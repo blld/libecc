@@ -14,22 +14,6 @@ static struct Input * findInput (Instance ecc, struct Text text);
 
 static int instanceCount = 0;
 
-static struct Value catch (const struct Op ** const ops, Instance const ecc)
-{
-	struct Error *error = ecc->result.type == Value(error)? ecc->result.data.error: Error.typeError(Text.make(NULL, 0), "unknown error");
-	
-	printTextInput(ecc, error->text);
-	
-	struct Value name = Value.toString(Object.get(&error->object, Identifier.name()));
-	struct Value message = Value.toString(Object.get(&error->object, Identifier.message()));
-	Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
-	return Value.undefined();
-}
-
-static struct Op exception[] = {
-	{ catch },
-};
-
 // MARK: - Static Members
 
 static struct Input * findInput (Instance ecc, struct Text text)
@@ -110,46 +94,46 @@ void eval (Instance self, struct Input *input)
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
 	struct Closure *closure = Parser.parseWithContext(parser, self->context);
-	Parser.destroy(parser), parser = NULL;
-	
-	///
-//		struct OpCode noopOps[] = {
-//			{ OpCode.var, Value.identifier(Identifier.makeWithChars("test", 4)) },
-//			{ OpCode.value, Value.integer(123) },
-//		};
-//		ops = malloc(sizeof(noopOps));
-//		memcpy(ops, noopOps, sizeof(noopOps));
-	///
-	
-//	closure->context.prototype = self->context;
-	
 	const struct Op *ops = closure->oplist->ops;
 	
-	self->envCapacity = 1;
-	self->envList = malloc(sizeof(*self->envList) * self->envCapacity);
-	self->context = &closure->context;
+	Parser.destroy(parser), parser = NULL;
 	
-	if (!setjmp(self->envList[self->envIndex]))
-		self->result = ops->function(&ops, self);
-	else
+	if (!self->envCapacity)
 	{
-		ops = exception;
-		self->result = ops->function(&ops, self);
+		self->envCapacity = 1;
+		self->envList = malloc(sizeof(*self->envList) * self->envCapacity);
+		
+		if (setjmp(self->envList[self->envIndex]))
+		{
+			struct Value value = self->result;
+			struct Value name = Value.undefined();
+			struct Value message = Value.undefined();
+			
+			if (Value.isObject(value))
+			{
+				name = Value.toString(Object.get(value.data.object, Identifier.name()));
+				message = Value.toString(Object.get(value.data.object, Identifier.message()));
+			}
+			else
+				message = Value.toString(value);
+			
+			if (name.type == Value(undefined))
+				name = Value.text(Text.errorName());
+			
+			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
+			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
+			return;
+		}
 	}
 	
-//	Object.dumpTo(self->context, stderr);
-//	putc('\n', stderr);
-	
+	self->context = &closure->context;
+	self->result = ops->function(&ops, self);
 	self->context = self->context->prototype;
-	
-//	Closure.destroy(closure), closure = NULL;
-	
-//	Object.dumpTo(self->context, stderr);
 }
 
-void throw (Instance self, struct Error *error)
+void throw (Instance self, struct Value value)
 {
-	self->result = Value.error(error);
+	self->result = value;
 	longjmp(self->envList[self->envIndex], 1);
 }
 

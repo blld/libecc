@@ -28,7 +28,7 @@ Interface(
 	(void, destroy, (Instance))
 	
 	(void, eval, (Instance, struct Input *))
-	(void, throw, (Instance, struct Error *error) __attribute__((noreturn)))
+	(void, throw, (Instance, struct Value value) __attribute__((noreturn)))
 	
 	(void, printTextInput, (Instance, struct Text text))
 	

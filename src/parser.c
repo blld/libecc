@@ -936,9 +936,13 @@ static struct OpList * statement (Instance self)
 	else if (acceptToken(self, Lexer(throwToken)))
 	{
 		if (!self->lexer->didLineBreak)
-			return OpList.unshift(Op.make(Op.throw, Value.undefined(), text), expression(self, 0));
-		else
-			return OpList.unshift(Op.make(Op.throw, Value.undefined(), text), OpList.create(Op.value, Value.undefined(), text));
+			oplist = expression(self, 0);
+		
+		if (!oplist)
+			error(self, Error.syntaxError(text, "throw statement is missing an expression"));
+		
+		semicolon(self);
+		return OpList.unshift(Op.make(Op.throw, Value.undefined(), Text.join(text, OpList.text(oplist))), oplist);
 	}
 	else if (acceptToken(self, Lexer(tryToken)))
 	{

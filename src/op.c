@@ -534,7 +534,7 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location));
+		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	return *ref;
 }
@@ -544,7 +544,7 @@ struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location));
+		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	return Value.reference(ref);
 }
@@ -554,7 +554,7 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location));
+		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	struct Value value = nextOp();
 	
@@ -1143,12 +1143,7 @@ struct Value throw (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Text text = (*ops)->text;
 	struct Value value = nextOp();
-//	if (value.type != Value(error)) {
-//		Error.error(Value.toString(value), ecc);
-//	}
-	#warning TODO: transform non-error value to error here
-	value.data.error->text = text;
-	Ecc.throw(ecc, value.data.error);
+	Ecc.throw(ecc, value);
 }
 
 struct Value debug (const Instance * const ops, struct Ecc * const ecc)
