@@ -19,15 +19,6 @@ static struct Object *syntaxErrorPrototype = NULL;
 static struct Object *typeErrorPrototype = NULL;
 static struct Object *uriErrorPrototype = NULL;
 
-static const struct Text errorType = { 14, "[object Error]" };
-
-static const struct Text errorName = { 5, "Error" };
-static const struct Text rangeErrorName = { 10, "RangeError" };
-static const struct Text referenceErrorName = { 14, "ReferenceError" };
-static const struct Text syntaxErrorName = { 11, "SyntaxError" };
-static const struct Text typeErrorName = { 9, "TypeError" };
-static const struct Text uriErrorName = { 8, "URIError" };
-
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -49,6 +40,9 @@ Instance createVA (struct Object *errorPrototype, struct Text text, const char *
 	assert(self);
 	
 	Object.initialize(&self->object, errorPrototype);
+	
+	if (!format)
+		return self;
 	
 	Object.add(&self->object, Identifier.message(), Value.chars(Chars.createVA(format, ap)), Object(writable) | Object(configurable));
 	
@@ -74,14 +68,14 @@ static struct Object *createErrorType (const struct Text *text)
 void setup (void)
 {
 	errorPrototype = Object.create(Object.prototype());
-	Object.setType(errorPrototype, &errorType);
-	initName(errorPrototype, &errorName);
+	Object.setType(errorPrototype, Text.errorType());
+	initName(errorPrototype, Text.errorName());
 	
-	rangeErrorPrototype = createErrorType(&rangeErrorName);
-	referenceErrorPrototype = createErrorType(&referenceErrorName);
-	syntaxErrorPrototype = createErrorType(&syntaxErrorName);
-	typeErrorPrototype = createErrorType(&typeErrorName);
-	uriErrorPrototype = createErrorType(&uriErrorName);
+	rangeErrorPrototype = createErrorType(Text.rangeErrorName());
+	referenceErrorPrototype = createErrorType(Text.referenceErrorName());
+	syntaxErrorPrototype = createErrorType(Text.syntaxErrorName());
+	typeErrorPrototype = createErrorType(Text.typeErrorName());
+	uriErrorPrototype = createErrorType(Text.uriErrorName());
 }
 
 struct Object *prototype (void)

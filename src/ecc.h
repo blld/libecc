@@ -42,6 +42,7 @@ Interface(
 		struct Value refObject;
 		struct Value result;
 		
+		int construct;
 		struct Closure *global;
 		
 		struct Input **inputs;

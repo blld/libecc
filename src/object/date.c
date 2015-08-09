@@ -10,7 +10,6 @@
 
 // MARK: - Private
 
-static struct Text dateType = { 14, "[object Date]" };
 static struct Object *datePrototype = NULL;
 static struct Object *dateConstructor = NULL;
 
@@ -21,7 +20,7 @@ static struct Object *dateConstructor = NULL;
 void setup (void)
 {
 	datePrototype = Object.create(Object.prototype());
-	datePrototype->type = &dateType;
+	datePrototype->type = Text.dateType();
 	
 //	Closure.addToObject(arrayPrototype, "toString", toString, 0);
 //	Closure.addToObject(arrayPrototype, "toLocaleString", toString, 0);

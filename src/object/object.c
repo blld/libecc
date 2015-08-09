@@ -11,21 +11,17 @@
 // MARK: - Private
 
 static const int defaultSize = 8;
-static Instance objectPrototype = NULL;
-static Instance objectConstructor = NULL;
-
-static const struct Text nullType = { 13, "[object Null]" };
-static const struct Text undefinedType = { 18, "[object Undefined]" };
-static const struct Text objectType = { 15, "[object Object]" };
+static struct Object *objectPrototype = NULL;
+static struct Closure *objectConstructor = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type == Value(null))
-		ecc->result = Value.text(&nullType);
+		ecc->result = Value.text(Text.nullType());
 	else if (ecc->this.type == Value(undefined))
-		ecc->result = Value.text(&undefinedType);
+		ecc->result = Value.text(Text.undefinedType());
 	else if (ecc->this.type == Value(object))
 		ecc->result = Value.text(ecc->this.data.object->type);
 	else
@@ -103,12 +99,12 @@ void setup (void)
 //	objectConstructor = Closure.create();
 }
 
-Instance prototype (void)
+struct Object *prototype (void)
 {
 	return objectPrototype;
 }
 
-Instance constructor (void)
+struct Closure *constructor (void)
 {
 	return objectConstructor;
 }
@@ -137,7 +133,7 @@ Instance initializeSized(Instance self, Instance prototype, uint32_t size)
 	
 	*self = Object.identity;
 	
-	self->type = &objectType;
+	self->type = Text.objectType();
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;
@@ -176,7 +172,7 @@ Instance finalize(Instance self)
 	return self;
 }
 
-Instance copy (Instance original)
+Instance copy (const Instance original)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
@@ -431,7 +427,7 @@ struct Value delete (Instance self, struct Identifier identifier)
 {
 #warning checkme
 	if (!self)
-		return Value.boolean(1);
+		return Value.true();
 	
 	Instance object = self;
 	uint32_t slot;
@@ -448,10 +444,10 @@ struct Value delete (Instance self, struct Identifier identifier)
 	} while (!slot && (object = object->prototype));
 	
 	if (!object || !object->hashmap[slot].slot[identifier.data.depth[3]])
-		return Value.boolean(0);
+		return Value.false();
 	
 	object->hashmap[slot].slot[identifier.data.depth[3]] = 0;
-	return Value.boolean(1);
+	return Value.true();
 }
 
 void packValue (Instance self)

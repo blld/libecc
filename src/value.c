@@ -10,18 +10,6 @@
 
 // MARK: - Private
 
-static struct Text nullText = { 4, "null" };
-static struct Text undefinedText = { 9, "undefined" };
-static struct Text trueText = { 4, "true" };
-static struct Text falseText = { 5, "false" };
-static struct Text booleanText = { 7, "boolean" };
-static struct Text numberText = { 6, "number" };
-static struct Text stringText = { 6, "string" };
-static struct Text objectText = { 6, "object" };
-static struct Text functionText = { 8, "function" };
-static struct Text zeroText = { 1, "0" };
-static struct Text oneText = { 1, "1" };
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -37,6 +25,20 @@ Structure null (void)
 {
 	return (Structure){
 		.type = Value(null),
+	};
+}
+
+Structure true (void)
+{
+	return (Structure){
+		.type = Value(true),
+	};
+}
+
+Structure false (void)
+{
+	return (Structure){
+		.type = Value(false),
 	};
 }
 
@@ -168,7 +170,7 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	struct Value aClosure = Object.get(object, aIdentifier);
 	if (aClosure.type == Value(closure))
 	{
-		struct Value result = Op.callClosure(aClosure.data.closure, ecc, value, 0);
+		struct Value result = Op.callClosureVA(aClosure.data.closure, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -176,12 +178,12 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	struct Value bClosure = Object.get(object, bIdentifier);
 	if (bClosure.type == Value(closure))
 	{
-		struct Value result = Op.callClosure(bClosure.data.closure, ecc, value, 0);
+		struct Value result = Op.callClosureVA(bClosure.data.closure, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
 	
-	Ecc.throw(ecc, Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location));
+	Ecc.throw(ecc, Value.error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
 }
 
 int isPrimitive (Structure value)
@@ -218,30 +220,30 @@ Structure toString (Structure value)
 			return value;
 		
 		case Value(null):
-			return Value.text(&nullText);
+			return Value.text(Text.null());
 		
 		case Value(undefined):
-			return Value.text(&undefinedText);
+			return Value.text(Text.undefined());
 		
 		case Value(false):
-			return Value.text(&falseText);
+			return Value.text(Text.false());
 		
 		case Value(true):
-			return Value.text(&trueText);
+			return Value.text(Text.true());
 		
 		case Value(integer):
 			if (value.data.integer == 0)
-				return Value.text(&zeroText);
+				return Value.text(Text.zero());
 			else if (value.data.integer == 1)
-				return Value.text(&oneText);
+				return Value.text(Text.one());
 			else
 				return Value.chars(Chars.create("%d", value.data.integer));
 		
 		case Value(binary):
 			if (value.data.binary == 0)
-				return Value.text(&zeroText);
+				return Value.text(Text.zero());
 			else if (value.data.binary == 1)
-				return Value.text(&oneText);
+				return Value.text(Text.one());
 			else
 				return Value.chars(Chars.create("%lg", value.data.binary));
 		
@@ -349,10 +351,10 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 	switch (value.type)
 	{
 		case Value(null):
-			Ecc.throw(ecc, Error.typeError(*text, "%.*s is null", text->length, text->location));
+			Ecc.throw(ecc, Value.error(Error.typeError(*text, "%.*s is null", text->length, text->location)));
 		
 		case Value(undefined):
-			Ecc.throw(ecc, Error.typeError(*text, "%.*s is undefined", text->length, text->location));
+			Ecc.throw(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
 		
 		case Value(false):
 		case Value(true):
@@ -389,29 +391,29 @@ Structure toType (Structure value)
 	{
 		case Value(true):
 		case Value(false):
-			return Value.text(&booleanText);
+			return Value.text(Text.boolean());
 		
 		case Value(undefined):
-			return Value.text(&undefinedText);
+			return Value.text(Text.undefined());
 		
 		case Value(integer):
 		case Value(binary):
-			return Value.text(&numberText);
+			return Value.text(Text.number());
 		
 		case Value(identifier):
 		case Value(text):
 		case Value(chars):
-			return Value.text(&stringText);
+			return Value.text(Text.string());
 		
 		case Value(null):
 		case Value(object):
 		case Value(string):
 		case Value(error):
 		case Value(date):
-			return Value.text(&objectText);
+			return Value.text(Text.object());
 		
 		case Value(closure):
-			return Value.text(&functionText);
+			return Value.text(Text.function());
 		
 		case Value(breaker):
 		case Value(reference):

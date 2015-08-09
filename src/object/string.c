@@ -10,8 +10,6 @@
 
 // MARK: - Private
 
-static const struct Text stringType = { 15, "[object String]" };
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -24,7 +22,7 @@ Instance create (const char *format, ...)
 	
 	Object.initialize(&self->object, NULL);
 	
-	self->object.type = &stringType;
+	self->object.type = Text.stringType();
 	
 	va_list ap, apsize;
 	va_start(ap, format);

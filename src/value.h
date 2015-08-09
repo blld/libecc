@@ -58,6 +58,8 @@ enum Module(Type) {
 Interface(
 	(Structure, undefined ,(void))
 	(Structure, null ,(void))
+	(Structure, false ,(void))
+	(Structure, true ,(void))
 	(Structure, boolean ,(int))
 	(Structure, integer ,(int32_t integer))
 	(Structure, binary ,(double binary))

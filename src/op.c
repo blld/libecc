@@ -63,7 +63,7 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength != bLength)
-			return Value.boolean(0);
+			return Value.false();
 		
 		return Value.boolean(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
@@ -72,11 +72,11 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 	else if (Value.isObject(a) && Value.isObject(b))
 		return Value.boolean(a.data.object == b.data.object);
 	else if (a.type == b.type)
-		return Value.boolean(1);
+		return Value.true();
 	else if (a.type == Value(null) && b.type == Value(undefined))
-		return Value.boolean(1);
+		return Value.true();
 	else if (a.type == Value(undefined) && b.type == Value(null))
-		return Value.boolean(1);
+		return Value.true();
 	else if ((Value.isNumber(a) && Value.isString(b))
 		|| (Value.isString(a) && Value.isNumber(b))
 		|| Value.isBoolean(a)
@@ -92,7 +92,7 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 		return equality(ecc, a, aText, b, bText);
 	}
 	
-	return Value.boolean(0);
+	return Value.false();
 }
 
 static struct Value identicality (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
@@ -108,7 +108,7 @@ static struct Value identicality (struct Ecc * const ecc, struct Value a, const 
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength != bLength)
-			return Value.boolean(0);
+			return Value.false();
 		
 		return Value.boolean(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
@@ -117,9 +117,9 @@ static struct Value identicality (struct Ecc * const ecc, struct Value a, const 
 	else if (Value.isObject(a) && Value.isObject(b))
 		return Value.boolean(a.data.object == b.data.object);
 	else if (a.type == b.type)
-		return Value.boolean(1);
+		return Value.true();
 	
-	return Value.boolean(0);
+	return Value.false();
 }
 
 static struct Value compare (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
@@ -152,7 +152,7 @@ static struct Value valueLess (struct Ecc * const ecc, struct Value a, const str
 {
 	a = compare(ecc, a, aText, b, bText);
 	if (a.type == Value(undefined))
-		return Value.boolean(0);
+		return Value.false();
 	else
 		return a;
 }
@@ -161,7 +161,7 @@ static struct Value valueMore (struct Ecc * const ecc, struct Value a, const str
 {
 	a = compare(ecc, b, bText, a, aText);
 	if (a.type == Value(undefined))
-		return Value.boolean(0);
+		return Value.false();
 	else
 		return a;
 }
@@ -170,18 +170,18 @@ static struct Value valueLessOrEqual (struct Ecc * const ecc, struct Value a, co
 {
 	a = compare(ecc, b, bText, a, aText);
 	if (a.type == Value(undefined) || a.type == Value(true))
-		return Value.boolean(0);
+		return Value.false();
 	else
-		return Value.boolean(1);
+		return Value.true();
 }
 
 static struct Value valueMoreOrEqual (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	a = compare(ecc, a, aText, b, bText);
 	if (a.type == Value(undefined) || a.type == Value(true))
-		return Value.boolean(0);
+		return Value.false();
 	else
-		return Value.boolean(1);
+		return Value.true();
 }
 
 static int integerLess(int32_t a, int32_t b)
@@ -268,7 +268,7 @@ int variableArgumentCount (struct Ecc * const ecc)
 
 struct Value *variableArgument (struct Ecc * const ecc, int argumentIndex)
 {
-	return &ecc->context->hashmap[2].data.value.data.object->element[argumentIndex];
+	return &ecc->context->hashmap[2].data.value.data.object->element[argumentIndex].value;
 }
 
 
@@ -346,19 +346,37 @@ static inline void populateContext (const Instance * const ops, struct Ecc * con
 	}
 }
 
-struct Value callClosure (struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
+static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, struct Object *context, struct Value this, int construct)
 {
 	struct Value callerThis = ecc->this;
 	struct Object *callerContext = ecc->context;
-	const Instance callOps = closure->oplist->ops;
+	int callerConstruct = ecc->construct;
+	const Instance callOps = ops;
+	struct Value value;
 	
+	ecc->this = this;
+	ecc->context = context;
+	ecc->construct = construct;
+	
+	ops->function(&callOps, ecc);
+	value = ecc->result;
+	
+	ecc->this = callerThis;
+	ecc->context = callerContext;
+	ecc->construct = callerConstruct;
+	ecc->result = Value.undefined();
+	
+	return value;
+}
+
+struct Value callClosureVA (struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
+{
 	if (closure->needHeap)
 	{
 		struct Object *context = Object.copy(&closure->context);
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		
 		if (closure->needArguments)
 			populateContextWithArgumentsVA(context, closure->parameterCount, argumentCount, ap);
 		else
@@ -366,12 +384,7 @@ struct Value callClosure (struct Closure *closure, struct Ecc * const ecc, struc
 		
 		va_end(ap);
 		
-		ecc->this = this;
-		ecc->context = context;
-		callOps->function(&callOps, ecc);
-		
-//		if (ecc->result.type != Value(closure))
-//			Object.destroy(context), context = NULL;
+		return callOps(closure->oplist->ops, ecc, context, ecc->refObject, 0);
 	}
 	else
 	{
@@ -384,43 +397,15 @@ struct Value callClosure (struct Closure *closure, struct Ecc * const ecc, struc
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		
 		populateContextVA(&stackContext, closure->parameterCount, argumentCount, ap);
-		
 		va_end(ap);
 		
-		ecc->this = this;
-		ecc->context = &stackContext;
-		callOps->function(&callOps, ecc);
-		
-//		Object.finalize(&stackContext);
+		return callOps(closure->oplist->ops, ecc, &stackContext, ecc->refObject, 0);
 	}
-	
-	struct Value value = ecc->result;
-	ecc->this = callerThis;
-	ecc->context = callerContext;
-	ecc->result = Value.undefined();
-	return value;
 }
 
-struct Value new (const Instance * const ops, struct Ecc * const ecc)
+static inline struct Value callClosure (const Instance * const ops, struct Ecc * const ecc, struct Closure * const closure, int32_t argumentCount, int construct)
 {
-	return Value.undefined();
-}
-
-struct Value call (const Instance * const ops, struct Ecc * const ecc)
-{
-	struct Text text = (*ops + 1)->text;
-	int32_t argumentCount = opValue().data.integer;
-	struct Value value = nextOp();
-	if (value.type != Value(closure))
-		Ecc.throw(ecc, Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location));
-	
-	struct Value callerThis = ecc->this;
-	struct Object *callerContext = ecc->context;
-	struct Closure *closure = value.data.closure;
-	const Instance callOps = closure->oplist->ops;
-	
 	if (closure->needHeap)
 	{
 		struct Object *context = Object.copy(&closure->context);
@@ -430,15 +415,7 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 		else
 			populateContext(ops, ecc, context, closure->parameterCount, argumentCount);
 		
-//		Object.dumpTo(context, stderr);
-		
-//		fprintf(stderr, "\n*** CALL %.*s\n", nextOp->bytes.length, nextOp->bytes.location);
-		ecc->this = ecc->refObject;
-		ecc->context = context;
-		callOps->function(&callOps, ecc);
-		
-//		if (ecc->result.type != Value(closure))
-//			Object.destroy(context), context = NULL;
+		return callOps(closure->oplist->ops, ecc, context, ecc->refObject, construct);
 	}
 	else
 	{
@@ -451,21 +428,30 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 		
 		populateContext(ops, ecc, &stackContext, closure->parameterCount, argumentCount);
 		
-//		Object.dumpTo(&stackContext, stderr);
-		
-//		fprintf(stderr, "\n*** CALL %.*s\n", nextOp->bytes.length, nextOp->bytes.location);
-		ecc->this = ecc->refObject;
-		ecc->context = &stackContext;
-		callOps->function(&callOps, ecc);
-		
-//		Object.finalize(&stackContext);
+		return callOps(closure->oplist->ops, ecc, &stackContext, ecc->refObject, construct);
 	}
+}
+
+struct Value construct (const Instance * const ops, struct Ecc * const ecc)
+{
+	struct Text text = (*ops)->text;
+	int32_t argumentCount = opValue().data.integer;
+	struct Value value = nextOp();
+	if (value.type != Value(closure))
+		Ecc.throw(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", (*ops)->text.length, (*ops)->text.location)));
 	
-	value = ecc->result;
-	ecc->this = callerThis;
-	ecc->context = callerContext;
-	ecc->result = Value.undefined();
-	return value;
+	return callClosure(ops, ecc, value.data.closure, argumentCount, 1);
+}
+
+struct Value call (const Instance * const ops, struct Ecc * const ecc)
+{
+	struct Text text = (*ops)->text;
+	int32_t argumentCount = opValue().data.integer;
+	struct Value value = nextOp();
+	if (value.type != Value(closure))
+		Ecc.throw(ecc, Value.error(Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location)));
+	
+	return callClosure(ops, ecc, value.data.closure, argumentCount, 0);
 }
 
 

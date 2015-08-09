@@ -310,7 +310,7 @@ static struct OpList * new (Instance self)
 			oplist = OpList.join(oplist, arguments(self, &count));
 			expectToken(self, ')');
 		}
-		return OpList.unshift(Op.make(Op.new, Value.integer(count), OpList.text(oplist)), oplist);
+		return OpList.unshift(Op.make(Op.construct, Value.integer(count), OpList.text(oplist)), oplist);
 	}
 	else if (previewToken(self) == Lexer(functionToken))
 		return function(self, 0);
@@ -318,7 +318,7 @@ static struct OpList * new (Instance self)
 		return primary(self);
 }
 
-static struct OpList * leftHandSideExpression (Instance self)
+static struct OpList * leftHandSide (Instance self)
 {
 	struct Text text;
 	struct OpList *oplist = new(self);
@@ -358,7 +358,7 @@ static struct OpList * leftHandSideExpression (Instance self)
 
 static struct OpList * postfix (Instance self)
 {
-	struct OpList *oplist = leftHandSideExpression(self);
+	struct OpList *oplist = leftHandSide(self);
 	
 	if (!self->lexer->didLineBreak && acceptToken(self, Lexer(incrementToken)))
 		oplist = OpList.unshift(Op.make(Op.postIncrementRef, Value.undefined(), self->lexer->text), expressionRef(self, oplist, "invalid increment operand"));
@@ -553,16 +553,20 @@ static struct OpList * logicalOr (Instance self, int noIn)
 static struct OpList * conditional (Instance self, int noIn)
 {
 	struct OpList *oplist = logicalOr(self, noIn);
-	struct Text text = self->lexer->text;
 	if (acceptToken(self, '?'))
 	{
-		struct OpList *a = assignment(self, 0);
+		struct OpList *trueOps = assignment(self, 0);
 		if (!expectToken(self, ':'))
-			return NULL;
+			return oplist;
 		
-		struct OpList *b = assignment(self, noIn);
-		#warning TODO
-		return OpList.join(OpList.join(OpList.create(Op.jumpIf, Value.integer(123/* TODO */), text), b), a);
+		struct OpList *falseOps = assignment(self, noIn);
+		
+		trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->opCount), OpList.text(trueOps)));
+		oplist = OpList.unshift(Op.make(Op.jumpIfNot, Value.integer(trueOps->opCount), OpList.text(oplist)), oplist);
+		oplist = OpList.join(oplist, trueOps);
+		oplist = OpList.join(oplist, falseOps);
+		
+		return oplist;
 	}
 	return oplist;
 }
@@ -727,7 +731,7 @@ static struct OpList * forStatement (Instance self)
 		oplist = variableDeclarationList(self, 1);
 	else if (previewToken(self) != ';')
 	{
-		oplist = leftHandSideExpression(self);
+		oplist = leftHandSide(self);
 		if (!oplist)
 		{
 			noIn = 1;
@@ -1112,7 +1116,7 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}
 	
-	OpList.dumpTo(oplist, stderr);
+//	OpList.dumpTo(oplist, stderr);
 	
 //	struct Op *oplist = NULL;
 //	

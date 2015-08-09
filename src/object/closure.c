@@ -10,8 +10,6 @@
 
 // MARK: - Private
 
-static struct Text nativeFunctionText = { 13, "[native code]" };
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -100,7 +98,7 @@ void addToObject(struct Object *object, const char *name, const Function functio
 	}
 	closure->object.hashmapCount = closure->object.hashmapCapacity;
 	closure->oplist = OpList.create(function, Value.undefined(), Text.make(NULL, 0));
-	closure->text = nativeFunctionText;
+	closure->text = *Text.nativeCode();
 	
 	Object.add(object, Identifier.makeWithCString(name), Value.closure(closure), flags);
 }

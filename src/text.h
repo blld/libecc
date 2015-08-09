@@ -20,6 +20,34 @@
 Interface(
 	(Structure, make ,(const char *location, uint16_t length))
 	(Structure, join ,(Structure from, Structure to))
+	
+	(const Instance, undefined ,(void))
+	(const Instance, null ,(void))
+	(const Instance, false ,(void))
+	(const Instance, true ,(void))
+	(const Instance, boolean ,(void))
+	(const Instance, number ,(void))
+	(const Instance, string ,(void))
+	(const Instance, object ,(void))
+	(const Instance, function ,(void))
+	(const Instance, zero ,(void))
+	(const Instance, one ,(void))
+	(const Instance, nativeCode ,(void))
+	
+	(const Instance, nullType ,(void))
+	(const Instance, undefinedType ,(void))
+	(const Instance, objectType ,(void))
+	(const Instance, errorType ,(void))
+	(const Instance, arrayType ,(void))
+	(const Instance, stringType ,(void))
+	(const Instance, dateType ,(void))
+	
+	(const Instance, errorName ,(void))
+	(const Instance, rangeErrorName ,(void))
+	(const Instance, referenceErrorName ,(void))
+	(const Instance, syntaxErrorName ,(void))
+	(const Instance, typeErrorName ,(void))
+	(const Instance, uriErrorName ,(void))
 	,
 	{
 		uint16_t length;

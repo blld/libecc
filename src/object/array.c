@@ -13,8 +13,6 @@
 static struct Object *arrayPrototype = NULL;
 static struct Object *arrayConstructor = NULL;
 
-static const struct Text arrayType = { 14, "[object Array]" };
-
 //static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 //{
 //	Op.assertParameterCount(ecc, 0);
@@ -68,7 +66,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 void setup (void)
 {
 	arrayPrototype = Object.create(Object.prototype());
-	arrayPrototype->type = &arrayType;
+	arrayPrototype->type = Text.arrayType();
 	
 	enum Object(Flags) flags = Object(writable) | Object(configurable);
 	

@@ -57,6 +57,8 @@ Instance create (void)
 	Closure.addValue(self->global, "null", Value.null(), 0);
 	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
 	
+//	Closure.addFunction(self->global, "Error", Error.constructor, 1, 0);
+	
 	self->context = &self->global->context;
 	
 	return self;

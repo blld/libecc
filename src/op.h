@@ -79,7 +79,7 @@
 	_( negative )\
 	_( invert )\
 	_( not )\
-	_( new )\
+	_( construct )\
 	_( call )\
 	\
 	/* assignement expression */\
@@ -130,7 +130,7 @@ Interface(
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
 	(struct Value *, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
-	(struct Value, callClosure ,(struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
+	(struct Value, callClosureVA ,(struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

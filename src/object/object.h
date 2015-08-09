@@ -40,15 +40,15 @@ enum Object(Flags)
 Interface(
 	(void, setup ,(void))
 	
-	(Instance, prototype ,(void))
-	(Instance, constructor ,(void))
+	(struct Object *, prototype ,(void))
+	(struct Closure *, constructor ,(void))
 	
 	(Instance, create ,(Instance prototype))
 	(Instance, createSized ,(Instance prototype, uint32_t size))
 	(Instance, initialize ,(Instance, Instance prototype))
 	(Instance, initializeSized ,(Instance, Instance prototype, uint32_t size))
 	(Instance, finalize ,(Instance))
-	(Instance, copy ,(Instance original))
+	(Instance, copy ,(const Instance original))
 	(void, destroy ,(Instance))
 	
 	(void, setType ,(Instance, const struct Text *type))
@@ -95,6 +95,7 @@ Interface(
 		uint32_t elementCount;
 		uint32_t elementCapacity;
 		
+		struct Value primitive;
 		uint8_t flags;
 	}
 )

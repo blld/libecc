@@ -44,7 +44,8 @@ int main(int argc, const char * argv[])
 //	char test[] = "var a = NaN, b = +Infinity; print(a < b)";
 //	char test[] = "for (var a = 0; a < 10; ++a) if (0) continue; else for (var b = 0; b < 10; ++b) { print(a + \" \"+b); continue; } ";
 //	char test[] = "if (1) print(true); else print(false); print('next'); print('next2');";
-	char test[] = "switch (2) { case 2: print('a'); case 1: print('b'); } print('c');";
+//	char test[] = "throw 'hello';";
+	char test[] = "print(1 > 2? 'a': 'b')";
 	
 	Ecc.eval(ecc, Input.createFromBytes(test, sizeof(test), "main"));
 //	Ecc.eval(ecc, Input.createFromFile("/Users/aurelien/Project/monade/new/test/block2.js"));
