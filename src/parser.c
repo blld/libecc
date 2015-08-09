@@ -846,48 +846,52 @@ static struct OpList * returnStatement (Instance self, struct Text text)
 	return oplist;
 }
 
-static struct OpList * caseClause(Instance self)
-{
-#warning TODO: working case
-	struct OpList *oplist = NULL;
-	
-	if (acceptToken(self, Lexer(caseToken)))
-	{
-		oplist = expression(self, 0);
-		expectToken(self, ':');
-		return OpList.join(oplist, statementList(self));
-	}
-	
-	if (acceptToken(self, Lexer(defaultToken)))
-	{
-		expectToken(self, ':');
-		return statementList(self);
-	}
-	
-	error(self, Error.syntaxError(self->lexer->text, "invalid switch statement"));
-	return NULL;
-}
-
-static struct OpList * caseClauses (Instance self)
-{
-	struct OpList *oplist = NULL;
-	if (previewToken(self) == '}')
-		return NULL;
-	
-	while (previewToken(self) != '}' && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
-		oplist = OpList.join(oplist, caseClause(self));
-	
-	return oplist;
-}
-
 static struct OpList * switchStatement (Instance self)
 {
+	struct OpList *oplist = NULL, *conditionOps = NULL, *defaultOps = NULL;
+	struct Text text;
+	uint32_t conditionCount = 0;
+	
 	expectToken(self, '(');
-	struct OpList *oplist = expression(self, 0);
+	conditionOps = expression(self, 0);
 	expectToken(self, ')');
 	expectToken(self, '{');
 	pushDepth(self, Identifier.none(), 1);
-	oplist = OpList.join(oplist, caseClauses(self));
+	
+	while (previewToken(self) != '}' && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
+	{
+		text = self->lexer->text;
+		
+		if (acceptToken(self, Lexer(caseToken)))
+		{
+			conditionOps = OpList.join(conditionOps, expression(self, 0));
+			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->opCount: 0), text));
+			++conditionCount;
+			expectToken(self, ':');
+			oplist = OpList.join(oplist, statementList(self));
+		}
+		else if (acceptToken(self, Lexer(defaultToken)))
+		{
+			if (!defaultOps)
+			{
+				defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->opCount: 0), text);
+				expectToken(self, ':');
+				oplist = OpList.join(oplist, statementList(self));
+			}
+			else
+				error(self, Error.syntaxError(text, "more than one switch default"));
+		}
+		else
+			error(self, Error.syntaxError(text, "invalid switch statement"));
+	}
+	
+	if (!defaultOps)
+		defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->opCount: 0), text);
+	
+	conditionOps = OpList.unshift(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->opCount: 0), OpList.text(conditionOps)), conditionOps);
+	conditionOps = OpList.join(conditionOps, defaultOps);
+	oplist = OpList.join(conditionOps, oplist);
+	
 	popDepth(self);
 	expectToken(self, '}');
 	return oplist;
@@ -1104,7 +1108,7 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}
 	
-//	OpList.dumpTo(oplist, stderr);
+	OpList.dumpTo(oplist, stderr);
 	
 //	struct Op *oplist = NULL;
 //	

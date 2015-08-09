@@ -1206,15 +1206,18 @@ struct Value jumpIfNot (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
 {
-	int32_t count = opValue().data.integer;
+	const struct Op *nextOps = *ops + opValue().data.integer;
 	struct Value a = nextOp(), b;
 	const struct Text *text = opText();
 	
-	while (count--)
+	while (*ops < nextOps)
 	{
 		b = nextOp();
 		if (Value.isTrue(equality(ecc, a, text, b, opText())))
+		{
+			*ops = nextOps + nextOp().data.integer + 1;
 			break;
+		}
 		else
 			++*ops;
 	}
