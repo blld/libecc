@@ -866,25 +866,39 @@ struct Value unsignedRightShift (const Instance * const ops, struct Ecc * const 
 	return Value.integer((uint32_t)Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
 }
 
-struct Value bitAnd (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseAnd (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer & Value.toInteger(b).data.integer);
 }
 
-struct Value bitXor (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseXor (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer ^ Value.toInteger(b).data.integer);
 }
 
-struct Value bitOr (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseOr (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer | Value.toInteger(b).data.integer);
+}
+
+struct Value logicalAnd (const Instance * const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	struct Value b = nextOp();
+	return Value.boolean(Value.isTrue(a) && Value.isTrue(b));
+}
+
+struct Value logicalOr (const Instance * const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	struct Value b = nextOp();
+	return Value.boolean(Value.isTrue(a) || Value.isTrue(b));
 }
 
 struct Value positive (const Instance * const ops, struct Ecc * const ecc)

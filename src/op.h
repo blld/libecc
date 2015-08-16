@@ -72,9 +72,11 @@
 	_( leftShift )\
 	_( rightShift )\
 	_( unsignedRightShift )\
-	_( bitAnd )\
-	_( bitXor )\
-	_( bitOr )\
+	_( bitwiseAnd )\
+	_( bitwiseXor )\
+	_( bitwiseOr )\
+	_( logicalAnd )\
+	_( logicalOr )\
 	_( positive )\
 	_( negative )\
 	_( invert )\

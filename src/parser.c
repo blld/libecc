@@ -509,7 +509,7 @@ static struct OpList * bitwiseAnd (Instance self, int noIn)
 {
 	struct OpList *oplist = equality(self, noIn);
 	while (acceptToken(self, '&'))
-		oplist = OpList.join(oplist, equality(self, noIn));
+		oplist = OpList.unshift(Op.make(Op.bitwiseAnd, Value.undefined(), self->lexer->text), OpList.join(oplist, equality(self, noIn)));
 	
 	return oplist;
 }
@@ -518,7 +518,7 @@ static struct OpList * bitwiseXor (Instance self, int noIn)
 {
 	struct OpList *oplist = bitwiseAnd(self, noIn);
 	while (acceptToken(self, '^'))
-		oplist = OpList.join(oplist, bitwiseAnd(self, noIn));
+		oplist = OpList.unshift(Op.make(Op.bitwiseXor, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseAnd(self, noIn)));
 	
 	return oplist;
 }
@@ -527,7 +527,7 @@ static struct OpList * bitwiseOr (Instance self, int noIn)
 {
 	struct OpList *oplist = bitwiseXor(self, noIn);
 	while (acceptToken(self, '|'))
-		oplist = OpList.join(oplist, bitwiseXor(self, noIn));
+		oplist = OpList.unshift(Op.make(Op.bitwiseOr, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseXor(self, noIn)));
 	
 	return oplist;
 }
@@ -536,7 +536,7 @@ static struct OpList * logicalAnd (Instance self, int noIn)
 {
 	struct OpList *oplist = bitwiseOr(self, noIn);
 	while (acceptToken(self, Lexer(logicalAndToken)))
-		oplist = OpList.join(oplist, bitwiseOr(self, noIn));
+		oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseOr(self, noIn)));
 	
 	return oplist;
 }
@@ -545,7 +545,7 @@ static struct OpList * logicalOr (Instance self, int noIn)
 {
 	struct OpList *oplist = logicalAnd(self, noIn);
 	while (acceptToken(self, Lexer(logicalOrToken)))
-		oplist = OpList.join(oplist, logicalAnd(self, noIn));
+		oplist = OpList.unshift(Op.make(Op.logicalOr, Value.undefined(), self->lexer->text), OpList.join(oplist, logicalAnd(self, noIn)));
 	
 	return oplist;
 }
@@ -1105,7 +1105,7 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 	
 	if (self->error)
 	{
-//		OpList.destroy(oplist), oplist = NULL;
+		OpList.destroy(oplist), oplist = NULL;
 		
 		struct Op errorOps[] = {
 			{ Op.throw, Value.undefined(), self->error->text },
