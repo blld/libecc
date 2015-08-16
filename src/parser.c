@@ -650,7 +650,11 @@ static struct OpList * block (Instance self)
 {
 	struct OpList *oplist = NULL;
 	expectToken(self, '{');
-	oplist = statementList(self);
+	if (previewToken(self) == '}')
+		oplist = OpList.create(Op.noop, Value.undefined(), self->lexer->text);
+	else
+		oplist = statementList(self);
+	
 	expectToken(self, '}');
 	return oplist;
 }
