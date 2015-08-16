@@ -534,18 +534,24 @@ static struct OpList * bitwiseOr (Instance self, int noIn)
 
 static struct OpList * logicalAnd (Instance self, int noIn)
 {
-	struct OpList *oplist = bitwiseOr(self, noIn);
+	struct OpList *oplist = bitwiseOr(self, noIn), *nextOp = NULL;
 	while (acceptToken(self, Lexer(logicalAndToken)))
-		oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseOr(self, noIn)));
+	{
+		nextOp = bitwiseOr(self, noIn);
+		oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.integer(nextOp->opCount), self->lexer->text), OpList.join(oplist, nextOp));
+	}
 	
 	return oplist;
 }
 
 static struct OpList * logicalOr (Instance self, int noIn)
 {
-	struct OpList *oplist = logicalAnd(self, noIn);
+	struct OpList *oplist = logicalAnd(self, noIn), *nextOp = NULL;
 	while (acceptToken(self, Lexer(logicalOrToken)))
-		oplist = OpList.unshift(Op.make(Op.logicalOr, Value.undefined(), self->lexer->text), OpList.join(oplist, logicalAnd(self, noIn)));
+	{
+		nextOp = logicalAnd(self, noIn);
+		oplist = OpList.unshift(Op.make(Op.logicalOr, Value.integer(nextOp->opCount), self->lexer->text), OpList.join(oplist, nextOp));
+	}
 	
 	return oplist;
 }

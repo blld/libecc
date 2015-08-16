@@ -889,16 +889,26 @@ struct Value bitwiseOr (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value logicalAnd (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value a = nextOp();
-	struct Value b = nextOp();
-	return Value.boolean(Value.isTrue(a) && Value.isTrue(b));
+	const int32_t opCount = opValue().data.integer;
+	if (!Value.isTrue(nextOp()))
+	{
+		*ops += opCount;
+		return Value.false();
+	}
+	else
+		return Value.boolean(Value.isTrue(nextOp()));
 }
 
 struct Value logicalOr (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value a = nextOp();
-	struct Value b = nextOp();
-	return Value.boolean(Value.isTrue(a) || Value.isTrue(b));
+	const int32_t opCount = opValue().data.integer;
+	if (Value.isTrue(nextOp()))
+	{
+		*ops += opCount;
+		return Value.true();
+	}
+	else
+		return Value.boolean(Value.isTrue(nextOp()));
 }
 
 struct Value positive (const Instance * const ops, struct Ecc * const ecc)
