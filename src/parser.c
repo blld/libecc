@@ -651,7 +651,7 @@ static struct OpList * block (Instance self)
 	struct OpList *oplist = NULL;
 	expectToken(self, '{');
 	if (previewToken(self) == '}')
-		oplist = OpList.create(Op.noop, Value.undefined(), self->lexer->text);
+		oplist = OpList.create(Op.next, Value.undefined(), self->lexer->text);
 	else
 		oplist = statementList(self);
 	
