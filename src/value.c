@@ -475,19 +475,19 @@ void dumpTo (Structure value, FILE *file)
 	switch (value.type)
 	{
 		case Value(null):
-			fprintf(file, "null");
+			fputs("null", file);
 			return;
 		
 		case Value(undefined):
-			fprintf(file, "undefined");
+			fputs("undefined", file);
 			return;
 		
 		case Value(false):
-			fprintf(file, "false");
+			fputs("false", file);
 			return;
 		
 		case Value(true):
-			fprintf(file, "true");
+			fputs("true", file);
 			return;
 		
 		case Value(integer):
@@ -505,20 +505,20 @@ void dumpTo (Structure value, FILE *file)
 		case Value(identifier):
 		{
 			struct Text *text = Identifier.textOf(value.data.identifier);
-			fprintf(file, "%.*s", text->length, text->location);
+			fwrite(text->location, sizeof(char), text->length, file);
 			return;
 		}
 		
 		case Value(text):
-			fprintf(file, "%.*s", value.data.text->length, value.data.text->location);
+			fwrite(value.data.text->location, sizeof(char), value.data.text->length, file);
 			return;
 		
 		case Value(chars):
-			fprintf(file, "%.*s", value.data.chars->length, value.data.chars->chars);
+			fwrite(value.data.chars->chars, sizeof(char), value.data.chars->length, file);
 			return;
 		
 		case Value(string):
-			fprintf(file, "%.*s", value.data.string->length, value.data.string->chars);
+			fwrite(value.data.string->chars, sizeof(char), value.data.string->length, file);
 			return;
 		
 		case Value(object):
@@ -530,16 +530,18 @@ void dumpTo (Structure value, FILE *file)
 		{
 			struct Value name = toString(Object.get(&value.data.error->object, Identifier.name()));
 			struct Value message = toString(Object.get(&value.data.error->object, Identifier.message()));
-			fprintf(file, "%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message));
+			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
+			fputs(": ", file);
+			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);
 			return;
 		}
 		
 		case Value(closure):
-			fprintf(file, "%.*s", value.data.closure->text.length, value.data.closure->text.location);
+			fwrite(value.data.closure->text.location, sizeof(char), value.data.closure->text.length, file);
 			return;
 		
 		case Value(reference):
-			fprintf(file, "-> ");
+			fputs("-> ", file);
 			dumpTo(*value.data.reference, file);
 			return;
 	}
