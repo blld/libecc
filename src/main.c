@@ -10,14 +10,11 @@
 
 struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertVariableParameter(ecc);
+	Op.assertParameterCount(ecc, 1);
 	
-	for (uint_fast32_t index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
-	{
-		Value.dumpTo(*Op.variableArgument(ecc, index), stderr);
-		fputc(' ', stderr);
-	}
+	Value.dumpTo(*Op.argument(ecc, 0), stderr);
 	fputc('\n', stderr);
+	
 	return Value.undefined();
 }
 
@@ -25,7 +22,7 @@ int main(int argc, const char * argv[])
 {
 	struct Ecc *ecc = Ecc.create();
 	
-	Closure.addFunction(ecc->global, "print", print, -1, 0);
+	Closure.addFunction(ecc->global, "print", print, 1, 0);
 	
 //	char test[] = "a = undefined; if (a) b = true; else b = false";
 //	char test[] = "var b = 0, a = 10;do {print(a)} while (a--);";
@@ -45,14 +42,25 @@ int main(int argc, const char * argv[])
 //	char test[] = "for (var a = 0; a < 10; ++a) if (0) continue; else for (var b = 0; b < 10; ++b) { print(a + \" \"+b); continue; } ";
 //	char test[] = "if (1) print(true); else print(false); print('next'); print('next2');";
 //	char test[] = "throw 'hello';";
-	char test[] = "print(1 > 2? 'a': 'b')";
+//	char test[] = "print(1 > 2? 'a': 'b')";
+//	char test[] = "if (1) {} print('ok')";
+//	char test[] = "try { eval(\"print('ok)\") } catch (e) { print(e) }";
+	char test[] = "eval(\"print('ok)\")";
 	
-	Ecc.eval(ecc, Input.createFromBytes(test, sizeof(test), "main"));
-//	Ecc.eval(ecc, Input.createFromFile("/Users/aurelien/Project/monade/new/test/block2.js"));
+#if 1
+	Ecc.evalInput(ecc, Input.createFromBytes(test, sizeof(test), "main"));
+#else
+	if (argc <= 1)
+	{
+		fprintf(stderr, "need a file\n");
+		return EXIT_FAILURE;
+	}
+	Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
+#endif
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 

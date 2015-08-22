@@ -8,11 +8,21 @@
 
 #include "ecc.h"
 
-static struct Input * findInput (Instance ecc, struct Text text);
-
 // MARK: - Private
 
 static int instanceCount = 0;
+
+static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Value.toString(*Op.argument(ecc, 0));
+	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	
+	evalInput(ecc, input);
+	
+	return Value.undefined();
+}
 
 // MARK: - Static Members
 
@@ -56,6 +66,7 @@ Instance create (void)
 	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
 	Closure.addValue(self->global, "null", Value.null(), 0);
 	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
+	Closure.addFunction(self->global, "eval", eval, 1, 0);
 	
 //	Closure.addFunction(self->global, "Error", Error.constructor, 1, 0);
 	
@@ -86,7 +97,7 @@ void destroy (Instance self)
 	}
 }
 
-void eval (Instance self, struct Input *input)
+void evalInput (Instance self, struct Input *input)
 {
 	assert(self);
 	assert(input);
@@ -122,6 +133,7 @@ void eval (Instance self, struct Input *input)
 			if (name.type == Value(undefined))
 				name = Value.text(Text.errorName());
 			
+			putc('\n', stderr);
 			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 			return;
@@ -143,7 +155,7 @@ void printTextInput (Instance self, struct Text text)
 {
 	struct Input *input = findInput(self, text);
 	if (input)
-		Input.printTextInput(input, text);
+		Input.printText(input, text);
 	else
 		Env.printColor(Env(Black), "(unknown input)\n\n");
 }

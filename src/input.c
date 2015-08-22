@@ -28,16 +28,6 @@ static Instance create()
 	return self;
 }
 
-static int32_t findLine (Instance self, struct Text text)
-{
-	uint_fast16_t line = self->lineCount + 1;
-	while (line--)
-		if (self->bytes + self->lines[line] <= text.location)
-			return line;
-	
-	return -1;
-}
-
 // MARK: - Methods
 
 Instance createFromFile (const char *filename)
@@ -105,7 +95,7 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-void printTextInput (Instance self, struct Text text)
+void printText (Instance self, struct Text text)
 {
 	assert(self);
 	
@@ -146,4 +136,14 @@ void printTextInput (Instance self, struct Text text)
 	}
 	else
 		Env.printColor(Env(Black), "%s\n", self->name);
+}
+
+int32_t findLine (Instance self, struct Text text)
+{
+	uint_fast16_t line = self->lineCount + 1;
+	while (line--)
+		if (self->bytes + self->lines[line] <= text.location)
+			return line;
+	
+	return -1;
 }

@@ -168,7 +168,7 @@ static struct OpList * propertyAssignment (Instance self)
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else if (previewToken(self) == Lexer(binaryToken))
 	{
-		Input.printTextInput(self->lexer->input, self->lexer->text);
+		Input.printText(self->lexer->input, self->lexer->text);
 		Env.printWarning("Using floating-point as property name polute identifier's pool");
 		oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}

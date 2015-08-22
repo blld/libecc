@@ -25,7 +25,8 @@ Interface(
 	(Instance, createFromBytes ,(const char *bytes, uint32_t length, const char *name, ...))
 	(void, destroy ,(Instance))
 	
-	(void, printTextInput, (Instance, struct Text text))
+	(void, printText, (Instance, struct Text text))
+	(int32_t, findLine, (Instance, struct Text text))
 	,
 	{
 		char name[FILENAME_MAX];

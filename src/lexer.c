@@ -95,6 +95,8 @@ static inline enum Module(Token) error(Instance self, struct Error *error)
 
 Instance createWithInput(struct Input *input)
 {
+	assert(input);
+	
 	Instance self = malloc(sizeof(*self));
 	assert(self);
 	*self = Module.identity;
@@ -436,7 +438,6 @@ enum Module(Token) nextToken (Instance self)
 						_(delete)
 						_(do)
 						_(else)
-						_(eval)
 						_(finally)
 						_(for)
 						_(function)

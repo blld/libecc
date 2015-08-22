@@ -84,7 +84,6 @@ Interface(
 			} data;
 		} *hashmap;
 		
-		// non-standard: element's flag is considered to always be: writable, enumerable, non-configurable
 		struct {
 			struct Value value;
 			char flags;

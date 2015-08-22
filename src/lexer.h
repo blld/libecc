@@ -41,7 +41,6 @@
 	_( instanceof ,,)\
 	_( typeof ,,)\
 	_( arguments ,,)\
-	_( eval ,,)\
 	_( break ,,)\
 	_( case ,,)\
 	_( default ,,)\
