@@ -10,6 +10,9 @@
 #define io_libecc_pool_h
 
 #include "namespace_io_libecc.h"
+struct Chars;
+struct Object;
+struct Closure;
 
 #include "value.h"
 
@@ -25,14 +28,24 @@ Interface(
 	
 	(Instance, shared ,(void))
 	
-	(void, add ,(struct Value value))
-	(void, delete ,(struct Value value))
-	(void, collect ,(void))
+	(void, addClosure ,(struct Closure *closure))
+	(void, addObject ,(struct Object *chars))
+	(void, addChars ,(struct Chars *chars))
+	
+	(void, collect ,(struct Value value))
 	,
 	{
-		struct Value *values;
-		uint16_t valueCount;
-		uint16_t valueCapacity;
+		struct Closure **closures;
+		uint16_t closuresCount;
+		uint16_t closuresCapacity;
+		
+		struct Object **objects;
+		uint16_t objectsCount;
+		uint16_t objectsCapacity;
+		
+		struct Chars **chars;
+		uint16_t charsCount;
+		uint16_t charsCapacity;
 	}
 )
 

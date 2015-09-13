@@ -67,30 +67,30 @@
 	_( get ,,)\
 	_( set ,,)\
 	\
-	_( equal ,"==",)\
-	_( notEqual ,"!=",)\
-	_( identical ,"===",)\
-	_( notIdentical ,"!==",)\
-	_( leftShiftAssign ,"<<=",)\
-	_( rightShiftAssign ,">>=",)\
-	_( unsignedRightShiftAssign ,">>>=",)\
-	_( leftShift ,"<<",)\
-	_( rightShift ,">>",)\
-	_( unsignedRightShift ,">>>",)\
-	_( lessOrEqual ,"<=",)\
-	_( moreOrEqual ,">=",)\
-	_( increment ,"++",)\
-	_( decrement ,"--",)\
-	_( logicalAnd ,"&&",)\
-	_( logicalOr ,"||",)\
-	_( addAssign ,"+=",)\
-	_( minusAssign ,"-=",)\
-	_( multiplyAssign ,"*=",)\
-	_( divideAssign ,"/=",)\
-	_( moduloAssign ,"%=",)\
-	_( andAssign ,"&=",)\
-	_( orAssign ,"|=",)\
-	_( xorAssign ,"^=",)\
+	_( equal ,"'=='",)\
+	_( notEqual ,"'!='",)\
+	_( identical ,"'==='",)\
+	_( notIdentical ,"'!=='",)\
+	_( leftShiftAssign ,"'<<='",)\
+	_( rightShiftAssign ,"'>>='",)\
+	_( unsignedRightShiftAssign ,"'>>>='",)\
+	_( leftShift ,"'<<'",)\
+	_( rightShift ,"'>>'",)\
+	_( unsignedRightShift ,"'>>>'",)\
+	_( lessOrEqual ,"'<='",)\
+	_( moreOrEqual ,"'>='",)\
+	_( increment ,"'++'",)\
+	_( decrement ,"'--'",)\
+	_( logicalAnd ,"'&&'",)\
+	_( logicalOr ,"'||'",)\
+	_( addAssign ,"'+='",)\
+	_( minusAssign ,"'-='",)\
+	_( multiplyAssign ,"'*='",)\
+	_( divideAssign ,"'/='",)\
+	_( moduloAssign ,"'%='",)\
+	_( andAssign ,"'&='",)\
+	_( orAssign ,"'|='",)\
+	_( xorAssign ,"'^='",)\
 	\
 
 #define _(X, S, ...) Module(X ## Token) __VA_ARGS__,
@@ -102,7 +102,7 @@ enum Module(Token) {
 Interface(
 	(Instance, createWithInput ,(struct Input *))
 	(void, destroy, (Instance))
-	(enum Module(Token), nextToken, (Instance))
+	(enum Lexer(Token), nextToken, (Instance))
 	(const char *, tokenChars ,(enum Module(Token) token))
 	,
 	{
@@ -112,6 +112,7 @@ Interface(
 		struct Value value;
 		struct Text text;
 		int didLineBreak;
+		int disallowRegex;
 	}
 )
 

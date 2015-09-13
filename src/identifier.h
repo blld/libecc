@@ -12,7 +12,6 @@
 #include "namespace_io_libecc.h"
 
 #include "text.h"
-#include "chars.h"
 
 
 #include "interface.h"
@@ -26,6 +25,7 @@ Interface(
 	
 	(Structure, none ,(void))
 	(Structure, prototype ,(void))
+	(Structure, constructor ,(void))
 	(Structure, length ,(void))
 	(Structure, arguments ,(void))
 	(Structure, name ,(void))

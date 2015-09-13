@@ -11,8 +11,6 @@
 // MARK: - Private
 
 static struct Object *errorPrototype = NULL;
-static struct Object *errorConstructor = NULL;
-
 static struct Object *rangeErrorPrototype = NULL;
 static struct Object *referenceErrorPrototype = NULL;
 static struct Object *syntaxErrorPrototype = NULL;
@@ -38,6 +36,7 @@ Instance createVA (struct Object *errorPrototype, struct Text text, const char *
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
+	Pool.addObject(&self->object);
 	
 	Object.initialize(&self->object, errorPrototype);
 	
@@ -78,14 +77,45 @@ void setup (void)
 	uriErrorPrototype = createErrorType(Text.uriErrorName());
 }
 
+void teardown (void)
+{
+//	Object.destroy(errorPrototype), errorPrototype = NULL;
+//	
+//	Object.destroy(rangeErrorPrototype), rangeErrorPrototype = NULL;
+//	Object.destroy(referenceErrorPrototype), referenceErrorPrototype = NULL;
+//	Object.destroy(syntaxErrorPrototype), syntaxErrorPrototype = NULL;
+//	Object.destroy(typeErrorPrototype), typeErrorPrototype = NULL;
+//	Object.destroy(uriErrorPrototype), uriErrorPrototype = NULL;
+}
+
 struct Object *prototype (void)
 {
 	return errorPrototype;
 }
 
-struct Object *constructor (void)
+struct Object *rangePrototype (void)
 {
-	return errorConstructor;
+	return rangeErrorPrototype;
+}
+
+struct Object *referencePrototype (void)
+{
+	return referenceErrorPrototype;
+}
+
+struct Object *syntaxPrototype (void)
+{
+	return syntaxErrorPrototype;
+}
+
+struct Object *typePrototype (void)
+{
+	return typeErrorPrototype;
+}
+
+struct Object *uriPrototype (void)
+{
+	return uriErrorPrototype;
 }
 
 Instance error (struct Text text, const char *format, ...)

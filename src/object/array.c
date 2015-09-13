@@ -11,13 +11,13 @@
 // MARK: - Private
 
 static struct Object *arrayPrototype = NULL;
-static struct Object *arrayConstructor = NULL;
+static struct Closure *arrayConstructor = NULL;
 
 //static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 //{
 //	Op.assertParameterCount(ecc, 0);
 //	
-//	ecc->result = Value.boolean(ecc->this.type == Value(object) && ecc->this.data.object->type == &arrayType);
+//	Ecc.result(ecc, Value.boolean(ecc->this.type == Value(object) && ecc->this.data.object->type == &arrayType));
 //	
 //	return Value.undefined();
 //}
@@ -37,12 +37,13 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		{
 			notLast = index < ecc->this.data.object->elementCount - 1;
 			
-			value = ecc->this.data.object->element[index].value;
+			value = ecc->this.data.object->element[index].data.value;
 			
 			value = Value.toString(value);
 			
 			stringLength = Value.stringLength(value);
 			chars = realloc(chars, sizeof(*chars) + length + stringLength + (notLast? 2: 0));
+			
 			memcpy(chars->chars + length, Value.stringChars(value), stringLength);
 			
 			length += stringLength;
@@ -53,8 +54,18 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		}
 		
 		chars->length = length;
+		Pool.addChars(chars);
 		ecc->result = Value.chars(chars);
 	}
+	
+	return Value.undefined();
+}
+
+static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	#warning TODO
 	
 	return Value.undefined();
 }
@@ -76,6 +87,15 @@ void setup (void)
 //	Closure.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
 //	Closure.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
 //	Closure.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
+	
+	arrayConstructor = Closure.createWithFunction(arrayPrototype, constructorFunction, 1);
+	
+	Object.add(arrayPrototype, Identifier.constructor(), Value.closure(arrayConstructor), 0);
+}
+
+void teardown (void)
+{
+//	Object.destroy(arrayPrototype), arrayPrototype = NULL;
 }
 
 struct Object *prototype (void)
@@ -83,7 +103,7 @@ struct Object *prototype (void)
 	return arrayPrototype;
 }
 
-struct Object *constructor (void)
+struct Closure *constructor (void)
 {
 	return arrayConstructor;
 }

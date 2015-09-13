@@ -107,6 +107,7 @@
 	_( debug )\
 	_( next )\
 	_( nextIf )\
+	_( expression )\
 	_( discard )\
 	_( jump )\
 	_( jumpIf )\
@@ -126,11 +127,11 @@ Interface(
 	
 	(void , assertParameterCount ,(struct Ecc * const ecc, int parameterCount))
 	(int , argumentCount ,(struct Ecc * const ecc))
-	(struct Value *, argument ,(struct Ecc * const ecc, int argumentIndex))
+	(struct Value, argument ,(struct Ecc * const ecc, int argumentIndex))
 	
 	(void , assertVariableParameter ,(struct Ecc * const ecc))
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
-	(struct Value *, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
+	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
 	(struct Value, callClosureVA ,(struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
 	

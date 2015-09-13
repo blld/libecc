@@ -23,9 +23,14 @@
 
 Interface(
 	(void, setup ,(void))
+	(void, teardown ,(void))
 	
 	(struct Object *, prototype ,(void))
-	(struct Object *, constructor ,(void))
+	(struct Object *, rangePrototype ,(void))
+	(struct Object *, referencePrototype ,(void))
+	(struct Object *, syntaxPrototype ,(void))
+	(struct Object *, typePrototype ,(void))
+	(struct Object *, uriPrototype ,(void))
 	
 	(Instance, error ,(struct Text, const char *format, ...))
 	(Instance, rangeError ,(struct Text, const char *format, ...))
@@ -33,6 +38,7 @@ Interface(
 	(Instance, syntaxError ,(struct Text, const char *format, ...))
 	(Instance, typeError ,(struct Text, const char *format, ...))
 	(Instance, uriError ,(struct Text, const char *format, ...))
+	
 	(void, destroy ,(Instance))
 	,
 	{

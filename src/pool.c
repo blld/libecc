@@ -10,9 +10,114 @@
 
 // MARK: - Private
 
+static void unmarkValue (struct Value value);
+static void unmarkObject (struct Object *object);
+
 static Instance self = NULL;
 
 // MARK: - Static Members
+
+static void markAll (void)
+{
+	uint_fast32_t index, count;
+	
+	for (index = 0, count = self->closuresCount; index < count; ++index)
+	{
+		self->closures[index]->object.flags |= Object(mark);
+		self->closures[index]->context.flags |= Object(mark);
+	}
+	
+	for (index = 0, count = self->objectsCount; index < count; ++index)
+		self->objects[index]->flags |= Object(mark);
+	
+	for (index = 0, count = self->charsCount; index < count; ++index)
+		self->chars[index]->flags |= Chars(mark);
+}
+
+static void unmarkClosure (struct Closure *closure)
+{
+	if (closure->object.flags & Object(mark))
+	{
+		unmarkObject(&closure->object);
+		unmarkObject(&closure->context);
+	}
+}
+
+static void unmarkObject (struct Object *object)
+{
+	if (object->flags & Object(mark))
+	{
+		object->flags &= ~Object(mark);
+		
+		if (object->prototype)
+			unmarkObject(object->prototype);
+		
+		uint_fast32_t index , count;
+		
+		for (index = 0, count = object->elementCount; index < count; ++index)
+			unmarkValue(object->element[index].data.value);
+		
+		for (index = 2, count = object->hashmapCount; index < count; ++index)
+			if (object->hashmap[index].data.flags & Object(isValue))
+			{
+//				Identifier.dumpTo(object->hashmap[index].data.identifier, stderr);
+//				fprintf(stderr, " < unmark\n");
+				unmarkValue(object->hashmap[index].data.value);
+			}
+	}
+}
+
+static void unmarkChars (struct Chars *chars)
+{
+	if (chars->flags & Chars(mark))
+		chars->flags &= ~Chars(mark);
+}
+
+static void unmarkValue (struct Value value)
+{
+	if (value.type == Value(closure))
+		unmarkClosure(value.data.closure);
+	else if (value.type >= Value(object))
+		unmarkObject(value.data.object);
+	else if (value.type == Value(chars))
+		unmarkChars(value.data.chars);
+}
+
+static void collectMarked (void)
+{
+	int total = 0;
+	
+	uint_fast32_t index;
+	
+	index = self->closuresCount;
+	while (index--)
+		if (self->closures[index]->object.flags & Object(mark))
+		{
+			Closure.destroy(self->closures[index]);
+			self->closures[index] = self->closures[--self->closuresCount];
+			++total;
+		}
+	
+	index = self->objectsCount;
+	while (index--)
+		if (self->objects[index]->flags & Object(mark))
+		{
+			Object.destroy(self->objects[index]);
+			self->objects[index] = self->objects[--self->objectsCount];
+			++total;
+		}
+	
+	index = self->charsCount;
+	while (index--)
+		if (self->chars[index]->flags & Chars(mark))
+		{
+			Chars.destroy(self->chars[index]);
+			self->chars[index] = self->chars[--self->charsCount];
+			++total;
+		}
+	
+//	fprintf(stderr, "collected total: %d\n", total);
+}
 
 // MARK: - Methods
 
@@ -22,6 +127,7 @@ void setup (void)
 	
 	self = malloc(sizeof(*self));
 	assert(self);
+	
 	*self = Module.identity;
 }
 
@@ -29,20 +135,10 @@ void teardown (void)
 {
 	assert (self);
 	
-	struct Value value;
+	free(self->closures), self->closures = NULL;
+	free(self->objects), self->objects = NULL;
+	free(self->chars), self->chars = NULL;
 	
-	while (self->valueCount--)
-	{
-		value = self->values[self->valueCount];
-//		fprintf(stderr, "delete [%d] %p\n", self->valueCount, value.data.closure);
-		
-		if (value.type == Value(object))
-			Object.destroy(value.data.object);
-		else if (value.type == Value(closure))
-			Closure.destroy(value.data.closure);
-	}
-	
-	free(self->values), self->values = NULL;
 	free(self), self = NULL;
 }
 
@@ -51,26 +147,54 @@ Instance shared (void)
 	return self;
 }
 
-void add (struct Value value)
+void addClosure (struct Closure *closure)
 {
-	if (self->valueCount >= self->valueCapacity)
-	{
-		self->valueCapacity = self->valueCapacity? self->valueCapacity * 2: 1;
-		self->values = realloc(self->values, self->valueCapacity * sizeof(*self->values));
-		memset(self->values + self->valueCount, 0, sizeof(*self->values) * (self->valueCapacity - self->valueCount));
-	}
-//	fprintf(stderr, "add [%d] %p\n", self->valueCount, value.data.closure);
-	self->values[self->valueCount++] = value;
-}
-
-void delete (struct Value value)
-{
-	for (uint_fast32_t index = 0; index < self->valueCount; ++index)
-		if (self->values[index].data.object == value.data.object)
-			self->values[index] = Value.undefined();
-}
-
-void collect (void)
-{
+	assert(closure);
 	
+	if (self->closuresCount >= self->closuresCapacity)
+	{
+		self->closuresCapacity = self->closuresCapacity? self->closuresCapacity * 2: 8;
+		self->closures = realloc(self->closures, self->closuresCapacity * sizeof(*self->closures));
+		memset(self->closures + self->closuresCount, 0, sizeof(*self->closures) * (self->closuresCapacity - self->closuresCount));
+	}
+	
+	self->closures[self->closuresCount++] = closure;
+}
+
+void addObject (struct Object *object)
+{
+	assert(object);
+	
+//	Object.dumpTo(object, stderr);
+//	fprintf(stderr, " > add %p %u\n", object, self->objectsCount);
+	
+	if (self->objectsCount >= self->objectsCapacity)
+	{
+		self->objectsCapacity = self->objectsCapacity? self->objectsCapacity * 2: 8;
+		self->objects = realloc(self->objects, self->objectsCapacity * sizeof(*self->objects));
+		memset(self->objects + self->objectsCount, 0, sizeof(*self->objects) * (self->objectsCapacity - self->objectsCount));
+	}
+	
+	self->objects[self->objectsCount++] = object;
+}
+
+void addChars (struct Chars *chars)
+{
+	assert(chars);
+	
+	if (self->charsCount >= self->charsCapacity)
+	{
+		self->charsCapacity = self->charsCapacity? self->charsCapacity * 2: 8;
+		self->chars = realloc(self->chars, self->charsCapacity * sizeof(*self->chars));
+		memset(self->chars + self->charsCount, 0, sizeof(*self->chars) * (self->charsCapacity - self->charsCount));
+	}
+	
+	self->chars[self->charsCount++] = chars;
+}
+
+void collect (struct Value value)
+{
+	markAll();
+	unmarkValue(value);
+	collectMarked();
 }

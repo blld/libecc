@@ -65,6 +65,7 @@
 		0D981A5B1B498D3A00A62141 /* text.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = text.h; sourceTree = "<group>"; };
 		0DA9C77B1B648C060081A906 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
 		0DA9C77C1B648C060081A906 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
+		0DCB570B1BA4FA7700E2324D /* compatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compatibility.h; sourceTree = "<group>"; };
 		0DD57DBF1B2D542A00CD8119 /* libecc */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libecc; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DD57DC21B2D542A00CD8119 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		0DD57DCA1B2D543E00CD8119 /* interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = interface.h; sourceTree = "<group>"; };
@@ -145,6 +146,7 @@
 				0D25FB0E1B5C89A70075F035 /* chars.h */,
 				0DD57DCA1B2D543E00CD8119 /* interface.h */,
 				0D25FB131B6334CF0075F035 /* namespace_io_libecc.h */,
+				0DCB570B1BA4FA7700E2324D /* compatibility.h */,
 			);
 			name = libecc;
 			path = ../src;
@@ -267,7 +269,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;
@@ -317,7 +319,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;

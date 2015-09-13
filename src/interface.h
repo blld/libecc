@@ -50,7 +50,8 @@
 	#include <setjmp.h>
 	#include <math.h>
 	#include <errno.h>
-
+	#include "compatibility.h"
+	
 	#define Structure struct Module
 	#define Instance struct Module *
 

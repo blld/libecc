@@ -118,10 +118,11 @@ enum Module(Token) nextToken (Instance self)
 {
 	assert(self);
 	
+	int c, disallowRegex = self->disallowRegex;
+	
 	self->value = Value.undefined();
 	self->didLineBreak = 0;
-	
-	int c;
+	self->disallowRegex = 0;
 	
 	retry:
 	self->text.location = self->input->bytes + self->offset;
@@ -153,20 +154,23 @@ enum Module(Token) nextToken (Instance self)
 						if (c == '\r' || c == '\n')
 							goto retry;
 				}
-				else if (acceptChar(self, '='))
-					return Module(divideAssignToken);
-				else
+				else if (!disallowRegex)
 				{
 					#warning TODO
 					Env.printWarning("TODO: regex or division");
-//					return syntaxError(self, "TODO: regex or division");
-					return Module(todoToken);
+					return error(self, Error.syntaxError(self->text, "TODO: regex"));
 				}
+				else if (acceptChar(self, '='))
+					return Module(divideAssignToken);
+				else
+					return '/';
 			}
 			
 			case '\'':
 			case '"':
 			{
+				self->disallowRegex = 1;
+				
 				char end = c;
 				int haveExtra = 0;
 				int didLineBreak = self->didLineBreak;
@@ -231,9 +235,11 @@ enum Module(Token) nextToken (Instance self)
 				if (c == '.' && !isnumber(previewChar(self)))
 					return c;
 				
+				self->disallowRegex = 1;
+				
 				int binary = 0;
 				
-				if (c == '0' && acceptChar(self, 'x'))
+				if (c == '0' && (acceptChar(self, 'x') || acceptChar(self, 'X')))
 				{
 					while (( c = previewChar(self) ))
 						if (ishexdigit(c))
@@ -255,7 +261,7 @@ enum Module(Token) nextToken (Instance self)
 					while (isnumber(previewChar(self)))
 						nextChar(self);
 					
-					if (acceptChar(self, 'e'))
+					if (acceptChar(self, 'e') || acceptChar(self, 'E'))
 					{
 						binary = 1;
 						
@@ -270,19 +276,23 @@ enum Module(Token) nextToken (Instance self)
 					}
 				}
 				
+				char buffer[self->text.length + 1];
+				memcpy(buffer, self->text.location, self->text.length);
+				buffer[self->text.length] = '\0';
+				
 				if (binary)
 				{
-					self->value = Value.binary(strtod(self->text.location, NULL));
+					self->value = Value.binary(strtod(buffer, NULL));
 					return Module(binaryToken);
 				}
 				else
 				{
 					errno = 0;
-					long integer = strtol(self->text.location, NULL, 0);
+					long integer = strtol(buffer, NULL, 0);
 					
 					if (errno == ERANGE)
 					{
-						self->value = Value.binary(strtod(self->text.location, NULL));
+						self->value = Value.binary(strtod(buffer, NULL));
 						return Module(binaryToken);
 					}
 					if (integer < INT32_MIN || integer > INT32_MAX)
@@ -298,12 +308,14 @@ enum Module(Token) nextToken (Instance self)
 				}
 			}
 			
-			case '{':
 			case '}':
-			case '(':
 			case ')':
-			case '[':
 			case ']':
+				self->disallowRegex = 1;
+				/* fallthrought */
+			case '{':
+			case '(':
+			case '[':
 			case ';':
 			case ',':
 			case '~':
@@ -423,12 +435,12 @@ enum Module(Token) nextToken (Instance self)
 					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
 						nextChar(self);
 					
+					#define _(X) { #X, sizeof(#X) - 1, Module(X##Token) },
 					static const struct {
 						const char *name;
 						size_t length;
 						enum Module(Token) token;
 					} keywords[] = {
-						#define _(X) { #X, sizeof(#X) - 1, Module(X##Token) },
 						_(break)
 						_(case)
 						_(catch)
@@ -448,28 +460,37 @@ enum Module(Token) nextToken (Instance self)
 						_(return)
 						_(switch)
 						_(typeof)
-						_(this)
 						_(throw)
 						_(try)
 						_(var)
 						_(void)
 						_(while)
 						_(with)
-						
-						_(null)
-						_(true)
-						_(false)
-						_(arguments)
+
 						_(void)
 						_(typeof)
 						
 						_(get)
 						_(set)
-						#undef _
+					}, disallowRegexKeyword[] = {
+						_(null)
+						_(true)
+						_(false)
+						_(this)
+						_(arguments)
 					};
+					#undef _
+					
 					for (int k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
 						if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
 							return keywords[k].token;
+					
+					for (int k = 0; k < sizeof(disallowRegexKeyword) / sizeof(*disallowRegexKeyword); ++k)
+						if (self->text.length == disallowRegexKeyword[k].length && memcmp(self->text.location, disallowRegexKeyword[k].name, disallowRegexKeyword[k].length) == 0)
+						{
+							self->disallowRegex = 1;
+							return disallowRegexKeyword[k].token;
+						}
 					
 					static const struct {
 						const char *name;
@@ -498,6 +519,7 @@ enum Module(Token) nextToken (Instance self)
 						if (self->text.length == reservedKeywords[k].length && memcmp(self->text.location, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
 							return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
 					
+					self->disallowRegex = 1;
 					self->value = Value.identifier(Identifier.makeWithText(self->text, 0));
 					return Module(identifierToken);
 				}
@@ -534,5 +556,6 @@ const char * tokenChars (enum Module(Token) token)
 		if (tokenList[index].token == token)
 			return tokenList[index].name;
 	
+	assert(0);
 	return "unknow";
 }

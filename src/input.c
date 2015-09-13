@@ -65,10 +65,6 @@ Instance createFromFile (const char *filename)
 Instance createFromBytes (const char *bytes, uint32_t length, const char *name, ...)
 {
 	assert(bytes);
-	assert(length);
-	
-	if (!length)
-		return NULL;
 	
 	Instance self = create();
 	
@@ -114,13 +110,13 @@ void printText (Instance self, struct Text text)
 				break;
 			
 			++length;
-		} while (start + length + 1 < self->length);
+		} while (start + length < self->length);
 		
 		Env.print("%.*s\n", length, location);
 		
 		char mark[length + 1 + sizeof(char)];
 		for (int b = 0; b <= length; ++b)
-			if (isgraph(location[b]))
+			if (b >= length || isgraph(location[b]))
 				mark[b] = ' ';
 			else
 				mark[b] = location[b];

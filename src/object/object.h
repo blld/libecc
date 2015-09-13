@@ -26,10 +26,10 @@
 enum Object(Flags)
 {
 	/* flags */
-	Object(mark),
+	Object(mark) = 1,
 	Object(extensible),
 	
-	/* hashmap.data.flags */
+	/* hashmap & element flags */
 	Object(writable),
 	Object(enumerable),
 	Object(configurable),
@@ -39,6 +39,7 @@ enum Object(Flags)
 
 Interface(
 	(void, setup ,(void))
+	(void, teardown ,(void))
 	
 	(struct Object *, prototype ,(void))
 	(struct Closure *, constructor ,(void))
@@ -53,6 +54,9 @@ Interface(
 	
 	(void, setType ,(Instance, const struct Text *type))
 	(void, mark ,(Instance))
+	
+//	(void, retain ,(Instance, int count))
+//	(void, release ,(Instance, int count, int noDestroy))
 	
 	(struct Value, getOwn ,(Instance, struct Identifier))
 	(struct Value, get ,(Instance, struct Identifier))
@@ -74,6 +78,13 @@ Interface(
 		
 		const struct Text *type;
 		
+		struct {
+			struct {
+				struct Value value;
+				char flags;
+			} data;
+		} *element;
+		
 		union {
 			uint32_t slot[16];
 			struct {
@@ -84,17 +95,12 @@ Interface(
 			} data;
 		} *hashmap;
 		
-		struct {
-			struct Value value;
-			char flags;
-		} *element;
-		
-		uint32_t hashmapCount;
-		uint32_t hashmapCapacity;
 		uint32_t elementCount;
 		uint32_t elementCapacity;
+		uint32_t hashmapCount;
+		uint32_t hashmapCapacity;
 		
-		struct Value primitive;
+		uint8_t traceCount;
 		uint8_t flags;
 	}
 )

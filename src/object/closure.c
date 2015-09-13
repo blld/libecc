@@ -23,11 +23,39 @@ Instance createSized (struct Object *prototype, uint32_t size)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
-	Pool.add(Value.closure(self));
+	Pool.addClosure(self);
+	
 	*self = Module.identity;
 	
 	Object.initialize(&self->object, NULL);
 	Object.initializeSized(&self->context, prototype, size);
+	
+	return self;
+}
+
+Instance createWithFunction (struct Object *prototype, const Function function, int parameterCount)
+{
+	Instance self = NULL;
+	
+	if (parameterCount < 0)
+	{
+		self = createSized(prototype, 3);
+		self->needHeap = 1;
+		self->needArguments = 1;
+		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
+		self->object.hashmap[2].data.identifier = Identifier.arguments();
+	}
+	else
+	{
+		self = createSized(prototype, 3 + parameterCount);
+		self->parameterCount = parameterCount;
+		
+		for (uint_fast16_t index = 0; index < parameterCount; ++index)
+			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
+	}
+	self->context.hashmapCount = self->context.hashmapCapacity;
+	self->oplist = OpList.create(function, Value.undefined(), Text.make(NULL, 0));
+	self->text = *Text.nativeCode();
 	
 	return self;
 }
@@ -38,8 +66,15 @@ Instance copy (Instance original)
 	
 	Instance self = malloc(sizeof(*self));
 	assert(self);
-	Pool.add(Value.closure(self));
+	Pool.addObject(&self->object);
+	
 	*self = *original;
+	
+	size_t byteSize;
+	
+	byteSize = sizeof(*self->object.hashmap) * self->object.hashmapCapacity;
+	self->object.hashmap = malloc(byteSize);
+	memcpy(self->object.hashmap, original->object.hashmap, byteSize);
 	
 	return self;
 }
@@ -48,17 +83,39 @@ void destroy (Instance self)
 {
 	assert(self);
 	
-//	fprintf(stderr, "destroy %p\n", self);
-	
 	Object.finalize(&self->object);
 	Object.finalize(&self->context);
 	
 	if (self->oplist)
 		OpList.destroy(self->oplist), self->oplist = NULL;
 	
-//	Pool.delete(Value.closure(self));
 	free(self), self = NULL;
 }
+
+//void retain (Instance self, int count)
+//{
+//	assert(self);
+//	
+//	fprintf(stderr, "RETAIN %p\n", self);
+//	
+//	Object.retain(&self->context, count);
+//	Object.retain(&self->object, count);
+//}
+//
+//void release (Instance self, int count)
+//{
+//	assert(self);
+//	
+//	fprintf(stderr, "RELEASE %p\n", self);
+//	fprintf(stderr, "object:\n");
+//	Object.dumpTo(&self->object, stderr);
+//	fprintf(stderr, "\ncontext:\n");
+//	Object.dumpTo(&self->context, stderr);
+//	fprintf(stderr, "\n-\n");
+//	
+//	Object.release(&self->context, count, 1);
+//	Object.release(&self->object, count, 0);
+//}
 
 void addFunction(Instance self, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
 {
@@ -78,27 +135,7 @@ void addToObject(struct Object *object, const char *name, const Function functio
 {
 	assert(object);
 	
-	Instance closure = NULL;
-	
-	if (parameterCount < 0)
-	{
-		closure = createSized(object, 3);
-		closure->needHeap = 1;
-		closure->needArguments = 1;
-		closure->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
-		closure->object.hashmap[2].data.identifier = Identifier.arguments();
-	}
-	else
-	{
-		closure = createSized(object, 3 + parameterCount);
-		closure->parameterCount = parameterCount;
-		
-		for (uint_fast16_t index = 0; index < parameterCount; ++index)
-			closure->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
-	}
-	closure->object.hashmapCount = closure->object.hashmapCapacity;
-	closure->oplist = OpList.create(function, Value.undefined(), Text.make(NULL, 0));
-	closure->text = *Text.nativeCode();
+	Instance closure = createWithFunction(object, function, parameterCount);
 	
 	Object.add(object, Identifier.makeWithCString(name), Value.closure(closure), flags);
 }

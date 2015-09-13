@@ -26,8 +26,12 @@
 Interface(
 	(Instance, create ,(struct Object *prototype))
 	(Instance, createSized ,(struct Object *prototype, uint32_t size))
+	(Instance, createWithFunction ,(struct Object *prototype, const Function function, int parameterCount))
 	(Instance, copy ,(Instance original))
 	(void, destroy ,(Instance))
+	
+//	(void, retain ,(Instance, int count))
+//	(void, release ,(Instance, int count))
 	
 	(void, addFunction ,(Instance self, const char *name, const Function function, int argumentCount, enum Object(Flags)))
 	(void, addValue ,(Instance self, const char *name, struct Value value, enum Object(Flags)))

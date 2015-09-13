@@ -30,12 +30,17 @@ void setup (void)
 //	Closure.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
 }
 
+void teardown (void)
+{
+//	Object.destroy(datePrototype), datePrototype = NULL;
+}
+
 struct Object *prototype (void)
 {
 	return datePrototype;
 }
 
-struct Object *constructor (void)
-{
-	return dateConstructor;
-}
+//struct Object *constructor (void)
+//{
+//	return dateConstructor;
+//}

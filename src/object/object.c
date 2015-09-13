@@ -38,10 +38,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 {
 	Op.assertParameterCount(ecc, 0);
 	
-	// todo: check null & undefined
-	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
-	
-	ecc->result = ecc->this;
+	ecc->result = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	return Value.undefined();
 }
@@ -50,7 +47,7 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 {
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value v = Value.toString(*Op.argument(ecc, 0));
+	struct Value v = Value.toString(Op.argument(ecc, 0));
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	if (v.type == Value(identifier))
@@ -79,15 +76,33 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	return Value.undefined();
 }
 
+static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Op.argument(ecc, 0);
+	
+	if (value.type == Value(null) || value.type == Value(undefined))
+		ecc->result = Value.object(Object.create(objectPrototype));
+	else if (ecc->construct && Value.isObject(value))
+		ecc->result = value;
+	else
+		ecc->result = Value.toObject(value, ecc, &(*ops)->text);
+	
+	return Value.undefined();
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
 
-void setup (void)
+void setup ()
 {
 	objectPrototype = create(NULL);
 	
 	enum Object(Flags) flags = Object(writable) | Object(configurable);
+	
+//	Object.add(objectPrototype, Value.closure(Closure.createWithFunction(NULL, )), flags);
 	
 	Closure.addToObject(objectPrototype, "toString", toString, 0, flags);
 	Closure.addToObject(objectPrototype, "toLocaleString", toString, 0, flags);
@@ -96,7 +111,16 @@ void setup (void)
 	Closure.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 0, flags);
 	Closure.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0, flags);
 	
-//	objectConstructor = Closure.create();
+//	objectConstructor = Closure.create(objectPrototype);
+	objectConstructor = Closure.createWithFunction(objectPrototype, constructorFunction, 1);
+	
+	Object.add(objectPrototype, Identifier.constructor(), Value.closure(objectConstructor), 0);
+}
+
+void teardown (void)
+{
+//	Object.destroy(objectPrototype), objectPrototype = NULL;
+//	Closure.destroy(objectConstructor), objectConstructor = NULL;
 }
 
 struct Object *prototype (void)
@@ -109,25 +133,25 @@ struct Closure *constructor (void)
 	return objectConstructor;
 }
 
-Instance create(Instance prototype)
+Instance create (Instance prototype)
 {
 	return createSized(prototype, defaultSize);
 }
 
-Instance createSized(Instance prototype, uint32_t size)
+Instance createSized (Instance prototype, uint32_t size)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
-	Pool.add(Value.object(self));
+	Pool.addObject(self);
 	return initializeSized(self, prototype, size);
 }
 
-Instance initialize(Instance self, Instance prototype)
+Instance initialize (Instance self, Instance prototype)
 {
 	return initializeSized(self, prototype, defaultSize);
 }
 
-Instance initializeSized(Instance self, Instance prototype, uint32_t size)
+Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 {
 	assert(self);
 	
@@ -150,9 +174,12 @@ Instance initializeSized(Instance self, Instance prototype, uint32_t size)
 	return self;
 }
 
-Instance finalize(Instance self)
+Instance finalize (Instance self)
 {
 	assert(self);
+	
+//	dumpTo(self, stderr);
+//	fprintf(stderr, " << \n");
 	
 //	while (self->elementCount--)
 //		Value.finalize(&self->element[self->elementCount]);
@@ -166,6 +193,9 @@ Instance finalize(Instance self)
 //			Value.finalize(&self->hashmap[self->hashmapCount].data.value);
 //		}
 	
+//	while (self->rootTrace > 0)
+//		release(self);
+	
 	free(self->hashmap), self->hashmap = NULL;
 	free(self->element), self->element = NULL;
 	
@@ -176,21 +206,30 @@ Instance copy (const Instance original)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
-	Pool.add(Value.object(self));
+	Pool.addObject(self);
 	
 	*self = *original;
 	
-	size_t byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
+	size_t byteSize;
+	
+	byteSize = sizeof(*self->element) * self->elementCapacity;
+	self->element = malloc(byteSize);
+	memcpy(self->element, original->element, byteSize);
+	
+	byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
 	self->hashmap = malloc(byteSize);
 	memcpy(self->hashmap, original->hashmap, byteSize);
+	
+	fprintf(stderr, "malloc %p\n", self->hashmap);
 	
 	return self;
 }
 
-void destroy(Instance self)
+void destroy (Instance self)
 {
 	assert(self);
 	
+//	dumpTo(self, stderr);
 //	fprintf(stderr, "destroy %p\n", self);
 	
 	finalize(self);
@@ -221,7 +260,89 @@ void mark (Instance self)
 		}
 }
 
-struct Value getOwn(Instance self, struct Identifier identifier)
+//void retain (Instance self, int traceCount)
+//{
+//	assert(self);
+//	
+//	fprintf(stderr, "retain %p %d\n", self, self->traceCount + 1);
+//	
+//	self->traceCount += traceCount;
+//	
+//	fprintf(stderr, "alive %p\n", self);
+//	
+//	if (!(self->flags & Object(mark)))
+//	{
+//		struct Value value;
+//		uint_fast32_t index, count;
+//		
+//		self->flags |= Object(mark);
+//		
+//		if (self->prototype)
+//			Object.retain(self->prototype, traceCount);
+//		
+//		for (index = 0, count = self->elementCount; index < count; ++index)
+//		{
+//			value = self->element[index].data.value;
+//			if (Value.isDynamic(value))
+//				Value.retain(value, traceCount);
+//		}
+//		
+//		for (index = 2, count = self->hashmapCount; index < count; ++index)
+//			if (self->hashmap[index].data.flags & Object(isValue))
+//			{
+//				value = self->hashmap[index].data.value;
+//				if (Value.isDynamic(value))
+//					Value.retain(value, traceCount);
+//			}
+//		
+//		self->flags &= ~Object(mark);
+//	}
+//}
+//
+//void release (Instance self, int traceCount, int noDestroy)
+//{
+//	assert(self);
+//	assert(self->traceCount > 0);
+//	
+//	fprintf(stderr, "release %p %d\n", self, self->traceCount - 1);
+//	
+//	self->traceCount -= traceCount;
+//	
+//	fprintf(stderr, "dead %p\n", self);
+//	
+//	if (!(self->flags & Object(mark)))
+//	{
+//		struct Value value;
+//		uint_fast32_t index, count;
+//		
+//		self->flags |= Object(mark);
+//		
+//		if (self->prototype)
+//			Object.release(self->prototype, traceCount, noDestroy);
+//		
+//		for (index = 0, count = self->elementCount; index < count; ++index)
+//		{
+//			value = self->element[index].data.value;
+//			if (Value.isDynamic(value))
+//				Value.release(value, traceCount);
+//		}
+//		
+//		for (index = 2, count = self->hashmapCount; index < count; ++index)
+//			if (self->hashmap[index].data.flags & Object(isValue))
+//			{
+//				value = self->hashmap[index].data.value;
+//				if (Value.isDynamic(value))
+//					Value.release(value, traceCount);
+//			}
+//		
+//		self->flags &= ~Object(mark);
+//	}
+//	
+//	if (!self->traceCount && !noDestroy)
+//		destroy(self), self = NULL;
+//}
+
+struct Value getOwn (Instance self, struct Identifier identifier)
 {
 	assert(self);
 	
@@ -238,7 +359,7 @@ struct Value getOwn(Instance self, struct Identifier identifier)
 		.data.value;
 }
 
-struct Value get(Instance self, struct Identifier identifier)
+struct Value get (Instance self, struct Identifier identifier)
 {
 	assert(self);
 	
@@ -262,7 +383,7 @@ struct Value get(Instance self, struct Identifier identifier)
 	return value;
 }
 
-struct Value *refOwn(Instance self, struct Identifier identifier, int create)
+struct Value *refOwn (Instance self, struct Identifier identifier, int create)
 {
 	assert(self);
 	
@@ -286,7 +407,7 @@ struct Value *refOwn(Instance self, struct Identifier identifier, int create)
 		return NULL;
 }
 
-struct Value *ref(Instance self, struct Identifier identifier, int create)
+struct Value *ref (Instance self, struct Identifier identifier, int create)
 {
 	assert(self);
 	
@@ -294,12 +415,13 @@ struct Value *ref(Instance self, struct Identifier identifier, int create)
 	uint32_t slot;
 	
 //	fprintf(stderr, "--- *\n");
+//	Identifier.dumpTo(identifier, stderr);
+//	fprintf(stderr, " < search\n");
 	
 	do
 	{
 //		dumpTo(object, stderr);
-//		fprintf(stderr, "--\n");
-		
+//		fprintf(stderr, "%p --\n", object);
 		
 		slot =
 			object->hashmap[
@@ -335,13 +457,21 @@ void setOwn (Instance self, struct Identifier identifier, struct Value value)
 		.slot[identifier.data.depth[2]]]
 		.slot[identifier.data.depth[3]];
 	
-	if (!slot)
+	if (slot)
+	{
+//		if (self->traceCount && Value.isDynamic(self->hashmap[slot].data.value))
+//			Value.release(self->hashmap[slot].data.value, self->traceCount);
+	}
+	else
 	{
 		add(self, identifier, value, Object(writable));
 		return;
 	}
 	
 	self->hashmap[slot].data.value = value;
+	
+//	if (self->traceCount && Value.isDynamic(value))
+//		Value.retain(value, self->traceCount);
 }
 
 void set(Instance self, struct Identifier identifier, struct Value value)
@@ -370,13 +500,21 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 	Value.dumpTo(value, stderr);
 	fprintf(stderr, "\n");
 	
-	if (!slot)
+	if (slot)
+	{
+//		if (self->traceCount && Value.isDynamic(self->hashmap[slot].data.value))
+//			Value.release(self->hashmap[slot].data.value, self->traceCount);
+	}
+	else
 	{
 		add(self, identifier, value, Object(writable));
 		return;
 	}
 	
 	self->hashmap[slot].data.value = value;
+	
+//	if (self->traceCount && Value.isDynamic(value))
+//		Value.retain(value, self->traceCount);
 }
 
 struct Value * add (Instance self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
@@ -418,8 +556,15 @@ struct Value * add (Instance self, struct Identifier identifier, struct Value va
 		slot = self->hashmap[slot].slot[identifier.data.depth[depth]];
 	} while (++depth < 4);
 	
+//	if ((self->hashmap[slot].data.flags & Object(isValue)) && Value.isDynamic(self->hashmap[slot].data.value))
+//		Value.release(self->hashmap[slot].data.value, self->traceCount);
+	
 	self->hashmap[slot].data.value = value;
 	self->hashmap[slot].data.flags = Object(isValue) | flags;
+	
+//	if (self->traceCount && Value.isDynamic(value))
+//		Value.retain(value, self->traceCount);
+	
 	return &self->hashmap[slot].data.value;
 }
 
@@ -445,8 +590,19 @@ struct Value delete (Instance self, struct Identifier identifier)
 	
 	if (!object || !object->hashmap[slot].slot[identifier.data.depth[3]])
 		return Value.false();
+
+#warning TODO
+	struct Value value = object->hashmap[object->hashmap[slot].slot[identifier.data.depth[3]]].data.value;
+//	if (self->rootTrace && Value.isDynamic(value))
+//	{
+//		if (value.type == Value(chars))
+//			--value.data.chars->rootTrace;
+//		else
+//			--value.data.object->rootTrace;
+//	}
 	
 	object->hashmap[slot].slot[identifier.data.depth[3]] = 0;
+	
 	return Value.true();
 }
 
@@ -502,8 +658,8 @@ void addElementAtIndex (Instance self, uint32_t index, struct Value value)
 	if (self->elementCapacity <= index)
 		resizeElement(self, index + 1);
 	
-	self->element[index].value = value;
-	self->element[index].flags |= Object(isValue);
+	self->element[index].data.value = value;
+	self->element[index].data.flags |= Object(isValue);
 }
 
 void dumpTo(Instance self, FILE *file)
@@ -521,9 +677,9 @@ void dumpTo(Instance self, FILE *file)
 		if (!isArray)
 			fprintf(stderr, "%d: ", index);
 		
-		if (self->element[index].flags & Object(isValue))
+		if (self->element[index].data.flags & Object(isValue))
 		{
-			Value.dumpTo(self->element[index].value, stderr);
+			Value.dumpTo(self->element[index].data.value, stderr);
 			fprintf(stderr, ", ");
 		}
 	}
@@ -551,5 +707,5 @@ void dumpTo(Instance self, FILE *file)
 //		}
 	}
 	
-	fprintf(stderr, isArray? "]\n": "}\n");
+	fprintf(stderr, isArray? "]": "}");
 }

@@ -18,6 +18,7 @@ Instance create (const char *format, ...)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
+	Pool.addObject(&self->object);
 	*self = Module.identity;
 	
 	Object.initialize(&self->object, NULL);

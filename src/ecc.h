@@ -27,7 +27,13 @@ Interface(
 	(Instance, create ,(void))
 	(void, destroy, (Instance))
 	
+	(void, addFunction ,(Instance, const char *name, const Function function, int argumentCount, enum Object(Flags)))
+	(void, addValue ,(Instance, const char *name, struct Value value, enum Object(Flags)))
+	
 	(void, evalInput, (Instance, struct Input *))
+	
+	(jmp_buf *, pushEnvList ,(Instance))
+	(jmp_buf *, popEnvList ,(Instance))
 	(void, throw, (Instance, struct Value value) __attribute__((noreturn)))
 	
 	(void, printTextInput, (Instance, struct Text text))
@@ -49,7 +55,7 @@ Interface(
 		uint16_t inputCount;
 		
 		jmp_buf *envList;
-		uint16_t envIndex;
+		uint16_t envCount;
 		uint16_t envCapacity;
 	}
 )

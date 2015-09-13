@@ -14,11 +14,12 @@ static struct Text *identifierPool = NULL;
 static uint16_t identifierCount = 0;
 static uint16_t identifierCapacity = 0;
 
-static struct Chars **charsList = NULL;
+static char **charsList = NULL;
 static uint16_t charsCount = 0;
 
 Structure internalIdentifier;
 Structure prototypeIdentifier;
+Structure constructorIdentifier;
 Structure lengthIdentifier;
 Structure argumentsIdentifier;
 Structure nameIdentifier;
@@ -35,6 +36,7 @@ void setup (void)
 	if (!identifierPool)
 	{
 		prototypeIdentifier = makeWithCString("prototype");
+		constructorIdentifier = makeWithCString("constructor");
 		lengthIdentifier = makeWithCString("length");
 		argumentsIdentifier = makeWithCString("arguments");
 		nameIdentifier = makeWithCString("name");
@@ -46,8 +48,8 @@ void setup (void)
 
 void teardown (void)
 {
-	while (charsCount--)
-		Chars.destroy(charsList[charsCount]), charsList[charsCount] = NULL;
+	while (charsCount)
+		free(charsList[--charsCount]), charsList[charsCount] = NULL;
 	
 	free(identifierPool), identifierPool = NULL, identifierCount = 0, identifierCapacity = 0;
 }
@@ -81,11 +83,11 @@ Structure makeWithText (const struct Text text, int copyOnCreate)
 		
 		if (copyOnCreate)
 		{
-			struct Chars *chars = Chars.createSized(text.length);
-			memcpy(chars->chars, text.location, text.length);
+			char *chars = malloc(text.length);
+			memcpy(chars, text.location, text.length);
 			charsList = realloc(charsList, sizeof(*charsList) * (charsCount + 1));
 			charsList[charsCount++] = chars;
-			identifierPool[identifierCount++] = Text.make(chars->chars, chars->length);
+			identifierPool[identifierCount++] = Text.make(chars, text.length);
 		}
 		else
 			identifierPool[identifierCount++] = text;
@@ -109,6 +111,11 @@ Structure none (void)
 Structure prototype (void)
 {
 	return prototypeIdentifier;
+}
+
+Structure constructor (void)
+{
+	return constructorIdentifier;
 }
 
 Structure length (void)

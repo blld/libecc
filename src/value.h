@@ -14,7 +14,6 @@
 struct Closure;
 struct Ecc;
 
-#include "chars.h"
 #include "text.h"
 #include "identifier.h"
 
@@ -30,6 +29,8 @@ enum Module(Type) {
 	
 	/* Primitive */
 	
+	/* static */
+	
 	Module(null) = -2 & ~0x70,
 	Module(false) = -1 & ~0x70,
 	Module(undefined) = 0x00,
@@ -42,6 +43,9 @@ enum Module(Type) {
 	
 	Module(identifier) = 0x20,
 	Module(text) = 0x22,
+	
+	/* dynamic */
+	
 	Module(chars) = 0x24,
 	
 	/* Objects */
@@ -74,9 +78,13 @@ Interface(
 	(Structure, breaker ,(int32_t integer))
 	(Structure, reference ,(Instance))
 	
+//	(void, retain ,(Structure, int count))
+//	(void, release ,(Structure, int count))
+	
 	(Structure, toPrimitive ,(Structure, struct Ecc *ecc, const struct Text *text, int hint /* 0: auto, 1: String, -1: Number */))
 	(int, isPrimitive ,(Structure))
 	(int, isBoolean ,(Structure))
+	(int, isDynamic ,(Structure))
 	(int, isTrue ,(Structure))
 	
 	(Structure, toString ,(Structure))
@@ -104,6 +112,7 @@ Interface(
 			double binary;
 			struct Identifier identifier;
 			const struct Text *text;
+			
 			struct Chars *chars;
 			
 			struct Object *object;

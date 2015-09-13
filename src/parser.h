@@ -24,6 +24,7 @@
 Interface(
 	(Instance, createWithLexer ,(struct Lexer *))
 	(void, destroy, (Instance))
+	
 	(struct Closure *, parseWithContext ,(Instance const, struct Object *context))
 	,
 	{

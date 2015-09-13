@@ -155,6 +155,72 @@ Structure reference (Instance self)
 	};
 }
 
+//void retain (Structure value, int count)
+//{
+////	Value.dumpTo(value, stderr);
+////	fprintf(stderr, " RETAIN\n");
+//	
+//	switch (value.type)
+//	{
+//		case Value(chars):
+//			Chars.retain(value.data.chars, count);
+//			break;
+//		
+//		case Value(error):
+//		case Value(string):
+//		case Value(date):
+////			Env.printWarning("todo %s:%d", __FILE__, __LINE__);
+//		
+//		case Value(object):
+//			Object.retain(value.data.object, count);
+//			break;
+//		
+//		case Value(closure):
+//			Closure.retain(value.data.closure, count);
+//			break;
+//		
+//		default:
+//			assert(0);
+//			exit(EXIT_FAILURE);
+//	}
+//}
+//
+//void release (Structure value, int count)
+//{
+////	Value.dumpTo(value, stderr);
+////	fprintf(stderr, " RELEASE\n");
+//	
+//	switch (value.type)
+//	{
+//		case Value(chars):
+//			Chars.release(value.data.chars, count);
+//			break;
+//		
+//		case Value(error):
+//		case Value(string):
+//		case Value(date):
+////			Env.printWarning("todo %s:%d", __FILE__, __LINE__);
+//		
+//		case Value(object):
+//			Object.release(value.data.object, count, 0);
+////			if (!value.data.object->traceCount)
+////				Object.destroy(value.data.object);
+//			
+//			break;
+//		
+//		case Value(closure):
+//			Closure.release(value.data.closure, count);
+////			if (!value.data.closure->object.traceCount)
+////				Closure.destroy(value.data.closure);
+//			
+//			break;
+//		
+//		default:
+//			assert(0);
+//			exit(EXIT_FAILURE);
+//	}
+//}
+
 Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text, int hint)
 {
 	if (value.type < Value(object))
@@ -194,6 +260,11 @@ int isPrimitive (Structure value)
 int isBoolean (Structure value)
 {
 	return value.type & 0x01;
+}
+
+int isDynamic (Structure value)
+{
+	return value.type >= Value(chars);
 }
 
 int isTrue (Structure value)
@@ -256,8 +327,15 @@ Structure toString (Structure value)
 		case Value(closure):
 			return Value.text(&value.data.closure->text);
 		
-		case Value(date):
 		case Value(error):
+		{
+			struct Object *object = value.data.object;
+			struct Value name = Value.toString(Object.get(object, Identifier.name()));
+			struct Value message = Value.toString(Object.get(object, Identifier.message()));
+			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+		}
+		
+		case Value(date):
 		case Value(breaker):
 		case Value(reference):
 			assert(0);
@@ -314,9 +392,27 @@ Structure toBinary (Structure value)
 		case Value(undefined):
 			return Value.binary(NAN);
 		
-		case Value(identifier):
 		case Value(text):
+		{
+			if (value.data.text == Text.zero())
+				return Value.binary(0);
+			else if (value.data.text == Text.one())
+				return Value.binary(1);
+			
+			/* fallthrought */
+		}
+		
+		case Value(identifier):
 		case Value(chars):
+		{
+			size_t length = Value.stringLength(value);
+			char buffer[length + 1];
+			memcpy(buffer, Value.stringChars(value), length);
+			buffer[length] = '\0';
+			double binary = strtod(buffer, NULL);
+			return Value.binary(binary);
+		}
+		
 		case Value(object):
 		case Value(error):
 		case Value(string):
@@ -356,14 +452,10 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 		case Value(undefined):
 			Ecc.throw(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
 		
-		case Value(false):
-		case Value(true):
-		case Value(integer):
-		case Value(binary):
+		case Value(identifier):
 		case Value(text):
 		case Value(chars):
-		#warning TODO create object
-			return Value.undefined();
+			return Value.string(String.create("%.*s", Value.stringLength(value), Value.stringChars(value)));
 		
 		case Value(closure):
 		case Value(object):
@@ -372,7 +464,10 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 		case Value(date):
 			return value;
 		
-		case Value(identifier):
+		case Value(integer):
+		case Value(binary):
+		case Value(false):
+		case Value(true):
 		case Value(breaker):
 		case Value(reference):
 			assert(0);
@@ -422,53 +517,53 @@ Structure toType (Structure value)
 	}
 }
 
-void finalize (Instance self)
-{
-	assert(self);
-	assert(self->type != Value(breaker));
-	assert(self->type != Value(reference));
-	
-	switch (self->type)
-	{
-		case Value(null):
-		case Value(false):
-		case Value(undefined):
-		case Value(true):
-		case Value(integer):
-		case Value(binary):
-		case Value(identifier):
-		case Value(text):
-			break;
-		
-		case Value(chars):
-			Chars.destroy(self->data.chars);
-			break;
-		
-		case Value(object):
-		case Value(date):
-			Object.destroy(self->data.object);
-			break;
-		
-		case Value(error):
-			Error.destroy(self->data.error);
-			break;
-		
-		case Value(string):
-			String.destroy(self->data.string);
-			break;
-		
-		case Value(closure):
-			Closure.destroy(self->data.closure);
-			break;
-		
-		case Value(breaker):
-		case Value(reference):
-			assert(0);
-			exit(EXIT_FAILURE);
-	}
-	
-	self->type = Value(undefined);
-}
+//void finalize (Instance self)
+//{
+//	assert(self);
+//	assert(self->type != Value(breaker));
+//	assert(self->type != Value(reference));
+//	
+//	switch (self->type)
+//	{
+//		case Value(null):
+//		case Value(false):
+//		case Value(undefined):
+//		case Value(true):
+//		case Value(integer):
+//		case Value(binary):
+//		case Value(identifier):
+//		case Value(text):
+//			break;
+//		
+//		case Value(chars):
+//			Chars.destroy(self->data.chars);
+//			break;
+//		
+//		case Value(object):
+//		case Value(date):
+//			Object.destroy(self->data.object);
+//			break;
+//		
+//		case Value(error):
+//			Error.destroy(self->data.error);
+//			break;
+//		
+//		case Value(string):
+//			String.destroy(self->data.string);
+//			break;
+//		
+//		case Value(closure):
+//			Closure.destroy(self->data.closure);
+//			break;
+//		
+//		case Value(breaker):
+//		case Value(reference):
+//			assert(0);
+//			exit(EXIT_FAILURE);
+//	}
+//	
+//	self->type = Value(undefined);
+//}
 
 void dumpTo (Structure value, FILE *file)
 {
