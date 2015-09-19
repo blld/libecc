@@ -477,7 +477,6 @@ enum Module(Token) nextToken (Instance self)
 						_(true)
 						_(false)
 						_(this)
-						_(arguments)
 					};
 					#undef _
 					

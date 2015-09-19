@@ -40,7 +40,6 @@
 	_( this ,,)\
 	_( instanceof ,,)\
 	_( typeof ,,)\
-	_( arguments ,,)\
 	_( break ,,)\
 	_( case ,,)\
 	_( default ,,)\
