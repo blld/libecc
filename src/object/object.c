@@ -220,8 +220,6 @@ Instance copy (const Instance original)
 	self->hashmap = malloc(byteSize);
 	memcpy(self->hashmap, original->hashmap, byteSize);
 	
-	fprintf(stderr, "malloc %p\n", self->hashmap);
-	
 	return self;
 }
 
@@ -570,9 +568,8 @@ struct Value * add (Instance self, struct Identifier identifier, struct Value va
 
 struct Value delete (Instance self, struct Identifier identifier)
 {
-#warning checkme
-	if (!self)
-		return Value.true();
+	assert(self);
+	assert(identifier.data.integer);
 	
 	Instance object = self;
 	uint32_t slot;
@@ -590,20 +587,14 @@ struct Value delete (Instance self, struct Identifier identifier)
 	
 	if (!object || !object->hashmap[slot].slot[identifier.data.depth[3]])
 		return Value.false();
-
-#warning TODO
-	struct Value value = object->hashmap[object->hashmap[slot].slot[identifier.data.depth[3]]].data.value;
-//	if (self->rootTrace && Value.isDynamic(value))
-//	{
-//		if (value.type == Value(chars))
-//			--value.data.chars->rootTrace;
-//		else
-//			--value.data.object->rootTrace;
-//	}
 	
-	object->hashmap[slot].slot[identifier.data.depth[3]] = 0;
-	
-	return Value.true();
+	if (object->hashmap[object->hashmap[slot].slot[identifier.data.depth[3]]].data.flags & Object(configurable))
+	{
+		object->hashmap[slot].slot[identifier.data.depth[3]] = 0;
+		return Value.true();
+	}
+	else
+		return Value.false();
 }
 
 void packValue (Instance self)

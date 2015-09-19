@@ -374,12 +374,14 @@ static struct OpList * unary (Instance self)
 	{
 		struct OpList *oplist = unary(self);
 		
-		if (oplist->ops[0].function == Op.getMember)
+		if (oplist && oplist->ops[0].function == Op.getLocal)
+			changeFunction(oplist->ops, Op.deleteLocal);
+		else if (oplist && oplist->ops[0].function == Op.getMember)
 			changeFunction(oplist->ops, Op.deleteMember);
-		else if (oplist->ops[0].function == Op.getProperty)
+		else if (oplist && oplist->ops[0].function == Op.getProperty)
 			changeFunction(oplist->ops, Op.deleteProperty);
 		else
-			error(self, Error.referenceError(OpList.text(oplist), "invalid delete operand"));
+			error(self, Error.referenceError(self->lexer->text, "invalid delete operand"));
 		
 		return oplist;
 	}
@@ -1107,7 +1109,8 @@ static struct OpList * parameters (Instance self, int *count)
 		{
 			++*count;
 			op = identifier(self);
-			Object.add(&self->closure->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+			if (op.value.data.identifier.data.integer)
+				Object.add(&self->closure->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
 		} while (acceptToken(self, ','));
 	
 	return NULL;
@@ -1126,11 +1129,14 @@ static struct OpList * function (Instance self, int isDeclaration)
 	if (previewToken(self) == Lexer(identifierToken))
 		identifierOp = identifier(self);
 	else if (isDeclaration)
+	{
 		error(self, Error.syntaxError(self->lexer->text, "function statement requires a name"));
+		return NULL;
+	}
 	
 	struct Closure *parentClosure = self->closure;
 	struct Closure *closure = Closure.create(NULL);
-	Object.add(&closure->context, Identifier.arguments(), Value.undefined(), Object(writable) | Object(configurable));
+	Object.add(&closure->context, Identifier.arguments(), Value.undefined(), Object(writable));
 	
 	self->closure = closure;
 	expectToken(self, '(');

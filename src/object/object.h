@@ -25,14 +25,14 @@
 
 enum Object(Flags)
 {
-	/* flags */
-	Object(mark) = 1,
-	Object(extensible),
+	/* object flags */
+	Object(mark) = 1 << 0,
+	Object(extensible) = 1 << 1,
 	
 	/* hashmap & element flags */
-	Object(writable),
-	Object(enumerable),
-	Object(configurable),
+	Object(writable) = 1 << 2,
+	Object(enumerable) = 1 << 3,
+	Object(configurable) = 1 << 4,
 	
 	Object(isValue) = 0x80,
 };

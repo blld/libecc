@@ -357,6 +357,8 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	const Instance callOps = ops;
 	struct Value value;
 	
+	context->prototype = callerContext;
+	
 	ecc->this = this;
 	ecc->context = context;
 	ecc->construct = construct;
@@ -367,7 +369,6 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	ecc->this = callerThis;
 	ecc->context = callerContext;
 	ecc->construct = callerConstruct;
-//	Ecc.result(ecc, Value.undefined());
 	
 	return value;
 }
@@ -376,7 +377,7 @@ struct Value callClosureVA (struct Closure *closure, struct Ecc * const ecc, str
 {
 	if (closure->needHeap)
 	{
-		struct Object *context = Object.copy(ecc->context /*&closure->context*/);
+		struct Object *context = Object.copy(&closure->context);
 		
 		va_list ap;
 		va_start(ap, argumentCount);
@@ -395,7 +396,6 @@ struct Value callClosureVA (struct Closure *closure, struct Ecc * const ecc, str
 		memcpy(hashmap, closure->context.hashmap, sizeof(hashmap));
 		
 		struct Object stackContext = closure->context;
-		stackContext.prototype = ecc->context /*&closure->context*/;
 		stackContext.hashmap = hashmap;
 		
 		va_list ap;
@@ -411,7 +411,7 @@ static inline struct Value callClosure (const Instance * const ops, struct Ecc *
 {
 	if (closure->needHeap)
 	{
-		struct Object *context = Object.copy(ecc->context /*&closure->context*/);
+		struct Object *context = Object.copy(&closure->context);
 		
 		if (closure->needArguments)
 			populateContextWithArguments(ops, ecc, context, closure->parameterCount, argumentCount);
@@ -426,7 +426,6 @@ static inline struct Value callClosure (const Instance * const ops, struct Ecc *
 		memcpy(hashmap, closure->context.hashmap, sizeof(hashmap));
 		
 		struct Object stackContext = closure->context;
-		stackContext.prototype = ecc->context /*&closure->context*/;
 		stackContext.hashmap = hashmap;
 		
 		populateContext(ops, ecc, &stackContext, closure->parameterCount, argumentCount);
@@ -560,6 +559,12 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 //		Value.retain(value, ecc->context->traceCount);
 	
 	return *ref = value;
+}
+
+struct Value deleteLocal (const Instance * const ops, struct Ecc * const ecc)
+{
+	struct Identifier identifier = opValue().data.identifier;
+	return Object.delete(ecc->context, identifier);
 }
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
