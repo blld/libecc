@@ -276,6 +276,13 @@ enum Module(Token) nextToken (Instance self)
 					}
 				}
 				
+				if (isalpha(previewChar(self)))
+				{
+					self->text.location += self->text.length;
+					self->text.length = 1;
+					return error(self, Error.syntaxError(self->text, "identifier starts immediately after numeric literal"));
+				}
+				
 				char buffer[self->text.length + 1];
 				memcpy(buffer, self->text.location, self->text.length);
 				buffer[self->text.length] = '\0';

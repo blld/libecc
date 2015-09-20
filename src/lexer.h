@@ -28,8 +28,8 @@
 	_( error ,,= 128)\
 	_( todo ,,)\
 	\
-	_( integer ,,)\
-	_( binary ,,)\
+	_( integer ,"number",)\
+	_( binary ,"number",)\
 	_( string ,,)\
 	_( identifier ,,)\
 	_( null ,,)\
