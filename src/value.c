@@ -249,7 +249,7 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 			return result;
 	}
 	
-	Ecc.throw(ecc, Value.error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
+	Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
 }
 
 int isPrimitive (Structure value)
@@ -447,10 +447,10 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 	switch (value.type)
 	{
 		case Value(null):
-			Ecc.throw(ecc, Value.error(Error.typeError(*text, "%.*s is null", text->length, text->location)));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is null", text->length, text->location)));
 		
 		case Value(undefined):
-			Ecc.throw(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
 		
 		case Value(identifier):
 		case Value(text):

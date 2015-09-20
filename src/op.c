@@ -440,7 +440,7 @@ struct Value construct (const Instance * const ops, struct Ecc * const ecc)
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(closure))
-		Ecc.throw(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", (*ops)->text.length, (*ops)->text.location)));
 	
 	return callClosure(ops, ecc, value.data.closure, argumentCount, 1);
 }
@@ -451,7 +451,7 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(closure))
-		Ecc.throw(ecc, Value.error(Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location)));
 	
 	return callClosure(ops, ecc, value.data.closure, argumentCount, 0);
 }
@@ -525,7 +525,7 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	return *ref;
 }
@@ -535,7 +535,7 @@ struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	return Value.reference(ref);
 }
@@ -545,7 +545,7 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
-		Ecc.throw(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	struct Value value = nextOp();
 	
@@ -1121,40 +1121,32 @@ struct Value bitOrAssignRef (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value try(const Instance * const ops, struct Ecc * const ecc)
 {
-	if (ecc->envCount >= ecc->envCapacity)
-	{
-		ecc->envCapacity *= 2;
-		ecc->envList = realloc(ecc->envList, sizeof(*ecc->envList) * ecc->envCapacity);
-	}
-	
 	const struct Op *end = *ops + opValue().data.integer;
-	uint16_t envIndex = ecc->envCount;
 	struct Value value = Value.undefined();
 	struct Object *context = Object.create(ecc->context);
 	ecc->context = context;
 	
 	int rethrow = 0;
 	
-	Ecc.pushEnvList(ecc);
-	
-	if (!setjmp(ecc->envList[envIndex])) // try
+	if (!setjmp(*Ecc.pushEnv(ecc))) // try
 		value = nextOp();
 	else
 	{
-		if (!setjmp(ecc->envList[envIndex])) // catch
+		if (!rethrow) // catch
 		{
+			rethrow = 1;
 			*ops = end + 1; // bypass catch jump
 			Object.add(context, nextOp().data.identifier, ecc->result, 0);
 			ecc->result = Value.undefined();
 			value = nextOp(); // execute until noop
+			rethrow = 0;
 		}
-		else
-			rethrow = 1;
 	}
 	
-	Ecc.popEnvList(ecc);
+	Ecc.popEnv(ecc);
 	
 	// finally
+	value = ecc->result;
 	ecc->context = context->prototype;
 	--ecc->envCount;
 	*ops = end; // op[end] = Op.jump, to after catch
@@ -1163,7 +1155,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 	if (finallyValue.type != Value(undefined))
 		return finallyValue;
 	else if (rethrow)
-		longjmp(ecc->envList[ecc->envCount - 1], 1);
+		Ecc.jmpEnv(ecc, value);
 	else if (value.type != Value(undefined))
 		return value;
 	else
@@ -1172,9 +1164,8 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 
 struct Value throw (const Instance * const ops, struct Ecc * const ecc)
 {
-//	struct Text text = (*ops)->text;
 	struct Value value = nextOp();
-	Ecc.throw(ecc, value);
+	Ecc.jmpEnv(ecc, value);
 }
 
 struct Value debug (const Instance * const ops, struct Ecc * const ecc)

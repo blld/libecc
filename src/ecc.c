@@ -47,9 +47,8 @@ Instance create (void)
 {
 	if (!instanceCount++)
 	{
-		Pool.setup();
-		
 		Env.setup();
+		Pool.setup();
 		Identifier.setup();
 		
 		Object.setup();
@@ -62,7 +61,6 @@ Instance create (void)
 	*self = Module.identity;
 	
 	self->global = Closure.create(NULL);
-//	Closure.retain(self->global, 1);
 	
 	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
 	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
@@ -83,8 +81,6 @@ Instance create (void)
 	Closure.addValue(self->global, "Array", Value.object(Array.prototype()), 0);
 	Closure.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
 	
-//	Closure.addFunction(self->global, "Error", Error.constructor, 1, 0);
-	
 	self->context = &self->global->context;
 	
 	return self;
@@ -93,14 +89,6 @@ Instance create (void)
 void destroy (Instance self)
 {
 	assert(self);
-	
-//	Value.finalize(&self->result);
-//	Closure.destroy(self->global), self->global = NULL;
-	
-//	Closure.release(self->global, 1);
-//	Closure.destroy(self->global), self->global = NULL;
-	
-	Pool.collect(Value.undefined());
 	
 	while (self->inputCount--)
 		Input.destroy(self->inputs[self->inputCount]), self->inputs[self->inputCount] = NULL;
@@ -137,7 +125,7 @@ void addValue (Instance self, const char *name, struct Value value, enum Object(
 	Closure.addValue(self->global, name, value, flags);
 }
 
-void evalInput (Instance self, struct Input *input)
+int evalInput (Instance self, struct Input *input)
 {
 	assert(self);
 	assert(input);
@@ -148,6 +136,8 @@ void evalInput (Instance self, struct Input *input)
 	
 //	Object.dumpTo(self->context, stderr);
 	
+	int result = EXIT_SUCCESS;
+	
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
 	struct Closure *closure = Parser.parseWithContext(parser, self->context);
@@ -155,19 +145,17 @@ void evalInput (Instance self, struct Input *input)
 	
 	Parser.destroy(parser), parser = NULL;
 	
-//	Closure.retain(closure, 1);
-	
-	self->result = Value.undefined();
 	self->context = &closure->context;
-	
-//	OpList.dumpTo(closure->oplist, stderr);
+	self->result = Value.undefined();
 	
 	if (!self->envCount)
 	{
-		if (!setjmp(*pushEnvList(self)))
+		if (!setjmp(*pushEnv(self)))
 			ops->function(&ops, self);
 		else
 		{
+			result = EXIT_FAILURE;
+			
 			struct Value value = self->result;
 			struct Value name = Value.undefined();
 			struct Value message;
@@ -188,39 +176,47 @@ void evalInput (Instance self, struct Input *input)
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 		}
 		
-		popEnvList(self);
+		popEnv(self);
 	}
 	else
 		ops->function(&ops, self);
 	
 	self->context = self->context->prototype;
 	
-//	if (self->result.type == Value(text))
-//		self->result = Value.chars(Chars.create("%.*s", Value.stringLength(self->result), Value.stringChars(self->result)));
+	return result;
 }
 
-jmp_buf *pushEnvList(Instance self)
+jmp_buf * pushEnv(Instance self)
 {
 	if (self->envCount >= self->envCapacity)
 	{
-		self->envCapacity = self->envCapacity? self->envCapacity * 2: 1;
+		self->envCapacity = self->envCapacity? self->envCapacity * 2: 8;
 		self->envList = realloc(self->envList, sizeof(*self->envList) * self->envCapacity);
 	}
 	
-	return &self->envList[self->envCount++];
+	self->envList[self->envCount].context = self->context;
+	self->envList[self->envCount].this = self->this;
+	
+	return &self->envList[self->envCount++].buf;
 }
 
-jmp_buf *popEnvList(Instance self)
+void popEnv(Instance self)
 {
-	return &self->envList[--self->envCount];
+	if (self->envCount)
+	{
+		--self->envCount;
+		self->context = self->envList[self->envCount].context;
+		self->this = self->envList[self->envCount].this;
+	}
 }
 
-void throw (Instance self, struct Value value)
+void jmpEnv (Instance self, struct Value value)
 {
 	assert(self);
 	
 	self->result = value;
-	longjmp(self->envList[self->envCount - 1], 1);
+	
+	longjmp(self->envList[self->envCount - 1].buf, 1);
 }
 
 void printTextInput (Instance self, struct Text text)
@@ -232,6 +228,11 @@ void printTextInput (Instance self, struct Text text)
 		Input.printText(input, text);
 	else
 		Env.printColor(Env(Black), "(unknown input)\n\n");
+}
+
+void garbageCollect(Instance self)
+{
+	Pool.collect(Value.closure(self->global));
 }
 
 // MARK: Memory
