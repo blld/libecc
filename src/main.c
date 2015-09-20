@@ -9,7 +9,7 @@
 #include "main.h"
 
 static int printUsage (void);
-static int runTest (void);
+static int runTest (int verbosity);
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc);
 
 static struct Ecc *ecc = NULL;
@@ -23,7 +23,9 @@ int main (int argc, const char * argv[])
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
 	else if (!strcmp(argv[1], "--test"))
-		result = runTest();
+		result = runTest(0);
+	else if (!strcmp(argv[1], "--test-verbose"))
+		result = runTest(1);
 	else
 	{
 		Closure.addFunction(ecc->global, "print", print, 1, 0);
@@ -39,7 +41,7 @@ int main (int argc, const char * argv[])
 
 static int printUsage (void)
 {
-	fprintf(stderr, "usage: libecc <filename> or libecc --test");
+	fprintf(stderr, "usage: libecc <filename> or libecc --test or libecc --test-verbose\n\n");
 	
 	return EXIT_FAILURE;
 }
@@ -58,6 +60,7 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 
 //
 
+static int testVerbosity = 0;
 static int testCount = 0;
 static int testErrorCount = 0;
 
@@ -65,10 +68,11 @@ static void test (const char *func, int line, const char *test, const char *expe
 {
 	++testCount;
 	
-	if (!setjmp(*Ecc.pushEnv(ecc)))
+	if (testVerbosity || !setjmp(*Ecc.pushEnv(ecc)))
 		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line));
 	
-	Ecc.popEnv(ecc);
+	if (!testVerbosity)
+		Ecc.popEnv(ecc);
 	
 	struct Value result = Value.toString(ecc->result);
 	uint16_t length = Value.stringLength(result);
@@ -92,25 +96,36 @@ static void test (const char *func, int line, const char *test, const char *expe
 
 static void testLexer (void)
 {
-	test("1.f", "SyntaxError: identifier starts immediately after numeric literal");
+	test("/*hello", "SyntaxError: unterminated comment");
+	test("/*hello\nworld", "SyntaxError: unterminated comment");
+	test("'hello", "SyntaxError: unterminated string literal");
+	test("'hello\nworld'", "SyntaxError: unterminated string literal");
+	test("0x", "SyntaxError: missing hexadecimal digits after '0x'");
+	test("0e+", "SyntaxError: missing exponent");
+	test("\\", "SyntaxError: invalid character '\\'");
 }
 
 static void testParser (void)
 {
+	test("debugger()", "SyntaxError: missing ; before statement");
+	test("delete a = 1", "ReferenceError: invalid assignment left-hand side");
+	test("delete throw", "SyntaxError: expected expression, got 'throw'");
+	
+	test("{", "SyntaxError: expected '}', got end of script");
+	test("[", "SyntaxError: expected ']', got end of script");
+	
 	test("= 1", "SyntaxError: expected expression, got '='");
 	test("+= 1", "SyntaxError: expected expression, got '+='");
-	test("== 1", "SyntaxError: expected expression, got '=='");
-	test("% 1", "SyntaxError: expected expression, got '%'");
 	test("var 1.", "SyntaxError: expected identifier, got number");
-	
-	test("", "undefined");
-	test("1;;;;;", "1");
-	test("1;{}", "1");
-	test("1;var a;", "1");
 }
 
 static void testEval (void)
 {
+	test("", "undefined");
+	test("1;;;;;", "1");
+	test("1;{}", "1");
+	test("1;var a;", "1");
+	
 	test("var x = 2; var y = 39; eval('x + y + 1')", "42");
 	test("var z = '42'; eval(z)", "42");
 	test("var x = 5, z, str = 'if (x == 5) { z = 42; } else z = 0; z'; eval(str)", "42");
@@ -118,6 +133,46 @@ static void testEval (void)
 	test("var str = 'if ( a ) { 1+1; } else { 1+2; }', a = false; eval(str)", "3");
 	test("var str = 'function a() {}'; typeof eval(str)", "undefined");
 	test("var str = '(function a() {})'; typeof eval(str)", "function");
+	
+	test("x", "ReferenceError: x is not defined");
+	test("x = 1", "ReferenceError: x is not defined");
+}
+
+static void testException (void)
+{
+	test("throw undefined", "undefined");
+	test("throw null", "null");
+	test("throw 123", "123");
+	test("throw 'hello'", "hello");
+	test("try { throw 'a' } finally { 'b' }", "a");
+	test("try { throw 'a' } catch(b){} finally { 'c' }", "c");
+	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "abc");
+	test("try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "b");
+	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }", "c");
+	
+	test("try { throw 'a' } ", "SyntaxError: missing catch or finally after try");
+}
+
+static void testOperation (void)
+{
+	test("+ 10", "10");
+	test("- 10", "-10");
+	test("~ 10", "-11");
+	test("! 10", "false");
+	test("10 * 2", "20");
+	test("10 / 2", "5");
+	test("10 % 8", "2");
+	test("10 + 1", "11");
+	test("10 - 1", "9");
+	test("10 & 3", "2");
+	test("10 ^ 3", "9");
+	test("10 | 3", "11");
+	
+	test("* 1", "SyntaxError: expected expression, got '*'");
+	test("% 1", "SyntaxError: expected expression, got '%'");
+	test("& 1", "SyntaxError: expected expression, got '&'");
+	test("^ 1", "SyntaxError: expected expression, got '^'");
+	test("| 1", "SyntaxError: expected expression, got '|'");
 }
 
 static void testEquality (void)
@@ -173,6 +228,12 @@ static void testEquality (void)
 	test("0 === NaN", "false");
 	test("'foo' === NaN", "false");
 	test("NaN === NaN", "false");
+	
+	test("== 1", "SyntaxError: expected expression, got '=='");
+}
+
+static void testRelational (void)
+{
 }
 
 static void testConditional (void)
@@ -182,11 +243,40 @@ static void testConditional (void)
 	test("var a = undefined, b; if (a) b = true; else b = false", "false");
 	test("var a = 1, b; if (a) b = true; else b = false", "true");
 	test("var b = 0, a = 10;do { ++b } while (a--); b;", "11");
-	test("throw 'hello';", "hello");
 }
 
-static int runTest (void)
+static void testSwitch (void)
 {
+	test("switch (1) { case 1: 123; case 2: 'abc'; }", "abc");
+	test("switch (2) { case 1: 123; case 2: 'abc'; }", "abc");
+	test("switch (1) { case 1: 123; break; case 2: 'abc'; }", "123");
+	test("switch ('abc') { case 'abc': 123; break; case 2: 'abc'; }", "123");
+	test("switch (123) { default: case 1: 123; break; case 2: 'abc'; }", "123");
+	test("switch (123) { case 1: 123; break; default: case 2: 'abc'; }", "abc");
+	test("switch (123) { case 1: 123; break; case 2: 'abc'; break; default: ({}) }", "[object Object]");
+}
+
+static void testDelete (void)
+{
+	test("delete b", "true");
+	test("var a = { b: 123, c: 'abc' }; a.b", "123");
+	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined");
+	test("this.x = 42; delete x", "true");
+	
+	test("delete Object.prototype", "TypeError: property 'prototype' is non-configurable and can't be deleted");
+	test("var y = 43; delete y", "TypeError: property 'y' is non-configurable and can't be deleted");
+}
+
+static void testGlobal (void)
+{
+	test("this.x = 42; var x = 123; x", "123");
+	test("var x = 123; this.x = 42; x", "42");
+}
+
+static int runTest (int verbosity)
+{
+	testVerbosity = verbosity;
+	
 //	test("test", "try { try { throw 'a' } catch (b) { throw b + 2 } } catch (c) { return c }", "");
 //	test("test", "'\t\tabc'", "");
 //	test("test", "'\t\tabc'; var a = 1", "1");
@@ -198,8 +288,14 @@ static int runTest (void)
 	testLexer();
 	testParser();
 	testEval();
+	testException();
+	testOperation();
 	testEquality();
+	testRelational();
 	testConditional();
+	testSwitch();
+	testDelete();
+	testGlobal();
 	
 	putc('\n', stderr);
 	

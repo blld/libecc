@@ -375,13 +375,19 @@ static struct OpList * unary (Instance self)
 		struct OpList *oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].function == Op.getLocal)
+		{
+//			Input.printText(self->lexer->input, OpList.text(oplist));
+//			Env.printWarning("applying the 'delete' operator to an unqualified name is deprecated");
 			changeFunction(oplist->ops, Op.deleteLocal);
+		}
 		else if (oplist && oplist->ops[0].function == Op.getMember)
 			changeFunction(oplist->ops, Op.deleteMember);
 		else if (oplist && oplist->ops[0].function == Op.getProperty)
 			changeFunction(oplist->ops, Op.deleteProperty);
-		else
+		else if (oplist)
 			error(self, Error.referenceError(self->lexer->text, "invalid delete operand"));
+		else
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
 		
 		return oplist;
 	}
@@ -410,20 +416,23 @@ static struct OpList * multiplicative (Instance self)
 	struct OpList *oplist = unary(self);
 	while (1)
 	{
-		struct Op op;
 		struct Text text = self->lexer->text;
+		Function function;
 		
 		if (acceptToken(self, '*'))
-			op = Op.make(Op.multiply, Value.undefined(), text);
+			function = Op.multiply;
 		else if (acceptToken(self, '/'))
-			op = Op.make(Op.divide, Value.undefined(), text);
+			function = Op.divide;
 		else if (acceptToken(self, '%'))
-			op = Op.make(Op.modulo, Value.undefined(), text);
+			function = Op.modulo;
 		else
 			return oplist;
 		
 		if (oplist)
-			oplist = OpList.unshift(op, OpList.join(oplist, unary(self)));
+		{
+			oplist = OpList.join(oplist, unary(self));
+			oplist = OpList.unshift(Op.make(function, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	}
@@ -434,18 +443,21 @@ static struct OpList * additive (Instance self)
 	struct OpList *oplist = multiplicative(self);
 	while (1)
 	{
-		struct Op op;
 		struct Text text = self->lexer->text;
+		Function function;
 		
 		if (acceptToken(self, '+'))
-			op = Op.make(Op.add, Value.undefined(), text);
+			function = Op.add;
 		else if (acceptToken(self, '-'))
-			op = Op.make(Op.minus, Value.undefined(), text);
+			function = Op.minus;
 		else
 			return oplist;
 		
 		if (oplist)
-			oplist = OpList.unshift(op, OpList.join(oplist, multiplicative(self)));
+		{
+			oplist = OpList.join(oplist, multiplicative(self));
+			oplist = OpList.unshift(Op.make(function, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	}
@@ -456,20 +468,23 @@ static struct OpList * shift (Instance self)
 	struct OpList *oplist = additive(self);
 	while (1)
 	{
-		struct Op op;
 		struct Text text = self->lexer->text;
+		Function function;
 		
 		if (acceptToken(self, Lexer(leftShiftToken)))
-			op = Op.make(Op.leftShift, Value.undefined(), text);
+			function = Op.leftShift;
 		else if (acceptToken(self, Lexer(rightShiftToken)))
-			op = Op.make(Op.rightShift, Value.undefined(), text);
+			function = Op.rightShift;
 		else if (acceptToken(self, Lexer(unsignedRightShiftToken)))
-			op = Op.make(Op.unsignedRightShift, Value.undefined(), text);
+			function = Op.unsignedRightShift;
 		else
 			return oplist;
 		
 		if (oplist)
-			oplist = OpList.unshift(op, additive(self));
+		{
+			oplist = OpList.join(oplist, additive(self));
+			oplist = OpList.unshift(Op.make(function, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	}
@@ -480,26 +495,29 @@ static struct OpList * relational (Instance self, int noIn)
 	struct OpList *oplist = shift(self);
 	while (1)
 	{
-		struct Op op;
 		struct Text text = self->lexer->text;
+		Function function;
 		
 		if (acceptToken(self, '<'))
-			op = Op.make(Op.less, Value.undefined(), text);
+			function = Op.less;
 		else if (acceptToken(self, '>'))
-			op = Op.make(Op.more, Value.undefined(), text);
+			function = Op.more;
 		else if (acceptToken(self, Lexer(lessOrEqualToken)))
-			op = Op.make(Op.lessOrEqual, Value.undefined(), text);
+			function = Op.lessOrEqual;
 		else if (acceptToken(self, Lexer(moreOrEqualToken)))
-			op = Op.make(Op.moreOrEqual, Value.undefined(), text);
+			function = Op.moreOrEqual;
 		else if (acceptToken(self, Lexer(instanceofToken)))
-			op = Op.make(Op.instanceOf, Value.undefined(), text);
+			function = Op.instanceOf;
 		else if (!noIn && acceptToken(self, Lexer(inToken)))
-			op = Op.make(Op.in, Value.undefined(), text);
+			function = Op.in;
 		else
 			return oplist;
 		
 		if (oplist)
-			oplist = OpList.unshift(op, OpList.join(oplist, shift(self)));
+		{
+			oplist = OpList.join(oplist, shift(self));
+			oplist = OpList.unshift(Op.make(function, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	}
@@ -510,22 +528,25 @@ static struct OpList * equality (Instance self, int noIn)
 	struct OpList *oplist = relational(self, noIn);
 	while (1)
 	{
-		struct Op op;
 		struct Text text = self->lexer->text;
+		Function function;
 		
 		if (acceptToken(self, Lexer(equalToken)))
-			op = Op.make(Op.equal, Value.undefined(), text);
+			function = Op.equal;
 		else if (acceptToken(self, Lexer(notEqualToken)))
-			op = Op.make(Op.notEqual, Value.undefined(), text);
+			function = Op.notEqual;
 		else if (acceptToken(self, Lexer(identicalToken)))
-			op = Op.make(Op.identical, Value.undefined(), text);
+			function = Op.identical;
 		else if (acceptToken(self, Lexer(notIdenticalToken)))
-			op = Op.make(Op.notIdentical, Value.undefined(), text);
+			function = Op.notIdentical;
 		else
 			return oplist;
 		
 		if (oplist)
-			oplist = OpList.unshift(op, OpList.join(oplist, relational(self, noIn)));
+		{
+			oplist = OpList.join(oplist, relational(self, noIn));
+			oplist = OpList.unshift(Op.make(function, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	}
@@ -537,7 +558,10 @@ static struct OpList * bitwiseAnd (Instance self, int noIn)
 	struct Text text = self->lexer->text;
 	while (acceptToken(self, '&'))
 		if (oplist)
-			oplist = OpList.unshift(Op.make(Op.bitwiseAnd, Value.undefined(), self->lexer->text), OpList.join(oplist, equality(self, noIn)));
+		{
+			oplist = OpList.join(oplist, equality(self, noIn));
+			oplist = OpList.unshift(Op.make(Op.bitwiseAnd, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	
@@ -550,7 +574,10 @@ static struct OpList * bitwiseXor (Instance self, int noIn)
 	struct Text text = self->lexer->text;
 	while (acceptToken(self, '^'))
 		if (oplist)
-			oplist = OpList.unshift(Op.make(Op.bitwiseXor, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseAnd(self, noIn)));
+		{
+			oplist = OpList.join(oplist, bitwiseAnd(self, noIn));
+			oplist = OpList.unshift(Op.make(Op.bitwiseXor, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	
@@ -563,7 +590,10 @@ static struct OpList * bitwiseOr (Instance self, int noIn)
 	struct Text text = self->lexer->text;
 	while (acceptToken(self, '|'))
 		if (oplist)
-			oplist = OpList.unshift(Op.make(Op.bitwiseOr, Value.undefined(), self->lexer->text), OpList.join(oplist, bitwiseXor(self, noIn)));
+		{
+			oplist = OpList.join(oplist, bitwiseXor(self, noIn));
+			oplist = OpList.unshift(Op.make(Op.bitwiseOr, Value.undefined(), OpList.text(oplist)), oplist);
+		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	
@@ -578,7 +608,8 @@ static struct OpList * logicalAnd (Instance self, int noIn)
 		if (oplist)
 		{
 			nextOp = bitwiseOr(self, noIn);
-			oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.integer(nextOp->opCount), self->lexer->text), OpList.join(oplist, nextOp));
+			oplist = OpList.join(oplist, nextOp);
+			oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.integer(nextOp->opCount), OpList.text(oplist)), oplist);
 		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
@@ -594,7 +625,8 @@ static struct OpList * logicalOr (Instance self, int noIn)
 		if (oplist)
 		{
 			nextOp = logicalAnd(self, noIn);
-			oplist = OpList.unshift(Op.make(Op.logicalOr, Value.integer(nextOp->opCount), self->lexer->text), OpList.join(oplist, nextOp));
+			oplist = OpList.join(oplist, nextOp);
+			oplist = OpList.unshift(Op.make(Op.logicalOr, Value.integer(nextOp->opCount), OpList.text(oplist)), oplist);
 		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
@@ -725,7 +757,7 @@ static struct OpList * variableDeclaration (Instance self, int noIn)
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
 	
-	Object.add(&self->closure->context, value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+	Object.add(&self->closure->context, value.data.identifier, Value.undefined(), Object(writable));
 	
 	if (acceptToken(self, '='))
 		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), assignment(self, noIn)));
@@ -1034,11 +1066,14 @@ static struct OpList * statement (Instance self)
 	}
 	else if (acceptToken(self, Lexer(tryToken)))
 	{
-//		oplist = block(self);
+		oplist = block(self);
 		if (!oplist)
 			return NULL;
 		
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->opCount), text), oplist);
+		
+		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
+			error(self, Error.syntaxError(self->lexer->text, "missing catch or finally after try"));
 		
 		if (acceptToken(self, Lexer(catchToken)))
 		{
@@ -1052,16 +1087,18 @@ static struct OpList * statement (Instance self)
 			struct OpList *catchOps = block(self);
 			if (catchOps)
 			{
-				catchOps = OpList.unshift(identiferOp, catchOps);
+				catchOps = OpList.appendNoop(OpList.unshift(identiferOp, catchOps));
 				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->opCount), text), catchOps);
 				oplist = OpList.join(oplist, catchOps);
 			}
 		}
+		else
+			oplist = OpList.appendNoop(oplist);
 		
 		if (acceptToken(self, Lexer(finallyToken)))
-			oplist = OpList.join(oplist, block(self));
+			oplist = OpList.appendNoop(OpList.join(oplist, block(self)));
 		
-		return OpList.appendNoop(oplist);
+		return oplist;
 	}
 	else if (acceptToken(self, Lexer(debuggerToken)))
 	{

@@ -564,7 +564,11 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 struct Value deleteLocal (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	return Object.delete(ecc->context, identifier);
+	struct Value result = Object.delete(ecc->context, identifier);
+	if (!Value.isTrue(result))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "property '%.*s' is non-configurable and can't be deleted", (*ops)->text.length, (*ops)->text.location)));
+	
+	return result;
 }
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
@@ -618,9 +622,14 @@ struct Value setMember (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
 {
+	const struct Text *text = opText();
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	return Object.delete(object.data.object, identifier);
+	struct Value result = Object.delete(object.data.object, identifier);
+	if (!Value.isTrue(result))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
+	
+	return result;
 }
 
 struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
@@ -719,9 +728,14 @@ struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value deleteProperty (const Instance * const ops, struct Ecc * const ecc)
 {
+	const struct Text *text = opText();
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	struct Value property = nextOp();
-	return Object.delete(object.data.object, property.data.identifier);
+	struct Identifier identifier = nextOp().data.identifier;
+	struct Value result = Object.delete(object.data.object, identifier);
+	if (!Value.isTrue(result))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
+	
+	return result;
 }
 
 struct Value result (const Instance * const ops, struct Ecc * const ecc)
@@ -1124,39 +1138,51 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 	const struct Op *end = *ops + opValue().data.integer;
 	struct Value value = Value.undefined();
 	struct Object *context = Object.create(ecc->context);
-	ecc->context = context;
+	struct Identifier identifier = Identifier.none();
 	
+	const struct Op *rethrowOps = NULL;
 	int rethrow = 0;
+	
+	ecc->context = context;
 	
 	if (!setjmp(*Ecc.pushEnv(ecc))) // try
 		value = nextOp();
 	else
 	{
+		value = ecc->result;
+		rethrowOps = *ops;
+		
 		if (!rethrow) // catch
 		{
 			rethrow = 1;
 			*ops = end + 1; // bypass catch jump
-			Object.add(context, nextOp().data.identifier, ecc->result, 0);
-			ecc->result = Value.undefined();
-			value = nextOp(); // execute until noop
-			rethrow = 0;
+			identifier = nextOp().data.identifier;
+			
+			if (!Identifier.isEqual(identifier, Identifier.none()))
+			{
+				Object.add(context, identifier, ecc->result, 0);
+				ecc->result = Value.undefined();
+				value = nextOp(); // execute until noop
+				rethrow = 0;
+			}
 		}
 	}
 	
 	Ecc.popEnv(ecc);
 	
-	// finally
-	value = ecc->result;
 	ecc->context = context->prototype;
-	--ecc->envCount;
+	
 	*ops = end; // op[end] = Op.jump, to after catch
 	struct Value finallyValue = nextOp(); // jump to after catch, and execute until noop
 	
-	if (finallyValue.type != Value(undefined))
+	if (finallyValue.type != Value(undefined)) /* return breaker */
 		return finallyValue;
 	else if (rethrow)
+	{
+		*ops = rethrowOps;
 		Ecc.jmpEnv(ecc, value);
-	else if (value.type != Value(undefined))
+	}
+	else if (value.type != Value(undefined)) /* return breaker */
 		return value;
 	else
 		return nextOp();
@@ -1164,7 +1190,9 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 
 struct Value throw (const Instance * const ops, struct Ecc * const ecc)
 {
+	const struct Op *throwOps = *ops;
 	struct Value value = nextOp();
+	*ops = throwOps + 1;
 	Ecc.jmpEnv(ecc, value);
 }
 
@@ -1254,7 +1282,7 @@ struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
 	if (( value = nextOp() ).type == Value(breaker) && --value.data.integer) \
 	{ \
 		if (--value.data.integer) \
-			return value; \
+			return value; /* return breaker */\
 		else \
 		{ \
 			*ops = endOps; \

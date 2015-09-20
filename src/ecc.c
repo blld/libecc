@@ -29,7 +29,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 static struct Input * findInput (Instance ecc, struct Text text)
 {
 	for (uint_fast16_t i = 0; i < ecc->inputCount; ++i)
-		if (text.location >= ecc->inputs[i]->bytes && text.location < ecc->inputs[i]->bytes + ecc->inputs[i]->length)
+		if (text.location >= ecc->inputs[i]->bytes && text.location <= ecc->inputs[i]->bytes + ecc->inputs[i]->length)
 			return ecc->inputs[i];
 	
 	return NULL;
@@ -147,6 +147,9 @@ int evalInput (Instance self, struct Input *input)
 	
 	self->context = &closure->context;
 	self->result = Value.undefined();
+	self->this = Value.object(self->context); // TODO: should save & restore ?
+	
+//	OpList.dumpTo(closure->oplist, stderr);
 	
 	if (!self->envCount)
 	{

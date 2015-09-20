@@ -44,6 +44,7 @@ Instance join (Instance self, Instance with)
 	memcpy(self->ops + self->opCount, with->ops, sizeof(*self->ops) * with->opCount);
 	self->opCount += with->opCount;
 	free(with), with = NULL;
+	
 	return self;
 }
 
@@ -190,7 +191,7 @@ void dumpTo (Instance self, FILE *file)
 	
 	for (int i = 0; i < self->opCount; ++i)
 	{
-		fprintf(file, "<%s> ", Op.toChars(self->ops[i].function));
+		fprintf(file, "[%03d] %s ", i, Op.toChars(self->ops[i].function));
 		
 		if (self->ops[i].value.type != Value(undefined) || self->ops[i].function == Op.value || self->ops[i].function == Op.exchange)
 			Value.dumpTo(self->ops[i].value, file);

@@ -138,7 +138,7 @@ int32_t findLine (Instance self, struct Text text)
 {
 	uint_fast16_t line = self->lineCount + 1;
 	while (line--)
-		if (self->bytes + self->lines[line] <= text.location)
+		if ((self->bytes + self->lines[line] <= text.location) && (self->bytes + self->lines[line] < self->bytes + self->length))
 			return line;
 	
 	return -1;

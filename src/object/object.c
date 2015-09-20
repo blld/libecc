@@ -112,6 +112,7 @@ void setup ()
 	objectConstructor = Closure.createWithFunction(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
 	
 	Object.add(objectPrototype, Identifier.constructor(), Value.closure(objectConstructor), 0);
+	Object.add(&objectConstructor->object, Identifier.prototype(), Value.object(objectPrototype), 0);
 }
 
 void teardown (void)
@@ -355,7 +356,7 @@ void setOwn (Instance self, struct Identifier identifier, struct Value value)
 	}
 	else
 	{
-		add(self, identifier, value, Object(writable));
+		add(self, identifier, value, Object(writable) | Object(configurable));
 		return;
 	}
 	
@@ -385,11 +386,11 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 			.slot[identifier.data.depth[3]];
 	} while (!slot && (object = object->prototype));
 	
-	fprintf(stderr, "set ");
-	Identifier.dumpTo(identifier, stderr);
-	fprintf(stderr, " = ");
-	Value.dumpTo(value, stderr);
-	fprintf(stderr, "\n");
+//	fprintf(stderr, "set ");
+//	Identifier.dumpTo(identifier, stderr);
+//	fprintf(stderr, " = ");
+//	Value.dumpTo(value, stderr);
+//	fprintf(stderr, "\n");
 	
 	if (slot)
 	{
@@ -398,7 +399,7 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 	}
 	else
 	{
-		add(self, identifier, value, Object(writable));
+		add(self, identifier, value, Object(writable) | Object(configurable));
 		return;
 	}
 	
@@ -479,7 +480,7 @@ struct Value delete (Instance self, struct Identifier identifier)
 	} while (!slot && (object = object->prototype));
 	
 	if (!object || !object->hashmap[slot].slot[identifier.data.depth[3]])
-		return Value.false();
+		return Value.true();
 	
 	if (object->hashmap[object->hashmap[slot].slot[identifier.data.depth[3]]].data.flags & Object(configurable))
 	{
