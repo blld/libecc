@@ -61,13 +61,10 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 //
 
 static int testVerbosity = 0;
-static int testCount = 0;
 static int testErrorCount = 0;
 
 static void test (const char *func, int line, const char *test, const char *expect)
 {
-	++testCount;
-	
 	if (testVerbosity || !setjmp(*Ecc.pushEnv(ecc)))
 		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line));
 	
@@ -276,14 +273,6 @@ static void testGlobal (void)
 static int runTest (int verbosity)
 {
 	testVerbosity = verbosity;
-	
-//	test("test", "try { try { throw 'a' } catch (b) { throw b + 2 } } catch (c) { return c }", "");
-//	test("test", "'\t\tabc'", "");
-//	test("test", "'\t\tabc'; var a = 1", "1");
-//	test("object", "Object('test')", "1");
-//	test("switch", "switch (2) { case 2: case 1: 'a'; }", "1");
-//	test("function 1", "function a(){ for  }", "");
-//	test("for in 1", "var 1", "");
 	
 	testLexer();
 	testParser();

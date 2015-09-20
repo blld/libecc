@@ -43,6 +43,7 @@ Instance createSized (uint16_t length)
 	assert(self);
 	Pool.addChars(self);
 	self->length = length;
+	self->flags = 0;
 	return self;
 }
 
