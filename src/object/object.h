@@ -55,9 +55,6 @@ Interface(
 	(void, setType ,(Instance, const struct Text *type))
 	(void, mark ,(Instance))
 	
-//	(void, retain ,(Instance, int count))
-//	(void, release ,(Instance, int count, int noDestroy))
-	
 	(struct Value, getOwn ,(Instance, struct Identifier))
 	(struct Value, get ,(Instance, struct Identifier))
 	(struct Value *, refOwn ,(Instance, struct Identifier, int create))
