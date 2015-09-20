@@ -135,6 +135,8 @@ void teardown (void)
 {
 	assert (self);
 	
+	collect(Value.undefined());
+	
 	free(self->closures), self->closures = NULL;
 	free(self->objects), self->objects = NULL;
 	free(self->chars), self->chars = NULL;

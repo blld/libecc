@@ -31,17 +31,12 @@ Interface(
 	(Instance, createVA ,(const char *format, va_list ap))
 	(Instance, create ,(const char *format, ...))
 	(Instance, createSized ,(uint16_t size))
-//	(Instance, copy ,(Instance))
-	
-//	(void, retain ,(Instance, int count))
-//	(void, release ,(Instance, int count))
 	
 	(void, destroy ,(Instance))
 	,
 	{
 		uint16_t length;
 		uint8_t flags;
-		uint8_t traceCount;
 		char chars[];
 	}
 )

@@ -30,7 +30,7 @@ static void resetColor()
 
 void setup (void)
 {
-	assert (!self);
+	assert(!self);
 	
 	self = malloc(sizeof(*self));
 	assert(self);
@@ -73,11 +73,10 @@ void printColor (enum Module(Color) color, const char *format, ...)
 
 void printError (int typeLength, const char *type, const char *format, ...)
 {
-	setColor(Module(Red));
-	fprintf(stderr, "%.*s", typeLength, type);
-	resetColor();
+	printColor(Env(Red), "%.*s", typeLength, type);
 	
-	fprintf(stderr, ": ");
+	putc(':', stderr);
+	putc(' ', stderr);
 	
 	setColor(Module(Black));
 	va_list ap;
@@ -91,11 +90,10 @@ void printError (int typeLength, const char *type, const char *format, ...)
 
 void printWarning (const char *format, ...)
 {
-	setColor(Module(Yellow));
-	fprintf(stderr, "Warning");
-	resetColor();
+	printColor(Env(Yellow), "Warning");
 	
-	fprintf(stderr, ": ");
+	putc(':', stderr);
+	putc(' ', stderr);
 	
 	setColor(Module(Black));
 	va_list ap;

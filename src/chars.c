@@ -43,30 +43,8 @@ Instance createSized (uint16_t length)
 	assert(self);
 	Pool.addChars(self);
 	self->length = length;
-	self->traceCount = 0;
 	return self;
 }
-
-Instance copy (Instance from)
-{
-	Instance self = createSized(from->length);
-	assert(self);
-	memcpy(self->chars, from->chars, from->length);
-	return self;
-}
-
-//void retain (Instance self, int count)
-//{
-//	self->traceCount += count;
-//}
-//
-//void release (Instance self, int count)
-//{
-//	self->traceCount -= count;
-//	
-//	if (self->traceCount <= 0)
-//		destroy(self), self = NULL;
-//}
 
 void destroy (Instance self)
 {
