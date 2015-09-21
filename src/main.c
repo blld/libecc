@@ -100,6 +100,12 @@ static void testLexer (void)
 	test("0x", "SyntaxError: missing hexadecimal digits after '0x'");
 	test("0e+", "SyntaxError: missing exponent");
 	test("\\", "SyntaxError: invalid character '\\'");
+	test("'\\a\\b\\f\\n\\r\\t\\v'", "\a\b\f\n\r\t\v");
+	test("'xxx\\xrrabc'", "SyntaxError: malformed hexadecimal character escape sequence");
+	test("'\\x44'", "D");
+	test("'xxx\\uabxyabc'", "SyntaxError: malformed Unicode character escape sequence");
+	test("'\\u4F8B'", "例");
+	test("'例'", "例");
 }
 
 static void testParser (void)

@@ -139,16 +139,19 @@ int evalInput (Instance self, struct Input *input)
 	
 	int result = EXIT_SUCCESS;
 	
+	struct Value parentThis = self->this;
+	struct Object *parentContext = self->context;
+	
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
-	struct Closure *closure = Parser.parseWithContext(parser, self->context);
+	struct Closure *closure = Parser.parseWithContext(parser, parentContext);
 	const struct Op *ops = closure->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
-	self->context = &closure->context;
 	self->result = Value.undefined();
-	self->this = Value.object(self->context); // TODO: should save & restore ?
+	self->context = &closure->context;
+	self->this = Value.object(self->context);
 	self->eval->context.prototype = self->context;
 	
 //	OpList.dumpTo(closure->oplist, stderr);
@@ -186,8 +189,9 @@ int evalInput (Instance self, struct Input *input)
 	else
 		ops->function(&ops, self);
 	
-	self->context = self->context->prototype;
-	self->eval->context.prototype = NULL;
+	self->this = parentThis;
+	self->context = parentContext;
+	self->eval->context.prototype = parentContext;
 	
 	return result;
 }

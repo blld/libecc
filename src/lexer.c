@@ -15,6 +15,26 @@ static inline int ishexdigit(int c)
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
+static inline int8_t hexhigit(int c)
+{
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	else
+		return c - '0';
+}
+
+static inline uint8_t uint8Hex(char a, char b)
+{
+	return hexhigit(a) << 4 | hexhigit(b);
+}
+
+static inline uint16_t uint16Hex(char a, char b, char c, char d)
+{
+	return hexhigit(a) << 12 | hexhigit(b) << 8 | hexhigit(c) << 4 | hexhigit(d);
+}
+
 // MARK: - Static Members
 
 static inline void addLine(Instance self, uint32_t offset)
@@ -71,26 +91,6 @@ static inline enum Module(Token) error(Instance self, struct Error *error)
 	return Module(errorToken);
 }
 
-//static inline enum Module(Token) value(Instance self, struct Value value)
-//{
-//	self->value = value;
-//	
-//	switch (value.type)
-//	{
-//		case Value(integer):
-//			return Module(integerToken);
-//		
-//		case Value(binary):
-//			return Module(binaryToken);
-//		
-//		case Value(error):
-//			return Module(errorToken);
-//		
-//		default:
-//			abort();
-//	}
-//}
-
 // MARK: - Methods
 
 Instance createWithInput(struct Input *input)
@@ -132,8 +132,11 @@ enum Module(Token) nextToken (Instance self)
 	{
 		switch (c)
 		{
-			case '\r':
+			case '\0':
+				return error(self, Error.syntaxError(self->text, "NUL character before end of script"));
+			
 			case '\n':
+			case '\r':
 			case '\t':
 			case ' ':
 				goto retry;
@@ -172,14 +175,14 @@ enum Module(Token) nextToken (Instance self)
 				self->disallowRegex = 1;
 				
 				char end = c;
-				int haveExtra = 0;
+				int haveEscape = 0;
 				int didLineBreak = self->didLineBreak;
 				
 				while (( c = nextChar(self) ))
 				{
 					if (c == '\\')
 					{
-						haveExtra = 1;
+						haveEscape = 1;
 						nextChar(self);
 						self->didLineBreak = didLineBreak;
 					}
@@ -188,27 +191,65 @@ enum Module(Token) nextToken (Instance self)
 						const char *location = self->text.location++;
 						uint32_t length = self->text.length -= 2;
 						
-						if (haveExtra)
+						if (haveEscape)
 						{
-							char buffer[length + 2];
+							++location;
+							
+							char buffer[length];
 							uint_fast32_t index = 0, bufferIndex = 0;
 							for (; index <= length; ++index, ++bufferIndex)
-							{
 								if (location[index] == '\\' && location[++index] != '\\')
 								{
-									if (location[index] == 't')
-										buffer[bufferIndex] = '\t';
+									switch (location[index])
+									{
+										case '0': buffer[bufferIndex] = '\0'; break;
+										case 'a': buffer[bufferIndex] = '\a'; break;
+										case 'b': buffer[bufferIndex] = '\b'; break;
+										case 'f': buffer[bufferIndex] = '\f'; break;
+										case 'n': buffer[bufferIndex] = '\n'; break;
+										case 'r': buffer[bufferIndex] = '\r'; break;
+										case 't': buffer[bufferIndex] = '\t'; break;
+										case 'v': buffer[bufferIndex] = '\v'; break;
+										case 'x':
+											if (ishexdigit(location[index + 1]) && ishexdigit(location[index + 2]))
+											{
+												buffer[bufferIndex] = uint8Hex(location[index + 1], location[index + 2]);
+												index += 2;
+												break;
+											}
+											return error(self, Error.syntaxError(Text.make(self->text.location + bufferIndex, 4), "malformed hexadecimal character escape sequence"));
+										
+										case 'u':
+											if (ishexdigit(location[index + 1]) && ishexdigit(location[index + 2]) && ishexdigit(location[index + 3]) && ishexdigit(location[index + 4]))
+											{
+												uint16_t c = uint16Hex(location[index+ 1], location[index + 2], location[index + 3], location[index + 4]);
+												char *b = buffer + bufferIndex;
+												
+												if (c < 0x80) *b++=c;
+												else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
+												else if (c - 0xd800u < 0x800) goto error;
+												else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
+												else goto error;
+												
+												bufferIndex = (unsigned int)(b - buffer) - 1;
+												index += 4;
+												break;
+											}
+											error:
+											return error(self, Error.syntaxError(Text.make(self->text.location + bufferIndex, 6), "malformed Unicode character escape sequence"));
+										
+										default:
+											buffer[bufferIndex] = location[index];
+									}
 								}
 								else
 									buffer[bufferIndex] = location[index];
-							}
-							buffer[bufferIndex] = '\'';
-							self->text.length = bufferIndex - 1;
 							
-							for (; bufferIndex++ <= length;)
-								buffer[bufferIndex] = ' ';
+							--bufferIndex;
 							
-							memcpy((char *)location, buffer, length + 2);
+							self->text = Text.make(malloc(length), bufferIndex);
+							memcpy((char *)self->text.location, buffer, bufferIndex);
+							Input.addEscapedText(self->input, self->text);
 						}
 						
 						return Module(stringToken);

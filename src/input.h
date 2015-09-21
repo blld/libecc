@@ -27,6 +27,8 @@ Interface(
 	
 	(void, printText, (Instance, struct Text text))
 	(int32_t, findLine, (Instance, struct Text text))
+	
+	(void, addEscapedText, (Instance, struct Text escapedText))
 	,
 	{
 		char name[FILENAME_MAX];
@@ -37,6 +39,9 @@ Interface(
 		uint16_t lineCount;
 		uint16_t lineCapacity;
 		uint32_t *lines;
+		
+		struct Text *escapedTextList;
+		uint16_t escapedTextCount;
 	}
 )
 

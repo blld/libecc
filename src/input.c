@@ -86,6 +86,10 @@ void destroy (Instance self)
 {
 	assert(self);
 	
+	while (self->escapedTextCount--)
+		free((char *)self->escapedTextList[self->escapedTextCount].location), self->escapedTextList[self->escapedTextCount].location = NULL;
+	
+	free(self->escapedTextList), self->escapedTextList = NULL;
 	free(self->bytes), self->bytes = NULL;
 	free(self->lines), self->lines = NULL;
 	free(self), self = NULL;
@@ -106,7 +110,7 @@ void printText (Instance self, struct Text text)
 		
 		do
 		{
-			if (!isblank(location[length]) && !isgraph(location[length]))
+			if (!isblank(location[length]) && !isgraph(location[length]) && location[length] >= 0)
 				break;
 			
 			++length;
@@ -114,7 +118,7 @@ void printText (Instance self, struct Text text)
 		
 		Env.print("%.*s\n", length, location);
 		
-		char mark[length + 1 + sizeof(char)];
+		char mark[length + 1];
 		for (int b = 0; b <= length; ++b)
 			if (b >= length || isgraph(location[b]))
 				mark[b] = ' ';
@@ -126,9 +130,12 @@ void printText (Instance self, struct Text text)
 			mark[index] = '~';
 		
 		mark[text.location - location] = '^';
-		mark[length + 1] = 0;
+		mark[length + 1] = '\0';
 		
-		Env.printColor(Env(Green), "%s\n", mark);
+		if ((text.location - location) > 0)
+			Env.printDim("%.*s", (text.location - location), mark);
+		
+		Env.printColor(Env(Green), "%s\n", mark + (text.location - location));
 	}
 	else
 		Env.printColor(Env(Black), "%s\n", self->name);
@@ -142,4 +149,10 @@ int32_t findLine (Instance self, struct Text text)
 			return line;
 	
 	return -1;
+}
+
+void addEscapedText (Instance self, struct Text escapedText)
+{
+	self->escapedTextList = realloc(self->escapedTextList, sizeof(*self->escapedTextList) * (self->escapedTextCount + 1));
+	self->escapedTextList[self->escapedTextCount++] = escapedText;
 }
