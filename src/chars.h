@@ -24,7 +24,7 @@
 
 enum Chars(Flags)
 {
-	Chars(mark) = 1,
+	Chars(mark) = 1 << 0,
 };
 
 Interface(

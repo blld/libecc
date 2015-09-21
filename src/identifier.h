@@ -32,6 +32,7 @@ Interface(
 	(Structure, message ,(void))
 	(Structure, toString ,(void))
 	(Structure, valueOf ,(void))
+	(Structure, eval ,(void))
 	(Structure, makeWithCString ,(const char *cString))
 	(Structure, makeWithText ,(const struct Text text, int copyOnCreate))
 	

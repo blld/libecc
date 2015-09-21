@@ -357,8 +357,6 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	const Instance callOps = ops;
 	struct Value value;
 	
-	context->prototype = callerContext;
-	
 	ecc->this = this;
 	ecc->context = context;
 	ecc->construct = construct;
@@ -456,6 +454,22 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 	return callClosure(ops, ecc, value.data.closure, argumentCount, 0);
 }
 
+struct Value eval (const Instance * const ops, struct Ecc * const ecc)
+{
+	int32_t argumentCount = opValue().data.integer;
+	if (!argumentCount)
+		return nextOp();
+	
+	struct Value value = nextOp();
+	while (--argumentCount)
+		nextOp();
+	
+	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	Ecc.evalInput(ecc, input);
+	
+	return ecc->result;
+}
+
 
 // Expression
 
@@ -522,6 +536,8 @@ struct Value this (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 {
+	ecc->refObject = Value.undefined();
+	
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
@@ -532,6 +548,8 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 {
+	ecc->refObject = Value.undefined();
+	
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value *ref = Object.ref(ecc->context, identifier, 0);
 	if (!ref)
@@ -573,12 +591,16 @@ struct Value deleteLocal (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 {
+	ecc->refObject = Value.undefined();
+	
 	int32_t slot = opValue().data.integer;
 	return ecc->context->hashmap[slot].data.value;
 }
 
 struct Value getLocalSlotRef (const Instance * const ops, struct Ecc * const ecc)
 {
+	ecc->refObject = Value.undefined();
+	
 	int32_t slot = opValue().data.integer;
 	return Value.reference(&ecc->context->hashmap[slot].data.value);
 }
@@ -597,7 +619,8 @@ struct Value setLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	const struct Text *text = opText();
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	ecc->refObject = object;
 	return Object.get(object.data.object, identifier);
 }
@@ -1136,12 +1159,12 @@ struct Value bitOrAssignRef (const Instance * const ops, struct Ecc * const ecc)
 struct Value try(const Instance * const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
-	struct Value value = Value.undefined();
 	struct Object *context = Object.create(ecc->context);
 	struct Identifier identifier = Identifier.none();
 	
-	const struct Op *rethrowOps = NULL;
-	int rethrow = 0;
+	const struct Op * volatile rethrowOps = NULL;
+	volatile int rethrow = 0;
+	volatile struct Value value = Value.undefined();
 	
 	ecc->context = context;
 	

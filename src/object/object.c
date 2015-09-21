@@ -349,21 +349,14 @@ void setOwn (Instance self, struct Identifier identifier, struct Value value)
 		.slot[identifier.data.depth[2]]]
 		.slot[identifier.data.depth[3]];
 	
-	if (slot)
-	{
-//		if (self->traceCount && Value.isDynamic(self->hashmap[slot].data.value))
-//			Value.release(self->hashmap[slot].data.value, self->traceCount);
-	}
-	else
+	if (!slot)
 	{
 		add(self, identifier, value, Object(writable) | Object(configurable));
 		return;
 	}
 	
-	self->hashmap[slot].data.value = value;
-	
-//	if (self->traceCount && Value.isDynamic(value))
-//		Value.retain(value, self->traceCount);
+	if (self->hashmap[slot].data.flags | Object(writable))
+		self->hashmap[slot].data.value = value;
 }
 
 void set(Instance self, struct Identifier identifier, struct Value value)
@@ -386,39 +379,20 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 			.slot[identifier.data.depth[3]];
 	} while (!slot && (object = object->prototype));
 	
-//	fprintf(stderr, "set ");
-//	Identifier.dumpTo(identifier, stderr);
-//	fprintf(stderr, " = ");
-//	Value.dumpTo(value, stderr);
-//	fprintf(stderr, "\n");
-	
-	if (slot)
-	{
-//		if (self->traceCount && Value.isDynamic(self->hashmap[slot].data.value))
-//			Value.release(self->hashmap[slot].data.value, self->traceCount);
-	}
-	else
+	if (!slot)
 	{
 		add(self, identifier, value, Object(writable) | Object(configurable));
 		return;
 	}
 	
-	self->hashmap[slot].data.value = value;
-	
-//	if (self->traceCount && Value.isDynamic(value))
-//		Value.retain(value, self->traceCount);
+	if (self->hashmap[slot].data.flags | Object(writable))
+		self->hashmap[slot].data.value = value;
 }
 
 struct Value * add (Instance self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	assert(identifier.data.integer);
-	
-//	fprintf(stderr, "set ");
-//	Identifier.dumpTo(identifier, stderr);
-//	fprintf(stderr, " = ");
-//	Value.dumpTo(&value, stderr);
-//	fprintf(stderr, "\n");
 	
 	uint_fast32_t slot = 1;
 	int depth = 0;
@@ -429,9 +403,7 @@ struct Value * add (Instance self, struct Identifier identifier, struct Value va
 		{
 			int need = 5 - depth - (self->hashmapCapacity - self->hashmapCount);
 			if (need > 0) {
-//				fprintf(stderr, "was %d need %d\n", self->hashmapCapacity, need);
 				self->hashmapCapacity *= 2;
-//				fprintf(stderr, "now %d\n", self->hashmapCapacity);
 				self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
 				memset(self->hashmap + self->hashmapCount, 0, sizeof(*self->hashmap) * (self->hashmapCapacity - self->hashmapCount));
 			}
@@ -448,14 +420,8 @@ struct Value * add (Instance self, struct Identifier identifier, struct Value va
 		slot = self->hashmap[slot].slot[identifier.data.depth[depth]];
 	} while (++depth < 4);
 	
-//	if ((self->hashmap[slot].data.flags & Object(isValue)) && Value.isDynamic(self->hashmap[slot].data.value))
-//		Value.release(self->hashmap[slot].data.value, self->traceCount);
-	
 	self->hashmap[slot].data.value = value;
 	self->hashmap[slot].data.flags = Object(isValue) | flags;
-	
-//	if (self->traceCount && Value.isDynamic(value))
-//		Value.retain(value, self->traceCount);
 	
 	return &self->hashmap[slot].data.value;
 }
@@ -573,7 +539,6 @@ void dumpTo(Instance self, FILE *file)
 	{
 		if (self->hashmap[index].data.flags & Object(isValue))
 		{
-//			fprintf(stderr, "(%d) ", index);
 			if (!isArray)
 			{
 				Identifier.dumpTo(self->hashmap[index].data.identifier, stderr);
@@ -582,14 +547,6 @@ void dumpTo(Instance self, FILE *file)
 			Value.dumpTo(self->hashmap[index].data.value, stderr);
 			fprintf(stderr, ", ");
 		}
-//		else
-//		{
-//			fprintf(stderr, "(%d) ", index);
-//			for (int i = 0; i < 16; ++ i)
-//				fprintf(stderr, "%02d ", self->hashmap[index].slot[i]);
-//			
-//			putc('\n', stderr);
-//		}
 	}
 	
 	fprintf(stderr, isArray? "]": "}");

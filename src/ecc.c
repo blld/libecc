@@ -61,12 +61,13 @@ Instance create (void)
 	*self = Module.identity;
 	
 	self->global = Closure.create(NULL);
+	self->eval = Closure.createWithFunction(NULL /* to be filled */, eval, 1);
 	
 	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
 	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
 	Closure.addValue(self->global, "null", Value.null(), 0);
 	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
-	Closure.addFunction(self->global, "eval", eval, 1, 0);
+	Closure.addValue(self->global, "eval", Value.closure(self->eval), 0);
 	
 	Closure.addValue(self->global, "Object", Value.closure(Object.constructor()), 0);
 	Closure.addValue(self->global, "Array", Value.closure(Array.constructor()), 0);
@@ -148,6 +149,7 @@ int evalInput (Instance self, struct Input *input)
 	self->context = &closure->context;
 	self->result = Value.undefined();
 	self->this = Value.object(self->context); // TODO: should save & restore ?
+	self->eval->context.prototype = self->context;
 	
 //	OpList.dumpTo(closure->oplist, stderr);
 	
@@ -185,6 +187,7 @@ int evalInput (Instance self, struct Input *input)
 		ops->function(&ops, self);
 	
 	self->context = self->context->prototype;
+	self->eval->context.prototype = NULL;
 	
 	return result;
 }
@@ -205,12 +208,12 @@ jmp_buf * pushEnv(Instance self)
 
 void popEnv(Instance self)
 {
-	if (self->envCount)
-	{
-		--self->envCount;
-		self->context = self->envList[self->envCount].context;
-		self->this = self->envList[self->envCount].this;
-	}
+	assert(self->envCount);
+	
+	--self->envCount;
+	self->context = self->envList[self->envCount].context;
+	self->this = self->envList[self->envCount].this;
+	self->eval->context.prototype = self->context;
 }
 
 void jmpEnv (Instance self, struct Value value)
@@ -235,7 +238,9 @@ void printTextInput (Instance self, struct Text text)
 
 void garbageCollect(Instance self)
 {
-	Pool.collect(Value.closure(self->global));
+	Pool.markAll();
+	Pool.unmarkValue(Value.closure(self->global));
+	Pool.collectMarked();
 }
 
 // MARK: Memory

@@ -272,24 +272,28 @@ static struct OpList * arguments (Instance self, int *count)
 static struct OpList * member (Instance self)
 {
 	struct OpList *oplist = new(self);
+	struct Text text, parentText = OpList.text(oplist);
 	while (1)
 	{
+		text = parentText;
+		
 		if (acceptToken(self, '.'))
 		{
 			struct Value value = self->lexer->value;
-			struct Text text = self->lexer->text;
+			parentText = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
 			
-			oplist = OpList.unshift(Op.make(Op.getMember, value, Text.join(OpList.text(oplist), text)), oplist);
+			oplist = OpList.unshift(Op.make(Op.getMember, value, text), oplist);
 		}
 		else if (acceptToken(self, '['))
 		{
 			oplist = OpList.join(oplist, expression(self, 0));
+			parentText = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ']'))
 				return oplist;
 			
-			oplist = OpList.unshift(Op.make(Op.getProperty, Value.undefined(), OpList.text(oplist)), oplist);
+			oplist = OpList.unshift(Op.make(Op.getProperty, Value.undefined(), text), oplist);
 		}
 		else
 			break;
@@ -320,14 +324,16 @@ static struct OpList * new (Instance self)
 
 static struct OpList * leftHandSide (Instance self)
 {
-	struct Text text;
 	struct OpList *oplist = new(self);
+	struct Text text, parentText = OpList.text(oplist);
 	while (1)
 	{
+		text = parentText;
+		
 		if (acceptToken(self, '.'))
 		{
 			struct Value value = self->lexer->value;
-			text = Text.join(OpList.text(oplist), self->lexer->text);
+			parentText = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
 			
@@ -336,7 +342,7 @@ static struct OpList * leftHandSide (Instance self)
 		else if (acceptToken(self, '['))
 		{
 			oplist = OpList.join(oplist, expression(self, 0));
-			text = Text.join(OpList.text(oplist), self->lexer->text);
+			parentText = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ']'))
 				return oplist;
 			
@@ -344,9 +350,19 @@ static struct OpList * leftHandSide (Instance self)
 		}
 		else if (acceptToken(self, '('))
 		{
+			int isEval = oplist->opCount == 1 && oplist->ops[0].function == Op.getLocal && Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval());
+			if (isEval)
+				OpList.destroy(oplist), oplist = NULL;
+			
 			int count = 0;
 			oplist = OpList.join(oplist, arguments(self, &count));
-			oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), OpList.text(oplist)), oplist);
+			
+			if (isEval)
+				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), OpList.text(oplist)), oplist);
+			else
+				oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), OpList.text(oplist)), oplist);
+			
+			parentText = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ')'))
 				return oplist;
 		}
@@ -847,7 +863,7 @@ static struct OpList * forStatement (Instance self)
 	
 	if (!noIn && acceptToken(self, Lexer(inToken)))
 	{
-		OpList.dumpTo(oplist, stderr);
+//		OpList.dumpTo(oplist, stderr);
 		
 		if (oplist->ops[0].function == Op.setLocal && oplist->opCount == 2)
 			oplist = OpList.join(OpList.create(Op.iterateInRef, Value.undefined(), self->lexer->text), OpList.create(Op.getLocalRef, oplist->ops[0].value, oplist->ops[0].text));
@@ -1159,7 +1175,7 @@ static struct OpList * function (Instance self, int isDeclaration)
 	expectToken(self, Lexer(functionToken));
 	
 	struct OpList *oplist = NULL;
-	int count = 0;
+	int parameterCount = 0;
 	
 	struct Op identifierOp = { 0 };
 	
@@ -1177,7 +1193,7 @@ static struct OpList * function (Instance self, int isDeclaration)
 	
 	self->closure = closure;
 	expectToken(self, '(');
-	oplist = OpList.join(oplist, parameters(self, &count));
+	oplist = OpList.join(oplist, parameters(self, &parameterCount));
 	expectToken(self, ')');
 	expectToken(self, '{');
 	oplist = OpList.join(oplist, sourceElements(self, '}', 0));
@@ -1187,8 +1203,10 @@ static struct OpList * function (Instance self, int isDeclaration)
 	
 	closure->oplist = oplist;
 	closure->text = text;
-	closure->parameterCount = count;
+	closure->parameterCount = parameterCount;
 	parentClosure->needHeap = 1;
+	
+	Object.add(&closure->object, Identifier.length(), Value.integer(parameterCount), Object(configurable));
 	
 	if (isDeclaration)
 		Object.add(&parentClosure->context, identifierOp.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));

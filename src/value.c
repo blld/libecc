@@ -315,6 +315,15 @@ Structure toString (Structure value)
 				return Value.text(Text.zero());
 			else if (value.data.binary == 1)
 				return Value.text(Text.one());
+			else if (isnan(value.data.binary))
+				return Value.text(Text.NaN());
+			else if (isinf(value.data.binary))
+			{
+				if (signbit(value.data.binary))
+					return Value.text(Text.negativeInfinity());
+				else
+					return Value.text(Text.Infinity());
+			}
 			else
 				return Value.chars(Chars.create("%lg", value.data.binary));
 		

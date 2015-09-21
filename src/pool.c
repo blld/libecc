@@ -17,23 +17,6 @@ static Instance self = NULL;
 
 // MARK: - Static Members
 
-static void markAll (void)
-{
-	uint_fast32_t index, count;
-	
-	for (index = 0, count = self->closuresCount; index < count; ++index)
-	{
-		self->closures[index]->object.flags |= Object(mark);
-		self->closures[index]->context.flags |= Object(mark);
-	}
-	
-	for (index = 0, count = self->objectsCount; index < count; ++index)
-		self->objects[index]->flags |= Object(mark);
-	
-	for (index = 0, count = self->charsCount; index < count; ++index)
-		self->chars[index]->flags |= Chars(mark);
-}
-
 static void unmarkClosure (struct Closure *closure)
 {
 	if (closure->object.flags & Object(mark))
@@ -73,52 +56,6 @@ static void unmarkChars (struct Chars *chars)
 		chars->flags &= ~Chars(mark);
 }
 
-static void unmarkValue (struct Value value)
-{
-	if (value.type == Value(closure))
-		unmarkClosure(value.data.closure);
-	else if (value.type >= Value(object))
-		unmarkObject(value.data.object);
-	else if (value.type == Value(chars))
-		unmarkChars(value.data.chars);
-}
-
-static void collectMarked (void)
-{
-	int total = 0;
-	
-	uint_fast32_t index;
-	
-	index = self->closuresCount;
-	while (index--)
-		if (self->closures[index]->object.flags & Object(mark))
-		{
-			Closure.destroy(self->closures[index]);
-			self->closures[index] = self->closures[--self->closuresCount];
-			++total;
-		}
-	
-	index = self->objectsCount;
-	while (index--)
-		if (self->objects[index]->flags & Object(mark))
-		{
-			Object.destroy(self->objects[index]);
-			self->objects[index] = self->objects[--self->objectsCount];
-			++total;
-		}
-	
-	index = self->charsCount;
-	while (index--)
-		if (self->chars[index]->flags & Chars(mark))
-		{
-			Chars.destroy(self->chars[index]);
-			self->chars[index] = self->chars[--self->charsCount];
-			++total;
-		}
-	
-//	fprintf(stderr, "collected total: %d\n", total);
-}
-
 // MARK: - Methods
 
 void setup (void)
@@ -135,7 +72,8 @@ void teardown (void)
 {
 	assert (self);
 	
-	collect(Value.undefined());
+	markAll();
+	collectMarked();
 	
 	free(self->closures), self->closures = NULL;
 	free(self->objects), self->objects = NULL;
@@ -194,9 +132,65 @@ void addChars (struct Chars *chars)
 	self->chars[self->charsCount++] = chars;
 }
 
-void collect (struct Value value)
+void markAll (void)
 {
-	markAll();
-	unmarkValue(value);
-	collectMarked();
+	uint_fast32_t index, count;
+	
+	for (index = 0, count = self->closuresCount; index < count; ++index)
+	{
+		self->closures[index]->object.flags |= Object(mark);
+		self->closures[index]->context.flags |= Object(mark);
+	}
+	
+	for (index = 0, count = self->objectsCount; index < count; ++index)
+		self->objects[index]->flags |= Object(mark);
+	
+	for (index = 0, count = self->charsCount; index < count; ++index)
+		self->chars[index]->flags |= Chars(mark);
+}
+
+void unmarkValue (struct Value value)
+{
+	if (value.type == Value(closure))
+		unmarkClosure(value.data.closure);
+	else if (value.type >= Value(object))
+		unmarkObject(value.data.object);
+	else if (value.type == Value(chars))
+		unmarkChars(value.data.chars);
+}
+
+void collectMarked (void)
+{
+	int total = 0;
+	
+	uint_fast32_t index;
+	
+	index = self->closuresCount;
+	while (index--)
+		if (self->closures[index]->object.flags & Object(mark))
+		{
+			Closure.destroy(self->closures[index]);
+			self->closures[index] = self->closures[--self->closuresCount];
+			++total;
+		}
+	
+	index = self->objectsCount;
+	while (index--)
+		if (self->objects[index]->flags & Object(mark))
+		{
+			Object.destroy(self->objects[index]);
+			self->objects[index] = self->objects[--self->objectsCount];
+			++total;
+		}
+	
+	index = self->charsCount;
+	while (index--)
+		if (self->chars[index]->flags & Chars(mark))
+		{
+			Chars.destroy(self->chars[index]);
+			self->chars[index] = self->chars[--self->charsCount];
+			++total;
+		}
+	
+//	fprintf(stderr, "collected total: %d\n", total);
 }

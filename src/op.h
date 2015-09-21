@@ -84,6 +84,7 @@
 	_( not )\
 	_( construct )\
 	_( call )\
+	_( eval )\
 	\
 	/* assignement expression */\
 	_( incrementRef )\

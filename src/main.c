@@ -130,6 +130,9 @@ static void testEval (void)
 	test("var str = 'if ( a ) { 1+1; } else { 1+2; }', a = false; eval(str)", "3");
 	test("var str = 'function a() {}'; typeof eval(str)", "undefined");
 	test("var str = '(function a() {})'; typeof eval(str)", "function");
+	test("function a() { var n = 456; return eval('n') }; a()", "456");
+	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined");
+	test("var e = eval, b = 'abc'; function a() { var n = 456; return e('b') }; a()", "abc");
 	
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
@@ -231,6 +234,11 @@ static void testEquality (void)
 
 static void testRelational (void)
 {
+	test("4 > 3", "true");
+	test("4 >= 3", "true");
+	test("3 >= 3", "true");
+	test("3 < 4", "true");
+	test("3 <= 4", "true");
 }
 
 static void testConditional (void)
@@ -266,8 +274,39 @@ static void testDelete (void)
 
 static void testGlobal (void)
 {
+	test("typeof this", "object");
+	
+	test("this['Infinity']", "Infinity");
+	test("-this['Infinity']", "-Infinity");
+	test("this['NaN']", "NaN");
+	test("this['null']", "null");
+	test("this['undefined']", "undefined");
+	test("typeof eval", "function");
+	
 	test("this.x = 42; var x = 123; x", "123");
 	test("var x = 123; this.x = 42; x", "42");
+}
+
+static void testFunction (void)
+{
+	test("var a; a.prototype", "TypeError: a is undefined");
+	test("var a = null; a.prototype", "TypeError: a is null");
+	
+	test("function a() {} a.prototype.toString.length", "0");
+	test("function a() {} a.prototype.toString()", "[object Object]");
+	test("function a() {} a.prototype.hasOwnProperty.length", "1");
+	test("function a() {} a.length", "0");
+	test("function a(b, c) {} a.length", "2");
+	
+	test("var n = 456; function b(c) { return 'c' + c + n } b(123)", "c123456");
+	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");
+}
+
+static void testThis (void)
+{
+	test("function a() { return typeof this; } a()", "undefined");
+	test("var a = { b: function () { return typeof this; } }; a.b()", "object");
+	test("var a = { b: function () { return this; } }; a.b().b === a.b", "true");
 }
 
 static int runTest (int verbosity)
@@ -285,6 +324,8 @@ static int runTest (int verbosity)
 	testSwitch();
 	testDelete();
 	testGlobal();
+	testFunction();
+	testThis();
 	
 	putc('\n', stderr);
 	

@@ -32,7 +32,9 @@ Interface(
 	(void, addObject ,(struct Object *chars))
 	(void, addChars ,(struct Chars *chars))
 	
-	(void, collect ,(struct Value value))
+	(void, markAll ,(void))
+	(void, unmarkValue ,(struct Value value))
+	(void, collectMarked ,(void))
 	,
 	{
 		struct Closure **closures;

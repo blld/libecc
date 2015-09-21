@@ -21,6 +21,9 @@ static const struct Text objectText = { 6, "object" };
 static const struct Text functionText = { 8, "function" };
 static const struct Text zeroText = { 1, "0" };
 static const struct Text oneText = { 1, "1" };
+static const struct Text nanText = { 3, "NaN" };
+static const struct Text infinityText = { 8, "Infinity" };
+static const struct Text negativeInfinityText = { 9, "-Infinity" };
 
 static const struct Text nullTypeText = { 13, "[object Null]" };
 static const struct Text undefinedTypeText =  { 18, "[object Undefined]" };
@@ -112,6 +115,21 @@ const Instance zero (void)
 const Instance one (void)
 {
 	return &oneText;
+}
+
+const Instance NaN (void)
+{
+	return &nanText;
+}
+
+const Instance Infinity (void)
+{
+	return &infinityText;
+}
+
+const Instance negativeInfinity (void)
+{
+	return &negativeInfinityText;
 }
 
 const Instance nativeCode (void)

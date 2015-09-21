@@ -26,6 +26,7 @@ Structure nameIdentifier;
 Structure messageIdentifier;
 Structure toStringIdentifier;
 Structure valueOfIdentifier;
+Structure evalIdentifier;
 
 // MARK: - Static Members
 
@@ -43,6 +44,7 @@ void setup (void)
 		messageIdentifier = makeWithCString("message");
 		toStringIdentifier = makeWithCString("toString");
 		valueOfIdentifier = makeWithCString("valueOf");
+		evalIdentifier = makeWithCString("eval");
 	}
 }
 
@@ -146,6 +148,11 @@ Structure toString (void)
 Structure valueOf (void)
 {
 	return valueOfIdentifier;
+}
+
+Structure eval (void)
+{
+	return evalIdentifier;
 }
 
 int isEqual (Structure self, Structure to)

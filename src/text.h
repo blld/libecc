@@ -32,6 +32,9 @@ Interface(
 	(const Instance, function ,(void))
 	(const Instance, zero ,(void))
 	(const Instance, one ,(void))
+	(const Instance, NaN ,(void))
+	(const Instance, Infinity ,(void))
+	(const Instance, negativeInfinity ,(void))
 	(const Instance, nativeCode ,(void))
 	
 	(const Instance, nullType ,(void))

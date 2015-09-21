@@ -50,7 +50,7 @@ Interface(
 			struct Object *context;
 			struct Value this;
 			
-			jmp_buf buf;			
+			jmp_buf buf;
 		} *envList;
 		uint16_t envCount;
 		uint16_t envCapacity;
@@ -60,6 +60,7 @@ Interface(
 		
 		int construct;
 		struct Closure *global;
+		struct Closure *eval;
 		
 		struct Input **inputs;
 		uint16_t inputCount;

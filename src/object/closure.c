@@ -27,8 +27,12 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	
 	*self = Module.identity;
 	
-	Object.initialize(&self->object, NULL);
+	Object.initialize(&self->object, Object.prototype()/* TODO: check */);
 	Object.initializeSized(&self->context, prototype, size);
+	
+	struct Object *proto = Object.create(Object.prototype());
+	Object.add(proto, Identifier.constructor(), Value.closure(self), Object(writable) | Object(configurable));
+	Object.add(&self->object, Identifier.prototype(), Value.object(proto), Object(writable));
 	
 	return self;
 }
@@ -56,6 +60,8 @@ Instance createWithFunction (struct Object *prototype, const Function function, 
 	self->context.hashmapCount = self->context.hashmapCapacity;
 	self->oplist = OpList.create(function, Value.undefined(), Text.make(NULL, 0));
 	self->text = *Text.nativeCode();
+	
+	Object.add(&self->object, Identifier.length(), Value.integer(parameterCount), 0);
 	
 	return self;
 }
