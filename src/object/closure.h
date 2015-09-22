@@ -30,13 +30,9 @@ Interface(
 	(Instance, copy ,(Instance original))
 	(void, destroy ,(Instance))
 	
-//	(void, retain ,(Instance, int count))
-//	(void, release ,(Instance, int count))
-	
-	(void, addFunction ,(Instance self, const char *name, const Function function, int argumentCount, enum Object(Flags)))
 	(void, addValue ,(Instance self, const char *name, struct Value value, enum Object(Flags)))
-	
-	(void, addToObject ,(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags)))
+	(Instance, addFunction ,(Instance self, const char *name, const Function function, int argumentCount, enum Object(Flags)))
+	(Instance, addToObject ,(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags)))
 	,
 	{
 		struct Object object;

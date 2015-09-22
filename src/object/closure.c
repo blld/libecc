@@ -98,38 +98,6 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-//void retain (Instance self, int count)
-//{
-//	assert(self);
-//	
-//	fprintf(stderr, "RETAIN %p\n", self);
-//	
-//	Object.retain(&self->context, count);
-//	Object.retain(&self->object, count);
-//}
-//
-//void release (Instance self, int count)
-//{
-//	assert(self);
-//	
-//	fprintf(stderr, "RELEASE %p\n", self);
-//	fprintf(stderr, "object:\n");
-//	Object.dumpTo(&self->object, stderr);
-//	fprintf(stderr, "\ncontext:\n");
-//	Object.dumpTo(&self->context, stderr);
-//	fprintf(stderr, "\n-\n");
-//	
-//	Object.release(&self->context, count, 1);
-//	Object.release(&self->object, count, 0);
-//}
-
-void addFunction(Instance self, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
-{
-	assert(self);
-	
-	addToObject(&self->context, name, function, parameterCount, flags);
-}
-
 void addValue(Instance self, const char *name, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
@@ -137,11 +105,20 @@ void addValue(Instance self, const char *name, struct Value value, enum Object(F
 	Object.add(&self->context, Identifier.makeWithCString(name), value, flags);
 }
 
-void addToObject(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
+Instance addFunction(Instance self, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
+{
+	assert(self);
+	
+	return addToObject(&self->context, name, function, parameterCount, flags);
+}
+
+Instance addToObject(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
 {
 	assert(object);
 	
 	Instance closure = createWithFunction(object, function, parameterCount);
 	
 	Object.add(object, Identifier.makeWithCString(name), Value.closure(closure), flags);
+	
+	return closure;
 }
