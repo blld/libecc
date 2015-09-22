@@ -161,7 +161,13 @@ void optimizeWithContext (Instance self, struct Object *context)
 	
 	for (uint_fast32_t index = 0, count = self->opCount; index < count; ++index)
 	{
-		if (self->ops[index].function == Op.getLocal || self->ops[index].function == Op.getLocalRef || self->ops[index].function == Op.setLocal)
+		if (self->ops[index].function == Op.try)
+		{
+			// skip try/catch
+			index += self->ops[index].value.data.integer;
+			index += self->ops[index].value.data.integer;
+		}
+		else if (self->ops[index].function == Op.getLocal || self->ops[index].function == Op.getLocalRef || self->ops[index].function == Op.setLocal)
 		{
 			for (uint_fast32_t slotIndex = 0, slotCount = context->hashmapCount; slotIndex < slotCount; ++slotIndex)
 			{
