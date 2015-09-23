@@ -113,11 +113,11 @@ Instance create (void)
 	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
 	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
 	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
-	Closure.addFunction(self->global, "eval", eval, 1, 0);
-	Closure.addFunction(self->global, "parseInt", parseInt, 2, 0);
-	Closure.addFunction(self->global, "parseFloat", parseFloat, 1, 0);
-	Closure.addFunction(self->global, "isNaN", isNaN, 1, 0);
-	Closure.addFunction(self->global, "isFinite", isFinite, 1, 0);
+	Closure.addNative(self->global, "eval", eval, 1, 0);
+	Closure.addNative(self->global, "parseInt", parseInt, 2, 0);
+	Closure.addNative(self->global, "parseFloat", parseFloat, 1, 0);
+	Closure.addNative(self->global, "isNaN", isNaN, 1, 0);
+	Closure.addNative(self->global, "isFinite", isFinite, 1, 0);
 	
 	Closure.addValue(self->global, "Object", Value.closure(Object.constructor()), 0);
 	Closure.addValue(self->global, "Array", Value.closure(Array.constructor()), 0);
@@ -162,11 +162,11 @@ void destroy (Instance self)
 	}
 }
 
-void addFunction (Instance self, const char *name, const Function function, int argumentCount, enum Object(Flags) flags)
+void addNative (Instance self, const char *name, const Native native, int argumentCount, enum Object(Flags) flags)
 {
 	assert(self);
 	
-	Closure.addFunction(self->global, name, function, argumentCount, flags);
+	Closure.addNative(self->global, name, native, argumentCount, flags);
 }
 
 void addValue (Instance self, const char *name, struct Value value, enum Object(Flags) flags)
@@ -206,7 +206,7 @@ int evalInput (Instance self, struct Input *input)
 	if (!self->envCount)
 	{
 		if (!setjmp(*pushEnv(self)))
-			ops->function(&ops, self);
+			ops->native(&ops, self);
 		else
 		{
 			result = EXIT_FAILURE;
@@ -234,7 +234,7 @@ int evalInput (Instance self, struct Input *input)
 		popEnv(self);
 	}
 	else
-		ops->function(&ops, self);
+		ops->native(&ops, self);
 	
 	self->context = parentContext;
 	self->this = parentThis;

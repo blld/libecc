@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-#define nextOp() (++*ops)->function(ops, ecc)
+#define nextOp() (++*ops)->native(ops, ecc)
 #define opValue() (*ops)->value
 #define opText() &(*ops)->text
 
@@ -220,24 +220,24 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 
 // MARK: - Methods
 
-struct Op make (const Function function, struct Value value, struct Text text)
+struct Op make (const Native native, struct Value value, struct Text text)
 {
-	return (struct Op){ function, value, text };
+	return (struct Op){ native, value, text };
 }
 
-const char * toChars (const Function function)
+const char * toChars (const Native native)
 {
 	#define _(X) { #X, X, },
 	struct {
 		const char *name;
-		const Function function;
+		const Native native;
 	} static const functionList[] = {
 		io_libecc_op_List
 	};
 	#undef _
 	
 	for (int index = 0; index < sizeof(functionList); ++index)
-		if (functionList[index].function == function)
+		if (functionList[index].native == native)
 			return functionList[index].name;
 	
 	assert(0);
@@ -361,7 +361,7 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	ecc->context = context;
 	ecc->construct = construct;
 	
-	ops->function(&callOps, ecc);
+	ops->native(&callOps, ecc);
 	value = ecc->result;
 	
 	ecc->this = callerThis;

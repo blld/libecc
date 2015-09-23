@@ -37,7 +37,7 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	return self;
 }
 
-Instance createWithFunction (struct Object *prototype, const Function function, int parameterCount)
+Instance createWithNative (struct Object *prototype, const Native native, int parameterCount)
 {
 	Instance self = NULL;
 	
@@ -58,7 +58,7 @@ Instance createWithFunction (struct Object *prototype, const Function function, 
 			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
 	self->context.hashmapCount = self->context.hashmapCapacity;
-	self->oplist = OpList.create(function, Value.undefined(), Text.make(NULL, 0));
+	self->oplist = OpList.create(native, Value.undefined(), Text.make(NULL, 0));
 	self->text = *Text.nativeCode();
 	
 	Object.add(&self->object, Identifier.length(), Value.integer(parameterCount), 0);
@@ -105,18 +105,18 @@ void addValue(Instance self, const char *name, struct Value value, enum Object(F
 	Object.add(&self->context, Identifier.makeWithCString(name), value, flags);
 }
 
-Instance addFunction(Instance self, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
+Instance addNative(Instance self, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
 {
 	assert(self);
 	
-	return addToObject(&self->context, name, function, parameterCount, flags);
+	return addToObject(&self->context, name, native, parameterCount, flags);
 }
 
-Instance addToObject(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags) flags)
+Instance addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
 {
 	assert(object);
 	
-	Instance closure = createWithFunction(object, function, parameterCount);
+	Instance closure = createWithNative(object, native, parameterCount);
 	
 	Object.add(object, Identifier.makeWithCString(name), Value.closure(closure), flags);
 	

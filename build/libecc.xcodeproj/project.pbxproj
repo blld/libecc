@@ -50,7 +50,7 @@
 		0D25FB101B5D25F60075F035 /* date.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = date.c; sourceTree = "<group>"; };
 		0D25FB111B5D25F60075F035 /* date.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = date.h; sourceTree = "<group>"; };
 		0D25FB131B6334CF0075F035 /* namespace_io_libecc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = namespace_io_libecc.h; sourceTree = "<group>"; };
-		0D25FB151B633AA90075F035 /* function.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = function.h; sourceTree = "<group>"; };
+		0D25FB151B633AA90075F035 /* native.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = native.h; sourceTree = "<group>"; };
 		0D25FB171B63B9C30075F035 /* oplist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = oplist.c; sourceTree = "<group>"; };
 		0D25FB181B63B9C30075F035 /* oplist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oplist.h; sourceTree = "<group>"; };
 		0D2FF3EE1B5680C500B4B40B /* closure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = closure.c; sourceTree = "<group>"; };
@@ -129,7 +129,7 @@
 				0D15F2DC1B3F893E00AD290E /* op.h */,
 				0D25FB171B63B9C30075F035 /* oplist.c */,
 				0D25FB181B63B9C30075F035 /* oplist.h */,
-				0D25FB151B633AA90075F035 /* function.h */,
+				0D25FB151B633AA90075F035 /* native.h */,
 				0D718DDE1B47B2FD004C3350 /* identifier.c */,
 				0D718DDF1B47B2FD004C3350 /* identifier.h */,
 				0DD57DD61B2F084600CD8119 /* ecc.c */,

@@ -11,7 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "function.h"
+#include "native.h"
 #include "value.h"
 #include "closure.h"
 
@@ -124,8 +124,8 @@
 
 #define _(X) (struct Value, X , (const Instance * const ops, struct Ecc * const ecc))
 Interface(
-	(struct Op, make ,(const Function function, struct Value value, struct Text text))
-	(const char *, toChars ,(const Function function))
+	(struct Op, make ,(const Native native, struct Value value, struct Text text))
+	(const char *, toChars ,(const Native native))
 	
 	(void , assertParameterCount ,(struct Ecc * const ecc, int parameterCount))
 	(int , argumentCount ,(struct Ecc * const ecc))
@@ -140,7 +140,7 @@ Interface(
 	io_libecc_op_List
 	,
 	{
-		const Function function;
+		const Native native;
 		const struct Value value;
 		const struct Text text;
 	}

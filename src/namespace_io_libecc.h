@@ -25,6 +25,7 @@
 #define Object io_libecc_Object
 #define Closure io_libecc_Closure
 #define Function io_libecc_Function
+#define Native io_libecc_Native
 #define Text io_libecc_Text
 #define Chars io_libecc_Chars
 #define Pool io_libecc_Pool

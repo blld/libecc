@@ -27,7 +27,7 @@ Interface(
 	(Instance, create ,(void))
 	(void, destroy, (Instance))
 	
-	(void, addFunction ,(Instance, const char *name, const Function function, int argumentCount, enum Object(Flags)))
+	(void, addNative ,(Instance, const char *name, const Native native, int argumentCount, enum Object(Flags)))
 	(void, addValue ,(Instance, const char *name, struct Value value, enum Object(Flags)))
 	(int, evalInput, (Instance, struct Input *))
 	

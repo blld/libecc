@@ -88,7 +88,7 @@ void setup (void)
 //	Closure.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
 //	Closure.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
 	
-	arrayConstructor = Closure.createWithFunction(arrayPrototype, constructorFunction, 1);
+	arrayConstructor = Closure.createWithNative(arrayPrototype, constructorFunction, 1);
 	
 	Object.add(arrayPrototype, Identifier.constructor(), Value.closure(arrayConstructor), 0);
 }

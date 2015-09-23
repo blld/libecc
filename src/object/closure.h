@@ -15,7 +15,7 @@
 #include "oplist.h"
 #endif
 #include "object.h"
-#include "function.h"
+#include "native.h"
 
 
 #include "interface.h"
@@ -26,13 +26,13 @@
 Interface(
 	(Instance, create ,(struct Object *prototype))
 	(Instance, createSized ,(struct Object *prototype, uint32_t size))
-	(Instance, createWithFunction ,(struct Object *prototype, const Function function, int parameterCount))
+	(Instance, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
 	(Instance, copy ,(Instance original))
 	(void, destroy ,(Instance))
 	
 	(void, addValue ,(Instance self, const char *name, struct Value value, enum Object(Flags)))
-	(Instance, addFunction ,(Instance self, const char *name, const Function function, int argumentCount, enum Object(Flags)))
-	(Instance, addToObject ,(struct Object *object, const char *name, const Function function, int parameterCount, enum Object(Flags)))
+	(Instance, addNative ,(Instance self, const char *name, const Native native, int argumentCount, enum Object(Flags)))
+	(Instance, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags)))
 	,
 	{
 		struct Object object;

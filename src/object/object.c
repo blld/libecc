@@ -220,7 +220,7 @@ void setup ()
 	Closure.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
 	Closure.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	objectConstructor = Closure.createWithFunction(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
+	objectConstructor = Closure.createWithNative(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
 	Closure.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
 	Closure.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	

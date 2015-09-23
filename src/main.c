@@ -20,7 +20,7 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Closure.addFunction(ecc->global, "print", print, 1, 0);
+	Closure.addNative(ecc->global, "print", print, 1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -137,7 +137,7 @@ static void testEval (void)
 	test("var str = '(function a() {})'; typeof eval(str)", "function");
 	test("function a() { var n = 456; return eval('n') }; a()", "456");
 	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined");
-	test("var e = eval; function a() { var n = 456; return e('parseInt.length') }; a()", "2");
+	test("var e = eval; function a() { var n = 456; return e('this.parseInt.length') }; a()", "2");
 	
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");

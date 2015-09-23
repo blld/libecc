@@ -21,7 +21,7 @@
 	io_libecc_OpList
 
 Interface(
-	(Instance, create ,(const Function function, struct Value value, struct Text text))
+	(Instance, create ,(const Native native, struct Value value, struct Text text))
 	(void, destroy ,(Instance))
 	
 	(Instance, join ,(Instance, Instance))
