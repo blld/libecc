@@ -11,7 +11,7 @@
 // MARK: - Private
 
 static struct Object *arrayPrototype = NULL;
-static struct Closure *arrayConstructor = NULL;
+static struct Function *arrayConstructor = NULL;
 
 //static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 //{
@@ -81,16 +81,16 @@ void setup (void)
 	
 	enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
-	Closure.addToObject(arrayPrototype, "toString", toString, 0, flags);
-//	Closure.addToObject(arrayPrototype, "toLocaleString", toString, 0);
-//	Closure.addToObject(arrayPrototype, "valueOf", valueOf, 0);
-//	Closure.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
-//	Closure.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
-//	Closure.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
+	Function.addToObject(arrayPrototype, "toString", toString, 0, flags);
+//	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);
+//	Function.addToObject(arrayPrototype, "valueOf", valueOf, 0);
+//	Function.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
+//	Function.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
+//	Function.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
 	
-	arrayConstructor = Closure.createWithNative(arrayPrototype, constructorFunction, 1);
+	arrayConstructor = Function.createWithNative(arrayPrototype, constructorFunction, 1);
 	
-	Object.add(arrayPrototype, Identifier.constructor(), Value.closure(arrayConstructor), 0);
+	Object.add(arrayPrototype, Identifier.constructor(), Value.function(arrayConstructor), 0);
 }
 
 void teardown (void)
@@ -103,7 +103,7 @@ struct Object *prototype (void)
 	return arrayPrototype;
 }
 
-struct Closure *constructor (void)
+struct Function *constructor (void)
 {
 	return arrayConstructor;
 }

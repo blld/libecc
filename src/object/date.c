@@ -22,12 +22,12 @@ void setup (void)
 	datePrototype = Object.create(Object.prototype());
 	datePrototype->type = Text.dateType();
 	
-//	Closure.addToObject(arrayPrototype, "toString", toString, 0);
-//	Closure.addToObject(arrayPrototype, "toLocaleString", toString, 0);
-//	Closure.addToObject(arrayPrototype, "valueOf", valueOf, 0);
-//	Closure.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
-//	Closure.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
-//	Closure.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
+//	Function.addToObject(arrayPrototype, "toString", toString, 0);
+//	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);
+//	Function.addToObject(arrayPrototype, "valueOf", valueOf, 0);
+//	Function.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
+//	Function.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
+//	Function.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
 }
 
 void teardown (void)

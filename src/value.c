@@ -129,13 +129,13 @@ Structure date (struct Date *date)
 	};
 }
 
-Structure closure (struct Closure *closure)
+Structure function (struct Function *function)
 {
-	assert(closure);
+	assert(function);
 	
 	return (Structure){
-		.data.closure = closure,
-		.type = Value(closure),
+		.data.function = function,
+		.type = Value(function),
 	};
 }
 
@@ -168,17 +168,17 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	struct Identifier bIdentifier = hint > 0? Identifier.valueOf(): Identifier.toString();
 	
 	struct Value aClosure = Object.get(object, aIdentifier);
-	if (aClosure.type == Value(closure))
+	if (aClosure.type == Value(function))
 	{
-		struct Value result = Op.callClosureVA(aClosure.data.closure, ecc, value, 0);
+		struct Value result = Op.callClosureVA(aClosure.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
 	
 	struct Value bClosure = Object.get(object, bIdentifier);
-	if (bClosure.type == Value(closure))
+	if (bClosure.type == Value(function))
 	{
-		struct Value result = Op.callClosureVA(bClosure.data.closure, ecc, value, 0);
+		struct Value result = Op.callClosureVA(bClosure.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -267,8 +267,8 @@ Structure toString (Structure value)
 		case Value(object):
 			return Value.text(value.data.object->type);
 		
-		case Value(closure):
-			return Value.text(&value.data.closure->text);
+		case Value(function):
+			return Value.text(&value.data.function->text);
 		
 		case Value(error):
 		{
@@ -359,7 +359,7 @@ Structure toBinary (Structure value)
 		case Value(object):
 		case Value(error):
 		case Value(date):
-		case Value(closure):
+		case Value(function):
 			return Value.binary(NAN);
 		
 		case Value(breaker):
@@ -399,7 +399,7 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 		case Value(chars):
 			return Value.string(String.create("%.*s", Value.stringLength(value), Value.stringChars(value)));
 		
-		case Value(closure):
+		case Value(function):
 		case Value(object):
 		case Value(error):
 		case Value(string):
@@ -449,7 +449,7 @@ Structure toType (Structure value)
 		case Value(date):
 			return Value.text(Text.object());
 		
-		case Value(closure):
+		case Value(function):
 			return Value.text(Text.function());
 		
 		case Value(breaker):
@@ -525,8 +525,8 @@ void dumpTo (Structure value, FILE *file)
 			return;
 		}
 		
-		case Value(closure):
-			fwrite(value.data.closure->text.location, sizeof(char), value.data.closure->text.length, file);
+		case Value(function):
+			fwrite(value.data.function->text.location, sizeof(char), value.data.function->text.length, file);
 			return;
 		
 		case Value(reference):

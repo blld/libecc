@@ -24,7 +24,7 @@ Interface(
 	(void, teardown ,(void))
 	
 	(struct Object *, prototype ,(void))
-	(struct Closure *, constructor ,(void))
+	(struct Function *, constructor ,(void))
 	,
 	{
 		char empty;

@@ -13,7 +13,7 @@
 static const int defaultSize = 8;
 
 static struct Object *objectPrototype = NULL;
-static struct Closure *objectConstructor = NULL;
+static struct Function *objectConstructor = NULL;
 
 static inline uint32_t getSlot (Instance self, struct Identifier identifier)
 {
@@ -213,18 +213,18 @@ void setup ()
 	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	objectPrototype = create(NULL);
-	Closure.addToObject(objectPrototype, "toString", toString, 0, flags);
-	Closure.addToObject(objectPrototype, "toLocaleString", toString, 0, flags);
-	Closure.addToObject(objectPrototype, "valueOf", valueOf, 0, flags);
-	Closure.addToObject(objectPrototype, "hasOwnProperty", hasOwnProperty, 1, flags);
-	Closure.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
-	Closure.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
+	Function.addToObject(objectPrototype, "toString", toString, 0, flags);
+	Function.addToObject(objectPrototype, "toLocaleString", toString, 0, flags);
+	Function.addToObject(objectPrototype, "valueOf", valueOf, 0, flags);
+	Function.addToObject(objectPrototype, "hasOwnProperty", hasOwnProperty, 1, flags);
+	Function.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
+	Function.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	objectConstructor = Closure.createWithNative(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
-	Closure.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
-	Closure.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
+	objectConstructor = Function.createWithNative(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
+	Function.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
+	Function.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	
-	Object.add(objectPrototype, Identifier.constructor(), Value.closure(objectConstructor), 0);
+	Object.add(objectPrototype, Identifier.constructor(), Value.function(objectConstructor), 0);
 	Object.add(&objectConstructor->object, Identifier.prototype(), Value.object(objectPrototype), 0);
 }
 
@@ -239,7 +239,7 @@ struct Object *prototype (void)
 	return objectPrototype;
 }
 
-struct Closure *constructor (void)
+struct Function *constructor (void)
 {
 	return objectConstructor;
 }

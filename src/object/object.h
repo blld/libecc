@@ -42,7 +42,7 @@ Interface(
 	(void, teardown ,(void))
 	
 	(struct Object *, prototype ,(void))
-	(struct Closure *, constructor ,(void))
+	(struct Function *, constructor ,(void))
 	
 	(Instance, create ,(Instance prototype))
 	(Instance, createSized ,(Instance prototype, uint32_t size))

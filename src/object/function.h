@@ -1,5 +1,5 @@
 //
-//  closure.h
+//  function.h
 //  libecc
 //
 //  Created by Bouilland Aurélien on 15/07/2015.
@@ -21,7 +21,7 @@
 #include "interface.h"
 
 #define Module \
-	io_libecc_Closure
+	io_libecc_Function
 
 Interface(
 	(Instance, create ,(struct Object *prototype))

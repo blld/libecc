@@ -56,7 +56,7 @@ Interface(
 		struct Value result;
 		
 		int construct;
-		struct Closure *global;
+		struct Function *global;
 		
 		struct Input **inputs;
 		uint16_t inputCount;

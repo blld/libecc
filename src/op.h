@@ -13,7 +13,7 @@
 
 #include "native.h"
 #include "value.h"
-#include "closure.h"
+#include "function.h"
 
 
 #include "interface.h"
@@ -28,7 +28,7 @@
 	_( value )\
 	_( valueConstRef )\
 	_( text )\
-	_( closure )\
+	_( function )\
 	_( object )\
 	_( array )\
 	_( this )\
@@ -135,7 +135,7 @@ Interface(
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
 	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
-	(struct Value, callClosureVA ,(struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
+	(struct Value, callClosureVA ,(struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

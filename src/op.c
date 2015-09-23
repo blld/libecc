@@ -371,66 +371,66 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	return value;
 }
 
-struct Value callClosureVA (struct Closure *closure, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
+struct Value callClosureVA (struct Function *Function, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
 {
-	if (closure->needHeap)
+	if (Function->needHeap)
 	{
-		struct Object *context = Object.copy(&closure->context);
+		struct Object *context = Object.copy(&Function->context);
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		if (closure->needArguments)
-			populateContextWithArgumentsVA(context, closure->parameterCount, argumentCount, ap);
+		if (Function->needArguments)
+			populateContextWithArgumentsVA(context, Function->parameterCount, argumentCount, ap);
 		else
-			populateContextVA(context, closure->parameterCount, argumentCount, ap);
+			populateContextVA(context, Function->parameterCount, argumentCount, ap);
 		
 		va_end(ap);
 		
-		return callOps(closure->oplist->ops, ecc, context, this, 0);
+		return callOps(Function->oplist->ops, ecc, context, this, 0);
 	}
 	else
 	{
-		__typeof__(*closure->context.hashmap) hashmap[closure->context.hashmapCapacity];
-		memcpy(hashmap, closure->context.hashmap, sizeof(hashmap));
+		__typeof__(*Function->context.hashmap) hashmap[Function->context.hashmapCapacity];
+		memcpy(hashmap, Function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = closure->context;
+		struct Object stackContext = Function->context;
 		stackContext.hashmap = hashmap;
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		populateContextVA(&stackContext, closure->parameterCount, argumentCount, ap);
+		populateContextVA(&stackContext, Function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(closure->oplist->ops, ecc, &stackContext, this, 0);
+		return callOps(Function->oplist->ops, ecc, &stackContext, this, 0);
 	}
 }
 
-static inline struct Value callClosure (const Instance * const ops, struct Ecc * const ecc, struct Closure * const closure, int32_t argumentCount, int construct)
+static inline struct Value callClosure (const Instance * const ops, struct Ecc * const ecc, struct Function * const Function, int32_t argumentCount, int construct)
 {
 	struct Value this = ecc->refObject;
 	
-	if (closure->needHeap)
+	if (Function->needHeap)
 	{
-		struct Object *context = Object.copy(&closure->context);
+		struct Object *context = Object.copy(&Function->context);
 		
-		if (closure->needArguments)
-			populateContextWithArguments(ops, ecc, context, closure->parameterCount, argumentCount);
+		if (Function->needArguments)
+			populateContextWithArguments(ops, ecc, context, Function->parameterCount, argumentCount);
 		else
-			populateContext(ops, ecc, context, closure->parameterCount, argumentCount);
+			populateContext(ops, ecc, context, Function->parameterCount, argumentCount);
 		
-		return callOps(closure->oplist->ops, ecc, context, this, construct);
+		return callOps(Function->oplist->ops, ecc, context, this, construct);
 	}
 	else
 	{
-		__typeof__(*closure->context.hashmap) hashmap[closure->context.hashmapCapacity];
-		memcpy(hashmap, closure->context.hashmap, sizeof(hashmap));
+		__typeof__(*Function->context.hashmap) hashmap[Function->context.hashmapCapacity];
+		memcpy(hashmap, Function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = closure->context;
+		struct Object stackContext = Function->context;
 		stackContext.hashmap = hashmap;
 		
-		populateContext(ops, ecc, &stackContext, closure->parameterCount, argumentCount);
+		populateContext(ops, ecc, &stackContext, Function->parameterCount, argumentCount);
 		
-		return callOps(closure->oplist->ops, ecc, &stackContext, this, construct);
+		return callOps(Function->oplist->ops, ecc, &stackContext, this, construct);
 	}
 }
 
@@ -439,10 +439,10 @@ struct Value construct (const Instance * const ops, struct Ecc * const ecc)
 	struct Text text = (*ops)->text;
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
-	if (value.type != Value(closure))
+	if (value.type != Value(function))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", (*ops)->text.length, (*ops)->text.location)));
 	
-	return callClosure(ops, ecc, value.data.closure, argumentCount, 1);
+	return callClosure(ops, ecc, value.data.function, argumentCount, 1);
 }
 
 struct Value call (const Instance * const ops, struct Ecc * const ecc)
@@ -450,10 +450,10 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 	struct Text text = (*ops)->text;
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
-	if (value.type != Value(closure))
+	if (value.type != Value(function))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location)));
 	
-	return callClosure(ops, ecc, value.data.closure, argumentCount, 0);
+	return callClosure(ops, ecc, value.data.function, argumentCount, 0);
 }
 
 struct Value eval (const Instance * const ops, struct Ecc * const ecc)
@@ -495,11 +495,11 @@ struct Value text (const Instance * const ops, struct Ecc * const ecc)
 	return Value.text(opText());
 }
 
-struct Value closure (const Instance * const ops, struct Ecc * const ecc)
+struct Value function (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Closure *closure = Closure.copy(opValue().data.closure);
-	closure->context.prototype = ecc->context;
-	return Value.closure(closure);
+	struct Function *function = Function.copy(opValue().data.function);
+	function->context.prototype = ecc->context;
+	return Value.function(function);
 }
 
 struct Value object (const Instance * const ops, struct Ecc * const ecc)

@@ -108,29 +108,29 @@ Instance create (void)
 	Instance self = malloc(sizeof(*self));
 	*self = Module.identity;
 	
-	self->global = Closure.create(NULL);
+	self->global = Function.create(NULL);
 	
-	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
-	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
-	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
-	Closure.addNative(self->global, "eval", eval, 1, 0);
-	Closure.addNative(self->global, "parseInt", parseInt, 2, 0);
-	Closure.addNative(self->global, "parseFloat", parseFloat, 1, 0);
-	Closure.addNative(self->global, "isNaN", isNaN, 1, 0);
-	Closure.addNative(self->global, "isFinite", isFinite, 1, 0);
+	Function.addValue(self->global, "NaN", Value.binary(NAN), 0);
+	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
+	Function.addValue(self->global, "undefined", Value.undefined(), 0);
+	Function.addNative(self->global, "eval", eval, 1, 0);
+	Function.addNative(self->global, "parseInt", parseInt, 2, 0);
+	Function.addNative(self->global, "parseFloat", parseFloat, 1, 0);
+	Function.addNative(self->global, "isNaN", isNaN, 1, 0);
+	Function.addNative(self->global, "isFinite", isFinite, 1, 0);
 	
-	Closure.addValue(self->global, "Object", Value.closure(Object.constructor()), 0);
-	Closure.addValue(self->global, "Array", Value.closure(Array.constructor()), 0);
+	Function.addValue(self->global, "Object", Value.function(Object.constructor()), 0);
+	Function.addValue(self->global, "Array", Value.function(Array.constructor()), 0);
 	
-	Closure.addValue(self->global, "Error", Value.object(Error.prototype()), 0);
-	Closure.addValue(self->global, "RangeError", Value.object(Error.rangePrototype()), 0);
-	Closure.addValue(self->global, "ReferenceError", Value.object(Error.referencePrototype()), 0);
-	Closure.addValue(self->global, "SyntaxError", Value.object(Error.syntaxPrototype()), 0);
-	Closure.addValue(self->global, "TypeError", Value.object(Error.typePrototype()), 0);
-	Closure.addValue(self->global, "URIError", Value.object(Error.uriPrototype()), 0);
+	Function.addValue(self->global, "Error", Value.object(Error.prototype()), 0);
+	Function.addValue(self->global, "RangeError", Value.object(Error.rangePrototype()), 0);
+	Function.addValue(self->global, "ReferenceError", Value.object(Error.referencePrototype()), 0);
+	Function.addValue(self->global, "SyntaxError", Value.object(Error.syntaxPrototype()), 0);
+	Function.addValue(self->global, "TypeError", Value.object(Error.typePrototype()), 0);
+	Function.addValue(self->global, "URIError", Value.object(Error.uriPrototype()), 0);
 	
-	Closure.addValue(self->global, "Array", Value.object(Array.prototype()), 0);
-	Closure.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
+	Function.addValue(self->global, "Array", Value.object(Array.prototype()), 0);
+	Function.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
 	
 	self->context = &self->global->context;
 	
@@ -166,14 +166,14 @@ void addNative (Instance self, const char *name, const Native native, int argume
 {
 	assert(self);
 	
-	Closure.addNative(self->global, name, native, argumentCount, flags);
+	Function.addNative(self->global, name, native, argumentCount, flags);
 }
 
 void addValue (Instance self, const char *name, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	
-	Closure.addValue(self->global, name, value, flags);
+	Function.addValue(self->global, name, value, flags);
 }
 
 int evalInput (Instance self, struct Input *input)
@@ -190,18 +190,18 @@ int evalInput (Instance self, struct Input *input)
 	
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
-	struct Closure *closure = Parser.parseWithContext(parser, parentContext);
-	const struct Op *ops = closure->oplist->ops;
+	struct Function *function = Parser.parseWithContext(parser, parentContext);
+	const struct Op *ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
-	self->context = &closure->context;
+	self->context = &function->context;
 	self->this = Value.object(self->context);
 	
 	self->result = Value.undefined();
 	
 //	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
-//	OpList.dumpTo(closure->oplist, stderr);
+//	OpList.dumpTo(Function->oplist, stderr);
 	
 	if (!self->envCount)
 	{
@@ -288,6 +288,6 @@ void printTextInput (Instance self, struct Text text)
 void garbageCollect(Instance self)
 {
 	Pool.markAll();
-	Pool.unmarkValue(Value.closure(self->global));
+	Pool.unmarkValue(Value.function(self->global));
 	Pool.collectMarked();
 }

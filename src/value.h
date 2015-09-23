@@ -11,7 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-struct Closure;
+struct Function;
 struct Ecc;
 
 #include "text.h"
@@ -52,7 +52,7 @@ enum Module(Type) {
 	
 	Module(object) = 0x40,
 	Module(error) = 0x42,
-	Module(closure) = 0x44,
+	Module(function) = 0x44,
 	Module(string) = 0x46,
 	Module(date) = 0x48,
 	
@@ -74,7 +74,7 @@ Interface(
 	(Structure, error ,(struct Error *))
 	(Structure, string ,(struct String *))
 	(Structure, date ,(struct Date *))
-	(Structure, closure ,(struct Closure *))
+	(Structure, function ,(struct Function *))
 	(Structure, breaker ,(int32_t integer))
 	(Structure, reference ,(Instance))
 	
@@ -114,7 +114,7 @@ Interface(
 			struct Error *error;
 			struct String *string;
 			struct Date *date;
-			struct Closure *closure;
+			struct Function *function;
 			
 			Instance reference;
 		} data;
@@ -126,7 +126,7 @@ Interface(
 // import object and redefine correct module (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
-#include "closure.h"
+#include "function.h"
 #include "object.h"
 #include "string.h"
 #include "array.h"

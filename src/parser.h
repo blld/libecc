@@ -12,7 +12,7 @@
 #include "namespace_io_libecc.h"
 
 #include "lexer.h"
-#include "closure.h"
+#include "function.h"
 #include "op.h"
 
 
@@ -25,7 +25,7 @@ Interface(
 	(Instance, createWithLexer ,(struct Lexer *))
 	(void, destroy, (Instance))
 	
-	(struct Closure *, parseWithContext ,(Instance const, struct Object *context))
+	(struct Function *, parseWithContext ,(Instance const, struct Object *context))
 	,
 	{
 		struct Lexer *lexer;
@@ -38,7 +38,7 @@ Interface(
 		} *depths;
 		uint16_t depthCount;
 		
-		struct Closure *closure;
+		struct Function *function;
 	}
 )
 

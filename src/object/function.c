@@ -1,12 +1,12 @@
 //
-//  closure.c
+//  function.c
 //  libecc
 //
 //  Created by Bouilland Aurélien on 15/07/2015.
 //  Copyright (c) 2015 Libeccio. All rights reserved.
 //
 
-#include "closure.h"
+#include "function.h"
 
 // MARK: - Private
 
@@ -23,7 +23,7 @@ Instance createSized (struct Object *prototype, uint32_t size)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
-	Pool.addClosure(self);
+	Pool.addFunction(self);
 	
 	*self = Module.identity;
 	
@@ -31,7 +31,7 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	Object.initializeSized(&self->context, prototype, size);
 	
 	struct Object *proto = Object.create(Object.prototype());
-	Object.add(proto, Identifier.constructor(), Value.closure(self), Object(writable) | Object(configurable));
+	Object.add(proto, Identifier.constructor(), Value.function(self), Object(writable) | Object(configurable));
 	Object.add(&self->object, Identifier.prototype(), Value.object(proto), Object(writable));
 	
 	return self;
@@ -116,9 +116,9 @@ Instance addToObject(struct Object *object, const char *name, const Native nativ
 {
 	assert(object);
 	
-	Instance closure = createWithNative(object, native, parameterCount);
+	Instance Function = createWithNative(object, native, parameterCount);
 	
-	Object.add(object, Identifier.makeWithCString(name), Value.closure(closure), flags);
+	Object.add(object, Identifier.makeWithCString(name), Value.function(Function), flags);
 	
-	return closure;
+	return Function;
 }

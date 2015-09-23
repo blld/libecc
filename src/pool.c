@@ -17,12 +17,12 @@ static Instance self = NULL;
 
 // MARK: - Static Members
 
-static void unmarkClosure (struct Closure *closure)
+static void unmarkClosure (struct Function *function)
 {
-	if (closure->object.flags & Object(mark))
+	if (function->object.flags & Object(mark))
 	{
-		unmarkObject(&closure->object);
-		unmarkObject(&closure->context);
+		unmarkObject(&function->object);
+		unmarkObject(&function->context);
 	}
 }
 
@@ -75,7 +75,7 @@ void teardown (void)
 	markAll();
 	collectMarked();
 	
-	free(self->closures), self->closures = NULL;
+	free(self->functions), self->functions = NULL;
 	free(self->objects), self->objects = NULL;
 	free(self->chars), self->chars = NULL;
 	
@@ -87,18 +87,18 @@ Instance shared (void)
 	return self;
 }
 
-void addClosure (struct Closure *closure)
+void addFunction (struct Function *function)
 {
-	assert(closure);
+	assert(function);
 	
-	if (self->closuresCount >= self->closuresCapacity)
+	if (self->functionsCount >= self->functionsCapacity)
 	{
-		self->closuresCapacity = self->closuresCapacity? self->closuresCapacity * 2: 8;
-		self->closures = realloc(self->closures, self->closuresCapacity * sizeof(*self->closures));
-		memset(self->closures + self->closuresCount, 0, sizeof(*self->closures) * (self->closuresCapacity - self->closuresCount));
+		self->functionsCapacity = self->functionsCapacity? self->functionsCapacity * 2: 8;
+		self->functions = realloc(self->functions, self->functionsCapacity * sizeof(*self->functions));
+		memset(self->functions + self->functionsCount, 0, sizeof(*self->functions) * (self->functionsCapacity - self->functionsCount));
 	}
 	
-	self->closures[self->closuresCount++] = closure;
+	self->functions[self->functionsCount++] = function;
 }
 
 void addObject (struct Object *object)
@@ -136,10 +136,10 @@ void markAll (void)
 {
 	uint_fast32_t index, count;
 	
-	for (index = 0, count = self->closuresCount; index < count; ++index)
+	for (index = 0, count = self->functionsCount; index < count; ++index)
 	{
-		self->closures[index]->object.flags |= Object(mark);
-		self->closures[index]->context.flags |= Object(mark);
+		self->functions[index]->object.flags |= Object(mark);
+		self->functions[index]->context.flags |= Object(mark);
 	}
 	
 	for (index = 0, count = self->objectsCount; index < count; ++index)
@@ -151,8 +151,8 @@ void markAll (void)
 
 void unmarkValue (struct Value value)
 {
-	if (value.type == Value(closure))
-		unmarkClosure(value.data.closure);
+	if (value.type == Value(function))
+		unmarkClosure(value.data.function);
 	else if (value.type >= Value(object))
 		unmarkObject(value.data.object);
 	else if (value.type == Value(chars))
@@ -165,12 +165,12 @@ void collectMarked (void)
 	
 	uint_fast32_t index;
 	
-	index = self->closuresCount;
+	index = self->functionsCount;
 	while (index--)
-		if (self->closures[index]->object.flags & Object(mark))
+		if (self->functions[index]->object.flags & Object(mark))
 		{
-			Closure.destroy(self->closures[index]);
-			self->closures[index] = self->closures[--self->closuresCount];
+			Function.destroy(self->functions[index]);
+			self->functions[index] = self->functions[--self->functionsCount];
 			++total;
 		}
 	

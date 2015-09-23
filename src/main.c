@@ -20,7 +20,7 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Closure.addNative(ecc->global, "print", print, 1, 0);
+	Function.addNative(ecc->global, "print", print, 1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();

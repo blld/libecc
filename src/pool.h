@@ -12,7 +12,7 @@
 #include "namespace_io_libecc.h"
 struct Chars;
 struct Object;
-struct Closure;
+struct Function;
 
 #include "value.h"
 
@@ -28,7 +28,7 @@ Interface(
 	
 	(Instance, shared ,(void))
 	
-	(void, addClosure ,(struct Closure *closure))
+	(void, addFunction ,(struct Function *function))
 	(void, addObject ,(struct Object *chars))
 	(void, addChars ,(struct Chars *chars))
 	
@@ -37,9 +37,9 @@ Interface(
 	(void, collectMarked ,(void))
 	,
 	{
-		struct Closure **closures;
-		uint16_t closuresCount;
-		uint16_t closuresCapacity;
+		struct Function **functions;
+		uint16_t functionsCount;
+		uint16_t functionsCapacity;
 		
 		struct Object **objects;
 		uint16_t objectsCount;

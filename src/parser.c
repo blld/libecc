@@ -217,8 +217,8 @@ static struct OpList * primary (Instance self)
 		
 		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.arguments()))
 		{
-			self->closure->needArguments = 1;
-			self->closure->needHeap = 1;
+			self->function->needArguments = 1;
+			self->function->needHeap = 1;
 		}
 	}
 	else if (previewToken(self) == Lexer(stringToken))
@@ -779,7 +779,7 @@ static struct OpList * variableDeclaration (Instance self, int noIn)
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
 	
-	Object.add(&self->closure->context, value.data.identifier, Value.undefined(), Object(writable));
+	Object.add(&self->function->context, value.data.identifier, Value.undefined(), Object(writable));
 	
 	if (acceptToken(self, '='))
 		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), assignment(self, noIn)));
@@ -1164,7 +1164,7 @@ static struct OpList * parameters (Instance self, int *count)
 			++*count;
 			op = identifier(self);
 			if (op.value.data.identifier.data.integer)
-				Object.add(&self->closure->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+				Object.add(&self->function->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
 		} while (acceptToken(self, ','));
 	
 	return NULL;
@@ -1188,11 +1188,11 @@ static struct OpList * native (Instance self, int isDeclaration)
 		return NULL;
 	}
 	
-	struct Closure *parentClosure = self->closure;
-	struct Closure *closure = Closure.create(NULL);
-	Object.add(&closure->context, Identifier.arguments(), Value.undefined(), Object(writable));
+	struct Function *parentClosure = self->function;
+	struct Function *function = Function.create(NULL);
+	Object.add(&function->context, Identifier.arguments(), Value.undefined(), Object(writable));
 	
-	self->closure = closure;
+	self->function = function;
 	expectToken(self, '(');
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
 	expectToken(self, ')');
@@ -1200,24 +1200,24 @@ static struct OpList * native (Instance self, int isDeclaration)
 	oplist = OpList.join(oplist, sourceElements(self, '}', 0));
 	text.length = self->lexer->text.location - text.location + 1;
 	expectToken(self, '}');
-	self->closure = parentClosure;
+	self->function = parentClosure;
 	
-	closure->oplist = oplist;
-	closure->text = text;
-	closure->parameterCount = parameterCount;
+	function->oplist = oplist;
+	function->text = text;
+	function->parameterCount = parameterCount;
 	parentClosure->needHeap = 1;
 	
-	Object.add(&closure->object, Identifier.length(), Value.integer(parameterCount), Object(configurable));
+	Object.add(&function->object, Identifier.length(), Value.integer(parameterCount), Object(configurable));
 	
 	if (isDeclaration)
 		Object.add(&parentClosure->context, identifierOp.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
 	else if (identifierOp.value.type != Value(undefined))
-		Object.add(&closure->context, identifierOp.value.data.identifier, Value.closure(closure), Object(writable) | Object(configurable));
+		Object.add(&function->context, identifierOp.value.data.identifier, Value.function(function), Object(writable) | Object(configurable));
 	
 	if (isDeclaration)
-		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.closure, Value.closure(closure), text));
+		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, Value.function(function), text));
 	else
-		return OpList.create(Op.closure, Value.closure(closure), self->lexer->text);
+		return OpList.create(Op.function, Value.function(function), self->lexer->text);
 }
 
 
@@ -1252,7 +1252,7 @@ static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
-	OpList.optimizeWithContext(oplist, &self->closure->context);
+	OpList.optimizeWithContext(oplist, &self->function->context);
 	
 	return oplist;
 }
@@ -1280,16 +1280,16 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-struct Closure * parseWithContext (Instance const self, struct Object *context)
+struct Function * parseWithContext (Instance const self, struct Object *context)
 {
 	assert(self);
 	
-	struct Closure *closure = Closure.create(context);
+	struct Function *function = Function.create(context);
 	nextToken(self);
 	
-	self->closure = closure;
+	self->function = function;
 	struct OpList *oplist = sourceElements(self, Lexer(noToken), 1);
-	self->closure = NULL;
+	self->function = NULL;
 	
 	if (self->error)
 	{
@@ -1304,6 +1304,6 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}
 	
-	closure->oplist = oplist;
-	return closure;
+	function->oplist = oplist;
+	return function;
 }
