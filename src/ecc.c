@@ -19,7 +19,55 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value value = Value.toString(Op.argument(ecc, 0));
 	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
+	struct Object *context = ecc->context;
+	ecc->context = &ecc->global->context;
 	evalInput(ecc, input);
+	ecc->context = context;
+	
+	return Value.undefined();
+}
+
+static struct Value parseInt (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Value.toString(Op.argument(ecc, 0));
+	int32_t radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	
+	struct Text text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	ecc->result = Lexer.parseInteger(text, radix);
+	
+	return Value.undefined();
+}
+
+static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Value.toString(Op.argument(ecc, 0));
+	
+	struct Text text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	ecc->result = Lexer.parseBinary(text);
+	
+	return Value.undefined();
+}
+
+static struct Value isFinite (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Value.toBinary(Op.argument(ecc, 0));
+	ecc->result = Value.boolean(!isnan(value.data.binary) && !isinf(value.data.binary));
+	
+	return Value.undefined();
+}
+
+static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value value = Value.toBinary(Op.argument(ecc, 0));
+	ecc->result = Value.boolean(isnan(value.data.binary));
 	
 	return Value.undefined();
 }
@@ -61,13 +109,15 @@ Instance create (void)
 	*self = Module.identity;
 	
 	self->global = Closure.create(NULL);
-	self->eval = Closure.createWithFunction(NULL /* to be filled */, eval, 1);
 	
-	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
 	Closure.addValue(self->global, "NaN", Value.binary(NAN), 0);
-	Closure.addValue(self->global, "null", Value.null(), 0);
+	Closure.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
 	Closure.addValue(self->global, "undefined", Value.undefined(), 0);
-	Closure.addValue(self->global, "eval", Value.closure(self->eval), 0);
+	Closure.addFunction(self->global, "eval", eval, 1, 0);
+	Closure.addFunction(self->global, "parseInt", parseInt, 2, 0);
+	Closure.addFunction(self->global, "parseFloat", parseFloat, 1, 0);
+	Closure.addFunction(self->global, "isNaN", isNaN, 1, 0);
+	Closure.addFunction(self->global, "isFinite", isFinite, 1, 0);
 	
 	Closure.addValue(self->global, "Object", Value.closure(Object.constructor()), 0);
 	Closure.addValue(self->global, "Array", Value.closure(Array.constructor()), 0);
@@ -133,14 +183,10 @@ int evalInput (Instance self, struct Input *input)
 	
 	addInput(self, input);
 	
-//	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
-	
-//	Object.dumpTo(self->context, stderr);
-	
 	int result = EXIT_SUCCESS;
 	
-	struct Value parentThis = self->this;
 	struct Object *parentContext = self->context;
+	struct Value parentThis = self->this;
 	
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
@@ -149,11 +195,12 @@ int evalInput (Instance self, struct Input *input)
 	
 	Parser.destroy(parser), parser = NULL;
 	
-	self->result = Value.undefined();
 	self->context = &closure->context;
 	self->this = Value.object(self->context);
-	self->eval->context.prototype = self->context;
 	
+	self->result = Value.undefined();
+	
+//	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
 //	OpList.dumpTo(closure->oplist, stderr);
 	
 	if (!self->envCount)
@@ -189,9 +236,8 @@ int evalInput (Instance self, struct Input *input)
 	else
 		ops->function(&ops, self);
 	
-	self->this = parentThis;
 	self->context = parentContext;
-	self->eval->context.prototype = parentContext;
+	self->this = parentThis;
 	
 	return result;
 }
@@ -217,7 +263,6 @@ void popEnv(Instance self)
 	--self->envCount;
 	self->context = self->envList[self->envCount].context;
 	self->this = self->envList[self->envCount].this;
-	self->eval->context.prototype = self->context;
 }
 
 void jmpEnv (Instance self, struct Value value)
@@ -246,42 +291,3 @@ void garbageCollect(Instance self)
 	Pool.unmarkValue(Value.closure(self->global));
 	Pool.collectMarked();
 }
-
-// MARK: Memory
-
-//void * allocate (Instance self, size_t size)
-//{
-//	void *pointer = c_malloc(size);
-//	if (!pointer)
-//	{
-//		static const struct Bytes type = { "Out of memory", 13 };
-//		struct Error *error = Error.create(&type, "cannot allocate %ld bytes", size);
-//		if (error && self && self->exceptionCount)
-//			throw(self, error);
-//		
-//		Env.printError(type.location, type.length, "cannot allocate %ld bytes", size);
-//		exit(EXIT_FAILURE);
-//	}
-//	return pointer;
-//}
-//
-//void * reallocate (Instance self, void *pointer, size_t size)
-//{
-//	pointer = c_realloc(pointer, size);
-//	if (!pointer)
-//	{
-//		static const struct io_libecc_Bytes type = { "Out of memory", 13 };
-//		struct Error *error = Error.create(&type, "cannot re-allocate %ld bytes", size);
-//		if (error && self && self->exceptionCount)
-//			throw(self, error);
-//		
-//		Env.printError(type.location, type.length, "cannot re-allocate %ld bytes", size);
-//		exit(EXIT_FAILURE);
-//	}
-//	return pointer;
-//}
-//
-//void deallocate (Instance self, void *pointer)
-//{
-//	c_free(pointer), pointer = NULL;
-//}

@@ -11,8 +11,48 @@
 // MARK: - Private
 
 static const int defaultSize = 8;
+
 static struct Object *objectPrototype = NULL;
 static struct Closure *objectConstructor = NULL;
+
+static inline uint32_t getSlot (Instance self, struct Identifier identifier)
+{
+	return
+		self->hashmap[
+		self->hashmap[
+		self->hashmap[
+		self->hashmap[1]
+		.slot[identifier.data.depth[0]]]
+		.slot[identifier.data.depth[1]]]
+		.slot[identifier.data.depth[2]]]
+		.slot[identifier.data.depth[3]];
+}
+
+static inline int32_t getElementOrIdentifier (struct Value property, struct Identifier *identifier)
+{
+	int32_t element = -1;
+	
+	if (property.type == Value(identifier))
+		*identifier = property.data.identifier;
+	else
+	{
+		struct Text text;
+		
+		if (property.type == Value(integer) && property.data.integer >= 0)
+			element = property.data.integer;
+		else
+		{
+			property = Value.toString(property);
+			text = Text.make(Value.stringChars(property), Value.stringLength(property));
+			element = Lexer.parseElement(text);
+		}
+		
+		if (element < 0)
+			*identifier = Identifier.makeWithText(text, 1);
+	}
+	
+	return element;
+}
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
@@ -51,28 +91,53 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	if (v.type == Value(identifier))
-		ecc->result = Value.boolean(refOwn(ecc->this.data.object, v.data.identifier, 0) != NULL);
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, v.data.identifier));
 	else if (v.type == Value(text))
-		ecc->result = Value.boolean(refOwn(ecc->this.data.object, Identifier.makeWithText(*v.data.text, 0), 0) != NULL);
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Identifier.makeWithText(*v.data.text, 0)));
 	else if (v.type == Value(chars))
-		ecc->result = Value.boolean(refOwn(ecc->this.data.object, Identifier.makeWithText(Text.make(v.data.string->chars, v.data.string->length), 1), 0) != NULL);
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Identifier.makeWithText(Text.make(v.data.string->chars, v.data.string->length), 1)));
 	
 	return Value.undefined();
 }
 
 static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
-//	if (self->data.object->name)
-//		return Value.string(String.createWithChars("[object Object]", 15));
-	printf("ok valueOf");
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value arg0 = Op.argument(ecc, 0);
+	
+	if (Value.isObject(arg0))
+	{
+		struct Object *v = arg0.data.object;
+		struct Object *o = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+		
+		while (( v = v->prototype ))
+			if (v == o)
+			{
+				ecc->result = Value.true();
+				return Value.undefined();
+			}
+	}
+	
+	ecc->result = Value.false();
 	return Value.undefined();
 }
 
 static struct Value propertyIsEnumerable (const struct Op ** const ops, struct Ecc * const ecc)
 {
-//	if (self->data.object->name)
-//		return Value.string(String.createWithChars("[object Object]", 15));
-	printf("ok valueOf");
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value property = Op.argument(ecc, 0);
+	struct Object *object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	enum Object(Flags) flags = 0;
+	
+	getOwnProperty(object, property, &flags);
+	
+	if (flags & Object(isValue))
+		ecc->result = Value.boolean(flags & Object(enumerable));
+	else
+		ecc->result = Value.undefined();
+	
 	return Value.undefined();
 }
 
@@ -92,24 +157,72 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	return Value.undefined();
 }
 
+static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	struct Value arg0 = Op.argument(ecc, 0);
+	if (!Value.isObject(arg0))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an object")));
+	
+	struct Object *object = arg0.data.object;
+	
+	ecc->result = object->prototype? Value.object(object->prototype): Value.undefined();
+	
+	return Value.undefined();
+}
+
+static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 2);
+	
+	struct Value arg0 = Op.argument(ecc, 0);
+	if (!Value.isObject(arg0))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an object")));
+	
+	struct Object *object = arg0.data.object;
+	struct Value property = Op.argument(ecc, 1);
+	enum Object(Flags) flags = 0;
+	struct Value *ref = getOwnProperty(object, property, &flags);
+	
+	ecc->result = Value.undefined();
+	
+	if (flags & Object(isValue))
+	{
+		const enum Object(Flags) resultFlags = Object(writable) | Object(enumerable) | Object(configurable);
+		
+		struct Object *result = Object.create(Object.prototype());
+		
+		Object.add(result, Identifier.value(), *ref, resultFlags);
+		Object.add(result, Identifier.writable(), Value.boolean(flags & Object(writable)), resultFlags);
+		Object.add(result, Identifier.enumerable(), Value.boolean(flags & Object(enumerable)), resultFlags);
+		Object.add(result, Identifier.configurable(), Value.boolean(flags & Object(configurable)), resultFlags);
+		
+		ecc->result = Value.object(result);
+	}
+	
+	return Value.undefined();
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
 
 void setup ()
 {
+	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	
 	objectPrototype = create(NULL);
-	
-	enum Object(Flags) flags = Object(writable) | Object(configurable);
-	
 	Closure.addToObject(objectPrototype, "toString", toString, 0, flags);
 	Closure.addToObject(objectPrototype, "toLocaleString", toString, 0, flags);
 	Closure.addToObject(objectPrototype, "valueOf", valueOf, 0, flags);
 	Closure.addToObject(objectPrototype, "hasOwnProperty", hasOwnProperty, 1, flags);
-	Closure.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 0, flags);
-	Closure.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0, flags);
+	Closure.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
+	Closure.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
 	objectConstructor = Closure.createWithFunction(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
+	Closure.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
+	Closure.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	
 	Object.add(objectPrototype, Identifier.constructor(), Value.closure(objectConstructor), 0);
 	Object.add(&objectConstructor->object, Identifier.prototype(), Value.object(objectPrototype), 0);
@@ -160,6 +273,7 @@ Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 	self->prototype = prototype;
 	self->hashmapCount = 2;
 	self->hashmapCapacity = size;
+	self->flags = Object(extensible);
 	
 	// hashmap is always 2 slots minimum
 	// slot 0 is self referencing undefined value (all zeroes)
@@ -238,17 +352,7 @@ struct Value getOwn (Instance self, struct Identifier identifier)
 {
 	assert(self);
 	
-	return
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[1]
-		.slot[identifier.data.depth[0]]]
-		.slot[identifier.data.depth[1]]]
-		.slot[identifier.data.depth[2]]]
-		.slot[identifier.data.depth[3]]]
-		.data.value;
+	return self->hashmap[getSlot(self, identifier)].data.value;
 }
 
 struct Value get (Instance self, struct Identifier identifier)
@@ -256,82 +360,105 @@ struct Value get (Instance self, struct Identifier identifier)
 	assert(self);
 	
 	Instance object = self;
-	struct Value value;
+	uint32_t slot = 0;
 	do
-	{
-		value =
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[1]
-			.slot[identifier.data.depth[0]]]
-			.slot[identifier.data.depth[1]]]
-			.slot[identifier.data.depth[2]]]
-			.slot[identifier.data.depth[3]]]
-			.data.value;
-	} while (value.type == Value(undefined) && (object = object->prototype));
-	
-	return value;
-}
-
-struct Value *refOwn (Instance self, struct Identifier identifier, int create)
-{
-	assert(self);
-	
-	uint32_t slot =
-	
-	slot =
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[1]
-		.slot[identifier.data.depth[0]]]
-		.slot[identifier.data.depth[1]]]
-		.slot[identifier.data.depth[2]]]
-		.slot[identifier.data.depth[3]];
+		slot = getSlot(object, identifier);
+	while (!slot && (object = object->prototype));
 	
 	if (slot)
-		return &self->hashmap[slot].data.value;
-	else if (create)
-		return add(self, identifier, Value.undefined(), Object(writable) | Object(enumerable) | Object(configurable));
+		return object->hashmap[slot].data.value;
 	else
-		return NULL;
+		return Value.undefined();
 }
 
-struct Value *ref (Instance self, struct Identifier identifier, int create)
+struct Value *getOwnMember (Instance self, struct Identifier identifier)
 {
 	assert(self);
 	
-	Instance object = self;
-	uint32_t slot;
+	uint32_t slot = getSlot(self, identifier);
+	if (slot)
+		return &self->hashmap[slot].data.value;
+	
+	return NULL;
+}
+
+struct Value *getMember (Instance self, struct Identifier identifier)
+{
+	assert(self);
 	
 //	fprintf(stderr, "--- > ");
 //	Identifier.dumpTo(identifier, stderr);
 //	fprintf(stderr, " <\n");
 	
+	Instance object = self;
+	uint32_t slot;
 	do
 	{
 //		dumpTo(object, stderr);
 //		fprintf(stderr, "%p --\n", object);
 		
-		slot =
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[1]
-			.slot[identifier.data.depth[0]]]
-			.slot[identifier.data.depth[1]]]
-			.slot[identifier.data.depth[2]]]
-			.slot[identifier.data.depth[3]];
-	} while (!slot && (object = object->prototype));
+		if (( slot = getSlot(object, identifier) ))
+			return &object->hashmap[slot].data.value;
+	}
+	while ((object = object->prototype));
 	
-	if (slot)
-		return &object->hashmap[slot].data.value;
-	else if (create)
-		return add(self, identifier, Value.undefined(), Object(writable) | Object(enumerable) | Object(configurable));
+	return NULL;
+}
+
+struct Value * getOwnProperty (Instance self, struct Value property, enum Object(Flags) *flags)
+{
+	assert(self);
+	assert(flags);
+	
+	struct Identifier identifier;
+	int32_t element = getElementOrIdentifier(property, &identifier);
+	uint32_t slot;
+	
+	if (element >= 0 && element < self->elementCount && (self->element[element].data.flags & Object(isValue)))
+	{
+		*flags = self->element[element].data.flags;
+		return &self->element[element].data.value;
+	}
+	else if (( slot = getSlot(self, identifier) ))
+	{
+		*flags = self->hashmap[slot].data.flags;
+		return &self->hashmap[slot].data.value;
+	}
+	
+	*flags = 0;
+	return NULL;
+}
+
+struct Value * getProperty (Instance self, struct Value property, enum Object(Flags) *flags)
+{
+	assert(self);
+	assert(flags);
+	
+	Instance object = self;
+	
+	struct Identifier identifier;
+	int32_t element = getElementOrIdentifier(property, &identifier);
+	uint32_t slot;
+	
+	if (element >= 0)
+		do
+			if (element < object->elementCount && (object->element[element].data.flags & Object(isValue)))
+			{
+				*flags = object->element[element].data.flags;
+				return &object->element[element].data.value;
+			}
+		while ((object = object->prototype));
 	else
-		return NULL;
+		do
+			if (( slot = getSlot(object, identifier) ))
+			{
+				*flags = object->hashmap[slot].data.flags;
+				return &object->hashmap[slot].data.value;
+			}
+		while ((object = object->prototype));
+	
+	*flags = 0;
+	return NULL;
 }
 
 void setOwn (Instance self, struct Identifier identifier, struct Value value)
@@ -339,15 +466,7 @@ void setOwn (Instance self, struct Identifier identifier, struct Value value)
 	assert(self);
 	assert(identifier.data.integer);
 	
-	uint32_t slot =
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[1]
-		.slot[identifier.data.depth[0]]]
-		.slot[identifier.data.depth[1]]]
-		.slot[identifier.data.depth[2]]]
-		.slot[identifier.data.depth[3]];
+	uint32_t slot = getSlot(self, identifier);
 	
 	if (!slot)
 	{
@@ -365,19 +484,9 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 	
 	Instance object = self;
 	uint32_t slot;
-	
 	do
-	{
-		slot =
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[1]
-			.slot[identifier.data.depth[0]]]
-			.slot[identifier.data.depth[1]]]
-			.slot[identifier.data.depth[2]]]
-			.slot[identifier.data.depth[3]];
-	} while (!slot && (object = object->prototype));
+		slot = getSlot(object, identifier);
+	while (!slot && (object = object->prototype));
 	
 	if (!slot)
 	{
@@ -433,24 +542,16 @@ struct Value delete (Instance self, struct Identifier identifier)
 	
 	Instance object = self;
 	uint32_t slot;
-	
 	do
-	{
-		slot =
-			object->hashmap[
-			object->hashmap[
-			object->hashmap[1]
-			.slot[identifier.data.depth[0]]]
-			.slot[identifier.data.depth[1]]]
-			.slot[identifier.data.depth[2]];
-	} while (!slot && (object = object->prototype));
+		slot = getSlot(object, identifier);
+	while (!slot && (object = object->prototype));
 	
-	if (!object || !object->hashmap[slot].slot[identifier.data.depth[3]])
+	if (!object || !(object->hashmap[slot].data.flags & Object(isValue)))
 		return Value.true();
 	
-	if (object->hashmap[object->hashmap[slot].slot[identifier.data.depth[3]]].data.flags & Object(configurable))
+	if (object->hashmap[slot].data.flags & Object(configurable))
 	{
-		object->hashmap[slot].slot[identifier.data.depth[3]] = 0;
+		memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
 		return Value.true();
 	}
 	else

@@ -27,6 +27,10 @@ Structure messageIdentifier;
 Structure toStringIdentifier;
 Structure valueOfIdentifier;
 Structure evalIdentifier;
+Structure valueIdentifier;
+Structure writableIdentifier;
+Structure enumerableIdentifier;
+Structure configurableIdentifier;
 
 // MARK: - Static Members
 
@@ -45,6 +49,10 @@ void setup (void)
 		toStringIdentifier = makeWithCString("toString");
 		valueOfIdentifier = makeWithCString("valueOf");
 		evalIdentifier = makeWithCString("eval");
+		valueIdentifier = makeWithCString("value");
+		writableIdentifier = makeWithCString("writable");
+		enumerableIdentifier = makeWithCString("enumerable");
+		configurableIdentifier = makeWithCString("configurable");
 	}
 }
 
@@ -153,6 +161,26 @@ Structure valueOf (void)
 Structure eval (void)
 {
 	return evalIdentifier;
+}
+
+Structure value (void)
+{
+	return valueIdentifier;
+}
+
+Structure writable (void)
+{
+	return writableIdentifier;
+}
+
+Structure enumerable (void)
+{
+	return enumerableIdentifier;
+}
+
+Structure configurable (void)
+{
+	return configurableIdentifier;
 }
 
 int isEqual (Structure self, Structure to)

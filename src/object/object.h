@@ -57,8 +57,10 @@ Interface(
 	
 	(struct Value, getOwn ,(Instance, struct Identifier))
 	(struct Value, get ,(Instance, struct Identifier))
-	(struct Value *, refOwn ,(Instance, struct Identifier, int create))
-	(struct Value *, ref ,(Instance, struct Identifier, int create))
+	(struct Value *, getOwnMember ,(Instance, struct Identifier))
+	(struct Value *, getMember ,(Instance, struct Identifier))
+	(struct Value *, getOwnProperty ,(Instance, struct Value, enum Object(Flags) *))
+	(struct Value *, getProperty ,(Instance, struct Value, enum Object(Flags) *))
 	(void, setOwn ,(Instance, struct Identifier, struct Value))
 	(void, set ,(Instance, struct Identifier, struct Value))
 	(struct Value *, add ,(Instance, struct Identifier, struct Value, enum Object(Flags)))

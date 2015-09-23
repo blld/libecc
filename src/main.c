@@ -20,6 +20,8 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
+	Closure.addFunction(ecc->global, "print", print, 1, 0);
+	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
 	else if (!strcmp(argv[1], "--test"))
@@ -27,10 +29,7 @@ int main (int argc, const char * argv[])
 	else if (!strcmp(argv[1], "--test-verbose"))
 		result = runTest(1);
 	else
-	{
-		Closure.addFunction(ecc->global, "print", print, 1, 0);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
-	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
@@ -138,7 +137,7 @@ static void testEval (void)
 	test("var str = '(function a() {})'; typeof eval(str)", "function");
 	test("function a() { var n = 456; return eval('n') }; a()", "456");
 	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined");
-	test("var e = eval, b = 'abc'; function a() { var n = 456; return e('b') }; a()", "abc");
+	test("var e = eval; function a() { var n = 456; return e('parseInt.length') }; a()", "2");
 	
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
@@ -151,10 +150,14 @@ static void testException (void)
 	test("throw 123", "123");
 	test("throw 'hello'", "hello");
 	test("try { throw 'a' } finally { 'b' }", "a");
-	test("try { throw 'a' } catch(b){} finally { 'c' }", "c");
+	test("try { throw 'a' } catch(b){ 'b' }", "b");
+	test("try { throw 'a' } catch(b){ 'b' } 'c'", "c");
+	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' }", "c");
+	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' } 'd'", "d");
 	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "abc");
 	test("try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "b");
 	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }", "c");
+	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f");
 	
 	test("try { throw 'a' } ", "SyntaxError: missing catch or finally after try");
 }
@@ -245,6 +248,15 @@ static void testRelational (void)
 	test("3 >= 3", "true");
 	test("3 < 4", "true");
 	test("3 <= 4", "true");
+	
+	test("'toString' in {}", "true");
+	test("'toString' in null", "TypeError: invalid 'in' operand null");
+	test("var a = { b: 1, c: 2 }; 'b' in a", "true");
+	test("var a = { b: 1, c: 2 }; 'd' in a", "false");
+	test("var a = [ 'b', 'c' ]; 0 in a", "true");
+	test("var a = [ 'b', 'c' ]; 2 in a", "false");
+	test("var a = [ 'b', 'c' ]; '0' in a", "true");
+	test("var a = [ 'b', 'c' ]; '2' in a", "false");
 }
 
 static void testConditional (void)
@@ -281,11 +293,12 @@ static void testDelete (void)
 static void testGlobal (void)
 {
 	test("typeof this", "object");
+	test("null", "null");
+	test("this['null']", "undefined");
 	
 	test("this['Infinity']", "Infinity");
 	test("-this['Infinity']", "-Infinity");
 	test("this['NaN']", "NaN");
-	test("this['null']", "null");
 	test("this['undefined']", "undefined");
 	test("typeof eval", "function");
 	
@@ -308,11 +321,69 @@ static void testFunction (void)
 	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");
 }
 
+static void testLoop (void)
+{
+	test("var a = 0; for (;;) if (++a > 100) break; a", "101");
+	test("var a; for (a = 0;;) if (++a > 100) break; a", "101");
+	test("for (var a = 0;;) if (++a > 100) break; a", "101");
+	test("for (var a = 0; a <= 100;) ++a; a", "101");
+	test("for (var a = 0; a <= 100; ++a); a", "101");
+	test("for (var a = 0, b = 0; a <= 100; ++a) ++b; b", "101");
+	test("var a = 100, b = 0; while (a--) ++b;", "100");
+	test("var a = 100, b = 0; do ++b; while (a--)", "101");
+	
+	test("var a = { 'a': 123 }, b; for (b in a) a[b];", "123");
+	test("var a = { 'a': 123 }; for (var b in a) a[b];", "123");
+	test("var a = { 'a': 123 }; for (b in a) ;", "ReferenceError: b is not defined");
+	test("var a = [ 'a', 123 ], b; for (b in a) b + ':' + a[b];", "1:123");
+	test("var a = [ 'a', 123 ], b; for (b in a) typeof b;", "string");
+}
+
 static void testThis (void)
 {
 	test("function a() { return typeof this; } a()", "undefined");
 	test("var a = { b: function () { return typeof this; } }; a.b()", "object");
 	test("var a = { b: function () { return this; } }; a.b().b === a.b", "true");
+}
+
+static void testObject (void)
+{
+	test("var a = { a: 1, 'b': 2, '1': 3 }; a.a", "1");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; a['a']", "1");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; a['b']", "2");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; a.b", "2");
+	test("var a = { a: 1, 'b': 2, 1: 3 }; a[1]", "3");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; a[1]", "3");
+	test("var a = { a: 1, 'b': 2, '1': 3 }, c = 1; a[c]", "3");
+	
+	test("var a = { a: 123 }; a.toString()", "[object Object]");
+	
+	test("var a = { a: 123 }; a.valueOf() === a", "true");
+	
+	test("var a = { a: 123 }; a.hasOwnProperty('a')", "true");
+	test("var a = { a: 123 }; a.hasOwnProperty('toString')", "false");
+	
+	test("var a = {}, b = {}; a.isPrototypeOf(123)", "false");
+	test("var a = {}, b = {}; a.isPrototypeOf(b)", "false");
+	test("var a = {}, b = {}; Object.getPrototypeOf(b).isPrototypeOf(a)", "true");
+	
+	test("var a = { a: 123 }; a.propertyIsEnumerable('a')", "true");
+	test("var a = {}; a.propertyIsEnumerable('toString')", "undefined");
+	test("var a = {}; Object.getPrototypeOf(a).propertyIsEnumerable('toString')", "false");
+	
+	test("var a = {}, b = {}; Object.getPrototypeOf(a) === Object.getPrototypeOf(b)", "true");
+	test("var a = {}; Object.getPrototypeOf(Object.getPrototypeOf(a))", "undefined");
+	
+	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').value", "123");
+	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').writable", "true");
+}
+
+static void testArray (void)
+{
+	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a[1]", "b");
+	test("var a = [ 'a', 'b', 'c' ]; a['1'] = 123; a[1]", "123");
+	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.a", "123");
+	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.toString()", "a,b,c");
 }
 
 static int runTest (int verbosity)
@@ -331,7 +402,10 @@ static int runTest (int verbosity)
 	testDelete();
 	testGlobal();
 	testFunction();
+	testLoop();
 	testThis();
+	testObject();
+	testArray();
 	
 	putc('\n', stderr);
 	

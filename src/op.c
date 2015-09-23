@@ -407,6 +407,8 @@ struct Value callClosureVA (struct Closure *closure, struct Ecc * const ecc, str
 
 static inline struct Value callClosure (const Instance * const ops, struct Ecc * const ecc, struct Closure * const closure, int32_t argumentCount, int construct)
 {
+	struct Value this = ecc->refObject;
+	
 	if (closure->needHeap)
 	{
 		struct Object *context = Object.copy(&closure->context);
@@ -416,7 +418,7 @@ static inline struct Value callClosure (const Instance * const ops, struct Ecc *
 		else
 			populateContext(ops, ecc, context, closure->parameterCount, argumentCount);
 		
-		return callOps(closure->oplist->ops, ecc, context, ecc->refObject, construct);
+		return callOps(closure->oplist->ops, ecc, context, this, construct);
 	}
 	else
 	{
@@ -428,7 +430,7 @@ static inline struct Value callClosure (const Instance * const ops, struct Ecc *
 		
 		populateContext(ops, ecc, &stackContext, closure->parameterCount, argumentCount);
 		
-		return callOps(closure->oplist->ops, ecc, &stackContext, ecc->refObject, construct);
+		return callOps(closure->oplist->ops, ecc, &stackContext, this, construct);
 	}
 }
 
@@ -539,7 +541,7 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 	ecc->refObject = Value.undefined();
 	
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.ref(ecc->context, identifier, 0);
+	struct Value *ref = Object.getMember(ecc->context, identifier);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -548,10 +550,8 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 {
-	ecc->refObject = Value.undefined();
-	
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.ref(ecc->context, identifier, 0);
+	struct Value *ref = Object.getMember(ecc->context, identifier);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -561,21 +561,11 @@ struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.ref(ecc->context, identifier, 0);
+	struct Value *ref = Object.getMember(ecc->context, identifier);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	struct Value value = nextOp();
-	
-//	fprintf(stderr, "set ");
-//	Identifier.dumpTo(identifier, stderr);
-//	fprintf(stderr, " = ");
-//	Value.dumpTo(&value, stderr);
-//	fprintf(stderr, "\n");
-	
-//	if (ecc->context->traceCount && Value.isDynamic(value))
-//		Value.retain(value, ecc->context->traceCount);
-	
 	return *ref = value;
 }
 
@@ -599,8 +589,6 @@ struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocalSlotRef (const Instance * const ops, struct Ecc * const ecc)
 {
-	ecc->refObject = Value.undefined();
-	
 	int32_t slot = opValue().data.integer;
 	return Value.reference(&ecc->context->hashmap[slot].data.value);
 }
@@ -609,10 +597,6 @@ struct Value setLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
-	
-//	if (ecc->context->traceCount && Value.isDynamic(value))
-//		Value.retain(value, ecc->context->traceCount);
-	
 	return ecc->context->hashmap[slot].data.value = value;
 }
 
@@ -629,8 +613,10 @@ struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	ecc->refObject = object;
-	struct Value *ref = Object.ref(object.data.object, identifier, 1);
+	struct Value *ref = Object.getMember(object.data.object, identifier);
+	if (!ref)
+		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+	
 	return Value.reference(ref);
 }
 
@@ -659,93 +645,59 @@ struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	ecc->refObject = object;
-	struct Value property = nextOp();
-	
-	if (Value.isString(property))
-	{
-		int digitsOnly = 1;
-		const char *chars = Value.stringChars(property);
-		uint16_t length = Value.stringLength(property);
-		
-		for (uint16_t index = 0; index < length; ++index)
-			if (!isdigit(chars[index]))
-			{
-				digitsOnly = 0;
-				break;
-			}
-		
-		if (digitsOnly)
-		{
-			struct Value index = Value.toBinary(property);
-			if (index.data.binary >= 0 && index.data.binary < INT32_MAX)
-				return object.data.object->element[(int32_t)index.data.binary].data.value;
-		}
-		
-		property = Value.identifier(Identifier.makeWithText(Text.make(chars, length), 1));
-	}
-	
-	return Object.get(object.data.object, property.data.identifier);
+	enum Object(Flags) flags;
+	struct Value *ref = Object.getProperty(object.data.object, nextOp(), &flags);
+	return ref? *ref: Value.undefined();
 }
 
 struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 {
+//	struct Value object = Value.toObject(nextOp(), ecc, opText());
+//	struct Value property = nextOp();
+//	struct Value *ref = Object.ref(object.data.object, property.data.identifier, 1);
+//	return Value.reference(ref);
+	
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	ecc->refObject = object;
-	struct Value property = nextOp();
-	struct Value *ref = Object.ref(object.data.object, property.data.identifier, 1);
+	enum Object(Flags) flags;
+	struct Value *ref = Object.getProperty(object.data.object, nextOp(), &flags);
+	if (!ref)
+		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+	
 	return Value.reference(ref);
 }
 
 struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = Value.toObject(nextOp(), ecc, opText());
+	struct Object *object = value.data.object;
 	
-	struct Value index = nextOp();
-//	if (index.type == Value(binary))
-//	{
-//		Ecc.printTextInput(ecc, (*ops)->text);
-//		Env.printWarning("Using floating-point as property name polute identifier's pool; using as an int. (use '%lf' alternatively)", index.data.binary);
-//		index = Value.integer(index.data.binary);
-//	}
-//	else if (Value.isString(&index))
-//	{
-//		const char *chars = Value.stringChars(&index);
-//		for (uint_fast16_t index = 0, count = Value.stringLength(&index); index < count; ++index)
-//			if ()
-//	}
-//	
-//	if (index.type == Value(integer))
-//	{
-//		if (index.data.binary >= 0 && index.data.binary < object.data.object->elementCount)
-//			return object.data.object->element[index.data.integer];
-//		else
-//			return Value.undefined();
-//	}
-
-//	if (Value.isString(&identifier))
-//	{
-//		int isElement = 1;
-//		const char *chars = Value.stringChars(&identifier);
-//		for (uint16_t index = 0, length = Value.stringLength(&identifier); index < length; ++index)
-//		{
-//			
-//		}
-//	}
+	struct Value property = nextOp();
+	value = nextOp();
 	
-	if (index.type == Value(binary))
+	int32_t element = -1;
+	
+	if (property.type == Value(identifier))
+		Object.set(object, property.data.identifier, value);
+	else
 	{
-		if (index.data.binary == (int32_t)index.data.binary)
-		{
-		}
+		struct Text text;
+		
+		if (property.type == Value(integer) && property.data.integer >= 0)
+			element = property.data.integer;
 		else
 		{
-			struct Value string = Value.toString(index);
-			index = Value.identifier(Identifier.makeWithText(Text.make(Value.stringChars(string), Value.stringLength(string)), 1));
+			property = Value.toString(property);
+			text = Text.make(Value.stringChars(property), Value.stringLength(property));
+			element = Lexer.parseElement(text);
 		}
+		
+		if (element >= 0)
+			Object.addElementAtIndex(object, element, value);
+		else
+			Object.set(object, Identifier.makeWithText(text, 1), value);
 	}
 	
-	struct Value value = nextOp();
-	Object.set(object.data.object, index.data.identifier, value);
 	return value;
 }
 
@@ -846,20 +798,34 @@ struct Value moreOrEqual (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value instanceOf (const Instance * const ops, struct Ecc * const ecc)
 {
-//	struct Value a = nextOp();
-//	struct Value b = nextOp();
-//	return Value.boolean(a.data.integer == b.data.integer);
-	assert(0);
-	abort();
+	struct Value a = nextOp();
+	if (!Value.isObject(a))
+		return Value.false();
+	
+	const struct Text *text = opText();
+	struct Value b = nextOp();
+	if (!Value.isObject(b))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not an object", text->length, text->location)));
+	
+	struct Object *object = b.data.object;
+	do
+		if (a.data.object->prototype == object)
+			return Value.true();
+	while (( object = object->prototype ));
+	
+	return Value.false();
 }
 
 struct Value in (const Instance * const ops, struct Ecc * const ecc)
 {
-//	struct Value a = nextOp();
-//	struct Value b = nextOp();
-//	return Value.boolean(a.data.integer == b.data.integer);
-	assert(0);
-	abort();
+	struct Value property = nextOp();
+	struct Value object = nextOp();
+	if (!Value.isObject(object))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
+	
+	enum Object(Flags) flags;
+	Object.getProperty(object.data.object, property, &flags);
+	return Value.boolean(flags & Object(isValue));
 }
 
 struct Value multiply (const Instance * const ops, struct Ecc * const ecc)

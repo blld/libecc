@@ -173,7 +173,13 @@ static struct OpList * propertyAssignment (Instance self)
 		oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
 	else if (previewToken(self) == Lexer(stringToken))
-		oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
+	{
+		int32_t element = Lexer.parseElement(self->lexer->text);
+		if (element >= 0)
+			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
+		else
+			oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
+	}
 	else if (previewToken(self) == Lexer(identifierToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else
@@ -778,7 +784,7 @@ static struct OpList * variableDeclaration (Instance self, int noIn)
 	if (acceptToken(self, '='))
 		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), assignment(self, noIn)));
 	else
-		return OpList.create(Op.next, Value.undefined(), self->lexer->text);
+		return OpList.create(Op.next, value, text);
 }
 
 static struct OpList * variableDeclarationList (Instance self, int noIn)
@@ -841,7 +847,6 @@ static struct OpList * whileStatement (Instance self)
 
 static struct OpList * forStatement (Instance self)
 {
-	int noIn = 0;
 	struct OpList *oplist = NULL, *condition = NULL, *increment = NULL, *body = NULL;
 	
 	expectToken(self, '(');
@@ -850,30 +855,26 @@ static struct OpList * forStatement (Instance self)
 		oplist = variableDeclarationList(self, 1);
 	else if (previewToken(self) != ';')
 	{
-		oplist = leftHandSide(self);
-		if (!oplist)
-		{
-			noIn = 1;
-			oplist = expression(self, 1);
-		}
+		oplist = expression(self, 1);
 		
 		if (oplist)
 			oplist = OpList.unshift(Op.make(Op.discard, Value.undefined(), OpList.text(oplist)), oplist);
 	}
 	
-	if (!noIn && acceptToken(self, Lexer(inToken)))
+	if (acceptToken(self, Lexer(inToken)))
 	{
 //		OpList.dumpTo(oplist, stderr);
 		
-		if (oplist->ops[0].function == Op.setLocal && oplist->opCount == 2)
-			oplist = OpList.join(OpList.create(Op.iterateInRef, Value.undefined(), self->lexer->text), OpList.create(Op.getLocalRef, oplist->ops[0].value, oplist->ops[0].text));
-		else if (oplist->ops[0].function == Op.discard && oplist->opCount == 2)
+		if (oplist->opCount == 2 && oplist->ops[0].function == Op.discard && oplist->ops[1].function == Op.getLocal)
+		{
+			changeFunction(oplist->ops, Op.iterateInRef);
+			changeFunction(&oplist->ops[1], Op.getLocalRef);
+		}
+		else if (oplist->opCount == 1 && oplist->ops[0].function == Op.next)
 		{
 			changeFunction(oplist->ops, Op.getLocalRef);
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value.undefined(), self->lexer->text), oplist);
 		}
-		else if (oplist->ops[0].function == Op.getLocal && oplist->opCount == 1)
-			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value.undefined(), self->lexer->text), expressionRef(self, oplist, "invalid for/in left-hand side"));
 		else
 			error(self, Error.referenceError(OpList.text(oplist), "invalid for/in left-hand side"));
 		
@@ -1112,9 +1113,9 @@ static struct OpList * statement (Instance self)
 			oplist = OpList.appendNoop(oplist);
 		
 		if (acceptToken(self, Lexer(finallyToken)))
-			oplist = OpList.appendNoop(OpList.join(oplist, block(self)));
+			oplist = OpList.join(oplist, block(self));
 		
-		return oplist;
+		return OpList.appendNoop(oplist);
 	}
 	else if (acceptToken(self, Lexer(debuggerToken)))
 	{
@@ -1248,20 +1249,6 @@ static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken
 	
 	last = OpList.appendNoop(last);
 	
-//	fprintf(stderr, "***");
-//	if (last)
-//		OpList.dumpTo(last, stderr);
-	
-//	if (forceResult && last && last->ops[0].function == Op.discard)
-//		changeFunction(&last->ops[0], Op.result);
-//	else
-//		last = OpList.unshift(Op.make(Op.result, Value.undefined(), self->lexer->text), OpList.appendNoop(last));
-	
-//	if (forceResult)
-//		for (uint32_t index = 0, count = last->opCount; index < count; ++index)
-//			if (last->ops[index].function == Op.discard)
-//				changeFunction(&last->ops[index], Op.result);
-	
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
@@ -1302,7 +1289,6 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 	
 	self->closure = closure;
 	struct OpList *oplist = sourceElements(self, Lexer(noToken), 1);
-	
 	self->closure = NULL;
 	
 	if (self->error)
@@ -1317,47 +1303,6 @@ struct Closure * parseWithContext (Instance const self, struct Object *context)
 		oplist->opCount = sizeof(errorOps) / sizeof(*errorOps);
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}
-	
-//	OpList.dumpTo(oplist, stderr);
-	
-//	struct Op *oplist = NULL;
-//	
-//	enum Lexer(Token) token;
-//	while (( token = Lexer.nextToken(self->lexer) ))
-//	{
-////		fprintf(stderr, "<%02x> %.*s  ", token, lexer->range.length, lexer->range.location);
-////		if (lexer->value.type != Value(Undefined))
-////			Value.dumpTo(&lexer->value, stderr);
-////		
-////		fprintf(stderr, "\n");
-//		
-//		if (token == Lexer(errorToken))
-//		{
-//			self->error = lexer->value.data.error;
-//			self->error->range = lexer->range;
-//			break;
-//		}
-//	}
-//	
-//	if (self->error)
-//	{
-//		#warning TODO: cleanup oplist here
-//		struct Op errorOps[] = {
-//			{ Op.throw, },
-//			{ Op.value, Value.error(self->error), self->error->range },
-//		};
-//		oplist = malloc(sizeof(errorOps));
-//		memcpy(oplist, errorOps, sizeof(errorOps));
-//	}
-//	else if (!oplist)
-//	{
-	
-//	struct Op noopOps[] = {
-//		{ Op.noop, },
-//	};
-//	struct Op *oplist = malloc(sizeof(noopOps));
-//	memcpy(oplist, noopOps, sizeof(noopOps));
-//	return oplist;
 	
 	closure->oplist = oplist;
 	return closure;

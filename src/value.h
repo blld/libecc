@@ -78,9 +78,6 @@ Interface(
 	(Structure, breaker ,(int32_t integer))
 	(Structure, reference ,(Instance))
 	
-//	(void, retain ,(Structure, int count))
-//	(void, release ,(Structure, int count))
-	
 	(Structure, toPrimitive ,(Structure, struct Ecc *ecc, const struct Text *text, int hint /* 0: auto, 1: String, -1: Number */))
 	(int, isPrimitive ,(Structure))
 	(int, isBoolean ,(Structure))
@@ -100,8 +97,6 @@ Interface(
 	(int, isObject ,(Structure))
 	
 	(Structure, toType ,(Structure))
-	
-//	(void, finalize ,(Instance))
 	
 	(void, dumpTo ,(Structure, FILE *))
 	,

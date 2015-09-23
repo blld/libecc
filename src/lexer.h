@@ -26,7 +26,6 @@
 #define io_libecc_lexer_Tokens \
 	_( no ,"end of script",= 0)\
 	_( error ,,= 128)\
-	_( todo ,,)\
 	\
 	_( integer ,"number",)\
 	_( binary ,"number",)\
@@ -101,8 +100,14 @@ enum Module(Token) {
 Interface(
 	(Instance, createWithInput ,(struct Input *))
 	(void, destroy, (Instance))
+	
 	(enum Lexer(Token), nextToken, (Instance))
+	
 	(const char *, tokenChars ,(enum Module(Token) token))
+	
+	(struct Value, parseBinary ,(struct Text text))
+	(struct Value, parseInteger ,(struct Text text, int radix))
+	(int32_t, parseElement ,(struct Text text))
 	,
 	{
 		struct Input *input;

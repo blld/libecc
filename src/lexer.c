@@ -324,35 +324,19 @@ enum Module(Token) nextToken (Instance self)
 					return error(self, Error.syntaxError(self->text, "identifier starts immediately after numeric literal"));
 				}
 				
-				char buffer[self->text.length + 1];
-				memcpy(buffer, self->text.location, self->text.length);
-				buffer[self->text.length] = '\0';
-				
 				if (binary)
 				{
-					self->value = Value.binary(strtod(buffer, NULL));
+					self->value = parseBinary(self->text);
 					return Module(binaryToken);
 				}
 				else
 				{
-					errno = 0;
-					long integer = strtol(buffer, NULL, 0);
+					self->value = parseInteger(self->text, 0);
 					
-					if (errno == ERANGE)
-					{
-						self->value = Value.binary(strtod(buffer, NULL));
-						return Module(binaryToken);
-					}
-					if (integer < INT32_MIN || integer > INT32_MAX)
-					{
-						self->value = Value.binary(integer);
-						return Module(binaryToken);
-					}
+					if (self->value.type == Value(integer))
+						return Lexer(integerToken);
 					else
-					{
-						self->value = Value.integer((int32_t)integer);
-						return Module(integerToken);
-					}
+						return Lexer(binaryToken);
 				}
 			}
 			
@@ -605,4 +589,54 @@ const char * tokenChars (enum Module(Token) token)
 	
 	assert(0);
 	return "unknow";
+}
+
+struct Value parseBinary (struct Text text)
+{
+	char buffer[text.length + 1];
+	memcpy(buffer, text.location, text.length);
+	buffer[text.length] = '\0';
+	
+	return Value.binary(strtod(buffer, NULL));
+}
+
+struct Value parseInteger (struct Text text, int radix)
+{
+	char buffer[text.length + 1];
+	memcpy(buffer, text.location, text.length);
+	buffer[text.length] = '\0';
+	
+	errno = 0;
+	
+	long integer = strtol(buffer, NULL, 0);
+	
+	if (errno == ERANGE)
+		return Value.binary(strtod(buffer, NULL));
+	if (integer < INT32_MIN || integer > INT32_MAX)
+		return Value.binary(integer);
+	else
+		return Value.integer((int32_t)integer);
+}
+
+int32_t parseElement (struct Text text)
+{
+	char c;
+	int hadDigit = 0;
+	
+	for (uint_fast32_t index = 0; index < text.length; ++index)
+	{
+		c = text.location[index];
+		if (isdigit(c))
+			hadDigit = 1;
+		else if (isgraph(c))
+			return -1;
+	}
+	if (!hadDigit)
+		return -1;
+	
+	struct Value value = parseInteger(text, 0);
+	if (value.type != Value(integer))
+		return -1;
+	
+	return value.data.integer;
 }

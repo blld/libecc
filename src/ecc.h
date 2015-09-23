@@ -38,9 +38,6 @@ Interface(
 	(void, printTextInput, (Instance, struct Text text))
 	
 	(void, garbageCollect ,(Instance))
-//	(void *, allocate ,(Instance, size_t size))
-//	(void *, reallocate ,(Instance, void *pointer, size_t size))
-//	(void, deallocate ,(Instance, void *pointer))
 	,
 	{
 		struct Object *context;
@@ -60,7 +57,6 @@ Interface(
 		
 		int construct;
 		struct Closure *global;
-		struct Closure *eval;
 		
 		struct Input **inputs;
 		uint16_t inputCount;
