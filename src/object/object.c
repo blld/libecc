@@ -531,7 +531,7 @@ void setProperty (Instance self, struct Value property, struct Value value)
 		do
 			if (( slot = getSlot(object, identifier) ))
 			{
-				if (self->element[element].data.flags | Object(writable))
+				if (self->hashmap[slot].data.flags | Object(writable))
 				{
 					object->hashmap[slot].data.value = value;
 					object->hashmap[slot].data.flags |= Object(isValue);
