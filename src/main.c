@@ -111,7 +111,6 @@ static void testLexer (void)
 static void testParser (void)
 {
 	test("debugger()", "SyntaxError: missing ; before statement");
-	test("delete a = 1", "ReferenceError: invalid assignment left-hand side");
 	test("delete throw", "SyntaxError: expected expression, got 'throw'");
 	
 	test("{", "SyntaxError: expected '}', got end of script");
@@ -282,25 +281,22 @@ static void testSwitch (void)
 
 static void testDelete (void)
 {
-	test("delete b", "true");
+	test("delete b", "SyntaxError: delete of an unqualified identifier in strict mode");
 	test("var a = { b: 123, c: 'abc' }; a.b", "123");
 	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined");
-	test("this.x = 42; delete x", "true");
 	
 	test("delete Object.prototype", "TypeError: property 'prototype' is non-configurable and can't be deleted");
-	test("var y = 43; delete y", "TypeError: property 'y' is non-configurable and can't be deleted");
 }
 
 static void testGlobal (void)
 {
-	test("typeof this", "object");
-	test("null", "null");
-	test("this['null']", "undefined");
+	test("typeof this", "undefined");
 	
-	test("this['Infinity']", "Infinity");
-	test("-this['Infinity']", "-Infinity");
-	test("this['NaN']", "NaN");
-	test("this['undefined']", "undefined");
+	test("null", "null");
+	test("Infinity", "Infinity");
+	test("-Infinity", "-Infinity");
+	test("NaN", "NaN");
+	test("undefined", "undefined");
 	test("typeof eval", "function");
 	
 	test("this.x = 42; var x = 123; x", "123");
@@ -366,6 +362,8 @@ static void testObject (void)
 	test("var a = { a: 1, 'b': 2, 1: 3 }; a[1]", "3");
 	test("var a = { a: 1, 'b': 2, '1': 3 }; a[1]", "3");
 	test("var a = { a: 1, 'b': 2, '1': 3 }, c = 1; a[c]", "3");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; delete a['a']; a['a']", "undefined");
+	test("var a = { a: 1, 'b': 2, '1': 3 }; delete a['a']; a['a'] = 123; a['a']", "123");
 	
 	test("var a = { a: 123 }; a.toString()", "[object Object]");
 	
@@ -401,6 +399,8 @@ static void testArray (void)
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.toString()", "a,b,c");
 	test("var a = [], o = ''; a[0] = 'abc'; a[4] = 123; a[2] = undefined; for (var b in a) o += b + a[b]; o", "0abc2undefined4123");
 	test("var a = [1, 2, 3], o = ''; delete a[1]; for (var b in a) o += b; o", "02");
+	test("var a = [1, , 3], o = ''; for (var b in a) o += b; o", "02");
+	test("var a = [1, , 3], o = ''; a[1] = undefined; for (var b in a) o += b; o", "012");
 	
 //	test("typeof Array", "function");
 }

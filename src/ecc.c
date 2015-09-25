@@ -20,9 +20,12 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
 	struct Object *context = ecc->context;
+	struct Value this = ecc->this;
 	ecc->context = &ecc->global->context;
+	ecc->this = Value.object(&ecc->global->context);
 	evalInput(ecc, input);
 	ecc->context = context;
+	ecc->this = this;
 	
 	return Value.undefined();
 }
@@ -191,7 +194,6 @@ int evalInput (Instance self, struct Input *input)
 	int result = EXIT_SUCCESS;
 	
 	struct Object *parentContext = self->context;
-	struct Value parentThis = self->this;
 	
 	struct Lexer *lexer = Lexer.createWithInput(input);
 	struct Parser *parser = Parser.createWithLexer(lexer);
@@ -201,12 +203,10 @@ int evalInput (Instance self, struct Input *input)
 	Parser.destroy(parser), parser = NULL;
 	
 	self->context = &function->context;
-	self->this = Value.object(self->context);
-	
 	self->result = Value.undefined();
 	
 //	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
-//	OpList.dumpTo(Function->oplist, stderr);
+//	OpList.dumpTo(function->oplist, stderr);
 	
 	if (!self->envCount)
 	{
@@ -242,7 +242,6 @@ int evalInput (Instance self, struct Input *input)
 		ops->native(&ops, self);
 	
 	self->context = parentContext;
-	self->this = parentThis;
 	
 	return result;
 }

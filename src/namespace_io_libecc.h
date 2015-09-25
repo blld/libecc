@@ -23,7 +23,6 @@
 #define Date io_libecc_Date
 #define Identifier io_libecc_Identifier
 #define Object io_libecc_Object
-//#define Function io_libecc_Closure
 #define Function io_libecc_Function
 #define Native io_libecc_Native
 #define Text io_libecc_Text

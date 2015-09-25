@@ -500,6 +500,50 @@ void set(Instance self, struct Identifier identifier, struct Value value)
 		self->hashmap[slot].data.value = value;
 }
 
+void setProperty (Instance self, struct Value property, struct Value value)
+{
+	assert(self);
+	
+	Instance object = self;
+	
+	struct Identifier identifier;
+	int32_t element = getElementOrIdentifier(property, &identifier);
+	uint32_t slot;
+	
+	if (element >= 0)
+	{
+		do
+			if (element < object->elementCount)
+			{
+				if (self->element[element].data.flags | Object(writable))
+				{
+					object->element[element].data.value = value;
+					object->element[element].data.flags |= Object(isValue);
+				}
+				return;
+			}
+		while ((object = object->prototype));
+		
+		addElementAtIndex(self, element, value, 0);
+	}
+	else
+	{
+		do
+			if (( slot = getSlot(object, identifier) ))
+			{
+				if (self->element[element].data.flags | Object(writable))
+				{
+					object->hashmap[slot].data.value = value;
+					object->hashmap[slot].data.flags |= Object(isValue);
+				}
+				return;
+			}
+		while ((object = object->prototype));
+		
+		add(self, identifier, value, 0);
+	}
+}
+
 struct Value * add (Instance self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
@@ -560,6 +604,35 @@ struct Value delete (Instance self, struct Identifier identifier)
 		return Value.false();
 }
 
+struct Value deleteProperty (Instance self, struct Value property)
+{
+	assert(self);
+	
+	struct Identifier identifier;
+	int32_t element = getElementOrIdentifier(property, &identifier);
+	uint32_t slot;
+	
+	if (element >= 0)
+	{
+		if (element < self->elementCount)
+		{
+			if (!(self->element[element].data.flags & Object(configurable)))
+				return Value.false();
+			
+			memset(&self->element[element], 0, sizeof(*self->element));
+		}
+	}
+	else if (( slot = getSlot(self, identifier) ))
+	{
+		if (!(self->hashmap[slot].data.flags & Object(configurable)))
+			return Value.false();
+		
+		memset(&self->hashmap[slot], 0, sizeof(*self->hashmap));
+	}
+	
+	return Value.true();
+}
+
 void packValue (Instance self)
 {
 	assert(self);
@@ -605,7 +678,7 @@ void resizeElement (Instance self, uint32_t size)
 	self->elementCount = self->elementCapacity = size;
 }
 
-void addElementAtIndex (Instance self, uint32_t index, struct Value value)
+void addElementAtIndex (Instance self, uint32_t index, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	
@@ -613,7 +686,7 @@ void addElementAtIndex (Instance self, uint32_t index, struct Value value)
 		resizeElement(self, index + 1);
 	
 	self->element[index].data.value = value;
-	self->element[index].data.flags |= Object(isValue);
+	self->element[index].data.flags |= Object(isValue) | flags;
 }
 
 void dumpTo(Instance self, FILE *file)

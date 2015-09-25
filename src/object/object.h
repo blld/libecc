@@ -63,12 +63,14 @@ Interface(
 	(struct Value *, getProperty ,(Instance, struct Value, enum Object(Flags) *))
 	(void, setOwn ,(Instance, struct Identifier, struct Value))
 	(void, set ,(Instance, struct Identifier, struct Value))
+	(void, setProperty ,(Instance, struct Value, struct Value))
 	(struct Value *, add ,(Instance, struct Identifier, struct Value, enum Object(Flags)))
 	(struct Value, delete ,(Instance, struct Identifier))
+	(struct Value, deleteProperty ,(Instance, struct Value))
 	(void, packValue ,(Instance))
 	
 	(void, resizeElement ,(Instance, uint32_t size))
-	(void, addElementAtIndex ,(Instance, uint32_t index, struct Value))
+	(void, addElementAtIndex ,(Instance, uint32_t index, struct Value, enum Object(Flags)))
 	
 	(void, dumpTo ,(Instance self, FILE *file))
 	,

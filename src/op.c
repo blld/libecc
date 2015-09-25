@@ -521,7 +521,7 @@ struct Value object (const Instance * const ops, struct Ecc * const ecc)
 		if (value.type == Value(identifier))
 			Object.add(object, value.data.identifier, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 		else if (value.type == Value(integer))
-			Object.addElementAtIndex(object, value.data.integer, nextOp());
+			Object.addElementAtIndex(object, value.data.integer, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 	}
 	return Value.object(object);
 }
@@ -531,10 +531,15 @@ struct Value array (const Instance * const ops, struct Ecc * const ecc)
 	uint32_t length = opValue().data.integer;
 	struct Object *object = Object.create(Array.prototype());
 	Object.resizeElement(object, length);
+	struct Value value;
 	for (uint_fast32_t index = 0; index < length; ++index)
 	{
-		object->element[index].data.value = nextOp();
-		object->element[index].data.flags |= Object(isValue);
+		value = nextOp();
+		if (value.type != Value(breaker))
+		{
+			object->element[index].data.value = value;
+			object->element[index].data.flags = Object(isValue) | Object(writable) | Object(enumerable) | Object(configurable);
+		}
 	}
 	
 	return Value.object(object);
@@ -576,16 +581,6 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 	
 	struct Value value = nextOp();
 	return *ref = value;
-}
-
-struct Value deleteLocal (const Instance * const ops, struct Ecc * const ecc)
-{
-	struct Identifier identifier = opValue().data.identifier;
-	struct Value result = Object.delete(ecc->context, identifier);
-	if (!Value.isTrue(result))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "property '%.*s' is non-configurable and can't be deleted", (*ops)->text.length, (*ops)->text.location)));
-	
-	return result;
 }
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
@@ -684,40 +679,22 @@ struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 	struct Value property = nextOp();
 	value = nextOp();
 	
-	int32_t element = -1;
-	
-	if (property.type == Value(identifier))
-		Object.set(object, property.data.identifier, value);
-	else
-	{
-		struct Text text;
-		
-		if (property.type == Value(integer) && property.data.integer >= 0)
-			element = property.data.integer;
-		else
-		{
-			property = Value.toString(property);
-			text = Text.make(Value.stringChars(property), Value.stringLength(property));
-			element = Lexer.parseElement(text);
-		}
-		
-		if (element >= 0)
-			Object.addElementAtIndex(object, element, value);
-		else
-			Object.set(object, Identifier.makeWithText(text, 1), value);
-	}
+	Object.setProperty(object, property, value);
 	
 	return value;
 }
 
 struct Value deleteProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	const struct Text *text = opText();
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	struct Identifier identifier = nextOp().data.identifier;
-	struct Value result = Object.delete(object.data.object, identifier);
+	struct Value property = nextOp();
+	const struct Text *text = opText();
+	struct Value result = Object.deleteProperty(object.data.object, property);
 	if (!Value.isTrue(result))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
+	{
+		struct Value string = Value.toString(property);
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
+	}
 	
 	return result;
 }

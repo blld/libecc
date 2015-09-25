@@ -36,7 +36,6 @@
 	_( getLocal )\
 	_( getLocalRef )\
 	_( setLocal )\
-	_( deleteLocal )\
 	\
 	_( getLocalSlot )\
 	_( getLocalSlotRef )\

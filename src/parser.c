@@ -146,7 +146,7 @@ static struct OpList * array (Instance self)
 		while (previewToken(self) == ',')
 		{
 			++count;
-			oplist = OpList.append(oplist, Op.make(Op.value, Value.undefined(), self->lexer->text));
+			oplist = OpList.append(oplist, Op.make(Op.value, Value.breaker(0), self->lexer->text));
 			nextToken(self);
 		}
 		
@@ -397,11 +397,7 @@ static struct OpList * unary (Instance self)
 		struct OpList *oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].native == Op.getLocal)
-		{
-//			Input.printText(self->lexer->input, OpList.text(oplist));
-//			Env.printWarning("applying the 'delete' operator to an unqualified name is deprecated");
-			changeNative(oplist->ops, Op.deleteLocal);
-		}
+			error(self, Error.syntaxError(self->lexer->text, "delete of an unqualified identifier in strict mode"));
 		else if (oplist && oplist->ops[0].native == Op.getMember)
 			changeNative(oplist->ops, Op.deleteMember);
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
