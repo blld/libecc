@@ -34,10 +34,12 @@ Instance createFromFile (const char *filename)
 {
 	assert(filename);
 	
+	struct Text inputError = *Text.inputErrorName();
+	
 	FILE *file = fopen(filename, "rb");
 	if (!file)
 	{
-		fprintf(stderr, "error opening file '%s'\n", filename);
+		Env.printError(inputError.length, inputError.location, "cannot open file '%s'", filename);
 		return NULL;
 	}
 	
@@ -45,7 +47,7 @@ Instance createFromFile (const char *filename)
 	long size;
 	if (fseek(file, 0, SEEK_END) || (size = ftell(file)) < 0 || fseek(file, 0, SEEK_SET))
 	{
-		fprintf(stderr, "error handling file '%s'\n", filename);
+		Env.printError(inputError.length, inputError.location, "cannot handle file '%s'", filename);
 		fclose(file);
 		return NULL;
 	}

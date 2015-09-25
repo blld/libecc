@@ -10,37 +10,43 @@
 
 // MARK: - Private
 
-static const struct Text nullText = { 4, "null" };
-static const struct Text undefinedText = { 9, "undefined" };
-static const struct Text trueText = { 4, "true" };
-static const struct Text falseText = { 5, "false" };
-static const struct Text booleanText = { 7, "boolean" };
-static const struct Text numberText = { 6, "number" };
-static const struct Text stringText = { 6, "string" };
-static const struct Text objectText = { 6, "object" };
-static const struct Text functionText = { 8, "function" };
-static const struct Text zeroText = { 1, "0" };
-static const struct Text oneText = { 1, "1" };
-static const struct Text nanText = { 3, "NaN" };
-static const struct Text infinityText = { 8, "Infinity" };
-static const struct Text negativeInfinityText = { 9, "-Infinity" };
+#define textMake(T) { sizeof(T) - 1, T }
 
-static const struct Text nullTypeText = { 13, "[object Null]" };
-static const struct Text undefinedTypeText =  { 18, "[object Undefined]" };
-static const struct Text objectTypeText = { 15, "[object Object]" };
-static const struct Text errorTypeText = { 14, "[object Error]" };
-static const struct Text arrayTypeText = { 14, "[object Array]" };
-static const struct Text stringTypeText = { 15, "[object String]" };
-static const struct Text dateTypeText = { 14, "[object Date]" };
+static const struct Text nullText = textMake("null");
+static const struct Text undefinedText = textMake("undefined");
+static const struct Text trueText = textMake("true");
+static const struct Text falseText = textMake("false");
+static const struct Text booleanText = textMake("boolean");
+static const struct Text numberText = textMake("number");
+static const struct Text stringText = textMake("string");
+static const struct Text objectText = textMake("object");
+static const struct Text functionText = textMake("function");
+static const struct Text zeroText = textMake("0");
+static const struct Text oneText = textMake("1");
+static const struct Text nanText = textMake("NaN");
+static const struct Text infinityText = textMake("Infinity");
+static const struct Text negativeInfinityText = textMake("-Infinity");
 
-static const struct Text errorNameText = { 5, "Error" };
-static const struct Text rangeErrorNameText = { 10, "RangeError" };
-static const struct Text referenceErrorNameText = { 14, "ReferenceError" };
-static const struct Text syntaxErrorNameText = { 11, "SyntaxError" };
-static const struct Text typeErrorNameText = { 9, "TypeError" };
-static const struct Text uriErrorNameText = { 8, "URIError" };
+static const struct Text nullTypeText = textMake("[object Null]");
+static const struct Text undefinedTypeText =  textMake("[object Undefined]");
+static const struct Text objectTypeText = textMake("[object Object]");
+static const struct Text errorTypeText = textMake("[object Error]");
+static const struct Text arrayTypeText = textMake("[object Array]");
+static const struct Text stringTypeText = textMake("[object String]");
+static const struct Text dateTypeText = textMake("[object Date]");
+static const struct Text functionTypeText = textMake("[object Function]");
+static const struct Text argumentsTypeText = textMake("[object Arguments]");
 
-static const struct Text nativeCodeText = { 13, "[native code]" };
+static const struct Text errorNameText = textMake("Error");
+static const struct Text rangeErrorNameText = textMake("RangeError");
+static const struct Text referenceErrorNameText = textMake("ReferenceError");
+static const struct Text syntaxErrorNameText = textMake("SyntaxError");
+static const struct Text typeErrorNameText = textMake("TypeError");
+static const struct Text uriErrorNameText = textMake("URIError");
+
+static const struct Text inputErrorNameText = textMake("InputError");
+
+static const struct Text nativeCodeText = textMake("[native code]");
 
 // MARK: - Static Members
 
@@ -175,6 +181,16 @@ const Instance dateType (void)
 	return &dateTypeText;
 }
 
+const Instance functionType (void)
+{
+	return &functionTypeText;
+}
+
+const Instance argumentsType (void)
+{
+	return &argumentsTypeText;
+}
+
 
 // MARK: Name
 
@@ -206,5 +222,10 @@ const Instance typeErrorName (void)
 const Instance uriErrorName (void)
 {
 	return &uriErrorNameText;
+}
+
+const Instance inputErrorName (void)
+{
+	return &inputErrorNameText;
 }
 

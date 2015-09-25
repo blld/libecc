@@ -100,6 +100,7 @@ Instance create (void)
 		Identifier.setup();
 		
 		Object.setup();
+		Function.setup();
 		Error.setup();
 		Array.setup();
 		Date.setup();
@@ -121,6 +122,7 @@ Instance create (void)
 	
 	Function.addValue(self->global, "Object", Value.function(Object.constructor()), 0);
 	Function.addValue(self->global, "Array", Value.function(Array.constructor()), 0);
+	Function.addValue(self->global, "Function", Value.function(Function.constructor()), 0);
 	
 	Function.addValue(self->global, "Error", Value.object(Error.prototype()), 0);
 	Function.addValue(self->global, "RangeError", Value.object(Error.rangePrototype()), 0);
@@ -150,7 +152,8 @@ void destroy (Instance self)
 	
 	if (!--instanceCount)
 	{
-//		Object.teardown();
+		Object.teardown();
+		Function.teardown();
 //		Error.teardown();
 //		Array.teardown();
 //		Date.teardown();
@@ -179,7 +182,9 @@ void addValue (Instance self, const char *name, struct Value value, enum Object(
 int evalInput (Instance self, struct Input *input)
 {
 	assert(self);
-	assert(input);
+	
+	if (!input)
+		return EXIT_FAILURE;
 	
 	addInput(self, input);
 	

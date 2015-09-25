@@ -10,9 +10,58 @@
 
 // MARK: - Private
 
+static struct Object *functionPrototype = NULL;
+static struct Function *functionConstructor = NULL;
+
+static struct Value prototypeFunction (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	ecc->result = Value.undefined();
+	
+	return Value.undefined();
+}
+
+static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertVariableParameter(ecc);
+	
+	// TODO
+	
+	return Value.undefined();
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
+
+void setup ()
+{
+	functionPrototype = Object.prototype();
+	struct Function *functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
+	functionPrototype = &functionPrototypeFunction->object;
+	
+	functionConstructor = Function.createWithNative(functionPrototype, constructorFunction, -1);
+	
+	Object.add(functionPrototype, Identifier.constructor(), Value.function(functionConstructor), 0);
+	Object.add(&functionConstructor->object, Identifier.prototype(), Value.function(functionPrototypeFunction), 0);
+	
+	Object.constructor()->object.prototype = functionPrototype;
+}
+
+void teardown (void)
+{
+	functionPrototype = NULL;
+	functionConstructor = NULL;
+}
+
+struct Object *prototype (void)
+{
+	return functionPrototype;
+}
+
+struct Function *constructor (void)
+{
+	return functionConstructor;
+}
 
 Instance create (struct Object *prototype)
 {
@@ -27,8 +76,10 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	
 	*self = Module.identity;
 	
-	Object.initialize(&self->object, Object.prototype()/* TODO: check */);
+	Object.initialize(&self->object, functionPrototype);
 	Object.initializeSized(&self->context, prototype, size);
+	
+	self->object.type = Text.functionType();
 	
 	struct Object *proto = Object.create(Object.prototype());
 	Object.add(proto, Identifier.constructor(), Value.function(self), Object(writable) | Object(configurable));
@@ -61,7 +112,7 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 	self->oplist = OpList.create(native, Value.undefined(), Text.make(NULL, 0));
 	self->text = *Text.nativeCode();
 	
-	Object.add(&self->object, Identifier.length(), Value.integer(parameterCount), 0);
+	Object.add(&self->object, Identifier.length(), Value.integer(parameterCount >= 0? parameterCount: 1), 0);
 	
 	return self;
 }

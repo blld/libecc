@@ -98,6 +98,7 @@ static void testLexer (void)
 	test("'hello\nworld'", "SyntaxError: unterminated string literal");
 	test("0x", "SyntaxError: missing hexadecimal digits after '0x'");
 	test("0e+", "SyntaxError: missing exponent");
+	test("0a", "SyntaxError: identifier starts immediately after numeric literal");
 	test("\\", "SyntaxError: invalid character '\\'");
 	test("'\\a\\b\\f\\n\\r\\t\\v'", "\a\b\f\n\r\t\v");
 	test("'xxx\\xrrabc'", "SyntaxError: malformed hexadecimal character escape sequence");
@@ -316,9 +317,19 @@ static void testFunction (void)
 	test("function a() {} a.prototype.hasOwnProperty.length", "1");
 	test("function a() {} a.length", "0");
 	test("function a(b, c) {} a.length", "2");
+	test("function a(b, c) { b + c } a(1, 5)", "6");
+	test("function a(b, c) { arguments.toString() } a()", "[object Arguments]");
+	test("function a(b, c) { arguments.length } a(1, 5, 6)", "3");
+	test("function a(b, c) { arguments[0] + arguments[1] } a(1, 5)", "6");
 	
 	test("var n = 456; function b(c) { return 'c' + c + n } b(123)", "c123456");
 	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");
+	
+	test("typeof Function", "function");
+	test("Function.length", "1");
+	test("typeof Function.prototype", "function");
+	test("Function.prototype.length", "0");
+	test("Function.prototype(1, 2, 3)", "undefined");
 }
 
 static void testLoop (void)
@@ -376,6 +387,10 @@ static void testObject (void)
 	
 	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').value", "123");
 	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').writable", "true");
+	test("var a = {}, o = ''; a['a'] = 'abc'; a['c'] = 123; a['b'] = undefined; for (var b in a) o += b + a[b]; o", "aabcc123bundefined");
+	
+	test("typeof Object", "function");
+	test("typeof Object.prototype", "object");
 }
 
 static void testArray (void)
@@ -384,6 +399,10 @@ static void testArray (void)
 	test("var a = [ 'a', 'b', 'c' ]; a['1'] = 123; a[1]", "123");
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.a", "123");
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.toString()", "a,b,c");
+	test("var a = [], o = ''; a[0] = 'abc'; a[4] = 123; a[2] = undefined; for (var b in a) o += b + a[b]; o", "0abc2undefined4123");
+	test("var a = [1, 2, 3], o = ''; delete a[1]; for (var b in a) o += b; o", "02");
+	
+//	test("typeof Array", "function");
 }
 
 static int runTest (int verbosity)

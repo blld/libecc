@@ -24,6 +24,12 @@
 	io_libecc_Function
 
 Interface(
+	(void, setup ,(void))
+	(void, teardown ,(void))
+	
+	(struct Object *, prototype ,(void))
+	(struct Function *, constructor ,(void))
+	
 	(Instance, create ,(struct Object *prototype))
 	(Instance, createSized ,(struct Object *prototype, uint32_t size))
 	(Instance, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))

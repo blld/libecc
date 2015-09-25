@@ -279,6 +279,7 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
+	// <!> no need to fully initialize arguments object, as it is used only by Native
 	struct Object *arguments = Object.create(NULL);
 	Object.resizeElement(arguments, argumentCount);
 	context->hashmap[2].data.value = Value.object(arguments);
@@ -299,21 +300,29 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 
 static inline void populateContextWithArguments (const Instance * const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
 {
-	struct Object *arguments = Object.create(NULL);
+	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
+	Object.add(arguments, Identifier.length(), Value.integer(argumentCount), Object(writable)); // TODO: change as a getter/setter to elementCount, same as Array
+	arguments->type = Text.argumentsType();
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	uint_fast32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
+		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			arguments->element[index].data.flags = Object(isValue);
+		}
 	else
 	{
 		for (; index < parameterCount; ++index)
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
 		
 		for (; index < argumentCount; ++index)
+		{
 			arguments->element[index].data.value = nextOp();
+			arguments->element[index].data.flags = Object(isValue);
+		}
 	}
 }
 
@@ -1375,7 +1384,7 @@ struct Value iterateInRef (const Instance * const ops, struct Ecc * const ecc)
 	
 	for (index = 0; index < object.data.object->elementCount; ++index)
 	{
-		if (object.data.object->element[index].data.value.type == Value(undefined))
+		if (!(object.data.object->element[index].data.flags & Object(isValue)))
 			continue;
 		
 		*ref = Value.chars(Chars.create("%d", index));
@@ -1385,7 +1394,7 @@ struct Value iterateInRef (const Instance * const ops, struct Ecc * const ecc)
 	
 	for (index = 2; index <= object.data.object->hashmapCount; ++index)
 	{
-		if (!(object.data.object->hashmap[index].data.flags & Object(isValue)) || object.data.object->hashmap[index].data.value.type == Value(undefined))
+		if (!(object.data.object->hashmap[index].data.flags & Object(isValue)))
 			continue;
 		
 		*ref = Value.identifier(object.data.object->hashmap[index].data.identifier);

@@ -44,6 +44,8 @@ Interface(
 	(const Instance, arrayType ,(void))
 	(const Instance, stringType ,(void))
 	(const Instance, dateType ,(void))
+	(const Instance, functionType ,(void))
+	(const Instance, argumentsType ,(void))
 	
 	(const Instance, errorName ,(void))
 	(const Instance, rangeErrorName ,(void))
@@ -51,6 +53,8 @@ Interface(
 	(const Instance, syntaxErrorName ,(void))
 	(const Instance, typeErrorName ,(void))
 	(const Instance, uriErrorName ,(void))
+	
+	(const Instance, inputErrorName ,(void))
 	,
 	{
 		uint16_t length;

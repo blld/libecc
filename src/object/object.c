@@ -62,8 +62,10 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		ecc->result = Value.text(Text.nullType());
 	else if (ecc->this.type == Value(undefined))
 		ecc->result = Value.text(Text.undefinedType());
-	else if (ecc->this.type == Value(object))
-		ecc->result = Value.text(ecc->this.data.object->type);
+	else if (Value.isObject(ecc->this))
+//		TODO: check
+//		ecc->result = Value.text(ecc->this.data.object->type);
+		ecc->result = Value.toString(ecc->this);
 	else
 	{
 		// null & undefined is already checked
@@ -220,7 +222,7 @@ void setup ()
 	Function.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
 	Function.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	objectConstructor = Function.createWithNative(objectPrototype, constructorFunction, 1); // TODO prototype should be function?
+	objectConstructor = Function.createWithNative(NULL /* <!> to fill with function.prototype */, constructorFunction, 1);
 	Function.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	
@@ -442,7 +444,7 @@ struct Value * getProperty (Instance self, struct Value property, enum Object(Fl
 	
 	if (element >= 0)
 		do
-			if (element < object->elementCount && (object->element[element].data.flags & Object(isValue)))
+			if (element < object->elementCount)
 			{
 				*flags = object->element[element].data.flags;
 				return &object->element[element].data.value;

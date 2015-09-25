@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-static void changeFunction (struct Op *op, const Native native)
+static void changeNative (struct Op *op, const Native native)
 {
 	*op = Op.make(native, op->value, op->text);
 }
@@ -22,7 +22,7 @@ static struct OpList * new (Instance self);
 static struct OpList * assignment (Instance self, int noIn);
 static struct OpList * expression (Instance self, int noIn);
 static struct OpList * statement (Instance self);
-static struct OpList * native (Instance self, int declaration);
+static struct OpList * function (Instance self, int declaration);
 static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken, int forceResult);
 
 
@@ -103,11 +103,11 @@ static void popDepth (Instance self)
 static struct OpList * expressionRef (Instance self, struct OpList *oplist, const char *name)
 {
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
-		changeFunction(oplist->ops, Op.getLocalRef);
+		changeNative(oplist->ops, Op.getLocalRef);
 	else if (oplist->ops[oplist->opCount - 1].native == Op.getMember)
-		changeFunction(oplist->ops, Op.getMemberRef);
+		changeNative(oplist->ops, Op.getMemberRef);
 	else if (oplist->ops[0].native == Op.getProperty)
-		changeFunction(oplist->ops, Op.getPropertyRef);
+		changeNative(oplist->ops, Op.getPropertyRef);
 	else
 		error(self, Error.referenceError(OpList.text(oplist), "%s", name));
 	
@@ -323,7 +323,7 @@ static struct OpList * new (Instance self)
 		return OpList.unshift(Op.make(Op.construct, Value.integer(count), OpList.text(oplist)), oplist);
 	}
 	else if (previewToken(self) == Lexer(functionToken))
-		return native(self, 0);
+		return function(self, 0);
 	else
 		return primary(self);
 }
@@ -400,12 +400,12 @@ static struct OpList * unary (Instance self)
 		{
 //			Input.printText(self->lexer->input, OpList.text(oplist));
 //			Env.printWarning("applying the 'delete' operator to an unqualified name is deprecated");
-			changeFunction(oplist->ops, Op.deleteLocal);
+			changeNative(oplist->ops, Op.deleteLocal);
 		}
 		else if (oplist && oplist->ops[0].native == Op.getMember)
-			changeFunction(oplist->ops, Op.deleteMember);
+			changeNative(oplist->ops, Op.deleteMember);
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
-			changeFunction(oplist->ops, Op.deleteProperty);
+			changeNative(oplist->ops, Op.deleteProperty);
 		else if (oplist)
 			error(self, Error.referenceError(self->lexer->text, "invalid delete operand"));
 		else
@@ -694,11 +694,11 @@ static struct OpList * assignment (Instance self, int noIn)
 		if (!oplist)
 			error(self, Error.syntaxError(text, "expected expression, got '='"));
 		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
-			changeFunction(oplist->ops, Op.setLocal);
+			changeNative(oplist->ops, Op.setLocal);
 		else if (oplist->ops[0].native == Op.getMember)
-			changeFunction(oplist->ops, Op.setMember);
+			changeNative(oplist->ops, Op.setMember);
 		else if (oplist->ops[0].native == Op.getProperty)
-			changeFunction(oplist->ops, Op.setProperty);
+			changeNative(oplist->ops, Op.setProperty);
 		else
 			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
 		
@@ -867,12 +867,12 @@ static struct OpList * forStatement (Instance self)
 		
 		if (oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
-			changeFunction(oplist->ops, Op.iterateInRef);
-			changeFunction(&oplist->ops[1], Op.getLocalRef);
+			changeNative(oplist->ops, Op.iterateInRef);
+			changeNative(&oplist->ops[1], Op.getLocalRef);
 		}
 		else if (oplist->opCount == 1 && oplist->ops[0].native == Op.next)
 		{
-			changeFunction(oplist->ops, Op.getLocalRef);
+			changeNative(oplist->ops, Op.getLocalRef);
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value.undefined(), self->lexer->text), oplist);
 		}
 		else
@@ -1170,7 +1170,7 @@ static struct OpList * parameters (Instance self, int *count)
 	return NULL;
 }
 
-static struct OpList * native (Instance self, int isDeclaration)
+static struct OpList * function (Instance self, int isDeclaration)
 {
 	struct Text text = self->lexer->text;
 	expectToken(self, Lexer(functionToken));
@@ -1229,7 +1229,7 @@ static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken
 	
 	while (previewToken(self) != endToken && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 		if (previewToken(self) == Lexer(functionToken))
-			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), native(self, 1)));
+			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), function(self, 1)));
 		else
 		{
 			statementOps = statement(self);
