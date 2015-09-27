@@ -102,8 +102,9 @@ Instance create (void)
 		Pool.setup();
 		Identifier.setup();
 		
-		Object.setup();
+		Object.setupPrototype();
 		Function.setup();
+		Object.setup();
 		Error.setup();
 		Array.setup();
 		Date.setup();
@@ -155,8 +156,8 @@ void destroy (Instance self)
 	
 	if (!--instanceCount)
 	{
-		Object.teardown();
 		Function.teardown();
+		Object.teardown();
 //		Error.teardown();
 //		Array.teardown();
 //		Date.teardown();
@@ -232,8 +233,8 @@ int evalInput (Instance self, struct Input *input)
 				name = Value.text(Text.errorName());
 			
 			putc('\n', stderr);
-			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
+			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
 		}
 		
 		popEnv(self);
@@ -286,12 +287,16 @@ void printTextInput (Instance self, struct Text text)
 	if (input)
 		Input.printText(input, text);
 	else
-		Env.printColor(Env(Black), "(unknown input)\n\n");
+	{
+		Env.printDim("(unknown input)\n");
+		fprintf(stderr, "%.*s\n\n", text.length, text.location);
+	}
 }
 
 void garbageCollect(Instance self)
 {
 	Pool.markAll();
 	Pool.unmarkValue(Value.function(self->global));
+	Pool.unmarkValue(self->this);
 	Pool.collectMarked();
 }

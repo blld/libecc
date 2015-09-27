@@ -67,7 +67,7 @@ static struct Object *createErrorType (const struct Text *text)
 void setup (void)
 {
 	errorPrototype = Object.create(Object.prototype());
-	Object.setType(errorPrototype, Text.errorType());
+	errorPrototype->type = Text.errorType();
 	initName(errorPrototype, Text.errorName());
 	
 	rangeErrorPrototype = createErrorType(Text.rangeErrorName());

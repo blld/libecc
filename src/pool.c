@@ -17,12 +17,15 @@ static Instance self = NULL;
 
 // MARK: - Static Members
 
-static void unmarkClosure (struct Function *function)
+static void unmarkFunction (struct Function *function)
 {
 	if (function->object.flags & Object(mark))
 	{
 		unmarkObject(&function->object);
 		unmarkObject(&function->context);
+		
+		if (function->pair)
+			unmarkFunction(function->pair);
 	}
 }
 
@@ -152,7 +155,7 @@ void markAll (void)
 void unmarkValue (struct Value value)
 {
 	if (value.type == Value(function))
-		unmarkClosure(value.data.function);
+		unmarkFunction(value.data.function);
 	else if (value.type >= Value(object))
 		unmarkObject(value.data.object);
 	else if (value.type == Value(chars))

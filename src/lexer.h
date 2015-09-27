@@ -62,8 +62,6 @@
 	_( void ,,)\
 	_( while ,,)\
 	_( with ,,)\
-	_( get ,,)\
-	_( set ,,)\
 	\
 	_( equal ,"'=='",)\
 	_( notEqual ,"'!='",)\

@@ -37,16 +37,19 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		{
 			notLast = index < ecc->this.data.object->elementCount - 1;
 			
-			value = ecc->this.data.object->element[index].data.value;
-			
-			value = Value.toString(value);
-			
-			stringLength = Value.stringLength(value);
-			chars = realloc(chars, sizeof(*chars) + length + stringLength + (notLast? 2: 0));
-			
-			memcpy(chars->chars + length, Value.stringChars(value), stringLength);
-			
-			length += stringLength;
+			if (ecc->this.data.object->element[index].data.flags & Object(isValue))
+			{
+				value = ecc->this.data.object->element[index].data.value;
+				
+				value = Value.toString(value);
+				
+				stringLength = Value.stringLength(value);
+				chars = realloc(chars, sizeof(*chars) + length + stringLength + (notLast? 1: 0));
+				
+				memcpy(chars->chars + length, Value.stringChars(value), stringLength);
+				length += stringLength;
+			}
+		
 			if (notLast)
 				chars->chars[length++] = ',';
 			else
@@ -57,6 +60,25 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		Pool.addChars(chars);
 		ecc->result = Value.chars(chars);
 	}
+	
+	return Value.undefined();
+}
+
+static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	
+	ecc->result = Value.binary(ecc->this.data.object->elementCount);
+	
+	return Value.undefined();
+}
+
+static struct Value setLength (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	
+	#warning TODO: check if object?
+	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
 	
 	return Value.undefined();
 }
@@ -87,6 +109,7 @@ void setup (void)
 //	Function.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
 //	Function.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
 //	Function.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
+	Object.add(arrayPrototype, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	
 	arrayConstructor = Function.createWithNative(arrayPrototype, constructorFunction, 1);
 	
@@ -96,6 +119,23 @@ void setup (void)
 void teardown (void)
 {
 //	Object.destroy(arrayPrototype), arrayPrototype = NULL;
+}
+
+struct Object *create (void)
+{
+	return createSized(0);
+}
+
+struct Object *createSized (uint32_t size)
+{
+	struct Object *self = Object.create(arrayPrototype);
+	assert(self);
+	Object.resizeElement(self, size);
+	self->type = Text.arrayType();
+	
+//	Object.add(self, Identifier.length(), )
+	
+	return self;
 }
 
 struct Object *prototype (void)

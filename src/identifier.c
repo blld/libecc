@@ -31,6 +31,8 @@ Structure valueIdentifier;
 Structure writableIdentifier;
 Structure enumerableIdentifier;
 Structure configurableIdentifier;
+Structure getIdentifier;
+Structure setIdentifier;
 
 // MARK: - Static Members
 
@@ -53,6 +55,8 @@ void setup (void)
 		writableIdentifier = makeWithCString("writable");
 		enumerableIdentifier = makeWithCString("enumerable");
 		configurableIdentifier = makeWithCString("configurable");
+		getIdentifier = makeWithCString("get");
+		setIdentifier = makeWithCString("set");
 	}
 }
 
@@ -181,6 +185,16 @@ Structure enumerable (void)
 Structure configurable (void)
 {
 	return configurableIdentifier;
+}
+
+Structure get (void)
+{
+	return getIdentifier;
+}
+
+Structure set (void)
+{
+	return setIdentifier;
 }
 
 int isEqual (Structure self, Structure to)

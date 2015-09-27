@@ -28,5 +28,6 @@
 #define Text io_libecc_Text
 #define Chars io_libecc_Chars
 #define Pool io_libecc_Pool
+#define Entry io_libecc_Entry
 
 #endif

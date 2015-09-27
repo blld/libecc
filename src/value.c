@@ -170,7 +170,7 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	struct Value aClosure = Object.get(object, aIdentifier);
 	if (aClosure.type == Value(function))
 	{
-		struct Value result = Op.callClosureVA(aClosure.data.function, ecc, value, 0);
+		struct Value result = Op.callFunctionVA(aClosure.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -178,7 +178,7 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	struct Value bClosure = Object.get(object, bIdentifier);
 	if (bClosure.type == Value(function))
 	{
-		struct Value result = Op.callClosureVA(bClosure.data.function, ecc, value, 0);
+		struct Value result = Op.callFunctionVA(bClosure.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}

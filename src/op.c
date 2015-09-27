@@ -216,6 +216,38 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
+static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value this)
+{
+	if (!entry.value)
+		return Value.undefined();
+	
+	if (entry.value->type == Value(function) && entry.value->data.function->isAccessor)
+	{
+		if (entry.value->data.function->isAccessor == 1)
+			return callFunctionVA(entry.value->data.function, ecc, this, 0);
+		else if (entry.value->data.function->pair)
+			return callFunctionVA(entry.value->data.function->pair, ecc, this, 0);
+	}
+	
+	return *entry.value;
+}
+
+static struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value)
+{
+	if (entry.value->type == Value(function) && entry.value->data.function->isAccessor)
+	{
+		if (entry.value->data.function->isAccessor == 2)
+			return callFunctionVA(entry.value->data.function, ecc, this, 1, value);
+		else if (entry.value->data.function->pair)
+			return callFunctionVA(entry.value->data.function->pair, ecc, this, 1, value);
+	}
+	
+	*entry.value = value;
+	*entry.flags |= Object(isValue);
+	
+	return value;
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -279,22 +311,32 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
-	// <!> no need to fully initialize arguments object, as it is used only by Native
-	struct Object *arguments = Object.create(NULL);
+	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
+	Object.add(arguments, Identifier.length(), Value.integer(argumentCount), Object(writable)); // TODO: change as a getter/setter to elementCount, same as Array
+	arguments->type = Text.argumentsType();
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	uint_fast32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
+		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			arguments->element[index].data.flags = Object(isValue);
+		}
 	else
 	{
 		for (; index < parameterCount; ++index)
+		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			arguments->element[index].data.flags = Object(isValue);
+		}
 		
 		for (; index < argumentCount; ++index)
+		{
 			arguments->element[index].data.value = va_arg(ap, struct Value);
+			arguments->element[index].data.flags = Object(isValue);
+		}
 	}
 }
 
@@ -316,7 +358,10 @@ static inline void populateContextWithArguments (const Instance * const ops, str
 	else
 	{
 		for (; index < parameterCount; ++index)
+		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			arguments->element[index].data.flags = Object(isValue);
+		}
 		
 		for (; index < argumentCount; ++index)
 		{
@@ -369,6 +414,7 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	ecc->this = this;
 	ecc->context = context;
 	ecc->construct = construct;
+	ecc->result = Value.undefined();
 	
 	ops->native(&callOps, ecc);
 	value = ecc->result;
@@ -380,66 +426,84 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 	return value;
 }
 
-struct Value callClosureVA (struct Function *Function, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
+struct Value callFunctionArguments (struct Function *function, struct Ecc * const ecc, struct Value this, struct Object *arguments)
 {
-	if (Function->needHeap)
+	struct Object *context = Object.copy(&function->context);
+	context->hashmap[2].data.value = Value.object(arguments);
+	int parameterCount = function->parameterCount;
+	int argumentCount = arguments->elementCount;
+	
+	uint_fast32_t index = 0;
+	if (argumentCount <= parameterCount)
+		for (; index < argumentCount; ++index)
+			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+	else
+		for (; index < parameterCount; ++index)
+			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+	
+	return callOps(function->oplist->ops, ecc, context, this, 0);
+}
+
+struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
+{
+	if (function->needHeap)
 	{
-		struct Object *context = Object.copy(&Function->context);
+		struct Object *context = Object.copy(&function->context);
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		if (Function->needArguments)
-			populateContextWithArgumentsVA(context, Function->parameterCount, argumentCount, ap);
+		if (function->needArguments)
+			populateContextWithArgumentsVA(context, function->parameterCount, argumentCount, ap);
 		else
-			populateContextVA(context, Function->parameterCount, argumentCount, ap);
+			populateContextVA(context, function->parameterCount, argumentCount, ap);
 		
 		va_end(ap);
 		
-		return callOps(Function->oplist->ops, ecc, context, this, 0);
+		return callOps(function->oplist->ops, ecc, context, this, 0);
 	}
 	else
 	{
-		__typeof__(*Function->context.hashmap) hashmap[Function->context.hashmapCapacity];
-		memcpy(hashmap, Function->context.hashmap, sizeof(hashmap));
+		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = Function->context;
+		struct Object stackContext = function->context;
 		stackContext.hashmap = hashmap;
 		
 		va_list ap;
 		va_start(ap, argumentCount);
-		populateContextVA(&stackContext, Function->parameterCount, argumentCount, ap);
+		populateContextVA(&stackContext, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(Function->oplist->ops, ecc, &stackContext, this, 0);
+		return callOps(function->oplist->ops, ecc, &stackContext, this, 0);
 	}
 }
 
-static inline struct Value callClosure (const Instance * const ops, struct Ecc * const ecc, struct Function * const Function, int32_t argumentCount, int construct)
+static inline struct Value callFunction (const Instance * const ops, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
 	struct Value this = ecc->refObject;
 	
-	if (Function->needHeap)
+	if (function->needHeap)
 	{
-		struct Object *context = Object.copy(&Function->context);
+		struct Object *context = Object.copy(&function->context);
 		
-		if (Function->needArguments)
-			populateContextWithArguments(ops, ecc, context, Function->parameterCount, argumentCount);
+		if (function->needArguments)
+			populateContextWithArguments(ops, ecc, context, function->parameterCount, argumentCount);
 		else
-			populateContext(ops, ecc, context, Function->parameterCount, argumentCount);
+			populateContext(ops, ecc, context, function->parameterCount, argumentCount);
 		
-		return callOps(Function->oplist->ops, ecc, context, this, construct);
+		return callOps(function->oplist->ops, ecc, context, this, construct);
 	}
 	else
 	{
-		__typeof__(*Function->context.hashmap) hashmap[Function->context.hashmapCapacity];
-		memcpy(hashmap, Function->context.hashmap, sizeof(hashmap));
+		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = Function->context;
+		struct Object stackContext = function->context;
 		stackContext.hashmap = hashmap;
 		
-		populateContext(ops, ecc, &stackContext, Function->parameterCount, argumentCount);
+		populateContext(ops, ecc, &stackContext, function->parameterCount, argumentCount);
 		
-		return callOps(Function->oplist->ops, ecc, &stackContext, this, construct);
+		return callOps(function->oplist->ops, ecc, &stackContext, this, construct);
 	}
 }
 
@@ -449,9 +513,9 @@ struct Value construct (const Instance * const ops, struct Ecc * const ecc)
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(function))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", text.length, text.location)));
 	
-	return callClosure(ops, ecc, value.data.function, argumentCount, 1);
+	return callFunction(ops, ecc, value.data.function, argumentCount, 1);
 }
 
 struct Value call (const Instance * const ops, struct Ecc * const ecc)
@@ -460,9 +524,9 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(function))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a function", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a function", text.length, text.location)));
 	
-	return callClosure(ops, ecc, value.data.function, argumentCount, 0);
+	return callFunction(ops, ecc, value.data.function, argumentCount, 0);
 }
 
 struct Value eval (const Instance * const ops, struct Ecc * const ecc)
@@ -515,9 +579,24 @@ struct Value object (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Object *object = Object.create(Object.prototype());
 	struct Value value;
+	int isGetter, isSetter;
+	
 	for (uint_fast32_t count = opValue().data.integer; count--;)
 	{
 		value = nextOp();
+		isGetter = 0;
+		isSetter = 0;
+		
+		if (value.type == Value(breaker))
+		{
+			if (value.data.integer == 0)
+				isGetter = 1;
+			else
+				isSetter = 1;
+			
+			value = nextOp();
+		}
+		
 		if (value.type == Value(identifier))
 			Object.add(object, value.data.identifier, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 		else if (value.type == Value(integer))
@@ -529,8 +608,7 @@ struct Value object (const Instance * const ops, struct Ecc * const ecc)
 struct Value array (const Instance * const ops, struct Ecc * const ecc)
 {
 	uint32_t length = opValue().data.integer;
-	struct Object *object = Object.create(Array.prototype());
-	Object.resizeElement(object, length);
+	struct Object *object = Array.createSized(length);
 	struct Value value;
 	for (uint_fast32_t index = 0; index < length; ++index)
 	{
@@ -555,32 +633,32 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 	ecc->refObject = Value.undefined();
 	
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.getMember(ecc->context, identifier);
-	if (!ref)
+	struct Entry entry = Object.getMember(ecc->context, identifier);
+	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return *ref;
+	return *entry.value;
 }
 
 struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.getMember(ecc->context, identifier);
-	if (!ref)
+	struct Entry entry = Object.getMember(ecc->context, identifier);
+	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return Value.reference(ref);
+	return Value.reference(entry.value);
 }
 
 struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value *ref = Object.getMember(ecc->context, identifier);
-	if (!ref)
+	struct Entry entry = Object.getMember(ecc->context, identifier);
+	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	struct Value value = nextOp();
-	return *ref = value;
+	return *entry.value = value;
 }
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
@@ -607,38 +685,42 @@ struct Value setLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	const struct Text *text = opText();
-	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	ecc->refObject = object;
-	return Object.get(object.data.object, identifier);
+	struct Entry entry = Object.getMember(object.data.object, identifier);
+	return getEntry(entry, ecc, object);
 }
 
 struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	struct Value *ref = Object.getMember(object.data.object, identifier);
-	if (!ref)
+	struct Entry entry = Object.getMember(object.data.object, identifier);
+	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return Value.reference(ref);
+	return Value.reference(entry.value);
 }
 
 struct Value setMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Entry entry = Object.getMember(object.data.object, identifier);
 	struct Value value = nextOp();
-	Object.set(object.data.object, identifier, value);
+	if (entry.value)
+		return setEntry(entry, ecc, object, value);
+	
+	Object.add(object.data.object, identifier, value, Object(writable) | Object(enumerable) | Object(configurable));
 	return value;
 }
 
 struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
 {
+	const struct Text *text = opText();
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	struct Value result = Object.delete(object.data.object, identifier);
-	const struct Text *text = opText();
 	if (!Value.isTrue(result))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
 	
@@ -649,9 +731,8 @@ struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	ecc->refObject = object;
-	enum Object(Flags) flags;
-	struct Value *ref = Object.getProperty(object.data.object, nextOp(), &flags);
-	return ref? *ref: Value.undefined();
+	struct Entry entry = Object.getProperty(object.data.object, nextOp());
+	return getEntry(entry, ecc, object);
 }
 
 struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
@@ -663,23 +744,25 @@ struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 	
 	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	ecc->refObject = object;
-	enum Object(Flags) flags;
-	struct Value *ref = Object.getProperty(object.data.object, nextOp(), &flags);
-	if (!ref)
+	struct Entry entry = Object.getProperty(object.data.object, nextOp());
+	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return Value.reference(ref);
+	return Value.reference(entry.value);
 }
 
 struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value value = Value.toObject(nextOp(), ecc, opText());
-	struct Object *object = value.data.object;
-	
+	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	struct Value property = nextOp();
-	value = nextOp();
+	struct Value value = nextOp();
 	
-	Object.setProperty(object, property, value);
+	struct Entry entry = Object.getProperty(object.data.object, property);
+	if (entry.value)
+		return setEntry(entry, ecc, object, value);
+	
+	Object.setProperty(object.data.object, property, value);
+	
 	
 	return value;
 }
@@ -809,9 +892,8 @@ struct Value in (const Instance * const ops, struct Ecc * const ecc)
 	if (!Value.isObject(object))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
 	
-	enum Object(Flags) flags;
-	Object.getProperty(object.data.object, property, &flags);
-	return Value.boolean(flags & Object(isValue));
+	struct Entry entry = Object.getProperty(object.data.object, property);
+	return Value.boolean(*entry.flags & Object(isValue));
 }
 
 struct Value multiply (const Instance * const ops, struct Ecc * const ecc)

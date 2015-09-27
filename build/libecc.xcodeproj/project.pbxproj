@@ -17,6 +17,7 @@
 		0D718DDA1B47B07E004C3350 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D718DD81B47B07E004C3350 /* object.c */; };
 		0D718DE01B47B2FD004C3350 /* identifier.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D718DDE1B47B2FD004C3350 /* identifier.c */; };
 		0D718DE31B47C9F8004C3350 /* string.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D718DE11B47C9F8004C3350 /* string.c */; };
+		0D99D6AF1BB788850035B8AC /* entry.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D99D6AD1BB788850035B8AC /* entry.c */; };
 		0DA9C77D1B648C060081A906 /* pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA9C77B1B648C060081A906 /* pool.c */; };
 		0DD57DC31B2D542A00CD8119 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DD57DC21B2D542A00CD8119 /* main.c */; };
 		0DD57DCD1B2D545D00CD8119 /* input.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DD57DCB1B2D545D00CD8119 /* input.c */; };
@@ -63,6 +64,8 @@
 		0D718DE11B47C9F8004C3350 /* string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = string.c; sourceTree = "<group>"; };
 		0D718DE21B47C9F8004C3350 /* string.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = string.h; sourceTree = "<group>"; };
 		0D981A5B1B498D3A00A62141 /* text.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = text.h; sourceTree = "<group>"; };
+		0D99D6AD1BB788850035B8AC /* entry.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = entry.c; sourceTree = "<group>"; };
+		0D99D6AE1BB788850035B8AC /* entry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = entry.h; sourceTree = "<group>"; };
 		0DA9C77B1B648C060081A906 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
 		0DA9C77C1B648C060081A906 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
 		0DCB570B1BA4FA7700E2324D /* compatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compatibility.h; sourceTree = "<group>"; };
@@ -144,6 +147,8 @@
 				0D981A5B1B498D3A00A62141 /* text.h */,
 				0D25FB0D1B5C89A70075F035 /* chars.c */,
 				0D25FB0E1B5C89A70075F035 /* chars.h */,
+				0D99D6AD1BB788850035B8AC /* entry.c */,
+				0D99D6AE1BB788850035B8AC /* entry.h */,
 				0DD57DCA1B2D543E00CD8119 /* interface.h */,
 				0D25FB131B6334CF0075F035 /* namespace_io_libecc.h */,
 				0DCB570B1BA4FA7700E2324D /* compatibility.h */,
@@ -245,6 +250,7 @@
 				0D718DE31B47C9F8004C3350 /* string.c in Sources */,
 				0DD57DCD1B2D545D00CD8119 /* input.c in Sources */,
 				0DD57DC31B2D542A00CD8119 /* main.c in Sources */,
+				0D99D6AF1BB788850035B8AC /* entry.c in Sources */,
 				0DEB34331B3E235200A310BE /* env.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -296,7 +302,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-pedantic";
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wall";
 			};

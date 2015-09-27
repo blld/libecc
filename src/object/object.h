@@ -14,6 +14,7 @@
 #include "value.h"
 #include "identifier.h"
 #include "pool.h"
+#include "entry.h"
 
 
 #include "interface.h"
@@ -38,6 +39,7 @@ enum Object(Flags)
 };
 
 Interface(
+	(void, setupPrototype ,(void))
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
@@ -52,19 +54,12 @@ Interface(
 	(Instance, copy ,(const Instance original))
 	(void, destroy ,(Instance))
 	
-	(void, setType ,(Instance, const struct Text *type))
-	(void, mark ,(Instance))
-	
-	(struct Value, getOwn ,(Instance, struct Identifier))
 	(struct Value, get ,(Instance, struct Identifier))
-	(struct Value *, getOwnMember ,(Instance, struct Identifier))
-	(struct Value *, getMember ,(Instance, struct Identifier))
-	(struct Value *, getOwnProperty ,(Instance, struct Value, enum Object(Flags) *))
-	(struct Value *, getProperty ,(Instance, struct Value, enum Object(Flags) *))
-	(void, setOwn ,(Instance, struct Identifier, struct Value))
-	(void, set ,(Instance, struct Identifier, struct Value))
+	(struct Entry, getMember ,(Instance, struct Identifier))
+	(struct Entry, getOwnProperty ,(Instance, struct Value))
+	(struct Entry, getProperty ,(Instance, struct Value))
 	(void, setProperty ,(Instance, struct Value, struct Value))
-	(struct Value *, add ,(Instance, struct Identifier, struct Value, enum Object(Flags)))
+	(void, add ,(Instance, struct Identifier, struct Value, enum Object(Flags)))
 	(struct Value, delete ,(Instance, struct Identifier))
 	(struct Value, deleteProperty ,(Instance, struct Value))
 	(void, packValue ,(Instance))
@@ -91,7 +86,7 @@ Interface(
 			struct {
 				struct Value value;
 				struct Identifier identifier;
-				char unused[43];
+				char unused[63 - sizeof(void *) * 2 - sizeof(struct Identifier)];
 				char flags;
 			} data;
 		} *hashmap;

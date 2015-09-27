@@ -105,7 +105,12 @@ void printText (Instance self, struct Text text)
 	
 	if (line >= 0)
 	{
-		Env.printColor(Env(Black), "%s:%d\n", self->name, line);
+		if (self->name[0] == '(')
+			Env.printDim("%s", self->name);
+		else
+			Env.printColor(Env(Black), "%s", self->name, line);
+		
+		Env.printColor(Env(Black), " line:%d\n", line);
 		
 		size_t start = self->lines[line], length = 0;
 		const char *location = self->bytes + start;

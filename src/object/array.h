@@ -25,9 +25,12 @@ Interface(
 	
 	(struct Object *, prototype ,(void))
 	(struct Function *, constructor ,(void))
+	
+	(struct Object *, create ,(void))
+	(struct Object *, createSized ,(uint32_t size))
 	,
 	{
-		char empty;
+		struct Object object;
 	}
 )
 

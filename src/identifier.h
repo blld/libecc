@@ -37,6 +37,8 @@ Interface(
 	(Structure, writable ,(void))
 	(Structure, enumerable ,(void))
 	(Structure, configurable ,(void))
+	(Structure, get ,(void))
+	(Structure, set ,(void))
 	(Structure, makeWithCString ,(const char *cString))
 	(Structure, makeWithText ,(const struct Text text, int copyOnCreate))
 	

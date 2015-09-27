@@ -134,7 +134,8 @@ Interface(
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
 	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
-	(struct Value, callClosureVA ,(struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
+	(struct Value, callFunctionArguments ,(struct Function *function, struct Ecc * const ecc, struct Value this, struct Object *arguments))
+	(struct Value, callFunctionVA ,(struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

@@ -13,6 +13,64 @@
 static struct Object *functionPrototype = NULL;
 static struct Function *functionConstructor = NULL;
 
+static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	
+	if (ecc->this.type != Value(function))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+	
+	ecc->result = Value.text(&ecc->this.data.function->text);
+	
+	return Value.undefined();
+}
+
+static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 2);
+	
+	if (ecc->this.type != Value(function))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+	
+	struct Value this = Op.argument(ecc, 0);
+	struct Value arguments = Op.argument(ecc, 1);
+	
+	if (arguments.type == Value(undefined) || arguments.type == Value(null))
+		Op.callFunctionVA(ecc->this.data.function, ecc, this, 0);
+	else
+	{
+		if (!Value.isObject(arguments))
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "arguments is not an object")));
+		
+		Op.callFunctionArguments(ecc->this.data.function, ecc, this, Object.copy(arguments.data.object));
+	}
+	
+	return Value.undefined();
+}
+
+static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertVariableParameter(ecc);
+	
+	if (ecc->this.type != Value(function))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+	
+	struct Object *arguments = ecc->context->hashmap[2].data.value.data.object;
+	
+	if (arguments->elementCount)
+	{
+		struct Value this = arguments->element[0].data.value;
+		
+		++arguments->element;
+		Op.callFunctionArguments(ecc->this.data.function, ecc, this, arguments);
+		--arguments->element;
+	}
+	else
+		Op.callFunctionVA(ecc->this.data.function, ecc, Value.undefined(), 0);
+	
+	return Value.undefined();
+}
+
 static struct Value prototypeFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	ecc->result = Value.undefined();
@@ -24,7 +82,50 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 {
 	Op.assertVariableParameter(ecc);
 	
-	// TODO
+	int argumentCount = Op.variableArgumentCount(ecc);
+	
+	if (argumentCount)
+	{
+		static const char prefix[] = "(function(";
+		
+		uint32_t length = 0;
+		char *chars = malloc(sizeof(prefix)-1 + (argumentCount == 1? 2: 0));
+		memcpy(chars, prefix, sizeof(prefix)-1);
+		length += sizeof(prefix)-1;
+		
+		struct Value value;
+		uint32_t valueLength;
+		int last;
+		
+		for (int_fast32_t index = 0; index < argumentCount; ++index)
+		{
+			last = index == argumentCount - 1;
+			if (last)
+			{
+				chars[length++] = ')';
+				chars[length++] = '{';
+			}
+			
+			value = Value.toString(Op.variableArgument(ecc, index));
+			valueLength = Value.stringLength(value);
+			chars = realloc(chars, sizeof(*chars) + length + valueLength + (index >= argumentCount - 2? 2: 1));
+			memcpy(chars + length, Value.stringChars(value), valueLength);
+			length += valueLength;
+			
+			if (index < argumentCount - 2)
+				chars[length++] = ',';
+		}
+		chars[length++] = '}';
+		chars[length++] = ')';
+		
+		Ecc.evalInput(ecc, Input.createFromBytes(chars, length, "(Function)"));
+		free(chars), chars = NULL;
+	}
+	else
+	{
+		static const char emptyFunction[] = "(function(){})";
+		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"));
+	}
 	
 	return Value.undefined();
 }
@@ -38,13 +139,14 @@ void setup ()
 	functionPrototype = Object.prototype();
 	struct Function *functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
 	functionPrototype = &functionPrototypeFunction->object;
+	Function.addToObject(functionPrototype, "toString", toString, 0, 0);
+	Function.addToObject(functionPrototype, "apply", apply, 2, 0);
+	Function.addToObject(functionPrototype, "call", call, -1, 0);
 	
 	functionConstructor = Function.createWithNative(functionPrototype, constructorFunction, -1);
 	
 	Object.add(functionPrototype, Identifier.constructor(), Value.function(functionConstructor), 0);
 	Object.add(&functionConstructor->object, Identifier.prototype(), Value.function(functionPrototypeFunction), 0);
-	
-	Object.constructor()->object.prototype = functionPrototype;
 }
 
 void teardown (void)
@@ -109,10 +211,20 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
 	self->context.hashmapCount = self->context.hashmapCapacity;
-	self->oplist = OpList.create(native, Value.undefined(), Text.make(NULL, 0));
+	self->oplist = OpList.create(native, Value.undefined(), *Text.nativeCode());
 	self->text = *Text.nativeCode();
 	
-	Object.add(&self->object, Identifier.length(), Value.integer(parameterCount >= 0? parameterCount: 1), 0);
+	Object.add(&self->object, Identifier.length(), Value.integer(abs(parameterCount)), 0);
+	
+	return self;
+}
+
+Instance createWithNativeAccessor (struct Object *prototype, const Native getter, const Native setter)
+{
+	Instance self = createWithNative(prototype, getter, 0);
+	
+	self->isAccessor = 1;
+	self->pair = createWithNative(prototype, setter, 1);
 	
 	return self;
 }

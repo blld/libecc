@@ -10,7 +10,9 @@
 
 static int printUsage (void);
 static int runTest (int verbosity);
+
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc);
+static struct Value gc (const struct Op ** const ops, struct Ecc * const ecc);
 
 static struct Ecc *ecc = NULL;
 
@@ -18,9 +20,13 @@ int main (int argc, const char * argv[])
 {
 	int result = EXIT_SUCCESS;
 	
+	struct Object object;
+	fprintf(stderr, "%ld\n", sizeof(*object.hashmap));
+	
 	ecc = Ecc.create();
 	
 	Function.addNative(ecc->global, "print", print, 1, 0);
+	Function.addNative(ecc->global, "gc", gc, 0, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -53,6 +59,19 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Value.dumpTo(Op.argument(ecc, 0), stdout);
 	putc('\n', stdout);
+	
+	ecc->result = Value.undefined();
+	
+	return Value.undefined();
+}
+
+static struct Value gc (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	
+	Ecc.garbageCollect(ecc);
+	
+	ecc->result = Value.undefined();
 	
 	return Value.undefined();
 }
@@ -159,7 +178,7 @@ static void testException (void)
 	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }", "c");
 	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f");
 	
-	test("try { throw 'a' } ", "SyntaxError: missing catch or finally after try");
+	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script");
 }
 
 static void testOperation (void)
@@ -251,6 +270,7 @@ static void testRelational (void)
 	
 	test("'toString' in {}", "true");
 	test("'toString' in null", "TypeError: invalid 'in' operand null");
+	test("var a; 'toString' in a", "TypeError: invalid 'in' operand a");
 	test("var a = { b: 1, c: 2 }; 'b' in a", "true");
 	test("var a = { b: 1, c: 2 }; 'd' in a", "false");
 	test("var a = [ 'b', 'c' ]; 0 in a", "true");
@@ -298,9 +318,6 @@ static void testGlobal (void)
 	test("NaN", "NaN");
 	test("undefined", "undefined");
 	test("typeof eval", "function");
-	
-	test("this.x = 42; var x = 123; x", "123");
-	test("var x = 123; this.x = 42; x", "42");
 }
 
 static void testFunction (void)
@@ -321,11 +338,25 @@ static void testFunction (void)
 	test("var n = 456; function b(c) { return 'c' + c + n } b(123)", "c123456");
 	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");
 	
+	test("typeof function(){}", "function");
+	test("function a(a, b){ return a + b } a.apply(null, 1, 2)", "TypeError: arguments is not an object");
+	test("function a(a, b){ return this + a + b } a.apply(10, [1, 2])", "13");
+	test("function a(a, b){ return this + a + b } a.call(10, 1, 2)", "13");
+	test("function a(){ return arguments }; a().toString()", "[object Arguments]");
+	test("function a(){ return arguments }; a.call().toString()", "[object Arguments]");
+	test("function a(){ return arguments }; a.apply().toString()", "[object Arguments]");
+	
 	test("typeof Function", "function");
 	test("Function.length", "1");
 	test("typeof Function.prototype", "function");
 	test("Function.prototype.length", "0");
 	test("Function.prototype(1, 2, 3)", "undefined");
+	test("typeof Function()", "function");
+	test("Function()()", "undefined");
+	test("Function('return 123')()", "123");
+	test("new Function('a', 'b', 'c', 'return a+b+c')(1, 2, 3)", "6");
+	test("new Function('a, b, c', 'return a+b+c')(1, 2, 3)", "6");
+	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6");
 }
 
 static void testLoop (void)
@@ -385,10 +416,35 @@ static void testObject (void)
 	
 	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').value", "123");
 	test("var a = { a: 123 }; Object.getOwnPropertyDescriptor(a, 'a').writable", "true");
+	
+	test("Object.getOwnPropertyNames({ a:'!', 2:'@', 'b':'#'}).toString()", "2,a,b");
+	
 	test("var a = {}, o = ''; a['a'] = 'abc'; a['c'] = 123; a['b'] = undefined; for (var b in a) o += b + a[b]; o", "aabcc123bundefined");
 	
 	test("typeof Object", "function");
 	test("typeof Object.prototype", "object");
+}
+
+static void testAccessor (void)
+{
+	test("var a = { get () {} }", "SyntaxError: expected identifier, got '('");
+	test("var a = { get a (b) {} }", "SyntaxError: getter functions must have no arguments");
+	test("var a = { set () {} }", "SyntaxError: expected identifier, got '('");
+	test("var a = { set a () {} }", "SyntaxError: setter functions must have one argument");
+	
+	test("var a = { get a() { return 123 } }; a.a", "123");
+	test("var a = { get a() { return 123 } }; a['a']", "123");
+	test("var a = { a: 'abc', set a(b) {}, get a() { return 123 } }; a.a", "123");
+	test("var a = { set a(b) {}, a: 'abc', get a() { return 123 } }; a.a", "123");
+	test("var a = { set a(b) {}, get a() { return 123 }, a: 'abc' }; a.a", "abc");
+	test("var a = { _a: 'u', get a() { return this._a } }; a.a", "u");
+	test("var a = { _a: 'u', set a(v) { this._a = v } }; a.a = 123; a._a", "123");
+	test("var a = { _a: 'u', set a(v) { this._a = v }, get a() { return this._a } }; a.a = 123; a.a", "123");
+	
+	test("var a = { get: 123 }; a.get", "123");
+	test("var a = { set: 123 }; a.set", "123");
+	test("var a = { get get() { return 123 } }; a.get", "123");
+	test("var a = { get set() { return 123 } }; a.set", "123");
 }
 
 static void testArray (void)
@@ -401,8 +457,18 @@ static void testArray (void)
 	test("var a = [1, 2, 3], o = ''; delete a[1]; for (var b in a) o += b; o", "02");
 	test("var a = [1, , 3], o = ''; for (var b in a) o += b; o", "02");
 	test("var a = [1, , 3], o = ''; a[1] = undefined; for (var b in a) o += b; o", "012");
+	test("[1, , 3]", "[object Array]");
+	test("[1, , 3] + ''", "1,,3");
+	test("[1, , 3].toString()", "1,,3");
+	test("typeof []", "object");
+	test("Object.prototype.toString.call([])", "[object Array]");
+	
+	test("var a = [1, 2]; a.length", "2");
+	test("var a = [1, 2]; a.length = 5; a.length", "5");
+	test("var a = [1, 2]; a[5] = 5; a.length", "6");
 	
 //	test("typeof Array", "function");
+//	test("typeof Array.prototype", "object");
 }
 
 static int runTest (int verbosity)
@@ -424,6 +490,7 @@ static int runTest (int verbosity)
 	testLoop();
 	testThis();
 	testObject();
+	testAccessor();
 	testArray();
 	
 	putc('\n', stderr);

@@ -22,8 +22,8 @@ static struct OpList * new (Instance self);
 static struct OpList * assignment (Instance self, int noIn);
 static struct OpList * expression (Instance self, int noIn);
 static struct OpList * statement (Instance self);
-static struct OpList * function (Instance self, int declaration);
-static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken, int forceResult);
+static struct OpList * function (Instance self, int isDeclaration, int isGetter, int isSetter);
+static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken);
 
 
 // MARK: Token
@@ -163,6 +163,33 @@ static struct OpList * array (Instance self)
 static struct OpList * propertyAssignment (Instance self)
 {
 	struct OpList *oplist = NULL;
+	int isGetter = 0, isSetter = 0;
+	
+	if (previewToken(self) == Lexer(identifierToken))
+	{
+		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.get()))
+		{
+			nextToken(self);
+			if (previewToken(self) == ':')
+			{
+				oplist = OpList.create(Op.value, Value.identifier(Identifier.get()), self->lexer->text);
+				goto skipAccessor;
+			}
+			else
+				isGetter = 1;
+		}
+		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.set()))
+		{
+			nextToken(self);
+			if (previewToken(self) == ':')
+			{
+				oplist = OpList.create(Op.value, Value.identifier(Identifier.set()), self->lexer->text);
+				goto skipAccessor;
+			}
+			else
+				isSetter = 1;
+		}
+	}
 	
 	if (previewToken(self) == Lexer(integerToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
@@ -183,11 +210,20 @@ static struct OpList * propertyAssignment (Instance self)
 	else if (previewToken(self) == Lexer(identifierToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else
+	{
 		expectToken(self, Lexer(identifierToken));
+		return NULL;
+	}
 	
 	nextToken(self);
-	expectToken(self, ':');
 	
+	if (isGetter)
+		return OpList.join(oplist, function(self, 0, 1, 0));
+	else if (isSetter)
+		return OpList.join(oplist, function(self, 0, 0, 1));
+	
+	skipAccessor:
+	expectToken(self, ':');
 	return OpList.join(oplist, assignment(self, 0));
 }
 
@@ -278,15 +314,13 @@ static struct OpList * arguments (Instance self, int *count)
 static struct OpList * member (Instance self)
 {
 	struct OpList *oplist = new(self);
-	struct Text text, parentText = OpList.text(oplist);
+	struct Text text = OpList.text(oplist);
 	while (1)
 	{
-		text = parentText;
-		
 		if (acceptToken(self, '.'))
 		{
 			struct Value value = self->lexer->value;
-			parentText = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
 			
@@ -295,7 +329,7 @@ static struct OpList * member (Instance self)
 		else if (acceptToken(self, '['))
 		{
 			oplist = OpList.join(oplist, expression(self, 0));
-			parentText = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ']'))
 				return oplist;
 			
@@ -323,7 +357,7 @@ static struct OpList * new (Instance self)
 		return OpList.unshift(Op.make(Op.construct, Value.integer(count), OpList.text(oplist)), oplist);
 	}
 	else if (previewToken(self) == Lexer(functionToken))
-		return function(self, 0);
+		return function(self, 0, 0, 0);
 	else
 		return primary(self);
 }
@@ -331,15 +365,13 @@ static struct OpList * new (Instance self)
 static struct OpList * leftHandSide (Instance self)
 {
 	struct OpList *oplist = new(self);
-	struct Text text, parentText = OpList.text(oplist);
+	struct Text text = OpList.text(oplist);
 	while (1)
 	{
-		text = parentText;
-		
 		if (acceptToken(self, '.'))
 		{
 			struct Value value = self->lexer->value;
-			parentText = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
 			
@@ -348,7 +380,7 @@ static struct OpList * leftHandSide (Instance self)
 		else if (acceptToken(self, '['))
 		{
 			oplist = OpList.join(oplist, expression(self, 0));
-			parentText = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ']'))
 				return oplist;
 			
@@ -364,11 +396,11 @@ static struct OpList * leftHandSide (Instance self)
 			oplist = OpList.join(oplist, arguments(self, &count));
 			
 			if (isEval)
-				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), OpList.text(oplist)), oplist);
+				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), text), oplist);
 			else
-				oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), OpList.text(oplist)), oplist);
+				oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), text), oplist);
 			
-			parentText = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ')'))
 				return oplist;
 		}
@@ -397,13 +429,13 @@ static struct OpList * unary (Instance self)
 		struct OpList *oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].native == Op.getLocal)
-			error(self, Error.syntaxError(self->lexer->text, "delete of an unqualified identifier in strict mode"));
+			error(self, Error.syntaxError(OpList.text(oplist), "delete of an unqualified identifier in strict mode"));
 		else if (oplist && oplist->ops[0].native == Op.getMember)
 			changeNative(oplist->ops, Op.deleteMember);
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
 			changeNative(oplist->ops, Op.deleteProperty);
 		else if (oplist)
-			error(self, Error.referenceError(self->lexer->text, "invalid delete operand"));
+			error(self, Error.referenceError(OpList.text(oplist), "invalid delete operand"));
 		else
 			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
 		
@@ -1086,7 +1118,7 @@ static struct OpList * statement (Instance self)
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->opCount), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
-			error(self, Error.syntaxError(self->lexer->text, "missing catch or finally after try"));
+			error(self, Error.syntaxError(self->lexer->text, "expected catch or finally, got %s", Lexer.tokenChars(previewToken(self))));
 		
 		if (acceptToken(self, Lexer(catchToken)))
 		{
@@ -1166,22 +1198,26 @@ static struct OpList * parameters (Instance self, int *count)
 	return NULL;
 }
 
-static struct OpList * function (Instance self, int isDeclaration)
+static struct OpList * function (Instance self, int isDeclaration, int isGetter, int isSetter)
 {
 	struct Text text = self->lexer->text;
-	expectToken(self, Lexer(functionToken));
 	
 	struct OpList *oplist = NULL;
 	int parameterCount = 0;
 	
-	struct Op identifierOp = { 0 };
+	struct Op identifierOp = { 0, Value.undefined() };
 	
-	if (previewToken(self) == Lexer(identifierToken))
-		identifierOp = identifier(self);
-	else if (isDeclaration)
+	if (!isGetter && !isSetter)
 	{
-		error(self, Error.syntaxError(self->lexer->text, "native statement requires a name"));
-		return NULL;
+		expectToken(self, Lexer(functionToken));
+		
+		if (previewToken(self) == Lexer(identifierToken))
+			identifierOp = identifier(self);
+		else if (isDeclaration)
+		{
+			error(self, Error.syntaxError(self->lexer->text, "function statement requires a name"));
+			return NULL;
+		}
 	}
 	
 	struct Function *parentClosure = self->function;
@@ -1191,9 +1227,23 @@ static struct OpList * function (Instance self, int isDeclaration)
 	self->function = function;
 	expectToken(self, '(');
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
+	
+	if (isGetter)
+	{
+		function->isAccessor = 1;
+		if (parameterCount != 0)
+			error(self, Error.syntaxError(self->lexer->text, "getter functions must have no arguments"));
+	}
+	else if (isSetter)
+	{
+		function->isAccessor = 2;
+		if (parameterCount != 1)
+			error(self, Error.syntaxError(self->lexer->text, "setter functions must have one argument"));
+	}
+	
 	expectToken(self, ')');
 	expectToken(self, '{');
-	oplist = OpList.join(oplist, sourceElements(self, '}', 0));
+	oplist = OpList.join(oplist, sourceElements(self, '}'));
 	text.length = self->lexer->text.location - text.location + 1;
 	expectToken(self, '}');
 	self->function = parentClosure;
@@ -1207,7 +1257,7 @@ static struct OpList * function (Instance self, int isDeclaration)
 	
 	if (isDeclaration)
 		Object.add(&parentClosure->context, identifierOp.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
-	else if (identifierOp.value.type != Value(undefined))
+	else if (identifierOp.value.type != Value(undefined) && !isGetter && !isSetter)
 		Object.add(&function->context, identifierOp.value.data.identifier, Value.function(function), Object(writable) | Object(configurable));
 	
 	if (isDeclaration)
@@ -1219,13 +1269,13 @@ static struct OpList * function (Instance self, int isDeclaration)
 
 // MARK: Source
 
-static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken, int forceResult)
+static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken)
 {
 	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL;
 	
 	while (previewToken(self) != endToken && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 		if (previewToken(self) == Lexer(functionToken))
-			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), function(self, 1)));
+			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), function(self, 1, 0, 0)));
 		else
 		{
 			statementOps = statement(self);
@@ -1284,7 +1334,7 @@ struct Function * parseWithContext (Instance const self, struct Object *context)
 	nextToken(self);
 	
 	self->function = function;
-	struct OpList *oplist = sourceElements(self, Lexer(noToken), 1);
+	struct OpList *oplist = sourceElements(self, Lexer(noToken));
 	self->function = NULL;
 	
 	if (self->error)

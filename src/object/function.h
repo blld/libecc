@@ -33,6 +33,7 @@ Interface(
 	(Instance, create ,(struct Object *prototype))
 	(Instance, createSized ,(struct Object *prototype, uint32_t size))
 	(Instance, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
+	(Instance, createWithNativeAccessor ,(struct Object *prototype, const Native getter, const Native setter))
 	(Instance, copy ,(Instance original))
 	(void, destroy ,(Instance))
 	
@@ -48,6 +49,8 @@ Interface(
 		int parameterCount;
 		int needHeap;
 		int needArguments;
+		int isAccessor;
+		Instance pair;
 	}
 )
 

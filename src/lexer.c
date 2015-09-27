@@ -498,12 +498,9 @@ enum Module(Token) nextToken (Instance self)
 						_(void)
 						_(while)
 						_(with)
-
+						
 						_(void)
 						_(typeof)
-						
-						_(get)
-						_(set)
 					}, disallowRegexKeyword[] = {
 						_(null)
 						_(true)
