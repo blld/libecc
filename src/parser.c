@@ -1249,7 +1249,14 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 		expectToken(self, Lexer(functionToken));
 		
 		if (previewToken(self) == Lexer(identifierToken))
+		{
 			identifierOp = identifier(self);
+			
+			if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier.eval()))
+				error(self, Error.syntaxError(identifierOp.text, "redefining eval is deprecated"));
+			else if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier.arguments()))
+				error(self, Error.syntaxError(identifierOp.text, "redefining arguments is deprecated"));
+		}
 		else if (isDeclaration)
 		{
 			error(self, Error.syntaxError(self->lexer->text, "function statement requires a name"));

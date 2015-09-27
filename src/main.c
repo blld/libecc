@@ -18,15 +18,12 @@ static struct Ecc *ecc = NULL;
 
 int main (int argc, const char * argv[])
 {
-	int result = EXIT_SUCCESS;
-	
-	struct Object object;
-	fprintf(stderr, "%ld\n", sizeof(*object.hashmap));
-	
 	ecc = Ecc.create();
 	
 	Function.addNative(ecc->global, "print", print, 1, 0);
 	Function.addNative(ecc->global, "gc", gc, 0, 0);
+	
+	int result = EXIT_SUCCESS;
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -139,12 +136,18 @@ static void testParser (void)
 	test("+= 1", "SyntaxError: expected expression, got '+='");
 	test("var 1.", "SyntaxError: expected identifier, got number");
 	
+	test("function eval(){}", "SyntaxError: redefining eval is deprecated");
+	test("function arguments(){}", "SyntaxError: redefining arguments is deprecated");
 	test("function a(eval){}", "SyntaxError: redefining eval is deprecated");
 	test("function a(arguments){}", "SyntaxError: redefining arguments is deprecated");
 	test("var eval", "SyntaxError: redefining eval is deprecated");
 	test("var arguments", "SyntaxError: redefining arguments is deprecated");
 	test("eval = 123", "SyntaxError: can't assign to eval");
 	test("arguments = 123", "SyntaxError: can't assign to arguments");
+	test("eval++", "SyntaxError: invalid increment operand");
+	test("arguments++", "SyntaxError: invalid increment operand");
+	test("eval += 1", "SyntaxError: invalid assignment left-hand side");
+	test("arguments += 1", "SyntaxError: invalid assignment left-hand side");
 }
 
 static void testEval (void)
@@ -208,11 +211,6 @@ static void testOperator (void)
 	test("& 1", "SyntaxError: expected expression, got '&'");
 	test("^ 1", "SyntaxError: expected expression, got '^'");
 	test("| 1", "SyntaxError: expected expression, got '|'");
-	
-	test("eval++", "SyntaxError: invalid increment operand");
-	test("arguments++", "SyntaxError: invalid increment operand");
-	test("eval += 1", "SyntaxError: invalid assignment left-hand side");
-	test("arguments += 1", "SyntaxError: invalid assignment left-hand side");
 }
 
 static void testEquality (void)

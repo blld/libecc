@@ -1439,26 +1439,30 @@ struct Value iterateInRef (const Instance * const ops, struct Ecc * const ecc)
 	struct Value value = nextOp();
 	const Instance startOps = *ops;
 	const Instance endOps = startOps + value.data.integer;
-	uint_fast32_t index;
 	
-	for (index = 0; index < object.data.object->elementCount; ++index)
+	if (Value.isObject(object))
 	{
-		if (!(object.data.object->element[index].data.flags & Object(isValue)))
-			continue;
+		uint_fast32_t index;
 		
-		*ref = Value.chars(Chars.create("%d", index));
+		for (index = 0; index < object.data.object->elementCount; ++index)
+		{
+			if (!(object.data.object->element[index].data.flags & Object(isValue)))
+				continue;
+			
+			*ref = Value.chars(Chars.create("%d", index));
+			
+			stepIteration(value, startOps);
+		}
 		
-		stepIteration(value, startOps);
-	}
-	
-	for (index = 2; index <= object.data.object->hashmapCount; ++index)
-	{
-		if (!(object.data.object->hashmap[index].data.flags & Object(isValue)))
-			continue;
-		
-		*ref = Value.identifier(object.data.object->hashmap[index].data.identifier);
-		
-		stepIteration(value, startOps);
+		for (index = 2; index <= object.data.object->hashmapCount; ++index)
+		{
+			if (!(object.data.object->hashmap[index].data.flags & Object(isValue)))
+				continue;
+			
+			*ref = Value.identifier(object.data.object->hashmap[index].data.identifier);
+			
+			stepIteration(value, startOps);
+		}
 	}
 	
 	*ops = endOps;

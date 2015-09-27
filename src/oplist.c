@@ -136,11 +136,8 @@ Instance createLoop (Instance initial, Instance condition, Instance step, Instan
 	}
 	
 normal:;
-//	if (initial && initial->ops[0].native != Op.discard)
-//		initial = OpList.unshift(Op.make(Op.discard, Value.undefined(), text(initial)), initial);
-//	
-//	if (step && step->ops[0].native != Op.discard)
-//		step = OpList.unshift(Op.make(Op.discard, Value.undefined(), text(step)), step);
+	if (step && step->ops[0].native != Op.discard)
+		step = OpList.unshift(Op.make(Op.discard, Value.undefined(), text(step)), step);
 	
 	if (!condition)
 	 condition = OpList.create(Op.value, Value.boolean(1), OpList.text(body));
