@@ -103,7 +103,17 @@ static void popDepth (Instance self)
 static struct OpList * expressionRef (Instance self, struct OpList *oplist, const char *name)
 {
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
+	{
+		if (oplist->ops[0].value.type == Value(identifier))
+		{
+			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval()))
+				error(self, Error.syntaxError(OpList.text(oplist), name));
+			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.arguments()))
+				error(self, Error.syntaxError(OpList.text(oplist), name));
+		}
+		
 		changeNative(oplist->ops, Op.getLocalRef);
+	}
 	else if (oplist->ops[oplist->opCount - 1].native == Op.getMember)
 		changeNative(oplist->ops, Op.getMemberRef);
 	else if (oplist->ops[0].native == Op.getProperty)
@@ -173,7 +183,7 @@ static struct OpList * propertyAssignment (Instance self)
 			if (previewToken(self) == ':')
 			{
 				oplist = OpList.create(Op.value, Value.identifier(Identifier.get()), self->lexer->text);
-				goto skipAccessor;
+				goto skipProperty;
 			}
 			else
 				isGetter = 1;
@@ -184,7 +194,7 @@ static struct OpList * propertyAssignment (Instance self)
 			if (previewToken(self) == ':')
 			{
 				oplist = OpList.create(Op.value, Value.identifier(Identifier.set()), self->lexer->text);
-				goto skipAccessor;
+				goto skipProperty;
 			}
 			else
 				isSetter = 1;
@@ -208,7 +218,14 @@ static struct OpList * propertyAssignment (Instance self)
 			oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
 	else if (previewToken(self) == Lexer(identifierToken))
-		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
+	{
+		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.eval()))
+			error(self, Error.syntaxError(self->lexer->text, "eval in object identifier"));
+		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.arguments()))
+			error(self, Error.syntaxError(self->lexer->text, "arguments in object identifier"));
+		else
+			oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
+	}
 	else
 	{
 		expectToken(self, Lexer(identifierToken));
@@ -222,7 +239,7 @@ static struct OpList * propertyAssignment (Instance self)
 	else if (isSetter)
 		return OpList.join(oplist, function(self, 0, 0, 1));
 	
-	skipAccessor:
+	skipProperty:
 	expectToken(self, ':');
 	return OpList.join(oplist, assignment(self, 0));
 }
@@ -722,7 +739,14 @@ static struct OpList * assignment (Instance self, int noIn)
 		if (!oplist)
 			error(self, Error.syntaxError(text, "expected expression, got '='"));
 		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
+		{
+			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval()))
+				error(self, Error.syntaxError(text, "can't assign to eval"));
+			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.arguments()))
+				error(self, Error.syntaxError(text, "can't assign to arguments"));
+			
 			changeNative(oplist->ops, Op.setLocal);
+		}
 		else if (oplist->ops[0].native == Op.getMember)
 			changeNative(oplist->ops, Op.setMember);
 		else if (oplist->ops[0].native == Op.getProperty)
@@ -806,6 +830,11 @@ static struct OpList * variableDeclaration (Instance self, int noIn)
 	struct Text text = self->lexer->text;
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
+	
+	if (Identifier.isEqual(value.data.identifier, Identifier.eval()))
+		error(self, Error.syntaxError(text, "redefining eval is deprecated"));
+	else if (Identifier.isEqual(value.data.identifier, Identifier.arguments()))
+		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
 	Object.add(&self->function->context, value.data.identifier, Value.undefined(), Object(writable));
 	
@@ -1191,8 +1220,16 @@ static struct OpList * parameters (Instance self, int *count)
 		{
 			++*count;
 			op = identifier(self);
+			
 			if (op.value.data.identifier.data.integer)
+			{
+				if (Identifier.isEqual(op.value.data.identifier, Identifier.eval()))
+					error(self, Error.syntaxError(op.text, "redefining eval is deprecated"));
+				else if (Identifier.isEqual(op.value.data.identifier, Identifier.arguments()))
+					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
+				
 				Object.add(&self->function->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+			}
 		} while (acceptToken(self, ','));
 	
 	return NULL;

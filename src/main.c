@@ -138,6 +138,13 @@ static void testParser (void)
 	test("= 1", "SyntaxError: expected expression, got '='");
 	test("+= 1", "SyntaxError: expected expression, got '+='");
 	test("var 1.", "SyntaxError: expected identifier, got number");
+	
+	test("function a(eval){}", "SyntaxError: redefining eval is deprecated");
+	test("function a(arguments){}", "SyntaxError: redefining arguments is deprecated");
+	test("var eval", "SyntaxError: redefining eval is deprecated");
+	test("var arguments", "SyntaxError: redefining arguments is deprecated");
+	test("eval = 123", "SyntaxError: can't assign to eval");
+	test("arguments = 123", "SyntaxError: can't assign to arguments");
 }
 
 static void testEval (void)
@@ -181,7 +188,7 @@ static void testException (void)
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script");
 }
 
-static void testOperation (void)
+static void testOperator (void)
 {
 	test("+ 10", "10");
 	test("- 10", "-10");
@@ -201,6 +208,11 @@ static void testOperation (void)
 	test("& 1", "SyntaxError: expected expression, got '&'");
 	test("^ 1", "SyntaxError: expected expression, got '^'");
 	test("| 1", "SyntaxError: expected expression, got '|'");
+	
+	test("eval++", "SyntaxError: invalid increment operand");
+	test("arguments++", "SyntaxError: invalid increment operand");
+	test("eval += 1", "SyntaxError: invalid assignment left-hand side");
+	test("arguments += 1", "SyntaxError: invalid assignment left-hand side");
 }
 
 static void testEquality (void)
@@ -421,6 +433,9 @@ static void testObject (void)
 	
 	test("var a = {}, o = ''; a['a'] = 'abc'; a['c'] = 123; a['b'] = undefined; for (var b in a) o += b + a[b]; o", "aabcc123bundefined");
 	
+	test("var a = { eval: 123 }", "SyntaxError: eval in object identifier");
+	test("var a = { arguments: 123 }", "SyntaxError: arguments in object identifier");
+	
 	test("typeof Object", "function");
 	test("typeof Object.prototype", "object");
 }
@@ -479,7 +494,7 @@ static int runTest (int verbosity)
 	testParser();
 	testEval();
 	testException();
-	testOperation();
+	testOperator();
 	testEquality();
 	testRelational();
 	testConditional();
