@@ -11,7 +11,7 @@
 // MARK: - Private
 
 static const int defaultSize = 8;
-static const char zeroFlag = 0;
+static const uint8_t zeroFlag = 0;
 
 static struct Object *objectPrototype = NULL;
 static struct Function *objectConstructor = NULL;
@@ -574,7 +574,7 @@ struct Entry getMember (Instance self, struct Identifier identifier)
 	
 	return (struct Entry){
 		NULL,
-		(char *)&zeroFlag,
+		(uint8_t *)&zeroFlag,
 	};
 }
 
@@ -603,7 +603,7 @@ struct Entry getOwnProperty (Instance self, struct Value property)
 	
 	return (struct Entry){
 		NULL,
-		(char *)&zeroFlag,
+		(uint8_t *)&zeroFlag,
 	};
 }
 
@@ -640,7 +640,7 @@ struct Entry getProperty (Instance self, struct Value property)
 	
 	return (struct Entry){
 		NULL,
-		(char *)&zeroFlag,
+		(uint8_t *)&zeroFlag,
 	};
 }
 

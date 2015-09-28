@@ -281,9 +281,10 @@ Structure toString (Structure value)
 		case Value(date):
 		case Value(breaker):
 		case Value(reference):
-			assert(0);
-			exit(EXIT_FAILURE);
+			break;
 	}
+	assert(0);
+	abort();
 }
 
 int isString (Structure value)
@@ -364,9 +365,10 @@ Structure toBinary (Structure value)
 		
 		case Value(breaker):
 		case Value(reference):
-			assert(0);
-			exit(EXIT_FAILURE);
+			break;
 	}
+	assert(0);
+	abort();
 }
 
 Structure toInteger (Structure value)
@@ -412,9 +414,10 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 		case Value(true):
 		case Value(breaker):
 		case Value(reference):
-			assert(0);
-			exit(EXIT_FAILURE);
+			break;
 	}
+	assert(0);
+	abort();
 }
 
 int isObject (Structure value)
@@ -454,9 +457,10 @@ Structure toType (Structure value)
 		
 		case Value(breaker):
 		case Value(reference):
-			assert(0);
-			exit(EXIT_FAILURE);
+			break;
 	}
+	assert(0);
+	abort();
 }
 
 void dumpTo (Structure value, FILE *file)

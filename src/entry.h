@@ -31,7 +31,7 @@ enum Module(Flags)
 struct Module
 {
 	struct Value *value;
-	char *flags;
+	uint8_t *flags;
 };
 
 #endif

@@ -10,11 +10,6 @@
 
 // MARK: - Private
 
-static inline int ishexdigit(int c)
-{
-	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-}
-
 static inline int8_t hexhigit(int c)
 {
 	if (c >= 'a' && c <= 'f')
@@ -211,7 +206,7 @@ enum Module(Token) nextToken (Instance self)
 										case 't': buffer[bufferIndex] = '\t'; break;
 										case 'v': buffer[bufferIndex] = '\v'; break;
 										case 'x':
-											if (ishexdigit(location[index + 1]) && ishexdigit(location[index + 2]))
+											if (isxdigit(location[index + 1]) && isxdigit(location[index + 2]))
 											{
 												buffer[bufferIndex] = uint8Hex(location[index + 1], location[index + 2]);
 												index += 2;
@@ -220,7 +215,7 @@ enum Module(Token) nextToken (Instance self)
 											return error(self, Error.syntaxError(Text.make(self->text.location + bufferIndex, 4), "malformed hexadecimal character escape sequence"));
 										
 										case 'u':
-											if (ishexdigit(location[index + 1]) && ishexdigit(location[index + 2]) && ishexdigit(location[index + 3]) && ishexdigit(location[index + 4]))
+											if (isxdigit(location[index + 1]) && isxdigit(location[index + 2]) && isxdigit(location[index + 3]) && isxdigit(location[index + 4]))
 											{
 												uint16_t c = uint16Hex(location[index+ 1], location[index + 2], location[index + 3], location[index + 4]);
 												char *b = buffer + bufferIndex;
@@ -273,7 +268,7 @@ enum Module(Token) nextToken (Instance self)
 			case '8':
 			case '9':
 			{
-				if (c == '.' && !isnumber(previewChar(self)))
+				if (c == '.' && !isdigit(previewChar(self)))
 					return c;
 				
 				self->disallowRegex = 1;
@@ -283,7 +278,7 @@ enum Module(Token) nextToken (Instance self)
 				if (c == '0' && (acceptChar(self, 'x') || acceptChar(self, 'X')))
 				{
 					while (( c = previewChar(self) ))
-						if (ishexdigit(c))
+						if (isxdigit(c))
 							nextChar(self);
 						else
 							break;
@@ -293,13 +288,13 @@ enum Module(Token) nextToken (Instance self)
 				}
 				else
 				{
-					while (isnumber(previewChar(self)))
+					while (isdigit(previewChar(self)))
 						nextChar(self);
 					
 					if (acceptChar(self, '.'))
 						binary = 1;
 					
-					while (isnumber(previewChar(self)))
+					while (isdigit(previewChar(self)))
 						nextChar(self);
 					
 					if (acceptChar(self, 'e') || acceptChar(self, 'E'))
@@ -309,10 +304,10 @@ enum Module(Token) nextToken (Instance self)
 						if (!acceptChar(self, '+'))
 							acceptChar(self, '-');
 						
-						if (!isnumber(previewChar(self)))
+						if (!isdigit(previewChar(self)))
 							return error(self, Error.syntaxError(self->text, "missing exponent"));
 						
-						while (isnumber(previewChar(self)))
+						while (isdigit(previewChar(self)))
 							nextChar(self);
 					}
 				}

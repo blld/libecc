@@ -27,7 +27,7 @@ enum Module(Color) {
 	Module(Blue) = 34,
 	Module(Magenta) = 35,
 	Module(Cyan) = 36,
-	Module(Gray) = 37,
+	Module(Grey) = 37,
 };
 
 Interface(
@@ -40,6 +40,7 @@ Interface(
 	(void, printColor ,(enum Module(Color), const char *format, ...))
 	(void, printError ,(int typeLength, const char *type, const char *format, ...))
 	(void, printWarning ,(const char *format, ...))
+	(void, printBold ,(const char *format, ...))
 	(void, printDim ,(const char *format, ...))
 	,
 	{

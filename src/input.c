@@ -43,7 +43,6 @@ Instance createFromFile (const char *filename)
 		return NULL;
 	}
 	
-	// <!> SEEK_END undefined on binary stream, assume correctness
 	long size;
 	if (fseek(file, 0, SEEK_END) || (size = ftell(file)) < 0 || fseek(file, 0, SEEK_SET))
 	{
@@ -55,10 +54,8 @@ Instance createFromFile (const char *filename)
 	Instance self = create();
 	
 	strncat(self->name, filename, sizeof(self->name) - 1);
-	self->length = (uint32_t)size;
 	self->bytes = malloc(size);
-	assert(self->bytes);
-	fread(self->bytes, sizeof(char), size, file);
+	self->length = (uint32_t)fread(self->bytes, sizeof(char), size, file);
 	fclose(file), file = NULL;
 	
 	return self;
@@ -103,14 +100,14 @@ void printText (Instance self, struct Text text)
 	
 	int32_t line = findLine(self, text);
 	
+	if (self->name[0] == '(')
+		Env.printDim("%s", self->name);
+	else
+		Env.printBold("%s", self->name, line);
+	
 	if (line >= 0)
 	{
-		if (self->name[0] == '(')
-			Env.printDim("%s", self->name);
-		else
-			Env.printColor(Env(Black), "%s", self->name, line);
-		
-		Env.printColor(Env(Black), " line:%d\n", line);
+		Env.printBold(" line:%d\n", line);
 		
 		size_t start = self->lines[line], length = 0;
 		const char *location = self->bytes + start;
@@ -145,7 +142,7 @@ void printText (Instance self, struct Text text)
 		Env.printColor(Env(Green), "%s\n", mark + (text.location - location));
 	}
 	else
-		Env.printColor(Env(Black), "%s\n", self->name);
+		putc('\n', stderr);
 }
 
 int32_t findLine (Instance self, struct Text text)

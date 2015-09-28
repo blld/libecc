@@ -140,9 +140,9 @@ Interface(
 	io_libecc_op_List
 	,
 	{
-		const Native native;
-		const struct Value value;
-		const struct Text text;
+		Native native;
+		struct Value value;
+		struct Text text;
 	}
 )
 #undef _

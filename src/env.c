@@ -105,6 +105,20 @@ void printWarning (const char *format, ...)
 	putc('\n', stderr);
 }
 
+void printBold (const char *format, ...)
+{
+	if (self->isTerminal)
+		fprintf(stderr, "\x1B[1m");
+	
+	va_list ap;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+	
+	if (self->isTerminal)
+		fprintf(stderr, "\x1B[0m");
+}
+
 void printDim (const char *format, ...)
 {
 	if (self->isTerminal)

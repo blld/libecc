@@ -685,7 +685,8 @@ struct Value setLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	ecc->refObject = object;
 	struct Entry entry = Object.getMember(object.data.object, identifier);
 	return getEntry(entry, ecc, object);
@@ -694,7 +695,8 @@ struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	struct Entry entry = Object.getMember(object.data.object, identifier);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
@@ -705,9 +707,10 @@ struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
 struct Value setMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	struct Entry entry = Object.getMember(object.data.object, identifier);
 	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
+	struct Entry entry = Object.getMember(object.data.object, identifier);
+	value = nextOp();
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
 	
@@ -719,7 +722,8 @@ struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
 	struct Identifier identifier = opValue().data.identifier;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	struct Value result = Object.delete(object.data.object, identifier);
 	if (!Value.isTrue(result))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
@@ -729,7 +733,8 @@ struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	ecc->refObject = object;
 	struct Entry entry = Object.getProperty(object.data.object, nextOp());
 	return getEntry(entry, ecc, object);
@@ -737,12 +742,8 @@ struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 {
-//	struct Value object = Value.toObject(nextOp(), ecc, opText());
-//	struct Value property = nextOp();
-//	struct Value *ref = Object.ref(object.data.object, property.data.identifier, 1);
-//	return Value.reference(ref);
-	
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	ecc->refObject = object;
 	struct Entry entry = Object.getProperty(object.data.object, nextOp());
 	if (!entry.value)
@@ -753,9 +754,10 @@ struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
-	struct Value property = nextOp();
 	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
+	struct Value property = nextOp();
+	value = nextOp();
 	
 	struct Entry entry = Object.getProperty(object.data.object, property);
 	if (entry.value)
@@ -769,7 +771,8 @@ struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value deleteProperty (const Instance * const ops, struct Ecc * const ecc)
 {
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value value = nextOp();
+	struct Value object = Value.toObject(value, ecc, opText());
 	struct Value property = nextOp();
 	const struct Text *text = opText();
 	struct Value result = Object.deleteProperty(object.data.object, property);
@@ -1245,7 +1248,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 		return nextOp();
 }
 
-struct Value throw (const Instance * const ops, struct Ecc * const ecc)
+dead struct Value throw (const Instance * const ops, struct Ecc * const ecc)
 {
 	const struct Op *throwOps = *ops;
 	struct Value value = nextOp();

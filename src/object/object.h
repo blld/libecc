@@ -77,7 +77,7 @@ Interface(
 		struct {
 			struct {
 				struct Value value;
-				char flags;
+				uint8_t flags;
 			} data;
 		} *element;
 		
@@ -87,7 +87,7 @@ Interface(
 				struct Value value;
 				struct Identifier identifier;
 				char unused[63 - sizeof(void *) * 2 - sizeof(struct Identifier)];
-				char flags;
+				uint8_t flags;
 			} data;
 		} *hashmap;
 		

@@ -94,7 +94,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 		++testErrorCount;
 		Env.printColor(Env(Red), "[failure]");
 		fprintf(stderr, " %s:%d : ", func, line);
-		Env.printColor(Env(Black), "expect '%s' was '%.*s'\n", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.printBold("expect '%s' was '%.*s'\n", expect, Value.stringLength(result), Value.stringChars(result));
 	}
 	else
 	{
@@ -509,9 +509,9 @@ static int runTest (int verbosity)
 	putc('\n', stderr);
 	
 	if (testErrorCount)
-		Env.printColor(Env(Black), "test failure: %d\n", testErrorCount);
+		Env.printBold("test failure: %d\n", testErrorCount);
 	else
-		Env.printColor(Env(Black), "all success\n");
+		Env.printBold("all success\n");
 	
 	putc('\n', stderr);
 	

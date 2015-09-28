@@ -33,7 +33,7 @@ Interface(
 	
 	(jmp_buf *, pushEnv ,(Instance))
 	(void, popEnv ,(Instance))
-	(void, jmpEnv, (Instance, struct Value value) __attribute__((noreturn)))
+	(void, jmpEnv, (Instance, struct Value value) dead)
 	
 	(void, printTextInput, (Instance, struct Text text))
 	
