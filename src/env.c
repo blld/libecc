@@ -24,6 +24,17 @@ static void resetColor()
 		fprintf(stderr, "\x1B[0m");
 }
 
+static void printBoldVA (const char *format, va_list ap)
+{
+	if (self->isTerminal)
+		fprintf(stderr, "\x1B[1m");
+	
+	vfprintf(stderr, format, ap);
+	
+	if (self->isTerminal)
+		fprintf(stderr, "\x1B[0m");
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -78,12 +89,10 @@ void printError (int typeLength, const char *type, const char *format, ...)
 	putc(':', stderr);
 	putc(' ', stderr);
 	
-	setColor(Module(Black));
 	va_list ap;
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	printBoldVA(format, ap);
 	va_end(ap);
-	resetColor();
 	
 	putc('\n', stderr);
 }
@@ -95,28 +104,20 @@ void printWarning (const char *format, ...)
 	putc(':', stderr);
 	putc(' ', stderr);
 	
-	setColor(Module(Black));
 	va_list ap;
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	printBoldVA(format, ap);
 	va_end(ap);
-	resetColor();
 	
 	putc('\n', stderr);
 }
 
 void printBold (const char *format, ...)
 {
-	if (self->isTerminal)
-		fprintf(stderr, "\x1B[1m");
-	
 	va_list ap;
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	printBoldVA(format, ap);
 	va_end(ap);
-	
-	if (self->isTerminal)
-		fprintf(stderr, "\x1B[0m");
 }
 
 void printDim (const char *format, ...)
