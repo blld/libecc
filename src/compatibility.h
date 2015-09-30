@@ -9,6 +9,21 @@
 #ifndef libecc_compatibility_h
 #define libecc_compatibility_h
 
+#if __STDC_HOSTED__
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stddef.h>
+	#include <stdarg.h>
+	#include <stdint.h>
+	#include <string.h>
+	#include <signal.h>
+	#include <assert.h>
+	#include <ctype.h>
+	#include <setjmp.h>
+	#include <math.h>
+	#include <errno.h>
+#endif
+
 #ifdef __GNUC__
 #define dead __attribute__((noreturn))
 #else

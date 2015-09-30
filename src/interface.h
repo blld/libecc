@@ -38,18 +38,6 @@
 #ifndef io_libecc_interface_h
 #define io_libecc_interface_h
 
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <stddef.h>
-	#include <stdarg.h>
-	#include <stdint.h>
-	#include <string.h>
-	#include <signal.h>
-	#include <assert.h>
-	#include <ctype.h>
-	#include <setjmp.h>
-	#include <math.h>
-	#include <errno.h>
 	#include "compatibility.h"
 	
 	#define Structure struct Module
