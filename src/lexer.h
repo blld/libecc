@@ -13,7 +13,7 @@
 
 #include "input.h"
 #include "value.h"
-#include "error.h"
+#include "object/error.h"
 
 
 #include "interface.h"

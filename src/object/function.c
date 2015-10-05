@@ -27,13 +27,15 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value this, arguments;
+	
 	Op.assertParameterCount(ecc, 2);
 	
 	if (ecc->this.type != Value(function))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
-	struct Value this = Op.argument(ecc, 0);
-	struct Value arguments = Op.argument(ecc, 1);
+	this = Op.argument(ecc, 0);
+	arguments = Op.argument(ecc, 1);
 	
 	if (arguments.type == Value(undefined) || arguments.type == Value(null))
 		Op.callFunctionVA(ecc->this.data.function, ecc, this, 0);
@@ -50,12 +52,14 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 
 static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *arguments;
+	
 	Op.assertVariableParameter(ecc);
 	
 	if (ecc->this.type != Value(function))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
-	struct Object *arguments = ecc->context->hashmap[2].data.value.data.object;
+	arguments = ecc->context->hashmap[2].data.value.data.object;
 	
 	if (arguments->elementCount)
 	{
@@ -80,24 +84,26 @@ static struct Value prototypeFunction (const struct Op ** const ops, struct Ecc 
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	int argumentCount;
+	
 	Op.assertVariableParameter(ecc);
 	
-	int argumentCount = Op.variableArgumentCount(ecc);
+	argumentCount = Op.variableArgumentCount(ecc);
 	
 	if (argumentCount)
 	{
 		static const char prefix[] = "(function(";
-		
 		uint32_t length = 0;
 		char *chars = malloc(sizeof(prefix)-1 + (argumentCount == 1? 2: 0));
-		memcpy(chars, prefix, sizeof(prefix)-1);
-		length += sizeof(prefix)-1;
-		
 		struct Value value;
 		uint32_t valueLength;
 		int last;
+		int_fast32_t index;
 		
-		for (int_fast32_t index = 0; index < argumentCount; ++index)
+		memcpy(chars, prefix, sizeof(prefix)-1);
+		length += sizeof(prefix)-1;
+		
+		for (index = 0; index < argumentCount; ++index)
 		{
 			last = index == argumentCount - 1;
 			if (last)
@@ -136,8 +142,10 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 void setup ()
 {
+	struct Function *functionPrototypeFunction;
+	
 	functionPrototype = Object.prototype();
-	struct Function *functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
+	functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
 	functionPrototype = &functionPrototypeFunction->object;
 	Function.addToObject(functionPrototype, "toString", toString, 0, 0);
 	Function.addToObject(functionPrototype, "apply", apply, 2, 0);
@@ -172,6 +180,7 @@ Instance create (struct Object *prototype)
 
 Instance createSized (struct Object *prototype, uint32_t size)
 {
+	struct Object *proto;
 	Instance self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addFunction(self);
@@ -183,7 +192,7 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	
 	self->object.type = Text.functionType();
 	
-	struct Object *proto = Object.create(Object.prototype());
+	proto = Object.create(Object.prototype());
 	Object.add(proto, Identifier.constructor(), Value.function(self), Object(writable) | Object(configurable));
 	Object.add(&self->object, Identifier.prototype(), Value.object(proto), Object(writable));
 	
@@ -204,10 +213,12 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 	}
 	else
 	{
+		uint16_t index;
+		
 		self = createSized(prototype, 3 + parameterCount);
 		self->parameterCount = parameterCount;
 		
-		for (uint_fast16_t index = 0; index < parameterCount; ++index)
+		for (index = 0; index < parameterCount; ++index)
 			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
 	self->context.hashmapCount = self->context.hashmapCapacity;
@@ -231,15 +242,14 @@ Instance createWithNativeAccessor (struct Object *prototype, const Native getter
 
 Instance copy (Instance original)
 {
-	assert(original);
-	
 	Instance self = malloc(sizeof(*self));
+	size_t byteSize;
+	
 	assert(self);
+	assert(original);
 	Pool.addObject(&self->object);
 	
 	*self = *original;
-	
-	size_t byteSize;
 	
 	byteSize = sizeof(*self->object.hashmap) * self->object.hashmapCapacity;
 	self->object.hashmap = malloc(byteSize);
@@ -277,11 +287,13 @@ Instance addNative(Instance self, const char *name, const Native native, int par
 
 Instance addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
 {
+	Instance function;
+	
 	assert(object);
 	
-	Instance Function = createWithNative(object, native, parameterCount);
+	function = createWithNative(object, native, parameterCount);
 	
-	Object.add(object, Identifier.makeWithCString(name), Value.function(Function), flags);
+	Object.add(object, Identifier.makeWithCString(name), Value.function(function), flags);
 	
-	return Function;
+	return function;
 }

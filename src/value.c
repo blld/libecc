@@ -52,7 +52,7 @@ Structure boolean (int boolean)
 Structure integer (int32_t integer)
 {
 	return (Structure){
-		.data.integer = integer,
+		.data = { .integer = integer },
 		.type = Value(integer),
 	};
 }
@@ -60,7 +60,7 @@ Structure integer (int32_t integer)
 Structure binary (double binary)
 {
 	return (Structure){
-		.data.binary = binary,
+		.data = { .binary = binary },
 		.type = Value(binary),
 	};
 }
@@ -68,7 +68,7 @@ Structure binary (double binary)
 Structure identifier (struct Identifier identifier)
 {
 	return (Structure){
-		.data.identifier = identifier,
+		.data = { .identifier = identifier },
 		.type = Value(identifier),
 	};
 }
@@ -76,15 +76,17 @@ Structure identifier (struct Identifier identifier)
 Structure text (const struct Text *text)
 {
 	return (Structure){
-		.data.text = text,
+		.data = { .text = text },
 		.type = Value(text),
 	};
 }
 
 Structure chars (struct Chars *chars)
 {
+	assert(chars);
+	
 	return (Structure){
-		.data.chars = chars,
+		.data = { .chars = chars },
 		.type = Value(chars),
 	};
 }
@@ -94,7 +96,7 @@ Structure object (struct Object *object)
 	assert(object);
 	
 	return (Structure){
-		.data.object = object,
+		.data = { .object = object },
 		.type = Value(object),
 	};
 }
@@ -104,7 +106,7 @@ Structure error (struct Error *error)
 	assert(error);
 	
 	return (Structure){
-		.data.error = error,
+		.data = { .error = error },
 		.type = Value(error),
 	};
 }
@@ -114,17 +116,17 @@ Structure string (struct String *string)
 	assert(string);
 	
 	return (Structure){
-		.data.string = string,
+		.data = { .string = string },
 		.type = Value(string),
 	};
 }
 
 Structure date (struct Date *date)
 {
-	assert(string);
+	assert(date);
 	
 	return (Structure){
-		.data.date = date,
+		.data = { .date = date },
 		.type = Value(date),
 	};
 }
@@ -134,7 +136,7 @@ Structure function (struct Function *function)
 	assert(function);
 	
 	return (Structure){
-		.data.function = function,
+		.data = { .function = function },
 		.type = Value(function),
 	};
 }
@@ -142,32 +144,40 @@ Structure function (struct Function *function)
 Structure breaker (int32_t integer)
 {
 	return (Structure){
-		.data.integer = integer,
+		.data = { .integer = integer },
 		.type = Value(breaker),
 	};
 }
 
-Structure reference (Instance self)
+Structure reference (Instance reference)
 {
+	assert(reference);
+	
 	return (Structure){
-		.data.reference = self,
+		.data = { .reference = reference },
 		.type = Value(reference),
 	};
 }
 
 Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text, int hint)
 {
+	struct Object *object;
+	struct Identifier aIdentifier;
+	struct Identifier bIdentifier;
+	struct Value aClosure;
+	struct Value bClosure;
+	
 	if (value.type < Value(object))
 		return value;
 	
-	struct Object *object = value.data.object;
+	object = value.data.object;
 	if (!hint)
 		hint = value.type == Value(date)? 1: -1;
 	
-	struct Identifier aIdentifier = hint > 0? Identifier.toString(): Identifier.valueOf();
-	struct Identifier bIdentifier = hint > 0? Identifier.valueOf(): Identifier.toString();
+	aIdentifier = hint > 0? Identifier.toString(): Identifier.valueOf();
+	bIdentifier = hint > 0? Identifier.valueOf(): Identifier.toString();
 	
-	struct Value aClosure = Object.get(object, aIdentifier);
+	aClosure = Object.get(object, aIdentifier);
 	if (aClosure.type == Value(function))
 	{
 		struct Value result = Op.callFunctionVA(aClosure.data.function, ecc, value, 0);
@@ -175,7 +185,7 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 			return result;
 	}
 	
-	struct Value bClosure = Object.get(object, bIdentifier);
+	bClosure = Object.get(object, bIdentifier);
 	if (bClosure.type == Value(function))
 	{
 		struct Value result = Op.callFunctionVA(bClosure.data.function, ecc, value, 0);
@@ -259,7 +269,7 @@ Structure toString (Structure value)
 					return Value.text(Text.Infinity());
 			}
 			else
-				return Value.chars(Chars.create("%lg", value.data.binary));
+				return Value.chars(Chars.create("%g", value.data.binary));
 		
 		case Value(identifier):
 			return Value.text(Identifier.textOf(value.data.identifier));

@@ -28,7 +28,7 @@ enum Chars(Flags)
 };
 
 Interface(
-	(Instance, createVA ,(const char *format, va_list ap))
+	(Instance, createVA ,(int16_t length, const char *format, va_list ap))
 	(Instance, create ,(const char *format, ...))
 	(Instance, createSized ,(uint16_t size))
 	
@@ -37,7 +37,7 @@ Interface(
 	{
 		uint16_t length;
 		uint8_t flags;
-		char chars[];
+		char chars[1];
 	}
 )
 

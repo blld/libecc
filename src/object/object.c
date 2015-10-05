@@ -96,9 +96,11 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 
 static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value v;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value v = Value.toString(Op.argument(ecc, 0));
+	v = Value.toString(Op.argument(ecc, 0));
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	if (v.type == Value(identifier))
@@ -113,9 +115,11 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 
 static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value arg0;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value arg0 = Op.argument(ecc, 0);
+	arg0 = Op.argument(ecc, 0);
 	
 	if (Value.isObject(arg0))
 	{
@@ -136,12 +140,15 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 
 static struct Value propertyIsEnumerable (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value property;
+	struct Object *object;
+	struct Entry entry;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value property = Op.argument(ecc, 0);
-	struct Object *object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	
-	struct Entry entry = getOwnProperty(object, property);
+	property = Op.argument(ecc, 0);
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	entry = getOwnProperty(object, property);
 	
 	if (*entry.flags & Object(isValue))
 		ecc->result = Value.boolean(*entry.flags & Object(enumerable));
@@ -153,9 +160,11 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Op.argument(ecc, 0);
+	value = Op.argument(ecc, 0);
 	
 	if (value.type == Value(null) || value.type == Value(undefined))
 		ecc->result = Value.object(Object.create(objectPrototype));
@@ -169,9 +178,11 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	
 	ecc->result = object->prototype? Value.object(object->prototype): Value.undefined();
 	
@@ -180,11 +191,15 @@ static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * c
 
 static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	struct Value property;
+	struct Entry entry;
+	
 	Op.assertParameterCount(ecc, 2);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	struct Value property = Op.argument(ecc, 1);
-	struct Entry entry = getOwnProperty(object, property);
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	property = Op.argument(ecc, 1);
+	entry = getOwnProperty(object, property);
 	
 	ecc->result = Value.undefined();
 	
@@ -207,11 +222,15 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 
 static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	struct Object *result;
+	uint32_t index, length;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	struct Object *result = Array.create();
-	uint_fast32_t index, length = 0;
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	result = Array.create();
+	length = 0;
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue))
@@ -235,12 +254,15 @@ static struct Value objectCreate (const struct Op ** const ops, struct Ecc * con
 
 static struct Value defineProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *property;
+	struct Value value;
+	enum Object(Flags) flags;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *property = checkObject(ops, ecc, Op.argument(ecc, 1));
-	
-	struct Value value = Object.get(property, Identifier.value());
-	enum Object(Flags) flags = 0;
+	property = checkObject(ops, ecc, Op.argument(ecc, 1));
+	value = Object.get(property, Identifier.value());
+	flags = 0;
 	
 	if (Value.isTrue(Object.get(property, Identifier.enumerable())))
 		flags |= Object(enumerable);
@@ -265,12 +287,14 @@ static struct Value defineProperties (const struct Op ** const ops, struct Ecc *
 
 static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	uint32_t index;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	object->flags &= ~Object(extensible);
 	
-	uint_fast32_t index;
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue))
 			object->element[index].data.flags &= ~Object(configurable);
@@ -285,12 +309,14 @@ static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 
 static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	uint32_t index;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	object->flags &= ~Object(extensible);
 	
-	uint_fast32_t index;
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue))
 			object->element[index].data.flags &= ~(Object(writable) | Object(configurable));
@@ -305,9 +331,11 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 
 static struct Value preventExtensions (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	object->flags &= ~Object(extensible);
 	
 	ecc->result = Value.object(object);
@@ -316,15 +344,17 @@ static struct Value preventExtensions (const struct Op ** const ops, struct Ecc 
 
 static struct Value isSealed (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	uint32_t index;
+	
 	Op.assertParameterCount(ecc, 1);
 	
 	ecc->result = Value.true();
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	if (object->flags & Object(extensible))
 		ecc->result = Value.false();
 	
-	uint_fast32_t index;
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue) && object->element[index].data.flags & Object(configurable))
 			ecc->result = Value.false();
@@ -338,15 +368,17 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	uint32_t index;
+	
 	Op.assertParameterCount(ecc, 1);
 	
 	ecc->result = Value.true();
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	if (object->flags & Object(extensible))
 		ecc->result = Value.false();
 		
-	uint_fast32_t index;
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue) && (object->element[index].data.flags & Object(writable) || object->element[index].data.flags & Object(configurable)))
 			ecc->result = Value.false();
@@ -360,9 +392,11 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value isExtensible (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	ecc->result = Value.boolean(object->flags & Object(extensible));
 	
 	return Value.undefined();
@@ -370,11 +404,15 @@ static struct Value isExtensible (const struct Op ** const ops, struct Ecc * con
 
 static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	struct Object *result;
+	uint32_t index, length;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Object *object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	struct Object *result = Array.create();
-	uint_fast32_t index, length = 0;
+	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	result = Array.create();
+	length = 0;
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue) && object->element[index].data.flags & Object(enumerable))
@@ -464,6 +502,8 @@ Instance initialize (Instance self, Instance prototype)
 
 Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 {
+	size_t byteSize;
+	
 	assert(self);
 	
 	*self = Object.identity;
@@ -479,7 +519,7 @@ Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 	// slot 0 is self referencing undefined value (all zeroes)
 	// slot 1 is entry point, referencing undefined (slot 0) by default (all zeroes)
 	
-	size_t byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
+	byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
 	self->hashmap = malloc(byteSize);
 	memset(self->hashmap, 0, byteSize);
 	
@@ -498,13 +538,13 @@ Instance finalize (Instance self)
 
 Instance copy (const Instance original)
 {
+	size_t byteSize;
+	
 	Instance self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(self);
 	
 	*self = *original;
-	
-	size_t byteSize;
 	
 	byteSize = sizeof(*self->element) * self->elementCapacity;
 	self->element = malloc(byteSize);
@@ -535,10 +575,10 @@ struct Value getOwn (Instance self, struct Identifier identifier)
 
 struct Value get (Instance self, struct Identifier identifier)
 {
-	assert(self);
-	
 	Instance object = self;
 	uint32_t slot = 0;
+	
+	assert(object);
 	do
 		slot = getSlot(object, identifier);
 	while (!slot && (object = object->prototype));
@@ -551,14 +591,14 @@ struct Value get (Instance self, struct Identifier identifier)
 
 struct Entry getMember (Instance self, struct Identifier identifier)
 {
-	assert(self);
-	
 //	fprintf(stderr, "--- > ");
 //	Identifier.dumpTo(identifier, stderr);
 //	fprintf(stderr, " <\n");
 	
 	Instance object = self;
 	uint32_t slot;
+	
+	assert(object);
 	do
 	{
 //		dumpTo(object, stderr);
@@ -580,11 +620,11 @@ struct Entry getMember (Instance self, struct Identifier identifier)
 
 struct Entry getOwnProperty (Instance self, struct Value property)
 {
-	assert(self);
-	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
 	uint32_t slot;
+	
+	assert(self);
 	
 	if (element >= 0 && element < self->elementCount && (self->element[element].data.flags & Object(isValue)))
 	{
@@ -609,13 +649,13 @@ struct Entry getOwnProperty (Instance self, struct Value property)
 
 struct Entry getProperty (Instance self, struct Value property)
 {
-	assert(self);
-	
 	Instance object = self;
 	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
 	uint32_t slot;
+	
+	assert(object);
 	
 	if (element >= 0)
 		do
@@ -646,13 +686,13 @@ struct Entry getProperty (Instance self, struct Value property)
 
 void setProperty (Instance self, struct Value property, struct Value value)
 {
-	assert(self);
-	
 	Instance object = self;
 	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
 	uint32_t slot;
+	
+	assert(object);
 	
 	if (element >= 0)
 	{
@@ -692,14 +732,14 @@ void setProperty (Instance self, struct Value property, struct Value value)
 
 void add (Instance self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
 {
+	uint32_t slot = 1;
+	int depth = 0;
+	
 	assert(self);
 	assert(identifier.data.integer);
 	
 	if (!(self->flags & Object(extensible)))
 		return;
-	
-	uint_fast32_t slot = 1;
-	int depth = 0;
 	
 	do
 	{
@@ -735,11 +775,12 @@ void add (Instance self, struct Identifier identifier, struct Value value, enum 
 
 struct Value delete (Instance self, struct Identifier identifier)
 {
-	assert(self);
-	assert(identifier.data.integer);
-	
 	Instance object = self;
 	uint32_t slot;
+	
+	assert(object);
+	assert(identifier.data.integer);
+	
 	do
 		slot = getSlot(object, identifier);
 	while (!slot && (object = object->prototype));
@@ -758,11 +799,11 @@ struct Value delete (Instance self, struct Identifier identifier)
 
 struct Value deleteProperty (Instance self, struct Value property)
 {
-	assert(self);
-	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
 	uint32_t slot;
+	
+	assert(self);
 	
 	if (element >= 0)
 	{
@@ -787,10 +828,10 @@ struct Value deleteProperty (Instance self, struct Value property)
 
 void packValue (Instance self)
 {
-	assert(self);
-	
 	__typeof__(*self->hashmap) data;
-	uint_fast32_t index = 2, valueIndex = 2, copyIndex, slot;
+	uint32_t index = 2, valueIndex = 2, copyIndex, slot;
+	
+	assert(self);
 	
 	for (; index <= self->hashmapCount; ++index)
 		if (self->hashmap[index].data.flags & Object(isValue))
@@ -843,23 +884,24 @@ void addElementAtIndex (Instance self, uint32_t index, struct Value value, enum 
 
 void dumpTo(Instance self, FILE *file)
 {
+	uint32_t index;
+	int isArray;
+	
 	assert(self);
 	
-	uint_fast32_t index;
+	isArray = self->prototype == Array.prototype();
 	
-	int isArray = self->prototype == Array.prototype();
-	
-	fprintf(stderr, isArray? "[ ": "{ ");
+	fprintf(file, isArray? "[ ": "{ ");
 	
 	for (index = 0; index < self->elementCount; ++index)
 	{
 		if (!isArray)
-			fprintf(stderr, "%d: ", index);
+			fprintf(file, "%d: ", index);
 		
 		if (self->element[index].data.flags & Object(isValue))
 		{
-			Value.dumpTo(self->element[index].data.value, stderr);
-			fprintf(stderr, ", ");
+			Value.dumpTo(self->element[index].data.value, file);
+			fprintf(file, ", ");
 		}
 	}
 	
@@ -869,13 +911,13 @@ void dumpTo(Instance self, FILE *file)
 		{
 			if (!isArray)
 			{
-				Identifier.dumpTo(self->hashmap[index].data.identifier, stderr);
-				fprintf(stderr, ": ");
+				Identifier.dumpTo(self->hashmap[index].data.identifier, file);
+				fprintf(file, ": ");
 			}
-			Value.dumpTo(self->hashmap[index].data.value, stderr);
-			fprintf(stderr, ", ");
+			Value.dumpTo(self->hashmap[index].data.value, file);
+			fprintf(file, ", ");
 		}
 	}
 	
-	fprintf(stderr, isArray? "]": "}");
+	fprintf(file, isArray? "]": "}");
 }

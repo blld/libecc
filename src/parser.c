@@ -316,8 +316,8 @@ static struct OpList * primary (Instance self)
 
 static struct OpList * arguments (Instance self, int *count)
 {
-	*count = 0;
 	struct OpList *oplist = NULL;
+	*count = 0;
 	if (previewToken(self) != ')')
 		do
 		{
@@ -405,11 +405,12 @@ static struct OpList * leftHandSide (Instance self)
 		}
 		else if (acceptToken(self, '('))
 		{
+			int count = 0;
+			
 			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval());
 			if (isEval)
 				OpList.destroy(oplist), oplist = NULL;
 			
-			int count = 0;
 			oplist = OpList.join(oplist, arguments(self, &count));
 			
 			if (isEval)
@@ -710,10 +711,12 @@ static struct OpList * conditional (Instance self, int noIn)
 		if (oplist)
 		{
 			struct OpList *trueOps = assignment(self, 0);
+			struct OpList *falseOps;
+			
 			if (!expectToken(self, ':'))
 				return oplist;
 			
-			struct OpList *falseOps = assignment(self, noIn);
+			falseOps = assignment(self, noIn);
 			
 			trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->opCount), OpList.text(trueOps)));
 			oplist = OpList.unshift(Op.make(Op.jumpIfNot, Value.integer(trueOps->opCount), OpList.text(oplist)), oplist);
@@ -877,26 +880,31 @@ static struct OpList * ifStatement (Instance self)
 
 static struct OpList * doStatement (Instance self)
 {
+	struct OpList *oplist, *condition;
+	
 	pushDepth(self, Identifier.none(), 2);
-	struct OpList *oplist = statement(self);
+	oplist = statement(self);
 	popDepth(self);
 	
 	expectToken(self, Lexer(whileToken));
 	expectToken(self, '(');
-	struct OpList *condition = expression(self, 0);
+	condition = expression(self, 0);
 	expectToken(self, ')');
 	semicolon(self);
+	
 	return OpList.createLoop(NULL, condition, NULL, oplist, 1);
 }
 
 static struct OpList * whileStatement (Instance self)
 {
+	struct OpList *oplist, *condition;
+	
 	expectToken(self, '(');
-	struct OpList *condition = expression(self, 0);
+	condition = expression(self, 0);
 	expectToken(self, ')');
 	
 	pushDepth(self, Identifier.none(), 2);
-	struct OpList *oplist = statement(self);
+	oplist = statement(self);
 	popDepth(self);
 	
 	return OpList.createLoop(NULL, condition, NULL, oplist, 0);
@@ -972,6 +980,8 @@ static struct OpList * continueStatement (Instance self, struct Text text)
 	struct OpList *oplist = NULL;
 	struct Identifier label = Identifier.none();
 	struct Text labelText = self->lexer->text;
+	uint16_t depth, lastestDepth, breaker = 0;
+	
 	if (!self->lexer->didLineBreak && previewToken(self) == Lexer(identifierToken))
 	{
 		label = self->lexer->value.data.identifier;
@@ -979,11 +989,11 @@ static struct OpList * continueStatement (Instance self, struct Text text)
 	}
 	semicolon(self);
 	
-	uint16_t depth = self->depthCount, breaker = 0;
+	depth = self->depthCount;
 	if (!depth)
 		error(self, Error.syntaxError(text, "continue must be inside loop"));
 	
-	int lastestDepth = 0;
+	lastestDepth = 0;
 	while (depth--)
 	{
 		breaker += self->depths[depth].depth;
@@ -1003,6 +1013,8 @@ static struct OpList * breakStatement (Instance self, struct Text text)
 	struct OpList *oplist = NULL;
 	struct Identifier label = Identifier.none();
 	struct Text labelText = self->lexer->text;
+	uint16_t depth, breaker = 0;
+	
 	if (!self->lexer->didLineBreak && previewToken(self) == Lexer(identifierToken))
 	{
 		label = self->lexer->value.data.identifier;
@@ -1010,7 +1022,7 @@ static struct OpList * breakStatement (Instance self, struct Text text)
 	}
 	semicolon(self);
 	
-	uint16_t depth = self->depthCount, breaker = 0;
+	depth = self->depthCount;
 	if (!depth)
 		error(self, Error.syntaxError(text, "break must be inside loop or switch"));
 	
@@ -1151,14 +1163,17 @@ static struct OpList * statement (Instance self)
 		
 		if (acceptToken(self, Lexer(catchToken)))
 		{
+			struct Op identiferOp;
+			struct OpList *catchOps;
+			
 			expectToken(self, '(');
 			if (previewToken(self) != Lexer(identifierToken))
 				error(self, Error.syntaxError(text, "missing identifier in catch"));
 			
-			struct Op identiferOp = identifier(self);
+			identiferOp = identifier(self);
 			expectToken(self, ')');
 			
-			struct OpList *catchOps = block(self);
+			catchOps = block(self);
 			if (catchOps)
 			{
 				catchOps = OpList.appendNoop(OpList.unshift(identiferOp, catchOps));
@@ -1213,8 +1228,8 @@ static struct OpList * statement (Instance self)
 
 static struct OpList * parameters (Instance self, int *count)
 {
-	*count = 0;
 	struct Op op;
+	*count = 0;
 	if (previewToken(self) != ')')
 		do
 		{
@@ -1243,6 +1258,8 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 	int parameterCount = 0;
 	
 	struct Op identifierOp = { 0, Value.undefined() };
+	struct Function *parentClosure;
+	struct Function *function;
 	
 	if (!isGetter && !isSetter)
 	{
@@ -1264,8 +1281,8 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 		}
 	}
 	
-	struct Function *parentClosure = self->function;
-	struct Function *function = Function.create(NULL);
+	parentClosure = self->function;
+	function = Function.create(NULL);
 	Object.add(&function->context, Identifier.arguments(), Value.undefined(), Object(writable));
 	
 	self->function = function;
@@ -1372,23 +1389,26 @@ void destroy (Instance self)
 
 struct Function * parseWithContext (Instance const self, struct Object *context)
 {
+	struct Function *function;
+	struct OpList *oplist;
+	
 	assert(self);
 	
-	struct Function *function = Function.create(context);
+	function = Function.create(context);
 	nextToken(self);
 	
 	self->function = function;
-	struct OpList *oplist = sourceElements(self, Lexer(noToken));
+	oplist = sourceElements(self, Lexer(noToken));
 	self->function = NULL;
 	
 	if (self->error)
 	{
-		OpList.destroy(oplist), oplist = NULL;
-		
 		struct Op errorOps[] = {
 			{ Op.throw, Value.undefined(), self->error->text },
 			{ Op.value, Value.error(self->error) },
 		};
+		
+		OpList.destroy(oplist), oplist = NULL;
 		oplist = malloc(sizeof(*oplist) + sizeof(errorOps));
 		oplist->opCount = sizeof(errorOps) / sizeof(*errorOps);
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));

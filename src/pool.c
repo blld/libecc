@@ -33,12 +33,12 @@ static void unmarkObject (struct Object *object)
 {
 	if (object->flags & Object(mark))
 	{
+		uint32_t index, count;
+		
 		object->flags &= ~Object(mark);
 		
 		if (object->prototype)
 			unmarkObject(object->prototype);
-		
-		uint_fast32_t index , count;
 		
 		for (index = 0, count = object->elementCount; index < count; ++index)
 			unmarkValue(object->element[index].data.value);
@@ -137,7 +137,7 @@ void addChars (struct Chars *chars)
 
 void markAll (void)
 {
-	uint_fast32_t index, count;
+	uint32_t index, count;
 	
 	for (index = 0, count = self->functionsCount; index < count; ++index)
 	{
@@ -166,7 +166,7 @@ void collectMarked (void)
 {
 	int total = 0;
 	
-	uint_fast32_t index;
+	uint32_t index;
 	
 	index = self->functionsCount;
 	while (index--)

@@ -19,20 +19,21 @@ static struct Object *uriErrorPrototype = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *object;
+	struct Value name, message;
+	
 	Op.assertParameterCount(ecc, 0);
 	
-	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
-	
-	struct Object *object = ecc->this.data.object;
-	struct Value name = Value.toString(Object.get(object, Identifier.name()));
-	struct Value message = Value.toString(Object.get(object, Identifier.message()));
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	name = Value.toString(Object.get(object, Identifier.name()));
+	message = Value.toString(Object.get(object, Identifier.message()));
 	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 	return Value.undefined();
 }
 
 // MARK: - Static Members
 
-Instance createVA (struct Object *errorPrototype, struct Text text, const char *format, va_list ap)
+static Instance createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	Instance self = malloc(sizeof(*self));
 	assert(self);
@@ -40,12 +41,10 @@ Instance createVA (struct Object *errorPrototype, struct Text text, const char *
 	
 	Object.initialize(&self->object, errorPrototype);
 	
-	if (!format)
-		return self;
-	
-	Object.add(&self->object, Identifier.message(), Value.chars(Chars.createVA(format, ap)), Object(writable) | Object(configurable));
-	
 	self->text = text;
+	
+	if (message)
+		Object.add(&self->object, Identifier.message(), Value.chars(message), Object(writable) | Object(configurable));
 	
 	return self;
 }
@@ -120,54 +119,99 @@ struct Object *uriPrototype (void)
 
 Instance error (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(errorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
 	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(errorPrototype, text, Chars.createVA(length, format, ap));
+	va_end(ap);
+	
 	return self;
 }
 
 Instance rangeError (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(rangeErrorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
 	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(rangeErrorPrototype, text, Chars.createVA(length, format, ap));
+	va_end(ap);
+	
 	return self;
 }
 
 Instance referenceError (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(referenceErrorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
 	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(referenceErrorPrototype, text, Chars.createVA(length, format, ap));
+	va_end(ap);
+	
 	return self;
 }
 
 Instance syntaxError (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(syntaxErrorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(syntaxErrorPrototype, text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }
 
 Instance typeError (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(typeErrorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(typeErrorPrototype, text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }
 
 Instance uriError (struct Text text, const char *format, ...)
 {
+	Instance self;
 	va_list ap;
+	int16_t length;
+	
 	va_start(ap, format);
-	Instance self = createVA(uriErrorPrototype, text, format, ap);
+	length = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
+	
+	va_start(ap, format);
+	self = createVA(uriErrorPrototype, text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }

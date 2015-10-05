@@ -55,8 +55,8 @@ static const struct Text nativeCodeText = textMake("[native code]");
 Structure make (const char *location, uint16_t length)
 {
 	return (Structure){
-		.length = length,
-		.location = location,
+		length,
+		location,
 	};
 }
 

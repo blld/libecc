@@ -32,8 +32,9 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		uint32_t length = 0, stringLength;
 		int notLast = 0;
 		struct Value value;
+		uint32_t index;
 		
-		for (uint_fast32_t index = 0; ; ++index)
+		for (index = 0; ; ++index)
 		{
 			notLast = index < ecc->this.data.object->elementCount - 1;
 			
@@ -98,10 +99,10 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 void setup (void)
 {
+	enum Object(Flags) flags = Object(writable) | Object(configurable);
+	
 	arrayPrototype = Object.create(Object.prototype());
 	arrayPrototype->type = Text.arrayType();
-	
-	enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	Function.addToObject(arrayPrototype, "toString", toString, 0, flags);
 //	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);

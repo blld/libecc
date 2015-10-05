@@ -11,9 +11,6 @@
 
 #include "namespace_io_libecc.h"
 
-#ifndef io_libecc_op_h
-#include "oplist.h"
-#endif
 #include "object.h"
 #include "native.h"
 

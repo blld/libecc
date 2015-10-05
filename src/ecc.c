@@ -14,13 +14,18 @@ static int instanceCount = 0;
 
 static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	struct Input *input;
+	struct Object *context;
+	struct Value this;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Value.toString(Op.argument(ecc, 0));
-	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	value = Value.toString(Op.argument(ecc, 0));
+	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
-	struct Object *context = ecc->context;
-	struct Value this = ecc->this;
+	context = ecc->context;
+	this = ecc->this;
 	ecc->context = &ecc->global->context;
 	ecc->this = Value.object(&ecc->global->context);
 	evalInput(ecc, input);
@@ -32,12 +37,16 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 
 static struct Value parseInt (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	struct Text text;
+	int32_t radix;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Value.toString(Op.argument(ecc, 0));
-	int32_t radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	value = Value.toString(Op.argument(ecc, 0));
+	radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
 	
-	struct Text text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseInteger(text, radix);
 	
 	return Value.undefined();
@@ -45,11 +54,14 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	struct Text text;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Op.argument(ecc, 0));
 	
-	struct Text text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseBinary(text);
 	
 	return Value.undefined();
@@ -57,9 +69,11 @@ static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const
 
 static struct Value isFinite (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Value.toBinary(Op.argument(ecc, 0));
+	value = Value.toBinary(Op.argument(ecc, 0));
 	ecc->result = Value.boolean(!isnan(value.data.binary) && !isinf(value.data.binary));
 	
 	return Value.undefined();
@@ -67,9 +81,11 @@ static struct Value isFinite (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	struct Value value = Value.toBinary(Op.argument(ecc, 0));
+	value = Value.toBinary(Op.argument(ecc, 0));
 	ecc->result = Value.boolean(isnan(value.data.binary));
 	
 	return Value.undefined();
@@ -79,7 +95,9 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 
 static struct Input * findInput (Instance ecc, struct Text text)
 {
-	for (uint_fast16_t i = 0; i < ecc->inputCount; ++i)
+	uint16_t i;
+	
+	for (i = 0; i < ecc->inputCount; ++i)
 		if (text.location >= ecc->inputs[i]->bytes && text.location <= ecc->inputs[i]->bytes + ecc->inputs[i]->length)
 			return ecc->inputs[i];
 	
@@ -96,6 +114,8 @@ static void addInput(Instance self, struct Input *input)
 
 Instance create (void)
 {
+	Instance self;
+	
 	if (!instanceCount++)
 	{
 		Env.setup();
@@ -110,7 +130,7 @@ Instance create (void)
 		Date.setup();
 	}
 	
-	Instance self = malloc(sizeof(*self));
+	self = malloc(sizeof(*self));
 	*self = Module.identity;
 	
 	self->global = Function.create(NULL);
@@ -185,6 +205,13 @@ void addValue (Instance self, const char *name, struct Value value, enum Object(
 
 int evalInput (Instance self, struct Input *input)
 {
+	int result;
+	struct Object *parentContext;
+	struct Lexer *lexer;
+	struct Parser *parser;
+	struct Function *function;
+	const struct Op *ops;
+	
 	assert(self);
 	
 	if (!input)
@@ -192,14 +219,14 @@ int evalInput (Instance self, struct Input *input)
 	
 	addInput(self, input);
 	
-	int result = EXIT_SUCCESS;
+	result = EXIT_SUCCESS;
 	
-	struct Object *parentContext = self->context;
+	parentContext = self->context;
 	
-	struct Lexer *lexer = Lexer.createWithInput(input);
-	struct Parser *parser = Parser.createWithLexer(lexer);
-	struct Function *function = Parser.parseWithContext(parser, parentContext);
-	const struct Op *ops = function->oplist->ops;
+	lexer = Lexer.createWithInput(input);
+	parser = Parser.createWithLexer(lexer);
+	function = Parser.parseWithContext(parser, parentContext);
+	ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
@@ -215,11 +242,14 @@ int evalInput (Instance self, struct Input *input)
 			ops->native(&ops, self);
 		else
 		{
+			struct Value value;
+			struct Value name;
+			struct Value message;
+			
 			result = EXIT_FAILURE;
 			
-			struct Value value = self->result;
-			struct Value name = Value.undefined();
-			struct Value message;
+			value = self->result;
+			name = Value.undefined();
 			
 			if (Value.isObject(value))
 			{
@@ -232,7 +262,7 @@ int evalInput (Instance self, struct Input *input)
 			if (name.type == Value(undefined))
 				name = Value.text(Text.errorName());
 			
-			putc('\n', stderr);
+			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
 		}
@@ -281,15 +311,19 @@ void jmpEnv (Instance self, struct Value value)
 
 void printTextInput (Instance self, struct Text text)
 {
+	struct Input *input;
+	
 	assert(self);
 	
-	struct Input *input = findInput(self, text);
+	input = findInput(self, text);
 	if (input)
 		Input.printText(input, text);
 	else
 	{
-		Env.printDim("(unknown input)\n");
-		fprintf(stderr, "%.*s\n\n", text.length, text.location);
+		Env.printColor(0, Env(Dim), "(unknown input)\n");
+		Env.print("%.*s", text.length, text.location);
+		Env.newline();
+		Env.newline();
 	}
 }
 

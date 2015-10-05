@@ -302,7 +302,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = "-pedantic";
+				OTHER_CFLAGS = "";
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wall";
 			};

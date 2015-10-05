@@ -18,12 +18,12 @@ static struct Ecc *ecc = NULL;
 
 int main (int argc, const char * argv[])
 {
+	int result = EXIT_SUCCESS;
+	
 	ecc = Ecc.create();
 	
 	Function.addNative(ecc->global, "print", print, 1, 0);
 	Function.addNative(ecc->global, "gc", gc, 0, 0);
-	
-	int result = EXIT_SUCCESS;
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -80,27 +80,31 @@ static int testErrorCount = 0;
 
 static void test (const char *func, int line, const char *test, const char *expect)
 {
+	struct Value result;
+	uint16_t length;
+	
 	if (testVerbosity || !setjmp(*Ecc.pushEnv(ecc)))
 		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line));
 	
 	if (!testVerbosity)
 		Ecc.popEnv(ecc);
 	
-	struct Value result = Value.toString(ecc->result);
-	uint16_t length = Value.stringLength(result);
+	result = Value.toString(ecc->result);
+	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
 	{
 		++testErrorCount;
-		Env.printColor(Env(Red), "[failure]");
-		fprintf(stderr, " %s:%d : ", func, line);
-		Env.printBold("expect '%s' was '%.*s'\n", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.printColor(Env(Red), Env(Bold), "[failure]");
+		Env.print(" %s:%d - ", func, line);
+		Env.printColor(0, Env(Bold), "expect '%s' was '%.*s'", expect, Value.stringLength(result), Value.stringChars(result));
 	}
 	else
 	{
-		Env.printColor(Env(Green), "[success]");
-		fprintf(stderr, " %s:%d\n", func, line);
+		Env.printColor(Env(Green), Env(Bold), "[success]");
+		Env.print(" %s:%d", func, line);
 	}
+	Env.newline();
 	
 	Ecc.garbageCollect(ecc);
 }
@@ -506,14 +510,17 @@ static int runTest (int verbosity)
 	testAccessor();
 	testArray();
 	
-	putc('\n', stderr);
+	
+	Env.newline();
 	
 	if (testErrorCount)
-		Env.printBold("test failure: %d\n", testErrorCount);
+		Env.printColor(0, Env(Bold), "test failure: %d", testErrorCount);
 	else
-		Env.printBold("all success\n");
+		Env.printColor(0, Env(Bold), "all success");
 	
-	putc('\n', stderr);
+	Env.newline();
+	Env.print(" ");
+	Env.newline();
 	
 	return testErrorCount? EXIT_FAILURE: EXIT_SUCCESS;
 }

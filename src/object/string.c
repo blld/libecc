@@ -16,6 +16,8 @@
 
 Instance create (const char *format, ...)
 {
+	va_list ap;
+	
 	Instance self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(&self->object);
@@ -25,13 +27,13 @@ Instance create (const char *format, ...)
 	
 	self->object.type = Text.stringType();
 	
-	va_list ap, apsize;
 	va_start(ap, format);
-	va_copy(apsize, ap);
-	self->length = vsnprintf(NULL, 0, format, apsize);
-	va_end(apsize);
+	self->length = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
 	
 	self->chars = malloc(self->length + 1);
+	
+	va_start(ap, format);
 	vsprintf(self->chars, format, ap);
 	va_end(ap);
 	

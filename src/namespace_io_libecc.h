@@ -9,6 +9,8 @@
 #ifndef libecc_namespace_io_libecc_h
 #define libecc_namespace_io_libecc_h
 
+#include "compatibility.h"
+
 #define Ecc io_libecc_Ecc
 #define Input io_libecc_Input
 #define Lexer io_libecc_Lexer

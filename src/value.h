@@ -10,11 +10,9 @@
 #define io_libecc_value_h
 
 #include "namespace_io_libecc.h"
-
 struct Function;
 struct Ecc;
 
-#include "text.h"
 #include "identifier.h"
 
 
@@ -126,12 +124,12 @@ Interface(
 // import object and redefine correct module (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
-#include "function.h"
-#include "object.h"
-#include "string.h"
-#include "array.h"
-#include "date.h"
-#include "error.h"
+#include "object/function.h"
+#include "object/object.h"
+#include "object/string.h"
+#include "object/array.h"
+#include "object/date.h"
+#include "object/error.h"
 #include "ecc.h"
 #endif
 

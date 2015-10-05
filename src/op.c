@@ -268,7 +268,8 @@ const char * toChars (const Native native)
 	};
 	#undef _
 	
-	for (int index = 0; index < sizeof(functionList); ++index)
+	int index;
+	for (index = 0; index < sizeof(functionList); ++index)
 		if (functionList[index].native == native)
 			return functionList[index].name;
 	
@@ -309,15 +310,30 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 
 // MARK: call
 
+static struct Value getArgumentsLength (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	ecc->result = Value.binary(ecc->this.data.object->elementCount);
+	return Value.undefined();
+}
+
+static struct Value setArgumentsLength (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 1);
+	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
+	return Value.undefined();
+}
+
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
+	uint32_t index = 0;
+	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier.length(), Value.integer(argumentCount), Object(writable)); // TODO: change as a getter/setter to elementCount, same as Array
-	arguments->type = Text.argumentsType();
+	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+		arguments->type = Text.argumentsType();
 	context->hashmap[2].data.value = Value.object(arguments);
 	
-	uint_fast32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 		{
@@ -342,13 +358,14 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 
 static inline void populateContextWithArguments (const Instance * const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
 {
+	uint32_t index = 0;
+	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier.length(), Value.integer(argumentCount), Object(writable)); // TODO: change as a getter/setter to elementCount, same as Array
+	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 	arguments->type = Text.argumentsType();
 	context->hashmap[2].data.value = Value.object(arguments);
 	
-	uint_fast32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 		{
@@ -373,7 +390,7 @@ static inline void populateContextWithArguments (const Instance * const ops, str
 
 static inline void populateContextVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
-	uint_fast32_t index = 0;
+	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 			context->hashmap[index + 3].data.value = va_arg(ap, struct Value);
@@ -389,7 +406,7 @@ static inline void populateContextVA (struct Object *context, int parameterCount
 
 static inline void populateContext (const Instance * const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
 {
-	uint_fast32_t index = 0;
+	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 			context->hashmap[index + 3].data.value = nextOp();
@@ -429,11 +446,12 @@ static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, 
 struct Value callFunctionArguments (struct Function *function, struct Ecc * const ecc, struct Value this, struct Object *arguments)
 {
 	struct Object *context = Object.copy(&function->context);
-	context->hashmap[2].data.value = Value.object(arguments);
 	int parameterCount = function->parameterCount;
 	int argumentCount = arguments->elementCount;
+	uint32_t index = 0;
 	
-	uint_fast32_t index = 0;
+	context->hashmap[2].data.value = Value.object(arguments);
+	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
@@ -449,8 +467,8 @@ struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, 
 	if (function->needHeap)
 	{
 		struct Object *context = Object.copy(&function->context);
-		
 		va_list ap;
+		
 		va_start(ap, argumentCount);
 		if (function->needArguments)
 			populateContextWithArgumentsVA(context, function->parameterCount, argumentCount, ap);
@@ -463,13 +481,15 @@ struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, 
 	}
 	else
 	{
+		struct Object stackContext;
 		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		va_list ap;
+		
 		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = function->context;
+		stackContext = function->context;
 		stackContext.hashmap = hashmap;
 		
-		va_list ap;
 		va_start(ap, argumentCount);
 		populateContextVA(&stackContext, function->parameterCount, argumentCount, ap);
 		va_end(ap);
@@ -495,10 +515,12 @@ static inline struct Value callFunction (const Instance * const ops, struct Ecc 
 	}
 	else
 	{
+		struct Object stackContext;
 		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		
 		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
 		
-		struct Object stackContext = function->context;
+		stackContext = function->context;
 		stackContext.hashmap = hashmap;
 		
 		populateContext(ops, ecc, &stackContext, function->parameterCount, argumentCount);
@@ -531,15 +553,18 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value eval (const Instance * const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	struct Input *input;
 	int32_t argumentCount = opValue().data.integer;
+	
 	if (!argumentCount)
 		return nextOp();
 	
-	struct Value value = nextOp();
+	value = nextOp();
 	while (--argumentCount)
 		nextOp();
 	
-	struct Input *input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	Ecc.evalInput(ecc, input);
 	
 	return ecc->result;
@@ -580,8 +605,9 @@ struct Value object (const Instance * const ops, struct Ecc * const ecc)
 	struct Object *object = Object.create(Object.prototype());
 	struct Value value;
 	int isGetter, isSetter;
+	uint32_t count;
 	
-	for (uint_fast32_t count = opValue().data.integer; count--;)
+	for (count = opValue().data.integer; count--;)
 	{
 		value = nextOp();
 		isGetter = 0;
@@ -610,7 +636,9 @@ struct Value array (const Instance * const ops, struct Ecc * const ecc)
 	uint32_t length = opValue().data.integer;
 	struct Object *object = Array.createSized(length);
 	struct Value value;
-	for (uint_fast32_t index = 0; index < length; ++index)
+	uint32_t index;
+	
+	for (index = 0; index < length; ++index)
 	{
 		value = nextOp();
 		if (value.type != Value(breaker))
@@ -630,10 +658,12 @@ struct Value this (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 {
-	ecc->refObject = Value.undefined();
+	struct Identifier identifier;
+	struct Entry entry;
 	
-	struct Identifier identifier = opValue().data.identifier;
-	struct Entry entry = Object.getMember(ecc->context, identifier);
+	ecc->refObject = Value.undefined();
+	identifier = opValue().data.identifier;
+	entry = Object.getMember(ecc->context, identifier);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -652,20 +682,22 @@ struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	struct Identifier identifier = opValue().data.identifier;
 	struct Entry entry = Object.getMember(ecc->context, identifier);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	struct Value value = nextOp();
+	value = nextOp();
 	return *entry.value = value;
 }
 
 struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 {
-	ecc->refObject = Value.undefined();
+	int32_t slot;
 	
-	int32_t slot = opValue().data.integer;
+	ecc->refObject = Value.undefined();
+	slot = opValue().data.integer;
 	return ecc->context->hashmap[slot].data.value;
 }
 
@@ -687,8 +719,9 @@ struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
+	struct Entry entry;
 	ecc->refObject = object;
-	struct Entry entry = Object.getMember(object.data.object, identifier);
+	entry = Object.getMember(object.data.object, identifier);
 	return getEntry(entry, ecc, object);
 }
 
@@ -735,8 +768,9 @@ struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
+	struct Entry entry;
 	ecc->refObject = object;
-	struct Entry entry = Object.getProperty(object.data.object, nextOp());
+	entry = Object.getProperty(object.data.object, nextOp());
 	return getEntry(entry, ecc, object);
 }
 
@@ -744,8 +778,9 @@ struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
+	struct Entry entry;
 	ecc->refObject = object;
-	struct Entry entry = Object.getProperty(object.data.object, nextOp());
+	entry = Object.getProperty(object.data.object, nextOp());
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -757,9 +792,10 @@ struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
 	struct Value property = nextOp();
+	struct Entry entry;
 	value = nextOp();
 	
-	struct Entry entry = Object.getProperty(object.data.object, property);
+	entry = Object.getProperty(object.data.object, property);
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
 	
@@ -870,16 +906,20 @@ struct Value moreOrEqual (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value instanceOf (const Instance * const ops, struct Ecc * const ecc)
 {
+	const struct Text *text;
 	struct Value a = nextOp();
+	struct Value b;
+	struct Object *object;
+	
 	if (!Value.isObject(a))
 		return Value.false();
 	
-	const struct Text *text = opText();
-	struct Value b = nextOp();
+	text = opText();
+	b = nextOp();
 	if (!Value.isObject(b))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not an object", text->length, text->location)));
 	
-	struct Object *object = b.data.object;
+	object = b.data.object;
 	do
 		if (a.data.object->prototype == object)
 			return Value.true();
@@ -892,10 +932,12 @@ struct Value in (const Instance * const ops, struct Ecc * const ecc)
 {
 	struct Value property = nextOp();
 	struct Value object = nextOp();
+	struct Entry entry;
+	
 	if (!Value.isObject(object))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
 	
-	struct Entry entry = Object.getProperty(object.data.object, property);
+	entry = Object.getProperty(object.data.object, property);
 	return Value.boolean(*entry.flags & Object(isValue));
 }
 
@@ -1156,8 +1198,10 @@ struct Value unsignedRightShiftAssignRef (const Instance * const ops, struct Ecc
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
+	uint32_t uint;
+	
 	*ref = Value.toInteger(*ref);
-	uint32_t uint = ref->data.integer;
+	uint = ref->data.integer;
 	uint >>= (uint32_t)Value.toInteger(b).data.integer;
 	ref->data.integer = uint;
 	return *ref;
@@ -1202,6 +1246,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 	const struct Op * volatile rethrowOps = NULL;
 	volatile int rethrow = 0;
 	volatile struct Value value = Value.undefined();
+	struct Value finallyValue;
 	
 	ecc->context = context;
 	
@@ -1233,7 +1278,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 	ecc->context = context->prototype;
 	
 	*ops = end; // op[end] = Op.jump, to after catch
-	struct Value finallyValue = nextOp(); // jump to after catch, and execute until noop
+	finallyValue = nextOp(); // jump to after catch, and execute until noop
 	
 	if (finallyValue.type != Value(undefined)) /* return breaker */
 		return finallyValue;
@@ -1317,7 +1362,8 @@ struct Value jumpIfNot (const Instance * const ops, struct Ecc * const ecc)
 
 struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
 {
-	const struct Op *nextOps = *ops + opValue().data.integer;
+	int32_t offset = opValue().data.integer;
+	const struct Op *nextOps = *ops + offset;
 	struct Value a = nextOp(), b;
 	const struct Text *text = opText();
 	
@@ -1326,7 +1372,8 @@ struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
 		b = nextOp();
 		if (Value.isTrue(equality(ecc, a, text, b, opText())))
 		{
-			*ops = nextOps + nextOp().data.integer + 1;
+			nextOps += nextOp().data.integer + 1;
+			*ops = nextOps;
 			break;
 		}
 		else
@@ -1445,7 +1492,7 @@ struct Value iterateInRef (const Instance * const ops, struct Ecc * const ecc)
 	
 	if (Value.isObject(object))
 	{
-		uint_fast32_t index;
+		uint32_t index;
 		
 		for (index = 0; index < object.data.object->elementCount; ++index)
 		{

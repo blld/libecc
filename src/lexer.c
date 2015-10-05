@@ -90,12 +90,11 @@ static inline enum Module(Token) error(Instance self, struct Error *error)
 
 Instance createWithInput(struct Input *input)
 {
-	assert(input);
-	
 	Instance self = malloc(sizeof(*self));
 	assert(self);
 	*self = Module.identity;
 	
+	assert(input);
 	self->input = input;
 	
 	return self;
@@ -111,9 +110,10 @@ void destroy (Instance self)
 
 enum Module(Token) nextToken (Instance self)
 {
+	int c, disallowRegex;
 	assert(self);
 	
-	int c, disallowRegex = self->disallowRegex;
+	disallowRegex = self->disallowRegex;
 	
 	self->value = Value.undefined();
 	self->didLineBreak = 0;
@@ -167,11 +167,11 @@ enum Module(Token) nextToken (Instance self)
 			case '\'':
 			case '"':
 			{
-				self->disallowRegex = 1;
-				
 				char end = c;
 				int haveEscape = 0;
 				int didLineBreak = self->didLineBreak;
+				
+				self->disallowRegex = 1;
 				
 				while (( c = nextChar(self) ))
 				{
@@ -188,10 +188,11 @@ enum Module(Token) nextToken (Instance self)
 						
 						if (haveEscape)
 						{
+							char buffer[length];
+							uint32_t index = 0, bufferIndex = 0;
+							
 							++location;
 							
-							char buffer[length];
-							uint_fast32_t index = 0, bufferIndex = 0;
 							for (; index <= length; ++index, ++bufferIndex)
 								if (location[index] == '\\' && location[++index] != '\\')
 								{
@@ -268,12 +269,12 @@ enum Module(Token) nextToken (Instance self)
 			case '8':
 			case '9':
 			{
+				int binary = 0;
+				
 				if (c == '.' && !isdigit(previewChar(self)))
 					return c;
 				
 				self->disallowRegex = 1;
-				
-				int binary = 0;
 				
 				if (c == '0' && (acceptChar(self, 'x') || acceptChar(self, 'X')))
 				{
@@ -459,15 +460,12 @@ enum Module(Token) nextToken (Instance self)
 			{
 				if (isalpha(c) || c == '$' || c == '_')
 				{
-					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
-						nextChar(self);
-					
-					#define _(X) { #X, sizeof(#X) - 1, Module(X##Token) },
 					static const struct {
 						const char *name;
 						size_t length;
 						enum Module(Token) token;
 					} keywords[] = {
+						#define _(X) { #X, sizeof(#X) - 1, Module(X##Token) },
 						_(break)
 						_(case)
 						_(catch)
@@ -501,19 +499,8 @@ enum Module(Token) nextToken (Instance self)
 						_(true)
 						_(false)
 						_(this)
+						#undef _
 					};
-					#undef _
-					
-					for (int k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
-						if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
-							return keywords[k].token;
-					
-					for (int k = 0; k < sizeof(disallowRegexKeyword) / sizeof(*disallowRegexKeyword); ++k)
-						if (self->text.length == disallowRegexKeyword[k].length && memcmp(self->text.location, disallowRegexKeyword[k].name, disallowRegexKeyword[k].length) == 0)
-						{
-							self->disallowRegex = 1;
-							return disallowRegexKeyword[k].token;
-						}
 					
 					static const struct {
 						const char *name;
@@ -538,7 +525,24 @@ enum Module(Token) nextToken (Instance self)
 						_(yield)
 						#undef _
 					};
-					for (int k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
+					
+					int k;
+					
+					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
+						nextChar(self);
+					
+					for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
+						if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
+							return keywords[k].token;
+					
+					for (k = 0; k < sizeof(disallowRegexKeyword) / sizeof(*disallowRegexKeyword); ++k)
+						if (self->text.length == disallowRegexKeyword[k].length && memcmp(self->text.location, disallowRegexKeyword[k].name, disallowRegexKeyword[k].length) == 0)
+						{
+							self->disallowRegex = 1;
+							return disallowRegexKeyword[k].token;
+						}
+					
+					for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
 						if (self->text.length == reservedKeywords[k].length && memcmp(self->text.location, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
 							return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
 					
@@ -558,16 +562,19 @@ enum Module(Token) nextToken (Instance self)
 
 const char * tokenChars (enum Module(Token) token)
 {
-	static char buffer[4] = { '\'', 0, '\'', 0 };
+	// <!> non reentrant
 	
-	#define _(X, S, ...) { sizeof(S "") > sizeof("")? S "": #X, Module(X ## Token), },
+	static char buffer[4] = { '\'', 0, '\'', 0 };
+	int index;
+	
 	struct {
 		const char *name;
 		const enum Module(Token) token;
 	} static const tokenList[] = {
+		#define _(X, S, I) { sizeof(S "") > sizeof("")? S "": #X, Module(X ## Token), },
 		io_libecc_lexer_Tokens
+		#undef _
 	};
-	#undef _
 	
 	if (token > Module(noToken) && token < Module(errorToken))
 	{
@@ -575,7 +582,7 @@ const char * tokenChars (enum Module(Token) token)
 		return buffer;
 	}
 	
-	for (int index = 0; index < sizeof(tokenList); ++index)
+	for (index = 0; index < sizeof(tokenList); ++index)
 		if (tokenList[index].token == token)
 			return tokenList[index].name;
 	
@@ -589,18 +596,21 @@ struct Value parseBinary (struct Text text)
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';
 	
-	return Value.binary(strtod(buffer, NULL));
+	double binary = strtod(buffer, NULL);
+	
+	return Value.binary(binary);
 }
 
 struct Value parseInteger (struct Text text, int radix)
 {
+	long integer;
 	char buffer[text.length + 1];
+	
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';
 	
 	errno = 0;
-	
-	long integer = strtol(buffer, NULL, 0);
+	integer = strtol(buffer, NULL, 0);
 	
 	if (errno == ERANGE)
 		return Value.binary(strtod(buffer, NULL));
@@ -614,8 +624,10 @@ int32_t parseElement (struct Text text)
 {
 	char c;
 	int hadDigit = 0;
+	uint32_t index;
+	struct Value value;
 	
-	for (uint_fast32_t index = 0; index < text.length; ++index)
+	for (index = 0; index < text.length; ++index)
 	{
 		c = text.location[index];
 		if (isdigit(c))
@@ -626,7 +638,7 @@ int32_t parseElement (struct Text text)
 	if (!hadDigit)
 		return -1;
 	
-	struct Value value = parseInteger(text, 0);
+	value = parseInteger(text, 0);
 	if (value.type != Value(integer))
 		return -1;
 	

@@ -27,7 +27,13 @@ enum Module(Color) {
 	Module(Blue) = 34,
 	Module(Magenta) = 35,
 	Module(Cyan) = 36,
-	Module(Grey) = 37,
+	Module(White) = 37,
+};
+
+enum Module(Attribute) {
+	Module(Bold) = 1,
+	Module(Dim) = 2,
+	Module(Invisible) = 8,
 };
 
 Interface(
@@ -37,14 +43,14 @@ Interface(
 	(Instance, shared ,(void))
 	
 	(void, print ,(const char *format, ...))
-	(void, printColor ,(enum Module(Color), const char *format, ...))
+	(void, printColor ,(enum Module(Color) color, enum Module(Attribute) attribute, const char *format, ...))
 	(void, printError ,(int typeLength, const char *type, const char *format, ...))
 	(void, printWarning ,(const char *format, ...))
-	(void, printBold ,(const char *format, ...))
-	(void, printDim ,(const char *format, ...))
+	(void, newline ,())
 	,
 	{
 		int isTerminal;
+		struct EnvInternal *internal;
 	}
 )
 

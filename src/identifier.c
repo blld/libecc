@@ -75,10 +75,10 @@ Structure makeWithCString (const char *cString)
 
 Structure makeWithText (const struct Text text, int copyOnCreate)
 {
-	uint16_t number = 0;
+	uint16_t number = 0, index = 0;
 	
 	#warning TODO: use binary tree
-	for (uint_fast16_t index = 0; index < identifierCount; ++index)
+	for (index = 0; index < identifierCount; ++index)
 	{
 		if (text.length == identifierPool[index].length && memcmp(identifierPool[index].location, text.location, text.length) == 0)
 		{
