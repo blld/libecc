@@ -1,9 +1,9 @@
 //
 //  identifier.c
-//  monade
+//  libecc
 //
 //  Created by Bouilland Aurélien on 20/07/2014.
-//  Copyright (c) 2014 Teppen Game. All rights reserved.
+//  Copyright (c) 2014 Libeccio. All rights reserved.
 //
 
 #include "identifier.h"

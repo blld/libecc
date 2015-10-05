@@ -153,12 +153,11 @@ void printText (Instance self, struct Text text)
 				mark[index] = '~';
 			
 			mark[text.location - location] = '^';
-			mark[length + 1] = '\0';
 			
 			if ((text.location - location) > 0)
 				Env.printColor(0, Env(Invisible), "%.*s", (text.location - location), mark);
 			
-			Env.printColor(Env(Green), Env(Bold), "%.*s", text.length, mark + (text.location - location));
+			Env.printColor(Env(Green), Env(Bold), "%.*s", text.length? text.length: 1, mark + (text.location - location));
 		}
 	}
 	
