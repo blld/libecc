@@ -1,10 +1,4 @@
 
-ifeq ($(OS),Windows_NT)
-binary := ./bin/libecc.exe
-else
-binary := ./bin/libecc
-endif
-
 binary := ./bin/libecc
 sources := $(wildcard ../src/*.c) $(wildcard ../src/object/*.c)
 objects := $(sources:../src/%.c=./object/%.o)
@@ -12,7 +6,7 @@ objects := $(sources:../src/%.c=./object/%.o)
 std ?= -std=c99
 warn ?= -Wall -pedantic
 opts ?= -Os -fomit-frame-pointer -fstrict-aliasing
-flto ?= -ftlo
+flto ?= -flto
 libs ?= -lm
 
 CFLAGS += $(std) $(warn) $(opts) $(flto) -DNDEBUG=1
