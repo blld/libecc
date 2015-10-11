@@ -13,7 +13,7 @@
 struct Function;
 struct Ecc;
 
-#include "identifier.h"
+#include "key.h"
 
 
 #define io_libecc_Value(X) io_libecc_value_ ## X
@@ -34,7 +34,7 @@ enum Value(Type) {
 	Value(integer) = 0x10,
 	Value(binary) = 0x12,
 	
-	Value(identifier) = 0x20,
+	Value(key) = 0x20,
 	Value(text) = 0x22,
 	
 	/* dynamic */
@@ -64,7 +64,7 @@ Interface(Value,
 	(struct Value, boolean ,(int))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
-	(struct Value, identifier ,(struct Identifier identifier))
+	(struct Value, key ,(struct Key key))
 	(struct Value, text ,(const struct Text *text))
 	(struct Value, chars ,(struct Chars *chars))
 	(struct Value, object ,(struct Object *))
@@ -102,7 +102,7 @@ Interface(Value,
 		{
 			int32_t integer;
 			double binary;
-			struct Identifier identifier;
+			struct Key key;
 			const struct Text *text;
 			
 			struct Chars *chars;

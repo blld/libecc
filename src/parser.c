@@ -84,10 +84,10 @@ static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
 
 // MARK: Depth
 
-static void pushDepth (struct Parser *self, struct Identifier identifier, char depth)
+static void pushDepth (struct Parser *self, struct Key key, char depth)
 {
 	self->depths = realloc(self->depths, (self->depthCount + 1) * sizeof(*self->depths));
-	self->depths[self->depthCount].identifier = identifier;
+	self->depths[self->depthCount].key = key;
 	self->depths[self->depthCount].depth = depth;
 	++self->depthCount;
 }
@@ -104,11 +104,11 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 {
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 	{
-		if (oplist->ops[0].value.type == Value(identifier))
+		if (oplist->ops[0].value.type == Value(key))
 		{
-			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval)))
+			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
 				error(self, Error.syntaxError(OpList.text(oplist), name));
-			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(arguments)))
+			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
 				error(self, Error.syntaxError(OpList.text(oplist), name));
 		}
 		
@@ -177,23 +177,23 @@ static struct OpList * propertyAssignment (struct Parser *self)
 	
 	if (previewToken(self) == Lexer(identifierToken))
 	{
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(get)))
+		if (Key.isEqual(self->lexer->value.data.key, Key(get)))
 		{
 			nextToken(self);
 			if (previewToken(self) == ':')
 			{
-				oplist = OpList.create(Op.value, Value.identifier(Identifier(get)), self->lexer->text);
+				oplist = OpList.create(Op.value, Value.key(Key(get)), self->lexer->text);
 				goto skipProperty;
 			}
 			else
 				isGetter = 1;
 		}
-		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(set)))
+		else if (Key.isEqual(self->lexer->value.data.key, Key(set)))
 		{
 			nextToken(self);
 			if (previewToken(self) == ':')
 			{
-				oplist = OpList.create(Op.value, Value.identifier(Identifier(set)), self->lexer->text);
+				oplist = OpList.create(Op.value, Value.key(Key(set)), self->lexer->text);
 				goto skipProperty;
 			}
 			else
@@ -207,7 +207,7 @@ static struct OpList * propertyAssignment (struct Parser *self)
 	{
 		Input.printText(self->lexer->input, self->lexer->text);
 		Env.printWarning("Using floating-point as property name polute identifier's pool");
-		oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
+		oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 	{
@@ -215,13 +215,13 @@ static struct OpList * propertyAssignment (struct Parser *self)
 		if (element >= 0)
 			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
 		else
-			oplist = OpList.create(Op.value, Value.identifier(Identifier.makeWithText(self->lexer->text, 0)), self->lexer->text);
+			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
 	else if (previewToken(self) == Lexer(identifierToken))
 	{
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(eval)))
+		if (Key.isEqual(self->lexer->value.data.key, Key(eval)))
 			error(self, Error.syntaxError(self->lexer->text, "eval in object identifier"));
-		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(arguments)))
+		else if (Key.isEqual(self->lexer->value.data.key, Key(arguments)))
 			error(self, Error.syntaxError(self->lexer->text, "arguments in object identifier"));
 		else
 			oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
@@ -268,7 +268,7 @@ static struct OpList * primary (struct Parser *self)
 	{
 		oplist = OpList.create(Op.getLocal, self->lexer->value, self->lexer->text);
 		
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(arguments)))
+		if (Key.isEqual(self->lexer->value.data.key, Key(arguments)))
 		{
 			self->function->needArguments = 1;
 			self->function->needHeap = 1;
@@ -407,7 +407,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 		{
 			int count = 0;
 			
-			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval));
+			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Key.isEqual(oplist->ops[0].value.data.key, Key(eval));
 			if (isEval)
 				OpList.destroy(oplist), oplist = NULL;
 			
@@ -743,9 +743,9 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 			error(self, Error.syntaxError(text, "expected expression, got '='"));
 		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 		{
-			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval)))
+			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
 				error(self, Error.syntaxError(text, "can't assign to eval"));
-			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(arguments)))
+			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
 				error(self, Error.syntaxError(text, "can't assign to arguments"));
 			
 			changeNative(oplist->ops, Op.setLocal);
@@ -834,12 +834,12 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
 	
-	if (Identifier.isEqual(value.data.identifier, Identifier(eval)))
+	if (Key.isEqual(value.data.key, Key(eval)))
 		error(self, Error.syntaxError(text, "redefining eval is deprecated"));
-	else if (Identifier.isEqual(value.data.identifier, Identifier(arguments)))
+	else if (Key.isEqual(value.data.key, Key(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
-	Object.add(&self->function->context, value.data.identifier, Value.undefined(), Object(writable));
+	Object.add(&self->function->context, value.data.key, Value.undefined(), Object(writable));
 	
 	if (acceptToken(self, '='))
 		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), assignment(self, noIn)));
@@ -882,7 +882,7 @@ static struct OpList * doStatement (struct Parser *self)
 {
 	struct OpList *oplist, *condition;
 	
-	pushDepth(self, Identifier(none), 2);
+	pushDepth(self, Key(none), 2);
 	oplist = statement(self);
 	popDepth(self);
 	
@@ -903,7 +903,7 @@ static struct OpList * whileStatement (struct Parser *self)
 	condition = expression(self, 0);
 	expectToken(self, ')');
 	
-	pushDepth(self, Identifier(none), 2);
+	pushDepth(self, Key(none), 2);
 	oplist = statement(self);
 	popDepth(self);
 	
@@ -946,7 +946,7 @@ static struct OpList * forStatement (struct Parser *self)
 		oplist = OpList.join(oplist, expression(self, 0));
 		expectToken(self, ')');
 		
-		pushDepth(self, Identifier(none), 2);
+		pushDepth(self, Key(none), 2);
 		body = statement(self);
 		popDepth(self);
 		
@@ -967,7 +967,7 @@ static struct OpList * forStatement (struct Parser *self)
 		
 		expectToken(self, ')');
 		
-		pushDepth(self, Identifier(none), 2);
+		pushDepth(self, Key(none), 2);
 		body = statement(self);
 		popDepth(self);
 		
@@ -978,13 +978,13 @@ static struct OpList * forStatement (struct Parser *self)
 static struct OpList * continueStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
-	struct Identifier label = Identifier(none);
+	struct Key label = Key(none);
 	struct Text labelText = self->lexer->text;
 	uint16_t depth, lastestDepth, breaker = 0;
 	
 	if (!self->lexer->didLineBreak && previewToken(self) == Lexer(identifierToken))
 	{
-		label = self->lexer->value.data.identifier;
+		label = self->lexer->value.data.key;
 		nextToken(self);
 	}
 	semicolon(self);
@@ -1001,7 +1001,7 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 			lastestDepth = self->depths[depth].depth;
 		
 		if (lastestDepth == 2)
-			if (Identifier.isEqual(label, Identifier(none)) || Identifier.isEqual(label, self->depths[depth].identifier))
+			if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
 				return OpList.create(Op.value, Value.breaker(breaker - 1), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
@@ -1011,13 +1011,13 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 static struct OpList * breakStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
-	struct Identifier label = Identifier(none);
+	struct Key label = Key(none);
 	struct Text labelText = self->lexer->text;
 	uint16_t depth, breaker = 0;
 	
 	if (!self->lexer->didLineBreak && previewToken(self) == Lexer(identifierToken))
 	{
-		label = self->lexer->value.data.identifier;
+		label = self->lexer->value.data.key;
 		nextToken(self);
 	}
 	semicolon(self);
@@ -1029,7 +1029,7 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 	while (depth--)
 	{
 		breaker += self->depths[depth].depth;
-		if (Identifier.isEqual(label, Identifier(none)) || Identifier.isEqual(label, self->depths[depth].identifier))
+		if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
 			return OpList.create(Op.value, Value.breaker(breaker), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
@@ -1062,7 +1062,7 @@ static struct OpList * switchStatement (struct Parser *self)
 	conditionOps = expression(self, 0);
 	expectToken(self, ')');
 	expectToken(self, '{');
-	pushDepth(self, Identifier(none), 1);
+	pushDepth(self, Key(none), 1);
 	
 	while (previewToken(self) != '}' && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 	{
@@ -1208,7 +1208,7 @@ static struct OpList * statement (struct Parser *self)
 				|| previewToken(self) == Lexer(switchToken)
 				)
 			{
-				pushDepth(self, oplist->ops[0].value.data.identifier, 0);
+				pushDepth(self, oplist->ops[0].value.data.key, 0);
 				free(oplist), oplist = NULL;
 				oplist = statement(self);
 				popDepth(self);
@@ -1236,14 +1236,14 @@ static struct OpList * parameters (struct Parser *self, int *count)
 			++*count;
 			op = identifier(self);
 			
-			if (op.value.data.identifier.data.integer)
+			if (op.value.data.key.data.integer)
 			{
-				if (Identifier.isEqual(op.value.data.identifier, Identifier(eval)))
+				if (Key.isEqual(op.value.data.key, Key(eval)))
 					error(self, Error.syntaxError(op.text, "redefining eval is deprecated"));
-				else if (Identifier.isEqual(op.value.data.identifier, Identifier(arguments)))
+				else if (Key.isEqual(op.value.data.key, Key(arguments)))
 					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
 				
-				Object.add(&self->function->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+				Object.add(&self->function->context, op.value.data.key, Value.undefined(), Object(writable) | Object(configurable));
 			}
 		} while (acceptToken(self, ','));
 	
@@ -1269,9 +1269,9 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 		{
 			identifierOp = identifier(self);
 			
-			if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier(eval)))
+			if (Key.isEqual(identifierOp.value.data.key, Key(eval)))
 				error(self, Error.syntaxError(identifierOp.text, "redefining eval is deprecated"));
-			else if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier(arguments)))
+			else if (Key.isEqual(identifierOp.value.data.key, Key(arguments)))
 				error(self, Error.syntaxError(identifierOp.text, "redefining arguments is deprecated"));
 		}
 		else if (isDeclaration)
@@ -1283,7 +1283,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	parentClosure = self->function;
 	function = Function.create(NULL);
-	Object.add(&function->context, Identifier(arguments), Value.undefined(), Object(writable));
+	Object.add(&function->context, Key(arguments), Value.undefined(), Object(writable));
 	
 	self->function = function;
 	expectToken(self, '(');
@@ -1314,12 +1314,12 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->parameterCount = parameterCount;
 	parentClosure->needHeap = 1;
 	
-	Object.add(&function->object, Identifier(length), Value.integer(parameterCount), Object(configurable));
+	Object.add(&function->object, Key(length), Value.integer(parameterCount), Object(configurable));
 	
 	if (isDeclaration)
-		Object.add(&parentClosure->context, identifierOp.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
+		Object.add(&parentClosure->context, identifierOp.value.data.key, Value.undefined(), Object(writable) | Object(configurable));
 	else if (identifierOp.value.type != Value(undefined) && !isGetter && !isSetter)
-		Object.add(&function->context, identifierOp.value.data.identifier, Value.function(function), Object(writable) | Object(configurable));
+		Object.add(&function->context, identifierOp.value.data.key, Value.function(function), Object(writable) | Object(configurable));
 	
 	if (isDeclaration)
 		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, Value.function(function), text));

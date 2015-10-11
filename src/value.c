@@ -65,11 +65,11 @@ struct Value binary (double binary)
 	};
 }
 
-struct Value identifier (struct Identifier identifier)
+struct Value key (struct Key key)
 {
 	return (struct Value){
-		.data = { .identifier = identifier },
-		.type = Value(identifier),
+		.data = { .key = key },
+		.type = Value(key),
 	};
 }
 
@@ -162,8 +162,8 @@ struct Value reference (struct Value *reference)
 struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text *text, int hint)
 {
 	struct Object *object;
-	struct Identifier aIdentifier;
-	struct Identifier bIdentifier;
+	struct Key aKey;
+	struct Key bKey;
 	struct Value aClosure;
 	struct Value bClosure;
 	
@@ -174,10 +174,10 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	if (!hint)
 		hint = value.type == Value(date)? 1: -1;
 	
-	aIdentifier = hint > 0? Identifier(toString): Identifier(valueOf);
-	bIdentifier = hint > 0? Identifier(valueOf): Identifier(toString);
+	aKey = hint > 0? Key(toString): Key(valueOf);
+	bKey = hint > 0? Key(valueOf): Key(toString);
 	
-	aClosure = Object.get(object, aIdentifier);
+	aClosure = Object.get(object, aKey);
 	if (aClosure.type == Value(function))
 	{
 		struct Value result = Op.callFunctionVA(aClosure.data.function, ecc, value, 0);
@@ -185,7 +185,7 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 			return result;
 	}
 	
-	bClosure = Object.get(object, bIdentifier);
+	bClosure = Object.get(object, bKey);
 	if (bClosure.type == Value(function))
 	{
 		struct Value result = Op.callFunctionVA(bClosure.data.function, ecc, value, 0);
@@ -271,8 +271,8 @@ struct Value toString (struct Value value)
 			else
 				return Value.chars(Chars.create("%g", value.data.binary));
 		
-		case Value(identifier):
-			return Value.text(Identifier.textOf(value.data.identifier));
+		case Value(key):
+			return Value.text(Key.textOf(value.data.key));
 		
 		case Value(object):
 			return Value.text(value.data.object->type);
@@ -283,8 +283,8 @@ struct Value toString (struct Value value)
 		case Value(error):
 		{
 			struct Object *object = value.data.object;
-			struct Value name = Value.toString(Object.get(object, Identifier(name)));
-			struct Value message = Value.toString(Object.get(object, Identifier(message)));
+			struct Value name = Value.toString(Object.get(object, Key(name)));
+			struct Value message = Value.toString(Object.get(object, Key(message)));
 			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 		}
 		
@@ -362,7 +362,7 @@ struct Value toBinary (struct Value value)
 			/* fallthrought */
 		}
 		
-		case Value(identifier):
+		case Value(key):
 		case Value(chars):
 		case Value(string):
 			return Lexer.parseBinary(Text.make(Value.stringChars(value), Value.stringLength(value)));
@@ -406,7 +406,7 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(undefined):
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
 		
-		case Value(identifier):
+		case Value(key):
 		case Value(text):
 		case Value(chars):
 			return Value.string(String.create("%.*s", Value.stringLength(value), Value.stringChars(value)));
@@ -450,7 +450,7 @@ struct Value toType (struct Value value)
 		case Value(binary):
 			return Value.text(&Text(number));
 		
-		case Value(identifier):
+		case Value(key):
 		case Value(text):
 		case Value(chars):
 			return Value.text(&Text(string));
@@ -505,9 +505,9 @@ void dumpTo (struct Value value, FILE *file)
 			fprintf(file, "%lf", value.data.binary);
 			return;
 		
-		case Value(identifier):
+		case Value(key):
 		{
-			struct Text *text = Identifier.textOf(value.data.identifier);
+			struct Text *text = Key.textOf(value.data.key);
 			fwrite(text->location, sizeof(char), text->length, file);
 			return;
 		}
@@ -531,8 +531,8 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(error):
 		{
-			struct Value name = toString(Object.get(&value.data.error->object, Identifier(name)));
-			struct Value message = toString(Object.get(&value.data.error->object, Identifier(message)));
+			struct Value name = toString(Object.get(&value.data.error->object, Key(name)));
+			struct Value message = toString(Object.get(&value.data.error->object, Key(message)));
 			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
 			fputs(": ", file);
 			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);

@@ -16,25 +16,25 @@ static const uint8_t zeroFlag = 0;
 static struct Object *objectPrototype = NULL;
 static struct Function *objectConstructor = NULL;
 
-static inline uint32_t getSlot (struct Object *self, struct Identifier identifier)
+static inline uint32_t getSlot (struct Object *self, struct Key key)
 {
 	return
 		self->hashmap[
 		self->hashmap[
 		self->hashmap[
 		self->hashmap[1]
-		.slot[identifier.data.depth[0]]]
-		.slot[identifier.data.depth[1]]]
-		.slot[identifier.data.depth[2]]]
-		.slot[identifier.data.depth[3]];
+		.slot[key.data.depth[0]]]
+		.slot[key.data.depth[1]]]
+		.slot[key.data.depth[2]]]
+		.slot[key.data.depth[3]];
 }
 
-static inline int32_t getElementOrIdentifier (struct Value property, struct Identifier *identifier)
+static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 {
 	int32_t element = -1;
 	
-	if (property.type == Value(identifier))
-		*identifier = property.data.identifier;
+	if (property.type == Value(key))
+		*key = property.data.key;
 	else
 	{
 		struct Text text;
@@ -49,7 +49,7 @@ static inline int32_t getElementOrIdentifier (struct Value property, struct Iden
 		}
 		
 		if (element < 0)
-			*identifier = Identifier.makeWithText(text, 1);
+			*key = Key.makeWithText(text, 1);
 	}
 	
 	return element;
@@ -103,12 +103,12 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	v = Value.toString(Op.argument(ecc, 0));
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
-	if (v.type == Value(identifier))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, v.data.identifier));
+	if (v.type == Value(key))
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, v.data.key));
 	else if (v.type == Value(text))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Identifier.makeWithText(*v.data.text, 0)));
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
 	else if (v.type == Value(chars))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Identifier.makeWithText(Text.make(v.data.string->chars, v.data.string->length), 1)));
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.string->chars, v.data.string->length), 1)));
 	
 	return Value.undefined();
 }
@@ -209,10 +209,10 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 		
 		struct Object *result = Object.create(Object.prototype());
 		
-		Object.add(result, Identifier(value), *entry.value, resultFlags);
-		Object.add(result, Identifier(writable), Value.boolean(*entry.flags & Object(writable)), resultFlags);
-		Object.add(result, Identifier(enumerable), Value.boolean(*entry.flags & Object(enumerable)), resultFlags);
-		Object.add(result, Identifier(configurable), Value.boolean(*entry.flags & Object(configurable)), resultFlags);
+		Object.add(result, Key(value), *entry.value, resultFlags);
+		Object.add(result, Key(writable), Value.boolean(*entry.flags & Object(writable)), resultFlags);
+		Object.add(result, Key(enumerable), Value.boolean(*entry.flags & Object(enumerable)), resultFlags);
+		Object.add(result, Key(configurable), Value.boolean(*entry.flags & Object(configurable)), resultFlags);
 		
 		ecc->result = Value.object(result);
 	}
@@ -238,7 +238,7 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	
 	for (index = 2; index <= object->hashmapCount; ++index)
 		if (object->hashmap[index].data.flags & Object(isValue))
-			Object.addElementAtIndex(result, length++, Value.identifier(object->hashmap[index].data.identifier), Object(writable) | Object(enumerable) | Object(configurable));
+			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), Object(writable) | Object(enumerable) | Object(configurable));
 	
 	ecc->result = Value.object(result);
 	
@@ -261,16 +261,16 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	Op.assertParameterCount(ecc, 1);
 	
 	property = checkObject(ops, ecc, Op.argument(ecc, 1));
-	value = Object.get(property, Identifier(value));
+	value = Object.get(property, Key(value));
 	flags = 0;
 	
-	if (Value.isTrue(Object.get(property, Identifier(enumerable))))
+	if (Value.isTrue(Object.get(property, Key(enumerable))))
 		flags |= Object(enumerable);
 	
-	if (Value.isTrue(Object.get(property, Identifier(configurable))))
+	if (Value.isTrue(Object.get(property, Key(configurable))))
 		flags |= Object(configurable);
 	
-	if (Value.isTrue(Object.get(property, Identifier(writable))))
+	if (Value.isTrue(Object.get(property, Key(writable))))
 		flags |= Object(writable);
 	
 	#define TODO
@@ -420,7 +420,7 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	for (index = 2; index <= object->hashmapCount; ++index)
 		if (object->hashmap[index].data.flags & Object(isValue) && object->hashmap[index].data.flags & Object(enumerable))
-			Object.addElementAtIndex(result, length++, Value.identifier(object->hashmap[index].data.identifier), Object(writable) | Object(enumerable) | Object(configurable));
+			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), Object(writable) | Object(enumerable) | Object(configurable));
 	
 	ecc->result = Value.object(result);
 	
@@ -462,8 +462,8 @@ void setup ()
 	Function.addToObject(&objectConstructor->object, "isExtensible", isExtensible, 1, flags);
 	Function.addToObject(&objectConstructor->object, "keys", keys, 1, flags);
 	
-	Object.add(objectPrototype, Identifier(constructor), Value.function(objectConstructor), 0);
-	Object.add(&objectConstructor->object, Identifier(prototype), Value.object(objectPrototype), 0);
+	Object.add(objectPrototype, Key(constructor), Value.function(objectConstructor), 0);
+	Object.add(&objectConstructor->object, Key(prototype), Value.object(objectPrototype), 0);
 }
 
 void teardown (void)
@@ -566,21 +566,21 @@ void destroy (struct Object *self)
 	free(self), self = NULL;
 }
 
-struct Value getOwn (struct Object *self, struct Identifier identifier)
+struct Value getOwn (struct Object *self, struct Key key)
 {
 	assert(self);
 	
-	return self->hashmap[getSlot(self, identifier)].data.value;
+	return self->hashmap[getSlot(self, key)].data.value;
 }
 
-struct Value get (struct Object *self, struct Identifier identifier)
+struct Value get (struct Object *self, struct Key key)
 {
 	struct Object *object = self;
 	uint32_t slot = 0;
 	
 	assert(object);
 	do
-		slot = getSlot(object, identifier);
+		slot = getSlot(object, key);
 	while (!slot && (object = object->prototype));
 	
 	if (slot)
@@ -589,10 +589,10 @@ struct Value get (struct Object *self, struct Identifier identifier)
 		return Value.undefined();
 }
 
-struct Entry getMember (struct Object *self, struct Identifier identifier)
+struct Entry getMember (struct Object *self, struct Key key)
 {
 //	fprintf(stderr, "--- > ");
-//	Identifier.dumpTo(identifier, stderr);
+//	Key.dumpTo(key, stderr);
 //	fprintf(stderr, " <\n");
 	
 	struct Object *object = self;
@@ -604,7 +604,7 @@ struct Entry getMember (struct Object *self, struct Identifier identifier)
 //		dumpTo(object, stderr);
 //		fprintf(stderr, "%p --\n", object);
 		
-		if (( slot = getSlot(object, identifier) ))
+		if (( slot = getSlot(object, key) ))
 			return (struct Entry){
 				&object->hashmap[slot].data.value,
 				&object->hashmap[slot].data.flags,
@@ -620,8 +620,8 @@ struct Entry getMember (struct Object *self, struct Identifier identifier)
 
 struct Entry getOwnProperty (struct Object *self, struct Value property)
 {
-	struct Identifier identifier;
-	int32_t element = getElementOrIdentifier(property, &identifier);
+	struct Key key;
+	int32_t element = getElementOrKey(property, &key);
 	uint32_t slot;
 	
 	assert(self);
@@ -633,7 +633,7 @@ struct Entry getOwnProperty (struct Object *self, struct Value property)
 			&self->element[element].data.flags,
 		};
 	}
-	else if (( slot = getSlot(self, identifier) ))
+	else if (( slot = getSlot(self, key) ))
 	{
 		return (struct Entry){
 			&self->hashmap[slot].data.value,
@@ -651,8 +651,8 @@ struct Entry getProperty (struct Object *self, struct Value property)
 {
 	struct Object *object = self;
 	
-	struct Identifier identifier;
-	int32_t element = getElementOrIdentifier(property, &identifier);
+	struct Key key;
+	int32_t element = getElementOrKey(property, &key);
 	uint32_t slot;
 	
 	assert(object);
@@ -669,7 +669,7 @@ struct Entry getProperty (struct Object *self, struct Value property)
 		while ((object = object->prototype));
 	else
 		do
-			if (( slot = getSlot(object, identifier) ))
+			if (( slot = getSlot(object, key) ))
 			{
 				return (struct Entry){
 					&object->hashmap[slot].data.value,
@@ -688,8 +688,8 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 {
 	struct Object *object = self;
 	
-	struct Identifier identifier;
-	int32_t element = getElementOrIdentifier(property, &identifier);
+	struct Key key;
+	int32_t element = getElementOrKey(property, &key);
 	uint32_t slot;
 	
 	assert(object);
@@ -714,7 +714,7 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 	else
 	{
 		do
-			if (( slot = getSlot(object, identifier) ))
+			if (( slot = getSlot(object, key) ))
 			{
 				if (self->hashmap[slot].data.flags | Object(writable))
 				{
@@ -726,24 +726,24 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(extensible))
-			add(self, identifier, value, 0);
+			add(self, key, value, 0);
 	}
 }
 
-void add (struct Object *self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
+void add (struct Object *self, struct Key key, struct Value value, enum Object(Flags) flags)
 {
 	uint32_t slot = 1;
 	int depth = 0;
 	
 	assert(self);
-	assert(identifier.data.integer);
+	assert(key.data.integer);
 	
 	if (!(self->flags & Object(extensible)))
 		return;
 	
 	do
 	{
-		if (!self->hashmap[slot].slot[identifier.data.depth[depth]])
+		if (!self->hashmap[slot].slot[key.data.depth[depth]])
 		{
 			int need = 5 - depth - (self->hashmapCapacity - self->hashmapCount);
 			if (need > 0) {
@@ -754,14 +754,14 @@ void add (struct Object *self, struct Identifier identifier, struct Value value,
 			
 			do
 			{
-				slot = self->hashmap[slot].slot[identifier.data.depth[depth]] = self->hashmapCount++;
+				slot = self->hashmap[slot].slot[key.data.depth[depth]] = self->hashmapCount++;
 			} while (++depth < 4);
 			
-			self->hashmap[slot].data.identifier = identifier;
+			self->hashmap[slot].data.key = key;
 			break;
 		}
 		
-		slot = self->hashmap[slot].slot[identifier.data.depth[depth]];
+		slot = self->hashmap[slot].slot[key.data.depth[depth]];
 	} while (++depth < 4);
 	
 	if (value.type == Value(function) && value.data.function->isAccessor)
@@ -773,16 +773,16 @@ void add (struct Object *self, struct Identifier identifier, struct Value value,
 	self->hashmap[slot].data.flags = Object(isValue) | flags;
 }
 
-struct Value delete (struct Object *self, struct Identifier identifier)
+struct Value delete (struct Object *self, struct Key key)
 {
 	struct Object *object = self;
 	uint32_t slot;
 	
 	assert(object);
-	assert(identifier.data.integer);
+	assert(key.data.integer);
 	
 	do
-		slot = getSlot(object, identifier);
+		slot = getSlot(object, key);
 	while (!slot && (object = object->prototype));
 	
 	if (!object || !(object->hashmap[slot].data.flags & Object(isValue)))
@@ -799,8 +799,8 @@ struct Value delete (struct Object *self, struct Identifier identifier)
 
 struct Value deleteProperty (struct Object *self, struct Value property)
 {
-	struct Identifier identifier;
-	int32_t element = getElementOrIdentifier(property, &identifier);
+	struct Key key;
+	int32_t element = getElementOrKey(property, &key);
 	uint32_t slot;
 	
 	assert(self);
@@ -815,7 +815,7 @@ struct Value deleteProperty (struct Object *self, struct Value property)
 			memset(&self->element[element], 0, sizeof(*self->element));
 		}
 	}
-	else if (( slot = getSlot(self, identifier) ))
+	else if (( slot = getSlot(self, key) ))
 	{
 		if (!(self->hashmap[slot].data.flags & Object(configurable)))
 			return Value.false();
@@ -911,7 +911,7 @@ void dumpTo(struct Object *self, FILE *file)
 		{
 			if (!isArray)
 			{
-				Identifier.dumpTo(self->hashmap[index].data.identifier, file);
+				Key.dumpTo(self->hashmap[index].data.key, file);
 				fprintf(file, ": ");
 			}
 			Value.dumpTo(self->hashmap[index].data.value, file);

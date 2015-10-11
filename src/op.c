@@ -330,8 +330,8 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-		arguments->type = &Text(argumentsType);
+	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+	arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
@@ -362,7 +362,7 @@ static inline void populateContextWithArguments (const struct Op ** const ops, s
 	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 	arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
@@ -623,8 +623,8 @@ struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 			value = nextOp();
 		}
 		
-		if (value.type == Value(identifier))
-			Object.add(object, value.data.identifier, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
+		if (value.type == Value(key))
+			Object.add(object, value.data.key, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 		else if (value.type == Value(integer))
 			Object.addElementAtIndex(object, value.data.integer, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 	}
@@ -658,12 +658,12 @@ struct Value this (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Identifier identifier;
+	struct Key key;
 	struct Entry entry;
 	
 	ecc->refObject = Value.undefined();
-	identifier = opValue().data.identifier;
-	entry = Object.getMember(ecc->context, identifier);
+	key = opValue().data.key;
+	entry = Object.getMember(ecc->context, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -672,8 +672,8 @@ struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Identifier identifier = opValue().data.identifier;
-	struct Entry entry = Object.getMember(ecc->context, identifier);
+	struct Key key = opValue().data.key;
+	struct Entry entry = Object.getMember(ecc->context, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -683,8 +683,8 @@ struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	struct Identifier identifier = opValue().data.identifier;
-	struct Entry entry = Object.getMember(ecc->context, identifier);
+	struct Key key = opValue().data.key;
+	struct Entry entry = Object.getMember(ecc->context, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -716,21 +716,21 @@ struct Value setLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Identifier identifier = opValue().data.identifier;
+	struct Key key = opValue().data.key;
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
 	struct Entry entry;
 	ecc->refObject = object;
-	entry = Object.getMember(object.data.object, identifier);
+	entry = Object.getMember(object.data.object, key);
 	return getEntry(entry, ecc, object);
 }
 
 struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Identifier identifier = opValue().data.identifier;
+	struct Key key = opValue().data.key;
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
-	struct Entry entry = Object.getMember(object.data.object, identifier);
+	struct Entry entry = Object.getMember(object.data.object, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -739,27 +739,27 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Identifier identifier = opValue().data.identifier;
+	struct Key key = opValue().data.key;
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
-	struct Entry entry = Object.getMember(object.data.object, identifier);
+	struct Entry entry = Object.getMember(object.data.object, key);
 	value = nextOp();
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
 	
-	Object.add(object.data.object, identifier, value, Object(writable) | Object(enumerable) | Object(configurable));
+	Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
 	return value;
 }
 
 struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
-	struct Identifier identifier = opValue().data.identifier;
+	struct Key key = opValue().data.key;
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
-	struct Value result = Object.delete(object.data.object, identifier);
+	struct Value result = Object.delete(object.data.object, key);
 	if (!Value.isTrue(result))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Identifier.textOf(identifier)->length, Identifier.textOf(identifier)->location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
 	
 	return result;
 }
@@ -1241,7 +1241,7 @@ struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
 	struct Object *context = Object.create(ecc->context);
-	struct Identifier identifier = Identifier(none);
+	struct Key key = Key(none);
 	
 	const struct Op * volatile rethrowOps = NULL;
 	volatile int rethrow = 0;
@@ -1261,11 +1261,11 @@ struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 		{
 			rethrow = 1;
 			*ops = end + 1; // bypass catch jump
-			identifier = nextOp().data.identifier;
+			key = nextOp().data.key;
 			
-			if (!Identifier.isEqual(identifier, Identifier(none)))
+			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(context, identifier, ecc->result, 0);
+				Object.add(context, key, ecc->result, 0);
 				ecc->result = Value.undefined();
 				value = nextOp(); // execute until noop
 				rethrow = 0;
@@ -1509,7 +1509,7 @@ struct Value iterateInRef (const struct Op ** const ops, struct Ecc * const ecc)
 			if (!(object.data.object->hashmap[index].data.flags & Object(isValue)))
 				continue;
 			
-			*ref = Value.identifier(object.data.object->hashmap[index].data.identifier);
+			*ref = Value.key(object.data.object->hashmap[index].data.key);
 			
 			stepIteration(value, startOps);
 		}

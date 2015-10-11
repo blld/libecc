@@ -31,7 +31,7 @@ Interface(Parser,
 		struct Error *error;
 		
 		struct {
-			struct Identifier identifier;
+			struct Key key;
 			char depth;
 		} *depths;
 		uint16_t depthCount;

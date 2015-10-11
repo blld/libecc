@@ -120,7 +120,7 @@ struct Ecc *create (void)
 	{
 		Env.setup();
 		Pool.setup();
-		Identifier.setup();
+		Key.setup();
 		
 		Object.setupPrototype();
 		Function.setup();
@@ -182,7 +182,7 @@ void destroy (struct Ecc *self)
 //		Array.teardown();
 //		Date.teardown();
 		
-		Identifier.teardown();
+		Key.teardown();
 		Env.teardown();
 		
 		Pool.teardown();
@@ -253,8 +253,8 @@ int evalInput (struct Ecc *self, struct Input *input)
 			
 			if (Value.isObject(value))
 			{
-				name = Value.toString(Object.get(value.data.object, Identifier(name)));
-				message = Value.toString(Object.get(value.data.object, Identifier(message)));
+				name = Value.toString(Object.get(value.data.object, Key(name)));
+				message = Value.toString(Object.get(value.data.object, Key(message)));
 			}
 			else
 				message = Value.toString(value);

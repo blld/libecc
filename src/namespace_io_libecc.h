@@ -23,7 +23,7 @@
 #define Array io_libecc_Array
 #define String io_libecc_String
 #define Date io_libecc_Date
-#define Identifier io_libecc_Identifier
+#define Key io_libecc_Key
 #define Object io_libecc_Object
 #define Function io_libecc_Function
 #define Native io_libecc_Native

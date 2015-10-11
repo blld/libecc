@@ -153,8 +153,8 @@ void setup ()
 	
 	functionConstructor = Function.createWithNative(functionPrototype, constructorFunction, -1);
 	
-	Object.add(functionPrototype, Identifier(constructor), Value.function(functionConstructor), 0);
-	Object.add(&functionConstructor->object, Identifier(prototype), Value.function(functionPrototypeFunction), 0);
+	Object.add(functionPrototype, Key(constructor), Value.function(functionConstructor), 0);
+	Object.add(&functionConstructor->object, Key(prototype), Value.function(functionPrototypeFunction), 0);
 }
 
 void teardown (void)
@@ -193,8 +193,8 @@ struct Function * createSized (struct Object *prototype, uint32_t size)
 	self->object.type = &Text(functionType);
 	
 	proto = Object.create(Object.prototype());
-	Object.add(proto, Identifier(constructor), Value.function(self), Object(writable) | Object(configurable));
-	Object.add(&self->object, Identifier(prototype), Value.object(proto), Object(writable));
+	Object.add(proto, Key(constructor), Value.function(self), Object(writable) | Object(configurable));
+	Object.add(&self->object, Key(prototype), Value.object(proto), Object(writable));
 	
 	return self;
 }
@@ -209,7 +209,7 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 		self->needHeap = 1;
 		self->needArguments = 1;
 		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
-		self->object.hashmap[2].data.identifier = Identifier(arguments);
+		self->object.hashmap[2].data.key = Key(arguments);
 	}
 	else
 	{
@@ -225,7 +225,7 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 	self->oplist = OpList.create(native, Value.undefined(), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
-	Object.add(&self->object, Identifier(length), Value.integer(abs(parameterCount)), 0);
+	Object.add(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
 	
 	return self;
 }
@@ -275,7 +275,7 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 {
 	assert(self);
 	
-	Object.add(&self->context, Identifier.makeWithCString(name), value, flags);
+	Object.add(&self->context, Key.makeWithCString(name), value, flags);
 }
 
 struct Function * addNative(struct Function *self, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
@@ -293,7 +293,7 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	
 	function = createWithNative(object, native, parameterCount);
 	
-	Object.add(object, Identifier.makeWithCString(name), Value.function(function), flags);
+	Object.add(object, Key.makeWithCString(name), Value.function(function), flags);
 	
 	return function;
 }

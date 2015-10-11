@@ -25,8 +25,8 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	name = Value.toString(Object.get(object, Identifier(name)));
-	message = Value.toString(Object.get(object, Identifier(message)));
+	name = Value.toString(Object.get(object, Key(name)));
+	message = Value.toString(Object.get(object, Key(message)));
 	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 	return Value.undefined();
 }
@@ -44,14 +44,14 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	self->text = text;
 	
 	if (message)
-		Object.add(&self->object, Identifier(message), Value.chars(message), Object(writable) | Object(configurable));
+		Object.add(&self->object, Key(message), Value.chars(message), Object(writable) | Object(configurable));
 	
 	return self;
 }
 
 static void initName(struct Object *object, const struct Text *text)
 {
-	Object.add(object, Identifier(name), Value.text(text), Object(writable) | Object(configurable));
+	Object.add(object, Key(name), Value.text(text), Object(writable) | Object(configurable));
 }
 
 static struct Object *createErrorType (const struct Text *text)

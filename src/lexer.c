@@ -547,7 +547,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
 					
 					self->disallowRegex = 1;
-					self->value = Value.identifier(Identifier.makeWithText(self->text, 0));
+					self->value = Value.key(Key.makeWithText(self->text, 0));
 					return Lexer(identifierToken);
 				}
 				else

@@ -110,11 +110,11 @@ void setup (void)
 //	Function.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
 //	Function.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
 //	Function.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
-	Object.add(arrayPrototype, Identifier(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
+	Object.add(arrayPrototype, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	
 	arrayConstructor = Function.createWithNative(arrayPrototype, constructorFunction, 1);
 	
-	Object.add(arrayPrototype, Identifier(constructor), Value.function(arrayConstructor), 0);
+	Object.add(arrayPrototype, Key(constructor), Value.function(arrayConstructor), 0);
 }
 
 void teardown (void)
@@ -133,8 +133,6 @@ struct Object *createSized (uint32_t size)
 	assert(self);
 	Object.resizeElement(self, size);
 	self->type = &Text(arrayType);
-	
-//	Object.add(self, Identifier.length(), )
 	
 	return self;
 }

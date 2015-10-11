@@ -3,13 +3,24 @@ binary := ./bin/libecc
 sources := $(wildcard ../src/*.c) $(wildcard ../src/object/*.c)
 objects := $(sources:../src/%.c=./object/%.o)
 
-std ?= -std=c99
-warn ?= -Wall -pedantic
+#
+
+ifeq ($(std),)
+	std := -std=c99
+	warn ?= -Wall -pedantic
+else
+	warn ?= -Wall
+endif
+
 opts ?= -Os -fomit-frame-pointer -fstrict-aliasing
 flto ?= -flto
 libs ?= -lm
 
-CFLAGS += $(std) $(warn) $(opts) $(flto) -DNDEBUG=1
+ifeq ($(debug),)
+debug += -DNDEBUG=1
+endif
+
+CFLAGS += $(std) $(warn) $(opts) $(flto) $(debug)
 
 ##
 

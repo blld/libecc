@@ -46,7 +46,7 @@ static void unmarkObject (struct Object *object)
 		for (index = 2, count = object->hashmapCount; index < count; ++index)
 			if (object->hashmap[index].data.flags & Object(isValue))
 			{
-//				Identifier.dumpTo(object->hashmap[index].data.identifier, stderr);
+//				Key.dumpTo(object->hashmap[index].data.key, stderr);
 //				fprintf(stderr, " < unmark\n");
 				unmarkValue(object->hashmap[index].data.value);
 			}

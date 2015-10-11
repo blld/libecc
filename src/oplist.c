@@ -81,7 +81,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 		if (condition->ops[1].native == Op.getLocal && (
 			condition->ops[0].native == Op.less ||
 			condition->ops[0].native == Op.lessOrEqual ))
-			if (step->opCount >= 2 && step->ops[1].value.data.identifier.data.integer == condition->ops[1].value.data.identifier.data.integer)
+			if (step->opCount >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
 			{
 				struct Value stepValue;
 				if (step->opCount == 2 && (step->ops[0].native == Op.incrementRef || step->ops[0].native == Op.postIncrementRef))
@@ -109,7 +109,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 		if (condition->ops[1].native == Op.getLocal && (
 			condition->ops[0].native == Op.more ||
 			condition->ops[0].native == Op.moreOrEqual ))
-			if (step->opCount >= 2 && step->ops[1].value.data.identifier.data.integer == condition->ops[1].value.data.identifier.data.integer)
+			if (step->opCount >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
 			{
 				struct Value stepValue;
 				if (step->opCount == 2 && (step->ops[0].native == Op.decrementRef || step->ops[0].native == Op.postDecrementRef))
@@ -176,7 +176,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 			{
 				if (context->hashmap[slotIndex].data.flags & Object(isValue))
 				{
-					if (Identifier.isEqual(context->hashmap[slotIndex].data.identifier, self->ops[index].value.data.identifier))
+					if (Key.isEqual(context->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
 					{
 						self->ops[index] = Op.make(
 							self->ops[index].native == Op.getLocal? Op.getLocalSlot:

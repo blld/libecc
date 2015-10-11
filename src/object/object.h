@@ -12,7 +12,7 @@
 #include "namespace_io_libecc.h"
 
 #include "value.h"
-#include "identifier.h"
+#include "key.h"
 #include "pool.h"
 #include "entry.h"
 
@@ -52,13 +52,13 @@ Interface(Object,
 	(struct Object *, copy ,(const struct Object * original))
 	(void, destroy ,(struct Object *))
 	
-	(struct Value, get ,(struct Object *, struct Identifier))
-	(struct Entry, getMember ,(struct Object *, struct Identifier))
+	(struct Value, get ,(struct Object *, struct Key))
+	(struct Entry, getMember ,(struct Object *, struct Key))
 	(struct Entry, getOwnProperty ,(struct Object *, struct Value))
 	(struct Entry, getProperty ,(struct Object *, struct Value))
 	(void, setProperty ,(struct Object *, struct Value, struct Value))
-	(void, add ,(struct Object *, struct Identifier, struct Value, enum Object(Flags)))
-	(struct Value, delete ,(struct Object *, struct Identifier))
+	(void, add ,(struct Object *, struct Key, struct Value, enum Object(Flags)))
+	(struct Value, delete ,(struct Object *, struct Key))
 	(struct Value, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))
 	
@@ -83,8 +83,8 @@ Interface(Object,
 			uint32_t slot[16];
 			struct {
 				struct Value value;
-				struct Identifier identifier;
-				char unused[63 - sizeof(void *) * 2 - sizeof(struct Identifier)];
+				struct Key key;
+				char unused[63 - sizeof(void *) * 2 - sizeof(struct Key)];
 				uint8_t flags;
 			} data;
 		} *hashmap;
