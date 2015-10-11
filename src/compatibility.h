@@ -35,10 +35,13 @@
 	#if (__STDC_VERSION__ < 199901L)
 		#ifdef __GNUC__
 			#define inline __inline__
+			#define restrict __restrict__
 		#elif _MSC_VER
 			#define inline __inline
+			#define restrict __restrict
 		#else
 			#define inline static
+			#define restrict
 		#endif
 	#endif
 
