@@ -65,6 +65,55 @@ Structure join (Structure from, Structure to)
 	return make(from.location, to.location - from.location + to.length);
 }
 
+uint16_t toUTF16 (Structure text, uint16_t *wbuffer)
+{
+	const char *buffer = text.location;
+	uint16_t index, windex;
+	uint32_t u;
+	
+	for (index = 0, windex = 0; index < text.length;)
+	{
+		u = buffer[index++];
+		
+		switch (text.length - index)
+		{
+			default:
+			case 3:
+				if ((u & 0xf8) == 0xf0 && (buffer[index] & 0xc0) == 0x80 && (buffer[index + 1] & 0xc0) == 0x80 && (buffer[index + 2] & 0xc0) == 0x80)
+				{
+					u  =               (u & 0x07) << 18;
+					u |= (buffer[index++] & 0x3f) << 12;
+					u |= (buffer[index++] & 0x3f) << 6;
+					u |= (buffer[index++] & 0x3f);
+					break;
+				}
+			
+			case 2:
+				if ((u & 0xf0) == 0xe0 && (buffer[index] & 0xc0) == 0x80 && (buffer[index + 1] & 0xc0) == 0x80 )
+				{
+					u  =               (u & 0x0f) << 12;
+					u |= (buffer[index++] & 0x3f) << 6;
+					u |= (buffer[index++] & 0x3f);
+					break;
+				}
+			
+			case 1:
+				if ((u & 0xe0) == 0xc0 && (buffer[index] & 0xc0) == 0x80)
+				{
+					u  =               (u & 0x1f) << 6;
+					u |= (buffer[index++] & 0x3f);
+					break;
+				}
+			
+			case 0:
+				break;
+		}
+		
+		wbuffer[windex++] = u;
+	}
+	
+	return windex;
+}
 
 // MARK: Texts
 

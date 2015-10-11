@@ -21,6 +21,8 @@ Interface(
 	(Structure, make ,(const char *location, uint16_t length))
 	(Structure, join ,(Structure from, Structure to))
 	
+	(uint16_t, toUTF16 ,(Structure, uint16_t *wbuffer))
+	
 	(const Instance, undefined ,(void))
 	(const Instance, null ,(void))
 	(const Instance, false ,(void))
