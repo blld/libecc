@@ -12,8 +12,6 @@
 #include "namespace_io_libecc.h"
 
 
-#include "interface.h"
-
 #define io_libecc_Entry(X) io_libecc_entry_ ## X
 
 enum Entry(Flags)

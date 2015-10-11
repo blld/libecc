@@ -12,8 +12,6 @@
 #include "namespace_io_libecc.h"
 
 
-#include "interface.h"
-
 #define io_libecc_Text(X) io_libecc_text_ ## X
 
 extern const struct Text Text(undefined);
@@ -50,6 +48,8 @@ extern const struct Text Text(typeErrorName);
 extern const struct Text Text(uriErrorName);
 extern const struct Text Text(inputErrorName);
 
+
+#include "interface.h"
 
 Interface(Text,
 	

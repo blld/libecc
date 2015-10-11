@@ -16,8 +16,6 @@
 #include "object/error.h"
 
 
-#include "interface.h"
-
 #define io_libecc_Lexer(X) io_libecc_lexer_ ## X
 
 #define io_libecc_lexer_Tokens \
@@ -91,6 +89,9 @@ enum Lexer(Token) {
 	io_libecc_lexer_Tokens
 };
 #undef _
+
+
+#include "interface.h"
 
 Interface(Lexer,
 	

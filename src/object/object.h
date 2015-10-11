@@ -17,8 +17,6 @@
 #include "entry.h"
 
 
-#include "interface.h"
-
 #define io_libecc_Object(X) io_libecc_object_ ## X
 
 enum Object(Flags)
@@ -35,6 +33,8 @@ enum Object(Flags)
 	Object(isValue) = 0x80,
 };
 
+
+#include "interface.h"
 Interface(Object,
 	
 	(void, setupPrototype ,(void))

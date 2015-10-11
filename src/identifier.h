@@ -14,8 +14,6 @@
 #include "text.h"
 
 
-#include "interface.h"
-
 #define io_libecc_Identifier(X) io_libecc_identifier_ ## X
 
 extern struct Identifier Identifier(none);
@@ -34,6 +32,9 @@ extern struct Identifier Identifier(enumerable);
 extern struct Identifier Identifier(configurable);
 extern struct Identifier Identifier(get);
 extern struct Identifier Identifier(set);
+
+
+#include "interface.h"
 
 Interface(Identifier,
 	

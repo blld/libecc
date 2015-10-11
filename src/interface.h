@@ -6,25 +6,6 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
-#undef Interface
-
-#if __INCLUDE_LEVEL__ > 2
-
-	#define Interface(module, methods, object) \
-		struct module object; \
-		io_libecc_interface_External(module, methods) \
-
-#else
-
-	#define Interface(module, methods, object) \
-		struct module object; \
-		io_libecc_interface_Declaration(methods) \
-		io_libecc_interface_External(module, methods) \
-		io_libecc_interface_Initialization(module, methods) \
-
-#endif
-
-
 #ifndef io_libecc_interface_h
 #define io_libecc_interface_h
 
@@ -53,5 +34,24 @@
 	#define io_libecc_interface_CAT(last, entries) io_libecc_interface__CAT(last, entries)
 
 	#define io_libecc_interface_Wrap(x,y) x,
+
+#endif
+
+
+#undef Interface
+
+#if __INCLUDE_LEVEL__ > 2
+
+	#define Interface(module, methods, object) \
+		struct module object; \
+		io_libecc_interface_External(module, methods) \
+
+#else
+
+	#define Interface(module, methods, object) \
+		struct module object; \
+		io_libecc_interface_Declaration(methods) \
+		io_libecc_interface_External(module, methods) \
+		io_libecc_interface_Initialization(module, methods) \
 
 #endif
