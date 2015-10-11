@@ -109,7 +109,14 @@ uint16_t toUTF16 (Structure text, uint16_t *wbuffer)
 				break;
 		}
 		
-		wbuffer[windex++] = u;
+		if (u > 0x010000)
+		{
+			u -= 0x010000;
+			wbuffer[windex++] = ((u >> 10) & 0x3ff) + 0xd800;
+			wbuffer[windex++] = ((u >>  0) & 0x3ff) + 0xdc00;
+		}
+		else
+			wbuffer[windex++] = u;
 	}
 	
 	return windex;
