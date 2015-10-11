@@ -551,7 +551,10 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					return Lexer(identifierToken);
 				}
 				else
-					return error(self, Error.syntaxError(self->text, "invalid character '%c'", c));
+					if (isprint(c))
+						return error(self, Error.syntaxError(self->text, "invalid character '%c'", c));
+					else
+						return error(self, Error.syntaxError(self->text, "invalid character '\\%d'", c & 0xff));
 			}
 		}
 	}
