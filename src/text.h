@@ -17,46 +17,48 @@
 #define Module \
 	io_libecc_Text
 
+#define io_libecc_Text(X) io_libecc_text_ ## X
+
+extern const struct Text Text(undefined);
+extern const struct Text Text(null);
+extern const struct Text Text(false);
+extern const struct Text Text(true);
+extern const struct Text Text(boolean);
+extern const struct Text Text(number);
+extern const struct Text Text(string);
+extern const struct Text Text(object);
+extern const struct Text Text(function);
+extern const struct Text Text(zero);
+extern const struct Text Text(one);
+extern const struct Text Text(nan);
+extern const struct Text Text(infinity);
+extern const struct Text Text(negativeInfinity);
+extern const struct Text Text(nativeCode);
+
+extern const struct Text Text(nullType);
+extern const struct Text Text(undefinedType);
+extern const struct Text Text(objectType);
+extern const struct Text Text(errorType);
+extern const struct Text Text(arrayType);
+extern const struct Text Text(stringType);
+extern const struct Text Text(dateType);
+extern const struct Text Text(functionType);
+extern const struct Text Text(argumentsType);
+
+extern const struct Text Text(errorName);
+extern const struct Text Text(rangeErrorName);
+extern const struct Text Text(referenceErrorName);
+extern const struct Text Text(syntaxErrorName);
+extern const struct Text Text(typeErrorName);
+extern const struct Text Text(uriErrorName);
+extern const struct Text Text(inputErrorName);
+
+
 Interface(
 	(Structure, make ,(const char *location, uint16_t length))
 	(Structure, join ,(Structure from, Structure to))
 	
 	(uint16_t, toUTF16 ,(Structure, uint16_t *wbuffer))
-	
-	(const Instance, undefined ,(void))
-	(const Instance, null ,(void))
-	(const Instance, false ,(void))
-	(const Instance, true ,(void))
-	(const Instance, boolean ,(void))
-	(const Instance, number ,(void))
-	(const Instance, string ,(void))
-	(const Instance, object ,(void))
-	(const Instance, function ,(void))
-	(const Instance, zero ,(void))
-	(const Instance, one ,(void))
-	(const Instance, NaN ,(void))
-	(const Instance, Infinity ,(void))
-	(const Instance, negativeInfinity ,(void))
-	(const Instance, nativeCode ,(void))
-	
-	(const Instance, nullType ,(void))
-	(const Instance, undefinedType ,(void))
-	(const Instance, objectType ,(void))
-	(const Instance, errorType ,(void))
-	(const Instance, arrayType ,(void))
-	(const Instance, stringType ,(void))
-	(const Instance, dateType ,(void))
-	(const Instance, functionType ,(void))
-	(const Instance, argumentsType ,(void))
-	
-	(const Instance, errorName ,(void))
-	(const Instance, rangeErrorName ,(void))
-	(const Instance, referenceErrorName ,(void))
-	(const Instance, syntaxErrorName ,(void))
-	(const Instance, typeErrorName ,(void))
-	(const Instance, uriErrorName ,(void))
-	
-	(const Instance, inputErrorName ,(void))
 	,
 	{
 		uint16_t length;

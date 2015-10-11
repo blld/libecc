@@ -41,7 +41,7 @@ Instance createFromFile (const char *filename)
 	
 	assert(filename);
 	
-	inputError = *Text.inputErrorName();
+	inputError = Text(inputErrorName);
 	
 	file = fopen(filename, "rb");
 	if (!file)
@@ -111,16 +111,16 @@ void printText (Instance self, struct Text text)
 	line = findLine(self, text);
 	
 	if (self->name[0] == '(')
-		Env.printColor(0, Env(Dim), "%s", self->name);
+		Env.printColor(0, Env(dim), "%s", self->name);
 	else
-		Env.printColor(0, Env(Bold), "%s", self->name, line);
+		Env.printColor(0, Env(bold), "%s", self->name, line);
 	
 	if (line >= 0)
 	{
 		const char *location;
 		size_t start, length = 0;
 		
-		Env.printColor(0, Env(Bold), " line:%d", line);
+		Env.printColor(0, Env(bold), " line:%d", line);
 		Env.newline();
 		
 		start = self->lines[line];
@@ -155,9 +155,9 @@ void printText (Instance self, struct Text text)
 			mark[text.location - location] = '^';
 			
 			if ((text.location - location) > 0)
-				Env.printColor(0, Env(Invisible), "%.*s", (text.location - location), mark);
+				Env.printColor(0, Env(invisible), "%.*s", (text.location - location), mark);
 			
-			Env.printColor(Env(Green), Env(Bold), "%.*s", text.length? text.length: 1, mark + (text.location - location));
+			Env.printColor(Env(green), Env(bold), "%.*s", text.length? text.length: 1, mark + (text.location - location));
 		}
 	}
 	

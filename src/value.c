@@ -235,38 +235,38 @@ Structure toString (Structure value)
 			return value;
 		
 		case Value(null):
-			return Value.text(Text.null());
+			return Value.text(&Text(null));
 		
 		case Value(undefined):
-			return Value.text(Text.undefined());
+			return Value.text(&Text(undefined));
 		
 		case Value(false):
-			return Value.text(Text.false());
+			return Value.text(&Text(false));
 		
 		case Value(true):
-			return Value.text(Text.true());
+			return Value.text(&Text(true));
 		
 		case Value(integer):
 			if (value.data.integer == 0)
-				return Value.text(Text.zero());
+				return Value.text(&Text(zero));
 			else if (value.data.integer == 1)
-				return Value.text(Text.one());
+				return Value.text(&Text(one));
 			else
 				return Value.chars(Chars.create("%d", value.data.integer));
 		
 		case Value(binary):
 			if (value.data.binary == 0)
-				return Value.text(Text.zero());
+				return Value.text(&Text(zero));
 			else if (value.data.binary == 1)
-				return Value.text(Text.one());
+				return Value.text(&Text(one));
 			else if (isnan(value.data.binary))
-				return Value.text(Text.NaN());
+				return Value.text(&Text(nan));
 			else if (isinf(value.data.binary))
 			{
 				if (signbit(value.data.binary))
-					return Value.text(Text.negativeInfinity());
+					return Value.text(&Text(negativeInfinity));
 				else
-					return Value.text(Text.Infinity());
+					return Value.text(&Text(infinity));
 			}
 			else
 				return Value.chars(Chars.create("%g", value.data.binary));
@@ -348,15 +348,15 @@ Structure toBinary (Structure value)
 		
 		case Value(text):
 		{
-			if (value.data.text == Text.zero())
+			if (value.data.text == &Text(zero))
 				return Value.binary(0);
-			else if (value.data.text == Text.one())
+			else if (value.data.text == &Text(one))
 				return Value.binary(1);
-			else if (value.data.text == Text.NaN())
+			else if (value.data.text == &Text(nan))
 				return Value.binary(NAN);
-			else if (value.data.text == Text.Infinity())
+			else if (value.data.text == &Text(infinity))
 				return Value.binary(INFINITY);
-			else if (value.data.text == Text.negativeInfinity())
+			else if (value.data.text == &Text(negativeInfinity))
 				return Value.binary(-INFINITY);
 			
 			/* fallthrought */
@@ -441,29 +441,29 @@ Structure toType (Structure value)
 	{
 		case Value(true):
 		case Value(false):
-			return Value.text(Text.boolean());
+			return Value.text(&Text(boolean));
 		
 		case Value(undefined):
-			return Value.text(Text.undefined());
+			return Value.text(&Text(undefined));
 		
 		case Value(integer):
 		case Value(binary):
-			return Value.text(Text.number());
+			return Value.text(&Text(number));
 		
 		case Value(identifier):
 		case Value(text):
 		case Value(chars):
-			return Value.text(Text.string());
+			return Value.text(&Text(string));
 		
 		case Value(null):
 		case Value(object):
 		case Value(string):
 		case Value(error):
 		case Value(date):
-			return Value.text(Text.object());
+			return Value.text(&Text(object));
 		
 		case Value(function):
-			return Value.text(Text.function());
+			return Value.text(&Text(function));
 		
 		case Value(breaker):
 		case Value(reference):

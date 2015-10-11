@@ -95,13 +95,13 @@ static void test (const char *func, int line, const char *test, const char *expe
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
 	{
 		++testErrorCount;
-		Env.printColor(Env(Red), Env(Bold), "[failure]");
+		Env.printColor(Env(red), Env(bold), "[failure]");
 		Env.print(" %s:%d - ", func, line);
-		Env.printColor(0, Env(Bold), "expect '%s' was '%.*s'", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.printColor(0, Env(bold), "expect '%s' was '%.*s'", expect, Value.stringLength(result), Value.stringChars(result));
 	}
 	else
 	{
-		Env.printColor(Env(Green), Env(Bold), "[success]");
+		Env.printColor(Env(green), Env(bold), "[success]");
 		Env.print(" %s:%d", func, line);
 	}
 	Env.newline();
@@ -514,9 +514,9 @@ static int runTest (int verbosity)
 	Env.newline();
 	
 	if (testErrorCount)
-		Env.printColor(0, Env(Bold), "test failure: %d", testErrorCount);
+		Env.printColor(0, Env(bold), "test failure: %d", testErrorCount);
 	else
-		Env.printColor(0, Env(Bold), "all success");
+		Env.printColor(0, Env(bold), "all success");
 	
 	Env.newline();
 	

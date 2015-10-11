@@ -190,7 +190,7 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	Object.initialize(&self->object, functionPrototype);
 	Object.initializeSized(&self->context, prototype, size);
 	
-	self->object.type = Text.functionType();
+	self->object.type = &Text(functionType);
 	
 	proto = Object.create(Object.prototype());
 	Object.add(proto, Identifier.constructor(), Value.function(self), Object(writable) | Object(configurable));
@@ -222,8 +222,8 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
 	self->context.hashmapCount = self->context.hashmapCapacity;
-	self->oplist = OpList.create(native, Value.undefined(), *Text.nativeCode());
-	self->text = *Text.nativeCode();
+	self->oplist = OpList.create(native, Value.undefined(), Text(nativeCode));
+	self->text = Text(nativeCode);
 	
 	Object.add(&self->object, Identifier.length(), Value.integer(abs(parameterCount)), 0);
 	

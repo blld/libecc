@@ -192,10 +192,10 @@ void printError (int typeLength, const char *type, const char *format, ...)
 {
 	va_list ap;
 	
-	printColor(Env(Red), Env(Bold), "%.*s", typeLength, type);
+	printColor(Env(red), Env(bold), "%.*s", typeLength, type);
 	print(": ");
 	
-	setTextColor(0, Env(Bold));
+	setTextColor(0, Env(bold));
 	#if __MSDOS__ || _WIN32 || _WIN64
 	{
 		int16_t length;
@@ -220,10 +220,10 @@ void printWarning (const char *format, ...)
 {
 	va_list ap;
 	
-	printColor(Env(Yellow), Env(Bold), "Warning");
+	printColor(Env(yellow), Env(bold), "Warning");
 	print(": ");
 	
-	setTextColor(0, Env(Bold));
+	setTextColor(0, Env(bold));
 	#if __MSDOS__ || _WIN32 || _WIN64
 	{
 		int16_t length;

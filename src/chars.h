@@ -14,7 +14,6 @@
 #include "pool.h"
 
 
-#define io_libecc_interface_noIdentity
 #include "interface.h"
 
 #define Module \

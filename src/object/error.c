@@ -66,14 +66,14 @@ static struct Object *createErrorType (const struct Text *text)
 void setup (void)
 {
 	errorPrototype = Object.create(Object.prototype());
-	errorPrototype->type = Text.errorType();
-	initName(errorPrototype, Text.errorName());
+	errorPrototype->type = &Text(errorType);
+	initName(errorPrototype, &Text(errorName));
 	
-	rangeErrorPrototype = createErrorType(Text.rangeErrorName());
-	referenceErrorPrototype = createErrorType(Text.referenceErrorName());
-	syntaxErrorPrototype = createErrorType(Text.syntaxErrorName());
-	typeErrorPrototype = createErrorType(Text.typeErrorName());
-	uriErrorPrototype = createErrorType(Text.uriErrorName());
+	rangeErrorPrototype = createErrorType(&Text(rangeErrorName));
+	referenceErrorPrototype = createErrorType(&Text(referenceErrorName));
+	syntaxErrorPrototype = createErrorType(&Text(syntaxErrorName));
+	typeErrorPrototype = createErrorType(&Text(typeErrorName));
+	uriErrorPrototype = createErrorType(&Text(uriErrorName));
 }
 
 void teardown (void)

@@ -12,41 +12,39 @@
 
 #define textMake(T) { sizeof(T) - 1, T }
 
-static const struct Text nullText = textMake("null");
-static const struct Text undefinedText = textMake("undefined");
-static const struct Text trueText = textMake("true");
-static const struct Text falseText = textMake("false");
-static const struct Text booleanText = textMake("boolean");
-static const struct Text numberText = textMake("number");
-static const struct Text stringText = textMake("string");
-static const struct Text objectText = textMake("object");
-static const struct Text functionText = textMake("function");
-static const struct Text zeroText = textMake("0");
-static const struct Text oneText = textMake("1");
-static const struct Text nanText = textMake("NaN");
-static const struct Text infinityText = textMake("Infinity");
-static const struct Text negativeInfinityText = textMake("-Infinity");
+const struct Text Text(undefined) = textMake("undefined");
+const struct Text Text(null) = textMake("null");
+const struct Text Text(true) = textMake("true");
+const struct Text Text(false) = textMake("false");
+const struct Text Text(boolean) = textMake("boolean");
+const struct Text Text(number) = textMake("number");
+const struct Text Text(string) = textMake("string");
+const struct Text Text(object) = textMake("object");
+const struct Text Text(function) = textMake("function");
+const struct Text Text(zero) = textMake("0");
+const struct Text Text(one) = textMake("1");
+const struct Text Text(nan) = textMake("NaN");
+const struct Text Text(infinity) = textMake("Infinity");
+const struct Text Text(negativeInfinity) = textMake("-Infinity");
+const struct Text Text(nativeCode) = textMake("[native code]");
 
-static const struct Text nullTypeText = textMake("[object Null]");
-static const struct Text undefinedTypeText =  textMake("[object Undefined]");
-static const struct Text objectTypeText = textMake("[object Object]");
-static const struct Text errorTypeText = textMake("[object Error]");
-static const struct Text arrayTypeText = textMake("[object Array]");
-static const struct Text stringTypeText = textMake("[object String]");
-static const struct Text dateTypeText = textMake("[object Date]");
-static const struct Text functionTypeText = textMake("[object Function]");
-static const struct Text argumentsTypeText = textMake("[object Arguments]");
+const struct Text Text(nullType) = textMake("[object Null]");
+const struct Text Text(undefinedType) =  textMake("[object Undefined]");
+const struct Text Text(objectType) = textMake("[object Object]");
+const struct Text Text(errorType) = textMake("[object Error]");
+const struct Text Text(arrayType) = textMake("[object Array]");
+const struct Text Text(stringType) = textMake("[object String]");
+const struct Text Text(dateType) = textMake("[object Date]");
+const struct Text Text(functionType) = textMake("[object Function]");
+const struct Text Text(argumentsType) = textMake("[object Arguments]");
 
-static const struct Text errorNameText = textMake("Error");
-static const struct Text rangeErrorNameText = textMake("RangeError");
-static const struct Text referenceErrorNameText = textMake("ReferenceError");
-static const struct Text syntaxErrorNameText = textMake("SyntaxError");
-static const struct Text typeErrorNameText = textMake("TypeError");
-static const struct Text uriErrorNameText = textMake("URIError");
-
-static const struct Text inputErrorNameText = textMake("InputError");
-
-static const struct Text nativeCodeText = textMake("[native code]");
+const struct Text Text(errorName) = textMake("Error");
+const struct Text Text(rangeErrorName) = textMake("RangeError");
+const struct Text Text(referenceErrorName) = textMake("ReferenceError");
+const struct Text Text(syntaxErrorName) = textMake("SyntaxError");
+const struct Text Text(typeErrorName) = textMake("TypeError");
+const struct Text Text(uriErrorName) = textMake("URIError");
+const struct Text Text(inputErrorName) = textMake("InputError");
 
 // MARK: - Static Members
 
@@ -121,167 +119,3 @@ uint16_t toUTF16 (Structure text, uint16_t *wbuffer)
 	
 	return windex;
 }
-
-// MARK: Texts
-
-const Instance undefined (void)
-{
-	return &undefinedText;
-}
-
-const Instance null (void)
-{
-	return &nullText;
-}
-
-const Instance false (void)
-{
-	return &falseText;
-}
-
-const Instance true (void)
-{
-	return &trueText;
-}
-
-const Instance boolean (void)
-{
-	return &booleanText;
-}
-
-const Instance number (void)
-{
-	return &numberText;
-}
-
-const Instance string (void)
-{
-	return &stringText;
-}
-
-const Instance object (void)
-{
-	return &objectText;
-}
-
-const Instance function (void)
-{
-	return &functionText;
-}
-
-const Instance zero (void)
-{
-	return &zeroText;
-}
-
-const Instance one (void)
-{
-	return &oneText;
-}
-
-const Instance NaN (void)
-{
-	return &nanText;
-}
-
-const Instance Infinity (void)
-{
-	return &infinityText;
-}
-
-const Instance negativeInfinity (void)
-{
-	return &negativeInfinityText;
-}
-
-const Instance nativeCode (void)
-{
-	return &nativeCodeText;
-}
-
-
-// MARK: Type
-
-const Instance nullType (void)
-{
-	return &nullTypeText;
-}
-
-const Instance undefinedType (void)
-{
-	return &undefinedTypeText;
-}
-
-const Instance objectType (void)
-{
-	return &objectTypeText;
-}
-
-const Instance errorType (void)
-{
-	return &errorTypeText;
-}
-
-const Instance arrayType (void)
-{
-	return &arrayTypeText;
-}
-
-const Instance stringType (void)
-{
-	return &stringTypeText;
-}
-
-const Instance dateType (void)
-{
-	return &dateTypeText;
-}
-
-const Instance functionType (void)
-{
-	return &functionTypeText;
-}
-
-const Instance argumentsType (void)
-{
-	return &argumentsTypeText;
-}
-
-
-// MARK: Name
-
-const Instance errorName (void)
-{
-	return &errorNameText;
-}
-
-const Instance rangeErrorName (void)
-{
-	return &rangeErrorNameText;
-}
-
-const Instance referenceErrorName (void)
-{
-	return &referenceErrorNameText;
-}
-
-const Instance syntaxErrorName (void)
-{
-	return &syntaxErrorNameText;
-}
-
-const Instance typeErrorName (void)
-{
-	return &typeErrorNameText;
-}
-
-const Instance uriErrorName (void)
-{
-	return &uriErrorNameText;
-}
-
-const Instance inputErrorName (void)
-{
-	return &inputErrorNameText;
-}
-

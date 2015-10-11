@@ -19,31 +19,31 @@
 
 #define io_libecc_Env(X) io_libecc_env_ ## X
 
-enum Module(Color) {
-	Module(Black) = 30,
-	Module(Red) = 31,
-	Module(Green) = 32,
-	Module(Yellow) = 33,
-	Module(Blue) = 34,
-	Module(Magenta) = 35,
-	Module(Cyan) = 36,
-	Module(White) = 37,
+enum Env(Color) {
+	Env(black) = 30,
+	Env(red) = 31,
+	Env(green) = 32,
+	Env(yellow) = 33,
+	Env(blue) = 34,
+	Env(magenta) = 35,
+	Env(cyan) = 36,
+	Env(white) = 37,
 };
 
-enum Module(Attribute) {
-	Module(Bold) = 1,
-	Module(Dim) = 2,
-	Module(Invisible) = 8,
+enum Env(Attribute) {
+	Env(bold) = 1,
+	Env(dim) = 2,
+	Env(invisible) = 8,
 };
 
 Interface(
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(Instance, shared ,(void))
+	(struct Env *, shared ,(void))
 	
 	(void, print ,(const char *format, ...))
-	(void, printColor ,(enum Module(Color) color, enum Module(Attribute) attribute, const char *format, ...))
+	(void, printColor ,(enum Env(Color) color, enum Env(Attribute) attribute, const char *format, ...))
 	(void, printError ,(int typeLength, const char *type, const char *format, ...))
 	(void, printWarning ,(const char *format, ...))
 	(void, newline ,())

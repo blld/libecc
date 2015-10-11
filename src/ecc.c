@@ -260,7 +260,7 @@ int evalInput (Instance self, struct Input *input)
 				message = Value.toString(value);
 			
 			if (name.type == Value(undefined))
-				name = Value.text(Text.errorName());
+				name = Value.text(&Text(errorName));
 			
 			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
@@ -320,7 +320,7 @@ void printTextInput (Instance self, struct Text text)
 		Input.printText(input, text);
 	else
 	{
-		Env.printColor(0, Env(Dim), "(unknown input)\n");
+		Env.printColor(0, Env(dim), "(unknown input)\n");
 		Env.print("%.*s", text.length, text.location);
 		Env.newline();
 		Env.newline();

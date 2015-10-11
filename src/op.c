@@ -331,7 +331,7 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
 	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-		arguments->type = Text.argumentsType();
+		arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
@@ -363,7 +363,7 @@ static inline void populateContextWithArguments (const Instance * const ops, str
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
 	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-	arguments->type = Text.argumentsType();
+	arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)

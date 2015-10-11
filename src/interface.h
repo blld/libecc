@@ -9,15 +9,6 @@
 #undef Interface
 #undef Module
 
-#undef io_libecc_interface_identity
-#ifdef io_libecc_interface_noIdentity
-	#define io_libecc_interface_identity
-	#undef io_libecc_interface_noIdentity
-#else
-	#define io_libecc_interface_identity const struct Module identity;
-#endif
-
-
 #if __INCLUDE_LEVEL__ > 2
 
 	#define Interface(methods, object) \
@@ -41,7 +32,7 @@
 	#define Structure struct Module
 	#define Instance struct Module *
 
-	#define io_libecc_interface_External(methods) struct { io_libecc_interface_CAT(_end, io_libecc_interface_E_even methods) io_libecc_interface_identity } extern const Module;
+	#define io_libecc_interface_External(methods) struct { io_libecc_interface_CAT(_end, io_libecc_interface_E_even methods) const struct Module identity; } extern const Module;
 	#define io_libecc_interface_E_even(R, N, P) io_libecc_interface_E(R, N, P) io_libecc_interface_E_odd
 	#define io_libecc_interface_E_odd(R, N, P) io_libecc_interface_E(R, N, P) io_libecc_interface_E_even
 	#define io_libecc_interface_E_even_end

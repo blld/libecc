@@ -102,7 +102,7 @@ void setup (void)
 	enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	arrayPrototype = Object.create(Object.prototype());
-	arrayPrototype->type = Text.arrayType();
+	arrayPrototype->type = &Text(arrayType);
 	
 	Function.addToObject(arrayPrototype, "toString", toString, 0, flags);
 //	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);
@@ -132,7 +132,7 @@ struct Object *createSized (uint32_t size)
 	struct Object *self = Object.create(arrayPrototype);
 	assert(self);
 	Object.resizeElement(self, size);
-	self->type = Text.arrayType();
+	self->type = &Text(arrayType);
 	
 //	Object.add(self, Identifier.length(), )
 	

@@ -68,9 +68,9 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type == Value(null))
-		ecc->result = Value.text(Text.nullType());
+		ecc->result = Value.text(&Text(nullType));
 	else if (ecc->this.type == Value(undefined))
-		ecc->result = Value.text(Text.undefinedType());
+		ecc->result = Value.text(&Text(undefinedType));
 	else if (Value.isObject(ecc->this))
 //		TODO: check
 		ecc->result = Value.text(ecc->this.data.object->type);
@@ -508,7 +508,7 @@ Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 	
 	*self = Object.identity;
 	
-	self->type = Text.objectType();
+	self->type = &Text(objectType);
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;

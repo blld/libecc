@@ -25,7 +25,7 @@ Instance create (const char *format, ...)
 	
 	Object.initialize(&self->object, NULL);
 	
-	self->object.type = Text.stringType();
+	self->object.type = &Text(stringType);
 	
 	va_start(ap, format);
 	self->length = vsnprintf(NULL, 0, format, ap);

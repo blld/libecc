@@ -14,21 +14,18 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Entry
-
 #define io_libecc_Entry(X) io_libecc_entry_ ## X
 
-enum Module(Flags)
+enum Entry(Flags)
 {
-	Module(writable) = 1 << 2,
-	Module(enumerable) = 1 << 3,
-	Module(configurable) = 1 << 4,
+	Entry(writable) = 1 << 2,
+	Entry(enumerable) = 1 << 3,
+	Entry(configurable) = 1 << 4,
 	
-	Module(isValue) = 0x80,
+	Entry(isValue) = 0x80,
 };
 
-struct Module
+struct Entry
 {
 	struct Value *value;
 	uint8_t *flags;
