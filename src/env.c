@@ -130,6 +130,9 @@ void teardown (void)
 	SetConsoleOutputCP(self->internal->oldOutputCP);
 	#endif
 	
+	print(" ");
+	newline();
+	
 	free(self->internal), self->internal = NULL;
 	free(self), self = NULL;
 }

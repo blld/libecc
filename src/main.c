@@ -43,7 +43,7 @@ int main (int argc, const char * argv[])
 
 static int printUsage (void)
 {
-	fprintf(stderr, "usage: libecc <filename> or libecc --test or libecc --test-verbose\n\n");
+	fprintf(stderr, "usage: libecc <filename> or libecc --test or libecc --test-verbose\n");
 	
 	return EXIT_FAILURE;
 }
@@ -518,8 +518,6 @@ static int runTest (int verbosity)
 	else
 		Env.printColor(0, Env(Bold), "all success");
 	
-	Env.newline();
-	Env.print(" ");
 	Env.newline();
 	
 	return testErrorCount? EXIT_FAILURE: EXIT_SUCCESS;
