@@ -17,9 +17,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Ecc
-
 Interface(Ecc,
 	
 	(struct Ecc *, create ,(void))

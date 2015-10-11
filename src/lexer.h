@@ -18,9 +18,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Lexer
-
 #define io_libecc_Lexer(X) io_libecc_lexer_ ## X
 
 #define io_libecc_lexer_Tokens \
@@ -89,8 +86,8 @@
 	_( xorAssign ,"'^='",)\
 	\
 
-#define _(X, S, ...) Module(X ## Token) __VA_ARGS__,
-enum Module(Token) {
+#define _(X, S, ...) Lexer(X ## Token) __VA_ARGS__,
+enum Lexer(Token) {
 	io_libecc_lexer_Tokens
 };
 #undef _
@@ -102,7 +99,7 @@ Interface(Lexer,
 	
 	(enum Lexer(Token), nextToken, (struct Lexer *))
 	
-	(const char *, tokenChars ,(enum Module(Token) token))
+	(const char *, tokenChars ,(enum Lexer(Token) token))
 	
 	(struct Value, parseBinary ,(struct Text text))
 	(struct Value, parseInteger ,(struct Text text, int radix))

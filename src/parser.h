@@ -18,9 +18,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Parser
-
 Interface(Parser,
 	
 	(struct Parser *, createWithLexer ,(struct Lexer *))

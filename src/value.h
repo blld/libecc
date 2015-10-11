@@ -18,9 +18,6 @@ struct Ecc;
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Value
-
 #define io_libecc_Value(X) io_libecc_value_ ## X
 
 enum Value(Type) {
@@ -134,8 +131,6 @@ Interface(Value,
 #include "ecc.h"
 #endif
 
-#include "interface.h"
-#define Module io_libecc_Value
 #endif
 
 #endif

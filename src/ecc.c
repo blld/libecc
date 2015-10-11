@@ -131,7 +131,7 @@ struct Ecc *create (void)
 	}
 	
 	self = malloc(sizeof(*self));
-	*self = Module.identity;
+	*self = Ecc.identity;
 	
 	self->global = Function.create(NULL);
 	

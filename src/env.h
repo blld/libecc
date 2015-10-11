@@ -14,9 +14,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Env
-
 #define io_libecc_Env(X) io_libecc_env_ ## X
 
 enum Env(Color) {

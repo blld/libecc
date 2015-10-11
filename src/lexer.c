@@ -80,10 +80,10 @@ static inline int acceptChar(struct Lexer *self, char c)
 		return 0;
 }
 
-static inline enum Module(Token) error(struct Lexer *self, struct Error *error)
+static inline enum Lexer(Token) error(struct Lexer *self, struct Error *error)
 {
 	self->value = Value.error(error);
-	return Module(errorToken);
+	return Lexer(errorToken);
 }
 
 // MARK: - Methods
@@ -92,7 +92,7 @@ struct Lexer * createWithInput(struct Input *input)
 {
 	struct Lexer *self = malloc(sizeof(*self));
 	assert(self);
-	*self = Module.identity;
+	*self = Lexer.identity;
 	
 	assert(input);
 	self->input = input;
@@ -108,7 +108,7 @@ void destroy (struct Lexer *self)
 	free(self), self = NULL;
 }
 
-enum Module(Token) nextToken (struct Lexer *self)
+enum Lexer(Token) nextToken (struct Lexer *self)
 {
 	int c, disallowRegex;
 	assert(self);
@@ -159,7 +159,7 @@ enum Module(Token) nextToken (struct Lexer *self)
 					return error(self, Error.syntaxError(self->text, "TODO: regex"));
 				}
 				else if (acceptChar(self, '='))
-					return Module(divideAssignToken);
+					return Lexer(divideAssignToken);
 				else
 					return '/';
 			}
@@ -248,7 +248,7 @@ enum Module(Token) nextToken (struct Lexer *self)
 							Input.addEscapedText(self->input, self->text);
 						}
 						
-						return Module(stringToken);
+						return Lexer(stringToken);
 					}
 					else if (c == '\r' || c == '\n')
 						break;
@@ -323,7 +323,7 @@ enum Module(Token) nextToken (struct Lexer *self)
 				if (binary)
 				{
 					self->value = parseBinary(self->text);
-					return Module(binaryToken);
+					return Lexer(binaryToken);
 				}
 				else
 				{
@@ -353,19 +353,19 @@ enum Module(Token) nextToken (struct Lexer *self)
 			
 			case '^':
 				if (acceptChar(self, '='))
-					return Module(xorAssignToken);
+					return Lexer(xorAssignToken);
 				else
 					return c;
 			
 			case '%':
 				if (acceptChar(self, '='))
-					return Module(moduloAssignToken);
+					return Lexer(moduloAssignToken);
 				else
 					return c;
 			
 			case '*':
 				if (acceptChar(self, '='))
-					return Module(multiplyAssignToken);
+					return Lexer(multiplyAssignToken);
 				else
 					return c;
 			
@@ -373,9 +373,9 @@ enum Module(Token) nextToken (struct Lexer *self)
 				if (acceptChar(self, '='))
 				{
 					if (acceptChar(self, '='))
-						return Module(identicalToken);
+						return Lexer(identicalToken);
 					else
-						return Module(equalToken);
+						return Lexer(equalToken);
 				}
 				else
 					return c;
@@ -384,42 +384,42 @@ enum Module(Token) nextToken (struct Lexer *self)
 				if (acceptChar(self, '='))
 				{
 					if (acceptChar(self, '='))
-						return Module(notIdenticalToken);
+						return Lexer(notIdenticalToken);
 					else
-						return Module(notEqualToken);
+						return Lexer(notEqualToken);
 				}
 				else
 					return c;
 			
 			case '+':
 				if (acceptChar(self, '+'))
-					return Module(incrementToken);
+					return Lexer(incrementToken);
 				else if (acceptChar(self, '='))
-					return Module(addAssignToken);
+					return Lexer(addAssignToken);
 				else
 					return c;
 			
 			case '-':
 				if (acceptChar(self, '-'))
-					return Module(decrementToken);
+					return Lexer(decrementToken);
 				else if (acceptChar(self, '='))
-					return Module(minusAssignToken);
+					return Lexer(minusAssignToken);
 				else
 					return c;
 			
 			case '&':
 				if (acceptChar(self, '&'))
-					return Module(logicalAndToken);
+					return Lexer(logicalAndToken);
 				else if (acceptChar(self, '='))
-					return Module(andAssignToken);
+					return Lexer(andAssignToken);
 				else
 					return c;
 			
 			case '|':
 				if (acceptChar(self, '|'))
-					return Module(logicalOrToken);
+					return Lexer(logicalOrToken);
 				else if (acceptChar(self, '='))
-					return Module(orAssignToken);
+					return Lexer(orAssignToken);
 				else
 					return c;
 			
@@ -427,12 +427,12 @@ enum Module(Token) nextToken (struct Lexer *self)
 				if (acceptChar(self, '<'))
 				{
 					if (acceptChar(self, '='))
-						return Module(leftShiftAssignToken);
+						return Lexer(leftShiftAssignToken);
 					else
-						return Module(leftShiftToken);
+						return Lexer(leftShiftToken);
 				}
 				else if (acceptChar(self, '='))
-					return Module(lessOrEqualToken);
+					return Lexer(lessOrEqualToken);
 				else
 					return c;
 			
@@ -442,17 +442,17 @@ enum Module(Token) nextToken (struct Lexer *self)
 					if (acceptChar(self, '>'))
 					{
 						if (acceptChar(self, '='))
-							return Module(unsignedRightShiftAssignToken);
+							return Lexer(unsignedRightShiftAssignToken);
 						else
-							return Module(unsignedRightShiftToken);
+							return Lexer(unsignedRightShiftToken);
 					}
 					else if (acceptChar(self, '='))
-						return Module(rightShiftAssignToken);
+						return Lexer(rightShiftAssignToken);
 					else
-						return Module(rightShiftToken);
+						return Lexer(rightShiftToken);
 				}
 				else if (acceptChar(self, '='))
-					return Module(moreOrEqualToken);
+					return Lexer(moreOrEqualToken);
 				else
 					return c;
 			
@@ -463,9 +463,9 @@ enum Module(Token) nextToken (struct Lexer *self)
 					static const struct {
 						const char *name;
 						size_t length;
-						enum Module(Token) token;
+						enum Lexer(Token) token;
 					} keywords[] = {
-						#define _(X) { #X, sizeof(#X) - 1, Module(X##Token) },
+						#define _(X) { #X, sizeof(#X) - 1, Lexer(X##Token) },
 						_(break)
 						_(case)
 						_(catch)
@@ -548,7 +548,7 @@ enum Module(Token) nextToken (struct Lexer *self)
 					
 					self->disallowRegex = 1;
 					self->value = Value.identifier(Identifier.makeWithText(self->text, 0));
-					return Module(identifierToken);
+					return Lexer(identifierToken);
 				}
 				else
 					return error(self, Error.syntaxError(self->text, "invalid character '%c'", c));
@@ -557,10 +557,10 @@ enum Module(Token) nextToken (struct Lexer *self)
 	}
 	
 	addLine(self, self->offset);
-	return Module(noToken);
+	return Lexer(noToken);
 }
 
-const char * tokenChars (enum Module(Token) token)
+const char * tokenChars (enum Lexer(Token) token)
 {
 	// <!> non reentrant
 	
@@ -569,14 +569,14 @@ const char * tokenChars (enum Module(Token) token)
 	
 	struct {
 		const char *name;
-		const enum Module(Token) token;
+		const enum Lexer(Token) token;
 	} static const tokenList[] = {
-		#define _(X, S, I) { sizeof(S "") > sizeof("")? S "": #X, Module(X ## Token), },
+		#define _(X, S, I) { sizeof(S "") > sizeof("")? S "": #X, Lexer(X ## Token), },
 		io_libecc_lexer_Tokens
 		#undef _
 	};
 	
-	if (token > Module(noToken) && token < Module(errorToken))
+	if (token > Lexer(noToken) && token < Lexer(errorToken))
 	{
 		buffer[1] = token;
 		return buffer;

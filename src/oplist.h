@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_OpList
-
 Interface(OpList,
 	
 	(struct OpList *, create ,(const Native native, struct Value value, struct Text text))

@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Date
-
 Interface(Date,
 	
 	(void, setup ,(void))

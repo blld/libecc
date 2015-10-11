@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_String
-
 Interface(String,
 	
 	(struct String *, create ,(const char *format, ...))

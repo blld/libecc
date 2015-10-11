@@ -19,9 +19,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Object
-
 #define io_libecc_Object(X) io_libecc_object_ ## X
 
 enum Object(Flags)
@@ -106,9 +103,6 @@ Interface(Object,
 #include "ecc.h"
 #include "string.h"
 #include "array.h"
-
-#include "interface.h"
-#define Module io_libecc_Object
 #endif
 
 #endif

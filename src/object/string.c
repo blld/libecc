@@ -21,7 +21,7 @@ struct String * create (const char *format, ...)
 	struct String *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(&self->object);
-	*self = Module.identity;
+	*self = String.identity;
 	
 	Object.initialize(&self->object, NULL);
 	

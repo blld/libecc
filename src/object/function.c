@@ -185,7 +185,7 @@ struct Function * createSized (struct Object *prototype, uint32_t size)
 	assert(self);
 	Pool.addFunction(self);
 	
-	*self = Module.identity;
+	*self = Function.identity;
 	
 	Object.initialize(&self->object, functionPrototype);
 	Object.initializeSized(&self->context, prototype, size);

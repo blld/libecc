@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Array
-
 Interface(Array,
 	
 	(void, setup ,(void))

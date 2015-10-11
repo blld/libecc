@@ -68,7 +68,7 @@ void setup (void)
 	self = malloc(sizeof(*self));
 	assert(self);
 	
-	*self = Module.identity;
+	*self = Pool.identity;
 }
 
 void teardown (void)

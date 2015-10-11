@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Identifier
-
 #define io_libecc_Identifier(X) io_libecc_identifier_ ## X
 
 extern struct Identifier Identifier(none);

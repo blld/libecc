@@ -18,7 +18,7 @@ static struct Input * create()
 	struct Input *self = malloc(sizeof(*self));
 	
 	assert(self);
-	*self = Module.identity;
+	*self = Input.identity;
 	
 	self->lineCapacity = 8;
 	self->lineCount = 1;

@@ -99,7 +99,7 @@ void setup (void)
 	
 	self = malloc(sizeof(*self));
 	assert(self);
-	*self = Module.identity;
+	*self = Env.identity;
 	
 	self->internal = malloc(sizeof(*self->internal));
 	*self->internal = EnvInternalIdentity;

@@ -19,9 +19,6 @@ struct Function;
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Pool
-
 Interface(Pool,
 	
 	(void, setup ,(void))

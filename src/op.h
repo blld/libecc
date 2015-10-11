@@ -18,9 +18,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Op
-
 #define io_libecc_op_List \
 	\
 	/* expression */\
@@ -149,7 +146,5 @@ Interface(Op,
 #undef _
 
 #include "oplist.h"
-#include "interface.h"
-#define Module io_libecc_Op
 
 #endif

@@ -14,9 +14,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Text
-
 #define io_libecc_Text(X) io_libecc_text_ ## X
 
 extern const struct Text Text(undefined);

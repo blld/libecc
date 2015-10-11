@@ -17,9 +17,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Function
-
 Interface(Function,
 	
 	(void, setup ,(void))

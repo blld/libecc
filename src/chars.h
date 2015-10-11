@@ -16,9 +16,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Chars
-
 #define io_libecc_Chars(X) io_libecc_chars_ ## X
 
 enum Chars(Flags)

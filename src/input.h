@@ -17,9 +17,6 @@
 
 #include "interface.h"
 
-#define Module \
-	io_libecc_Input
-
 Interface(Input,
 	
 	(struct Input *, createFromFile ,(const char *filename))

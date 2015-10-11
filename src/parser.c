@@ -1371,7 +1371,7 @@ struct Parser * createWithLexer (struct Lexer *lexer)
 {
 	struct Parser *self = malloc(sizeof(*self));
 	assert(self);
-	*self = Module.identity;
+	*self = Parser.identity;
 	
 	self->lexer = lexer;
 	
