@@ -48,6 +48,52 @@ const struct Text Text(inputErrorName) = textMake("InputError");
 
 // MARK: - Static Members
 
+static inline uint32_t toCodepoint (struct Text *text)
+{
+	uint32_t cp;
+	
+	switch (text->length)
+	{
+		default:
+		case 4:
+			if ((text->location[0] & 0xf8) == 0xf0 && (text->location[1] & 0xc0) == 0x80 && (text->location[2] & 0xc0) == 0x80 && (text->location[3] & 0xc0) == 0x80)
+			{
+				cp  = (*text->location++ & 0x07) << 18;
+				cp |= (*text->location++ & 0x3f) << 12;
+				cp |= (*text->location++ & 0x3f) << 6;
+				cp |= (*text->location++ & 0x3f);
+				text->length -= 4;
+				return cp;
+			}
+		
+		case 3:
+			if ((text->location[0] & 0xf0) == 0xe0 && (text->location[1] & 0xc0) == 0x80 && (text->location[2] & 0xc0) == 0x80 )
+			{
+				cp  = (*text->location++ & 0x0f) << 12;
+				cp |= (*text->location++ & 0x3f) << 6;
+				cp |= (*text->location++ & 0x3f);
+				text->length -= 3;
+				return cp;
+			}
+		
+		case 2:
+			if ((text->location[0] & 0xe0) == 0xc0 && (text->location[1] & 0xc0) == 0x80)
+			{
+				cp  = (*text->location++ & 0x1f) << 6;
+				cp |= (*text->location++ & 0x3f);
+				text->length -= 2;
+				return cp;
+			}
+		
+		case 1:
+			--text->length;
+			return *text->location++;
+		
+		case 0:
+			return 0;
+	}
+}
+
 // MARK: - Methods
 
 struct Text make (const char *location, uint16_t length)
@@ -63,58 +109,36 @@ struct Text join (struct Text from, struct Text to)
 	return make(from.location, to.location - from.location + to.length);
 }
 
+uint16_t lengthToUTF16 (struct Text text)
+{
+	uint16_t windex = 0;
+	
+	while (text.length)
+		if (toCodepoint(&text) > 0x010000)
+			windex += 2;
+		else
+			++windex;
+	
+	return windex;
+}
+
 uint16_t toUTF16 (struct Text text, uint16_t *wbuffer)
 {
-	const char *buffer = text.location;
-	uint16_t index, windex;
-	uint32_t u;
+	uint16_t windex = 0;
+	uint32_t cp;
 	
-	for (index = 0, windex = 0; index < text.length;)
+	while (text.length)
 	{
-		u = buffer[index++];
+		cp = toCodepoint(&text);
 		
-		switch (text.length - index)
+		if (cp > 0x010000)
 		{
-			default:
-			case 3:
-				if ((u & 0xf8) == 0xf0 && (buffer[index] & 0xc0) == 0x80 && (buffer[index + 1] & 0xc0) == 0x80 && (buffer[index + 2] & 0xc0) == 0x80)
-				{
-					u  =               (u & 0x07) << 18;
-					u |= (buffer[index++] & 0x3f) << 12;
-					u |= (buffer[index++] & 0x3f) << 6;
-					u |= (buffer[index++] & 0x3f);
-					break;
-				}
-			
-			case 2:
-				if ((u & 0xf0) == 0xe0 && (buffer[index] & 0xc0) == 0x80 && (buffer[index + 1] & 0xc0) == 0x80 )
-				{
-					u  =               (u & 0x0f) << 12;
-					u |= (buffer[index++] & 0x3f) << 6;
-					u |= (buffer[index++] & 0x3f);
-					break;
-				}
-			
-			case 1:
-				if ((u & 0xe0) == 0xc0 && (buffer[index] & 0xc0) == 0x80)
-				{
-					u  =               (u & 0x1f) << 6;
-					u |= (buffer[index++] & 0x3f);
-					break;
-				}
-			
-			case 0:
-				break;
-		}
-		
-		if (u > 0x010000)
-		{
-			u -= 0x010000;
-			wbuffer[windex++] = ((u >> 10) & 0x3ff) + 0xd800;
-			wbuffer[windex++] = ((u >>  0) & 0x3ff) + 0xdc00;
+			cp -= 0x010000;
+			wbuffer[windex++] = ((cp >> 10) & 0x3ff) + 0xd800;
+			wbuffer[windex++] = ((cp >>  0) & 0x3ff) + 0xdc00;
 		}
 		else
-			wbuffer[windex++] = u;
+			wbuffer[windex++] = cp;
 	}
 	
 	return windex;
