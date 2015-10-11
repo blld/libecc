@@ -464,41 +464,42 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						const char *name;
 						size_t length;
 						enum Lexer(Token) token;
+						int disallowRegex;
 					} keywords[] = {
-						#define _(X) { #X, sizeof(#X) - 1, Lexer(X##Token) },
-						_(break)
-						_(case)
-						_(catch)
-						_(continue)
-						_(debugger)
-						_(default)
-						_(delete)
-						_(do)
-						_(else)
-						_(finally)
-						_(for)
-						_(function)
-						_(if)
-						_(in)
-						_(instanceof)
-						_(new)
-						_(return)
-						_(switch)
-						_(typeof)
-						_(throw)
-						_(try)
-						_(var)
-						_(void)
-						_(while)
-						_(with)
+						#define _(X, Y) { #X, sizeof(#X) - 1, Lexer(X##Token), 0 ## Y },
+						_(break,)
+						_(case,)
+						_(catch,)
+						_(continue,)
+						_(debugger,)
+						_(default,)
+						_(delete,)
+						_(do,)
+						_(else,)
+						_(finally,)
+						_(for,)
+						_(function,)
+						_(if,)
+						_(in,)
+						_(instanceof,)
+						_(new,)
+						_(return,)
+						_(switch,)
+						_(typeof,)
+						_(throw,)
+						_(try,)
+						_(var,)
+						_(void,)
+						_(while,)
+						_(with,)
 						
-						_(void)
-						_(typeof)
-					}, disallowRegexKeyword[] = {
-						_(null)
-						_(true)
-						_(false)
-						_(this)
+						_(void,)
+						_(typeof,)
+						
+						_(null, 1)
+						_(true, 1)
+						_(false, 1)
+						_(this, 1)
 						#undef _
 					};
 					
@@ -533,13 +534,9 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					
 					for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
 						if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
-							return keywords[k].token;
-					
-					for (k = 0; k < sizeof(disallowRegexKeyword) / sizeof(*disallowRegexKeyword); ++k)
-						if (self->text.length == disallowRegexKeyword[k].length && memcmp(self->text.location, disallowRegexKeyword[k].name, disallowRegexKeyword[k].length) == 0)
 						{
-							self->disallowRegex = 1;
-							return disallowRegexKeyword[k].token;
+							self->disallowRegex |= keywords[k].disallowRegex;
+							return keywords[k].token;
 						}
 					
 					for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
