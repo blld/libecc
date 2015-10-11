@@ -30,14 +30,14 @@ static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 	#if __MSDOS__ || _WIN32 || _WIN64
 	int c = color - 30;
 	
-	if (attribute == Env(Invisible))
+	if (attribute == Env(invisible))
 		c = (self->internal->defaultAttribute >> 4) & 0x7;
-	else if (color == Env(Black))
-		c = attribute == Env(Bold)? 0x7: 0x8;
-	else if (color == Env(White) || !color)
-		c = attribute == Env(Bold)? 0xf: attribute == Env(Dim)? 0x8: 0x7;
+	else if (color == Env(black))
+		c = attribute == Env(bold)? 0x7: 0x8;
+	else if (color == Env(white) || !color)
+		c = attribute == Env(bold)? 0xf: attribute == Env(dim)? 0x8: 0x7;
 	else
-		c = (attribute == Env(Bold)? 0x8: 0) | ((c << 2) & 0x4) | (c & 0x2) | ((c >> 2) & 0x1);
+		c = (attribute == Env(bold)? 0x8: 0) | ((c << 2) & 0x4) | (c & 0x2) | ((c >> 2) & 0x1);
 	
 	#if __MSDOS__
 	textcolor(c);
