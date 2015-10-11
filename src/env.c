@@ -84,7 +84,8 @@ static inline void printVA(uint16_t length, const char *format, va_list ap)
 {
 	char buffer[length + 1];
 	vsnprintf(buffer, length + 1, format, ap);
-	WriteConsoleA(self->internal->console, buffer, length, NULL, NULL);
+	DWORD numberOfCharsWritten;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, length, &numberOfCharsWritten, NULL);
 }
 #endif
 
