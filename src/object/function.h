@@ -6,8 +6,8 @@
 //  Copyright (c) 2015 Libeccio. All rights reserved.
 //
 
-#ifndef io_libecc_closure_h
-#define io_libecc_closure_h
+#ifndef io_libecc_function_h
+#define io_libecc_function_h
 
 #include "namespace_io_libecc.h"
 

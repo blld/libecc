@@ -1258,7 +1258,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	int parameterCount = 0;
 	
 	struct Op identifierOp = { 0, Value.undefined() };
-	struct Function *parentClosure;
+	struct Function *parentFunction;
 	struct Function *function;
 	
 	if (!isGetter && !isSetter)
@@ -1281,7 +1281,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 		}
 	}
 	
-	parentClosure = self->function;
+	parentFunction = self->function;
 	function = Function.create(NULL);
 	Object.add(&function->context, Key(arguments), Value.undefined(), Object(writable));
 	
@@ -1307,17 +1307,17 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	oplist = OpList.join(oplist, sourceElements(self, '}'));
 	text.length = self->lexer->text.location - text.location + 1;
 	expectToken(self, '}');
-	self->function = parentClosure;
+	self->function = parentFunction;
 	
 	function->oplist = oplist;
 	function->text = text;
 	function->parameterCount = parameterCount;
-	parentClosure->needHeap = 1;
+	parentFunction->needHeap = 1;
 	
 	Object.add(&function->object, Key(length), Value.integer(parameterCount), Object(configurable));
 	
 	if (isDeclaration)
-		Object.add(&parentClosure->context, identifierOp.value.data.key, Value.undefined(), Object(writable) | Object(configurable));
+		Object.add(&parentFunction->context, identifierOp.value.data.key, Value.undefined(), Object(writable) | Object(configurable));
 	else if (identifierOp.value.type != Value(undefined) && !isGetter && !isSetter)
 		Object.add(&function->context, identifierOp.value.data.key, Value.function(function), Object(writable) | Object(configurable));
 	

@@ -164,8 +164,8 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	struct Object *object;
 	struct Key aKey;
 	struct Key bKey;
-	struct Value aClosure;
-	struct Value bClosure;
+	struct Value aFunction;
+	struct Value bFunction;
 	
 	if (value.type < Value(object))
 		return value;
@@ -177,18 +177,18 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	aKey = hint > 0? Key(toString): Key(valueOf);
 	bKey = hint > 0? Key(valueOf): Key(toString);
 	
-	aClosure = Object.get(object, aKey);
-	if (aClosure.type == Value(function))
+	aFunction = Object.get(object, aKey);
+	if (aFunction.type == Value(function))
 	{
-		struct Value result = Op.callFunctionVA(aClosure.data.function, ecc, value, 0);
+		struct Value result = Op.callFunctionVA(aFunction.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
 	
-	bClosure = Object.get(object, bKey);
-	if (bClosure.type == Value(function))
+	bFunction = Object.get(object, bKey);
+	if (bFunction.type == Value(function))
 	{
-		struct Value result = Op.callFunctionVA(bClosure.data.function, ecc, value, 0);
+		struct Value result = Op.callFunctionVA(bFunction.data.function, ecc, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
