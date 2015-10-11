@@ -50,20 +50,20 @@ const struct Text Text(inputErrorName) = textMake("InputError");
 
 // MARK: - Methods
 
-Structure make (const char *location, uint16_t length)
+struct Text make (const char *location, uint16_t length)
 {
-	return (Structure){
+	return (struct Text){
 		length,
 		location,
 	};
 }
 
-Structure join (Structure from, Structure to)
+struct Text join (struct Text from, struct Text to)
 {
 	return make(from.location, to.location - from.location + to.length);
 }
 
-uint16_t toUTF16 (Structure text, uint16_t *wbuffer)
+uint16_t toUTF16 (struct Text text, uint16_t *wbuffer)
 {
 	const char *buffer = text.location;
 	uint16_t index, windex;

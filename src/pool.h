@@ -22,11 +22,10 @@ struct Function;
 #define Module \
 	io_libecc_Pool
 
-Interface(
+Interface(Pool,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
-	(Instance, shared ,(void))
 	
 	(void, addFunction ,(struct Function *function))
 	(void, addObject ,(struct Object *chars))

@@ -19,7 +19,8 @@
 #define Module \
 	io_libecc_Date
 
-Interface(
+Interface(Date,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	

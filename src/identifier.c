@@ -17,22 +17,24 @@ static uint16_t identifierCapacity = 0;
 static char **charsList = NULL;
 static uint16_t charsCount = 0;
 
-Structure internalIdentifier;
-Structure prototypeIdentifier;
-Structure constructorIdentifier;
-Structure lengthIdentifier;
-Structure argumentsIdentifier;
-Structure nameIdentifier;
-Structure messageIdentifier;
-Structure toStringIdentifier;
-Structure valueOfIdentifier;
-Structure evalIdentifier;
-Structure valueIdentifier;
-Structure writableIdentifier;
-Structure enumerableIdentifier;
-Structure configurableIdentifier;
-Structure getIdentifier;
-Structure setIdentifier;
+struct Identifier Identifier(none) = {{{ 0 }}};
+
+struct Identifier Identifier(internal);
+struct Identifier Identifier(prototype);
+struct Identifier Identifier(constructor);
+struct Identifier Identifier(length);
+struct Identifier Identifier(arguments);
+struct Identifier Identifier(name);
+struct Identifier Identifier(message);
+struct Identifier Identifier(toString);
+struct Identifier Identifier(valueOf);
+struct Identifier Identifier(eval);
+struct Identifier Identifier(value);
+struct Identifier Identifier(writable);
+struct Identifier Identifier(enumerable);
+struct Identifier Identifier(configurable);
+struct Identifier Identifier(get);
+struct Identifier Identifier(set);
 
 // MARK: - Static Members
 
@@ -42,21 +44,21 @@ void setup (void)
 {
 	if (!identifierPool)
 	{
-		prototypeIdentifier = makeWithCString("prototype");
-		constructorIdentifier = makeWithCString("constructor");
-		lengthIdentifier = makeWithCString("length");
-		argumentsIdentifier = makeWithCString("arguments");
-		nameIdentifier = makeWithCString("name");
-		messageIdentifier = makeWithCString("message");
-		toStringIdentifier = makeWithCString("toString");
-		valueOfIdentifier = makeWithCString("valueOf");
-		evalIdentifier = makeWithCString("eval");
-		valueIdentifier = makeWithCString("value");
-		writableIdentifier = makeWithCString("writable");
-		enumerableIdentifier = makeWithCString("enumerable");
-		configurableIdentifier = makeWithCString("configurable");
-		getIdentifier = makeWithCString("get");
-		setIdentifier = makeWithCString("set");
+		Identifier(prototype) = makeWithCString("prototype");
+		Identifier(constructor) = makeWithCString("constructor");
+		Identifier(length) = makeWithCString("length");
+		Identifier(arguments) = makeWithCString("arguments");
+		Identifier(name) = makeWithCString("name");
+		Identifier(message) = makeWithCString("message");
+		Identifier(toString) = makeWithCString("toString");
+		Identifier(valueOf) = makeWithCString("valueOf");
+		Identifier(eval) = makeWithCString("eval");
+		Identifier(value) = makeWithCString("value");
+		Identifier(writable) = makeWithCString("writable");
+		Identifier(enumerable) = makeWithCString("enumerable");
+		Identifier(configurable) = makeWithCString("configurable");
+		Identifier(get) = makeWithCString("get");
+		Identifier(set) = makeWithCString("set");
 	}
 }
 
@@ -68,12 +70,12 @@ void teardown (void)
 	free(identifierPool), identifierPool = NULL, identifierCount = 0, identifierCapacity = 0;
 }
 
-Structure makeWithCString (const char *cString)
+struct Identifier makeWithCString (const char *cString)
 {
 	return makeWithText(Text.make(cString, strlen(cString)), 0);
 }
 
-Structure makeWithText (const struct Text text, int copyOnCreate)
+struct Identifier makeWithText (const struct Text text, int copyOnCreate)
 {
 	uint16_t number = 0, index = 0;
 	
@@ -109,7 +111,7 @@ Structure makeWithText (const struct Text text, int copyOnCreate)
 		number = identifierCount;
 	}
 	
-	return (Structure) {{{
+	return (struct Identifier) {{{
 		number >> 12 & 0xf,
 		number >> 8 & 0xf,
 		number >> 4 & 0xf,
@@ -117,102 +119,22 @@ Structure makeWithText (const struct Text text, int copyOnCreate)
 	}}};
 }
 
-Structure none (void)
-{
-	return (Structure) {{{ 0 }}};
-}
-
-Structure prototype (void)
-{
-	return prototypeIdentifier;
-}
-
-Structure constructor (void)
-{
-	return constructorIdentifier;
-}
-
-Structure length (void)
-{
-	return lengthIdentifier;
-}
-
-Structure arguments (void)
-{
-	return argumentsIdentifier;
-}
-
-Structure name (void)
-{
-	return nameIdentifier;
-}
-
-Structure message (void)
-{
-	return messageIdentifier;
-}
-
-Structure toString (void)
-{
-	return toStringIdentifier;
-}
-
-Structure valueOf (void)
-{
-	return valueOfIdentifier;
-}
-
-Structure eval (void)
-{
-	return evalIdentifier;
-}
-
-Structure value (void)
-{
-	return valueIdentifier;
-}
-
-Structure writable (void)
-{
-	return writableIdentifier;
-}
-
-Structure enumerable (void)
-{
-	return enumerableIdentifier;
-}
-
-Structure configurable (void)
-{
-	return configurableIdentifier;
-}
-
-Structure get (void)
-{
-	return getIdentifier;
-}
-
-Structure set (void)
-{
-	return setIdentifier;
-}
-
-int isEqual (Structure self, Structure to)
+int isEqual (struct Identifier self, struct Identifier to)
 {
 	return self.data.integer == to.data.integer;
 }
 
-struct Text *textOf (Structure self)
+struct Text *textOf (struct Identifier identifier)
 {
-	uint16_t number = self.data.depth[0] << 12 | self.data.depth[1] << 8 | self.data.depth[2] << 4 | self.data.depth[3];
+	uint16_t number = identifier.data.depth[0] << 12 | identifier.data.depth[1] << 8 | identifier.data.depth[2] << 4 | identifier.data.depth[3];
 	if (number)
 		return &identifierPool[number - 1];
 	else
 		return NULL;
 }
 
-void dumpTo (Structure self, FILE *file)
+void dumpTo (struct Identifier identifier, FILE *file)
 {
-	struct Text *text = textOf(self);
+	struct Text *text = textOf(identifier);
 	fprintf(file, "%.*s", text->length, text->location);
 }

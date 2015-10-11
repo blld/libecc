@@ -14,9 +14,9 @@
 
 // MARK: - Methods
 
-Instance createVA (int16_t length, const char *format, va_list ap)
+struct Chars * createVA (int16_t length, const char *format, va_list ap)
 {
-	Instance self;
+	struct Chars *self;
 	
 	self = createSized(length);
 	vsprintf(self->chars, format, ap);
@@ -24,11 +24,11 @@ Instance createVA (int16_t length, const char *format, va_list ap)
 	return self;
 }
 
-Instance create (const char *format, ...)
+struct Chars * create (const char *format, ...)
 {
 	int16_t length;
 	va_list ap;
-	Instance self;
+	struct Chars *self;
 	
 	va_start(ap, format);
 	length = vsnprintf(NULL, 0, format, ap);
@@ -41,9 +41,9 @@ Instance create (const char *format, ...)
 	return self;
 }
 
-Instance createSized (uint16_t length)
+struct Chars * createSized (uint16_t length)
 {
-	Instance self = malloc(sizeof(*self) + length);
+	struct Chars *self = malloc(sizeof(*self) + length);
 	assert(self);
 	Pool.addChars(self);
 	self->length = length;
@@ -51,7 +51,7 @@ Instance createSized (uint16_t length)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Chars *self)
 {
 	assert(self);
 	

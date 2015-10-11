@@ -25,17 +25,17 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	name = Value.toString(Object.get(object, Identifier.name()));
-	message = Value.toString(Object.get(object, Identifier.message()));
+	name = Value.toString(Object.get(object, Identifier(name)));
+	message = Value.toString(Object.get(object, Identifier(message)));
 	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 	return Value.undefined();
 }
 
 // MARK: - Static Members
 
-static Instance createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
+static struct Error * createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
-	Instance self = malloc(sizeof(*self));
+	struct Error *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(&self->object);
 	
@@ -44,14 +44,14 @@ static Instance createVA (struct Object *errorPrototype, struct Text text, struc
 	self->text = text;
 	
 	if (message)
-		Object.add(&self->object, Identifier.message(), Value.chars(message), Object(writable) | Object(configurable));
+		Object.add(&self->object, Identifier(message), Value.chars(message), Object(writable) | Object(configurable));
 	
 	return self;
 }
 
 static void initName(struct Object *object, const struct Text *text)
 {
-	Object.add(object, Identifier.name(), Value.text(text), Object(writable) | Object(configurable));
+	Object.add(object, Identifier(name), Value.text(text), Object(writable) | Object(configurable));
 }
 
 static struct Object *createErrorType (const struct Text *text)
@@ -117,9 +117,9 @@ struct Object *uriPrototype (void)
 	return uriErrorPrototype;
 }
 
-Instance error (struct Text text, const char *format, ...)
+struct Error * error (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -134,9 +134,9 @@ Instance error (struct Text text, const char *format, ...)
 	return self;
 }
 
-Instance rangeError (struct Text text, const char *format, ...)
+struct Error * rangeError (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -151,9 +151,9 @@ Instance rangeError (struct Text text, const char *format, ...)
 	return self;
 }
 
-Instance referenceError (struct Text text, const char *format, ...)
+struct Error * referenceError (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -168,9 +168,9 @@ Instance referenceError (struct Text text, const char *format, ...)
 	return self;
 }
 
-Instance syntaxError (struct Text text, const char *format, ...)
+struct Error * syntaxError (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -184,9 +184,9 @@ Instance syntaxError (struct Text text, const char *format, ...)
 	return self;
 }
 
-Instance typeError (struct Text text, const char *format, ...)
+struct Error * typeError (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -200,9 +200,9 @@ Instance typeError (struct Text text, const char *format, ...)
 	return self;
 }
 
-Instance uriError (struct Text text, const char *format, ...)
+struct Error * uriError (struct Text text, const char *format, ...)
 {
-	Instance self;
+	struct Error *self;
 	va_list ap;
 	int16_t length;
 	
@@ -216,7 +216,7 @@ Instance uriError (struct Text text, const char *format, ...)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Error *self)
 {
 	assert(self);
 	if (!self)

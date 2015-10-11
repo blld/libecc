@@ -95,11 +95,12 @@ enum Module(Token) {
 };
 #undef _
 
-Interface(
-	(Instance, createWithInput ,(struct Input *))
-	(void, destroy, (Instance))
+Interface(Lexer,
 	
-	(enum Lexer(Token), nextToken, (Instance))
+	(struct Lexer *, createWithInput ,(struct Input *))
+	(void, destroy, (struct Lexer *))
+	
+	(enum Lexer(Token), nextToken, (struct Lexer *))
 	
 	(const char *, tokenChars ,(enum Module(Token) token))
 	

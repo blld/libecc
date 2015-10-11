@@ -330,7 +330,7 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+	Object.add(arguments, Identifier(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 		arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
@@ -356,13 +356,13 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	}
 }
 
-static inline void populateContextWithArguments (const Instance * const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
+static inline void populateContextWithArguments (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
 {
 	uint32_t index = 0;
 	
 	struct Object *arguments = Object.create(Object.prototype());
 	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Identifier.length(), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+	Object.add(arguments, Identifier(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 	arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
@@ -404,7 +404,7 @@ static inline void populateContextVA (struct Object *context, int parameterCount
 	}
 }
 
-static inline void populateContext (const Instance * const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
+static inline void populateContext (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
 {
 	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
@@ -420,12 +420,12 @@ static inline void populateContext (const Instance * const ops, struct Ecc * con
 	}
 }
 
-static inline struct Value callOps (const Instance ops, struct Ecc * const ecc, struct Object *context, struct Value this, int construct)
+static inline struct Value callOps (const struct Op * const ops, struct Ecc * const ecc, struct Object *context, struct Value this, int construct)
 {
 	struct Value callerThis = ecc->this;
 	struct Object *callerContext = ecc->context;
 	int callerConstruct = ecc->construct;
-	const Instance callOps = ops;
+	const struct Op *callOps = ops;
 	struct Value value;
 	
 	ecc->this = this;
@@ -498,7 +498,7 @@ struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, 
 	}
 }
 
-static inline struct Value callFunction (const Instance * const ops, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
+static inline struct Value callFunction (const struct Op ** const ops, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
 	struct Value this = ecc->refObject;
 	
@@ -529,7 +529,7 @@ static inline struct Value callFunction (const Instance * const ops, struct Ecc 
 	}
 }
 
-struct Value construct (const Instance * const ops, struct Ecc * const ecc)
+struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Text text = (*ops)->text;
 	int32_t argumentCount = opValue().data.integer;
@@ -540,7 +540,7 @@ struct Value construct (const Instance * const ops, struct Ecc * const ecc)
 	return callFunction(ops, ecc, value.data.function, argumentCount, 1);
 }
 
-struct Value call (const Instance * const ops, struct Ecc * const ecc)
+struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Text text = (*ops)->text;
 	int32_t argumentCount = opValue().data.integer;
@@ -551,7 +551,7 @@ struct Value call (const Instance * const ops, struct Ecc * const ecc)
 	return callFunction(ops, ecc, value.data.function, argumentCount, 0);
 }
 
-struct Value eval (const Instance * const ops, struct Ecc * const ecc)
+struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Input *input;
@@ -573,34 +573,34 @@ struct Value eval (const Instance * const ops, struct Ecc * const ecc)
 
 // Expression
 
-struct Value noop (const Instance * const ops, struct Ecc * const ecc)
+struct Value noop (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return Value.undefined();
 }
 
-struct Value value (const Instance * const ops, struct Ecc * const ecc)
+struct Value value (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return opValue();
 }
 
-struct Value valueConstRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value valueConstRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return Value.reference((struct Value *)&opValue());
 }
 
-struct Value text (const Instance * const ops, struct Ecc * const ecc)
+struct Value text (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return Value.text(opText());
 }
 
-struct Value function (const Instance * const ops, struct Ecc * const ecc)
+struct Value function (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Function *function = Function.copy(opValue().data.function);
 	function->context.prototype = ecc->context;
 	return Value.function(function);
 }
 
-struct Value object (const Instance * const ops, struct Ecc * const ecc)
+struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Object *object = Object.create(Object.prototype());
 	struct Value value;
@@ -631,7 +631,7 @@ struct Value object (const Instance * const ops, struct Ecc * const ecc)
 	return Value.object(object);
 }
 
-struct Value array (const Instance * const ops, struct Ecc * const ecc)
+struct Value array (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	uint32_t length = opValue().data.integer;
 	struct Object *object = Array.createSized(length);
@@ -651,12 +651,12 @@ struct Value array (const Instance * const ops, struct Ecc * const ecc)
 	return Value.object(object);
 }
 
-struct Value this (const Instance * const ops, struct Ecc * const ecc)
+struct Value this (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return ecc->this;
 }
 
-struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
+struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier;
 	struct Entry entry;
@@ -670,7 +670,7 @@ struct Value getLocal (const Instance * const ops, struct Ecc * const ecc)
 	return *entry.value;
 }
 
-struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Entry entry = Object.getMember(ecc->context, identifier);
@@ -680,7 +680,7 @@ struct Value getLocalRef (const Instance * const ops, struct Ecc * const ecc)
 	return Value.reference(entry.value);
 }
 
-struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
+struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Identifier identifier = opValue().data.identifier;
@@ -692,7 +692,7 @@ struct Value setLocal (const Instance * const ops, struct Ecc * const ecc)
 	return *entry.value = value;
 }
 
-struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
+struct Value getLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot;
 	
@@ -701,20 +701,20 @@ struct Value getLocalSlot (const Instance * const ops, struct Ecc * const ecc)
 	return ecc->context->hashmap[slot].data.value;
 }
 
-struct Value getLocalSlotRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value getLocalSlotRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
 	return Value.reference(&ecc->context->hashmap[slot].data.value);
 }
 
-struct Value setLocalSlot (const Instance * const ops, struct Ecc * const ecc)
+struct Value setLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
 	return ecc->context->hashmap[slot].data.value = value;
 }
 
-struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
+struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value value = nextOp();
@@ -725,7 +725,7 @@ struct Value getMember (const Instance * const ops, struct Ecc * const ecc)
 	return getEntry(entry, ecc, object);
 }
 
-struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value value = nextOp();
@@ -737,7 +737,7 @@ struct Value getMemberRef (const Instance * const ops, struct Ecc * const ecc)
 	return Value.reference(entry.value);
 }
 
-struct Value setMember (const Instance * const ops, struct Ecc * const ecc)
+struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Identifier identifier = opValue().data.identifier;
 	struct Value value = nextOp();
@@ -751,7 +751,7 @@ struct Value setMember (const Instance * const ops, struct Ecc * const ecc)
 	return value;
 }
 
-struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
+struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
 	struct Identifier identifier = opValue().data.identifier;
@@ -764,7 +764,7 @@ struct Value deleteMember (const Instance * const ops, struct Ecc * const ecc)
 	return result;
 }
 
-struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
+struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
@@ -774,7 +774,7 @@ struct Value getProperty (const Instance * const ops, struct Ecc * const ecc)
 	return getEntry(entry, ecc, object);
 }
 
-struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
@@ -787,7 +787,7 @@ struct Value getPropertyRef (const Instance * const ops, struct Ecc * const ecc)
 	return Value.reference(entry.value);
 }
 
-struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
+struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
@@ -805,7 +805,7 @@ struct Value setProperty (const Instance * const ops, struct Ecc * const ecc)
 	return value;
 }
 
-struct Value deleteProperty (const Instance * const ops, struct Ecc * const ecc)
+struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
@@ -821,26 +821,26 @@ struct Value deleteProperty (const Instance * const ops, struct Ecc * const ecc)
 	return result;
 }
 
-struct Value result (const Instance * const ops, struct Ecc * const ecc)
+struct Value result (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	ecc->result = nextOp();
 	return Value.breaker(0);
 }
 
-struct Value exchange (const Instance * const ops, struct Ecc * const ecc)
+struct Value exchange (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = opValue();
 	nextOp();
 	return value;
 }
 
-struct Value typeOf (const Instance * const ops, struct Ecc * const ecc)
+struct Value typeOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = nextOp();
 	return Value.toType(value);
 }
 
-struct Value equal (const Instance * const ops, struct Ecc * const ecc)
+struct Value equal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -848,7 +848,7 @@ struct Value equal (const Instance * const ops, struct Ecc * const ecc)
 	return equality(ecc, a, text, b, opText());
 }
 
-struct Value notEqual (const Instance * const ops, struct Ecc * const ecc)
+struct Value notEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -856,7 +856,7 @@ struct Value notEqual (const Instance * const ops, struct Ecc * const ecc)
 	return Value.boolean(!Value.isTrue(equality(ecc, a, text, b, opText())));
 }
 
-struct Value identical (const Instance * const ops, struct Ecc * const ecc)
+struct Value identical (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -864,7 +864,7 @@ struct Value identical (const Instance * const ops, struct Ecc * const ecc)
 	return identicality(ecc, a, text, b, opText());
 }
 
-struct Value notIdentical (const Instance * const ops, struct Ecc * const ecc)
+struct Value notIdentical (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -872,7 +872,7 @@ struct Value notIdentical (const Instance * const ops, struct Ecc * const ecc)
 	return Value.boolean(!Value.isTrue(identicality(ecc, a, text, b, opText())));
 }
 
-struct Value less (const Instance * const ops, struct Ecc * const ecc)
+struct Value less (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -880,7 +880,7 @@ struct Value less (const Instance * const ops, struct Ecc * const ecc)
 	return valueLess(ecc, a, text, b, opText());
 }
 
-struct Value lessOrEqual (const Instance * const ops, struct Ecc * const ecc)
+struct Value lessOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -888,7 +888,7 @@ struct Value lessOrEqual (const Instance * const ops, struct Ecc * const ecc)
 	return valueLessOrEqual(ecc, a, text, b, opText());
 }
 
-struct Value more (const Instance * const ops, struct Ecc * const ecc)
+struct Value more (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -896,7 +896,7 @@ struct Value more (const Instance * const ops, struct Ecc * const ecc)
 	return valueMore(ecc, a, text, b, opText());
 }
 
-struct Value moreOrEqual (const Instance * const ops, struct Ecc * const ecc)
+struct Value moreOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -904,7 +904,7 @@ struct Value moreOrEqual (const Instance * const ops, struct Ecc * const ecc)
 	return valueMoreOrEqual(ecc, a, text, b, opText());
 }
 
-struct Value instanceOf (const Instance * const ops, struct Ecc * const ecc)
+struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text;
 	struct Value a = nextOp();
@@ -928,7 +928,7 @@ struct Value instanceOf (const Instance * const ops, struct Ecc * const ecc)
 	return Value.false();
 }
 
-struct Value in (const Instance * const ops, struct Ecc * const ecc)
+struct Value in (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value property = nextOp();
 	struct Value object = nextOp();
@@ -941,28 +941,28 @@ struct Value in (const Instance * const ops, struct Ecc * const ecc)
 	return Value.boolean(*entry.flags & Object(isValue));
 }
 
-struct Value multiply (const Instance * const ops, struct Ecc * const ecc)
+struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
 }
 
-struct Value divide (const Instance * const ops, struct Ecc * const ecc)
+struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
 }
 
-struct Value modulo (const Instance * const ops, struct Ecc * const ecc)
+struct Value modulo (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.binary(fmod(Value.toBinary(a).data.binary, Value.toBinary(b).data.binary));
 }
 
-struct Value add (const Instance * const ops, struct Ecc * const ecc)
+struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	const struct Text *text = opText();
@@ -970,56 +970,56 @@ struct Value add (const Instance * const ops, struct Ecc * const ecc)
 	return addition(ecc, a, text, b, opText());
 }
 
-struct Value minus (const Instance * const ops, struct Ecc * const ecc)
+struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
 }
 
-struct Value leftShift (const Instance * const ops, struct Ecc * const ecc)
+struct Value leftShift (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer << (uint32_t)Value.toInteger(b).data.integer);
 }
 
-struct Value rightShift (const Instance * const ops, struct Ecc * const ecc)
+struct Value rightShift (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
 }
 
-struct Value unsignedRightShift (const Instance * const ops, struct Ecc * const ecc)
+struct Value unsignedRightShift (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer((uint32_t)Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
 }
 
-struct Value bitwiseAnd (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseAnd (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer & Value.toInteger(b).data.integer);
 }
 
-struct Value bitwiseXor (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseXor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer ^ Value.toInteger(b).data.integer);
 }
 
-struct Value bitwiseOr (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitwiseOr (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer | Value.toInteger(b).data.integer);
 }
 
-struct Value logicalAnd (const Instance * const ops, struct Ecc * const ecc)
+struct Value logicalAnd (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const int32_t opCount = opValue().data.integer;
 	if (!Value.isTrue(nextOp()))
@@ -1031,7 +1031,7 @@ struct Value logicalAnd (const Instance * const ops, struct Ecc * const ecc)
 		return Value.boolean(Value.isTrue(nextOp()));
 }
 
-struct Value logicalOr (const Instance * const ops, struct Ecc * const ecc)
+struct Value logicalOr (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const int32_t opCount = opValue().data.integer;
 	if (Value.isTrue(nextOp()))
@@ -1043,25 +1043,25 @@ struct Value logicalOr (const Instance * const ops, struct Ecc * const ecc)
 		return Value.boolean(Value.isTrue(nextOp()));
 }
 
-struct Value positive (const Instance * const ops, struct Ecc * const ecc)
+struct Value positive (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	return Value.toBinary(a);
 }
 
-struct Value negative (const Instance * const ops, struct Ecc * const ecc)
+struct Value negative (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	return Value.binary(-Value.toBinary(a).data.binary);
 }
 
-struct Value invert (const Instance * const ops, struct Ecc * const ecc)
+struct Value invert (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	return Value.integer(~Value.toInteger(a).data.integer);
 }
 
-struct Value not (const Instance * const ops, struct Ecc * const ecc)
+struct Value not (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	return Value.boolean(!Value.isTrue(a));
@@ -1069,7 +1069,7 @@ struct Value not (const Instance * const ops, struct Ecc * const ecc)
 
 // MARK: assignement
 
-struct Value incrementRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value incrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	if (ref->type == Value(integer))
@@ -1084,7 +1084,7 @@ struct Value incrementRef (const Instance * const ops, struct Ecc * const ecc)
 	return *ref;
 }
 
-struct Value decrementRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value decrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	if (ref->type == Value(integer))
@@ -1099,7 +1099,7 @@ struct Value decrementRef (const Instance * const ops, struct Ecc * const ecc)
 	return *ref;
 }
 
-struct Value postIncrementRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value postIncrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
@@ -1115,7 +1115,7 @@ struct Value postIncrementRef (const Instance * const ops, struct Ecc * const ec
 	return value;
 }
 
-struct Value postDecrementRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value postDecrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
@@ -1131,7 +1131,7 @@ struct Value postDecrementRef (const Instance * const ops, struct Ecc * const ec
 	return value;
 }
 
-struct Value multiplyAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value multiplyAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1140,7 +1140,7 @@ struct Value multiplyAssignRef (const Instance * const ops, struct Ecc * const e
 	return *ref;
 }
 
-struct Value divideAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value divideAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1149,7 +1149,7 @@ struct Value divideAssignRef (const Instance * const ops, struct Ecc * const ecc
 	return *ref;
 }
 
-struct Value moduloAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value moduloAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1158,7 +1158,7 @@ struct Value moduloAssignRef (const Instance * const ops, struct Ecc * const ecc
 	return *ref;
 }
 
-struct Value addAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value addAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *a = nextOp().data.reference;
 	const struct Text *text = opText();
@@ -1167,7 +1167,7 @@ struct Value addAssignRef (const Instance * const ops, struct Ecc * const ecc)
 	return *a;
 }
 
-struct Value minusAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value minusAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1176,7 +1176,7 @@ struct Value minusAssignRef (const Instance * const ops, struct Ecc * const ecc)
 	return *ref;
 }
 
-struct Value leftShiftAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value leftShiftAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1185,7 +1185,7 @@ struct Value leftShiftAssignRef (const Instance * const ops, struct Ecc * const 
 	return *ref;
 }
 
-struct Value rightShiftAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value rightShiftAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1194,7 +1194,7 @@ struct Value rightShiftAssignRef (const Instance * const ops, struct Ecc * const
 	return *ref;
 }
 
-struct Value unsignedRightShiftAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value unsignedRightShiftAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1207,7 +1207,7 @@ struct Value unsignedRightShiftAssignRef (const Instance * const ops, struct Ecc
 	return *ref;
 }
 
-struct Value bitAndAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitAndAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1216,7 +1216,7 @@ struct Value bitAndAssignRef (const Instance * const ops, struct Ecc * const ecc
 	return *ref;
 }
 
-struct Value bitXorAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitXorAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1225,7 +1225,7 @@ struct Value bitXorAssignRef (const Instance * const ops, struct Ecc * const ecc
 	return *ref;
 }
 
-struct Value bitOrAssignRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value bitOrAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
@@ -1237,11 +1237,11 @@ struct Value bitOrAssignRef (const Instance * const ops, struct Ecc * const ecc)
 
 // MARK: Statement
 
-struct Value try(const Instance * const ops, struct Ecc * const ecc)
+struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
 	struct Object *context = Object.create(ecc->context);
-	struct Identifier identifier = Identifier.none();
+	struct Identifier identifier = Identifier(none);
 	
 	const struct Op * volatile rethrowOps = NULL;
 	volatile int rethrow = 0;
@@ -1263,7 +1263,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 			*ops = end + 1; // bypass catch jump
 			identifier = nextOp().data.identifier;
 			
-			if (!Identifier.isEqual(identifier, Identifier.none()))
+			if (!Identifier.isEqual(identifier, Identifier(none)))
 			{
 				Object.add(context, identifier, ecc->result, 0);
 				ecc->result = Value.undefined();
@@ -1293,7 +1293,7 @@ struct Value try(const Instance * const ops, struct Ecc * const ecc)
 		return nextOp();
 }
 
-dead struct Value throw (const Instance * const ops, struct Ecc * const ecc)
+dead struct Value throw (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *throwOps = *ops;
 	struct Value value = nextOp();
@@ -1301,18 +1301,18 @@ dead struct Value throw (const Instance * const ops, struct Ecc * const ecc)
 	Ecc.jmpEnv(ecc, value);
 }
 
-struct Value debug (const Instance * const ops, struct Ecc * const ecc)
+struct Value debug (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	__asm__("int3");
 	return nextOp();
 }
 
-struct Value next (const Instance * const ops, struct Ecc * const ecc)
+struct Value next (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return nextOp();
 }
 
-struct Value nextIf (const Instance * const ops, struct Ecc * const ecc)
+struct Value nextIf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = opValue();
 	if (!Value.isTrue(nextOp()))
@@ -1321,26 +1321,26 @@ struct Value nextIf (const Instance * const ops, struct Ecc * const ecc)
 	return nextOp();
 }
 
-struct Value expression (const Instance * const ops, struct Ecc * const ecc)
+struct Value expression (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	ecc->result = nextOp();
 	return nextOp();
 }
 
-struct Value discard (const Instance * const ops, struct Ecc * const ecc)
+struct Value discard (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	nextOp();
 	return nextOp();
 }
 
-struct Value jump (const Instance * const ops, struct Ecc * const ecc)
+struct Value jump (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t offset = opValue().data.integer;
 	*ops += offset;
 	return nextOp();
 }
 
-struct Value jumpIf (const Instance * const ops, struct Ecc * const ecc)
+struct Value jumpIf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t offset = opValue().data.integer;
 	struct Value value = nextOp();
@@ -1350,7 +1350,7 @@ struct Value jumpIf (const Instance * const ops, struct Ecc * const ecc)
 	return nextOp();
 }
 
-struct Value jumpIfNot (const Instance * const ops, struct Ecc * const ecc)
+struct Value jumpIfNot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t offset = opValue().data.integer;
 	struct Value value = nextOp();
@@ -1360,7 +1360,7 @@ struct Value jumpIfNot (const Instance * const ops, struct Ecc * const ecc)
 	return nextOp();
 }
 
-struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
+struct Value switchOp (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t offset = opValue().data.integer;
 	const struct Op *nextOps = *ops + offset;
@@ -1399,11 +1399,11 @@ struct Value switchOp (const Instance * const ops, struct Ecc * const ecc)
 	else \
 		*ops = nextOps;
 
-struct Value iterate (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterate (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	const Instance startOps = *ops;
-	const Instance endOps = startOps;
-	const Instance nextOps = startOps + 1;
+	const struct Op *startOps = *ops;
+	const struct Op *endOps = startOps;
+	const struct Op *nextOps = startOps + 1;
 	struct Value value;
 	
 	*ops += opValue().data.integer;
@@ -1416,7 +1416,7 @@ struct Value iterate (const Instance * const ops, struct Ecc * const ecc)
 }
 
 static struct Value iterateIntegerRef (
-	const Instance * const ops,
+	const struct Op ** const ops,
 	struct Ecc * const ecc,
 	int (*compareInteger) (int32_t, int32_t),
 	__typeof__(integerWontOverflowPositive) wontOverflow,
@@ -1462,33 +1462,33 @@ done:
 	return nextOp();
 }
 
-struct Value iterateLessRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterateLessRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return iterateIntegerRef(ops, ecc, integerLess, integerWontOverflowPositive, valueLess, addition);
 }
 
-struct Value iterateLessOrEqualRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterateLessOrEqualRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return iterateIntegerRef(ops, ecc, integerLessOrEqual, integerWontOverflowPositive, valueLessOrEqual, addition);
 }
 
-struct Value iterateMoreRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterateMoreRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return iterateIntegerRef(ops, ecc, integerMore, integerWontOverflowNegative, valueMore, subtraction);
 }
 
-struct Value iterateMoreOrEqualRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterateMoreOrEqualRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	return iterateIntegerRef(ops, ecc, integerMoreOrEqual, integerWontOverflowNegative, valueMoreOrEqual, subtraction);
 }
 
-struct Value iterateInRef (const Instance * const ops, struct Ecc * const ecc)
+struct Value iterateInRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value object = nextOp();
 	struct Value value = nextOp();
-	const Instance startOps = *ops;
-	const Instance endOps = startOps + value.data.integer;
+	const struct Op *startOps = *ops;
+	const struct Op *endOps = startOps + value.data.integer;
 	
 	if (Value.isObject(object))
 	{

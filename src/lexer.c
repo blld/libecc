@@ -32,7 +32,7 @@ static inline uint16_t uint16Hex(char a, char b, char c, char d)
 
 // MARK: - Static Members
 
-static inline void addLine(Instance self, uint32_t offset)
+static inline void addLine(struct Lexer *self, uint32_t offset)
 {
 	if (self->input->lineCount + 1 >= self->input->lineCapacity)
 	{
@@ -42,7 +42,7 @@ static inline void addLine(Instance self, uint32_t offset)
 	self->input->lines[++self->input->lineCount] = offset;
 }
 
-static inline char previewChar(Instance self)
+static inline char previewChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
 		return self->input->bytes[self->offset];
@@ -50,7 +50,7 @@ static inline char previewChar(Instance self)
 		return 0;
 }
 
-static inline char nextChar(Instance self)
+static inline char nextChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
 	{
@@ -69,7 +69,7 @@ static inline char nextChar(Instance self)
 		return 0;
 }
 
-static inline int acceptChar(Instance self, char c)
+static inline int acceptChar(struct Lexer *self, char c)
 {
 	if (previewChar(self) == c)
 	{
@@ -80,7 +80,7 @@ static inline int acceptChar(Instance self, char c)
 		return 0;
 }
 
-static inline enum Module(Token) error(Instance self, struct Error *error)
+static inline enum Module(Token) error(struct Lexer *self, struct Error *error)
 {
 	self->value = Value.error(error);
 	return Module(errorToken);
@@ -88,9 +88,9 @@ static inline enum Module(Token) error(Instance self, struct Error *error)
 
 // MARK: - Methods
 
-Instance createWithInput(struct Input *input)
+struct Lexer * createWithInput(struct Input *input)
 {
-	Instance self = malloc(sizeof(*self));
+	struct Lexer *self = malloc(sizeof(*self));
 	assert(self);
 	*self = Module.identity;
 	
@@ -100,7 +100,7 @@ Instance createWithInput(struct Input *input)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Lexer *self)
 {
 	assert(self);
 	
@@ -108,7 +108,7 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-enum Module(Token) nextToken (Instance self)
+enum Module(Token) nextToken (struct Lexer *self)
 {
 	int c, disallowRegex;
 	assert(self);

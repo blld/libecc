@@ -121,8 +121,9 @@
 	_( iterateMoreOrEqualRef )\
 	_( iterateInRef )\
 
-#define _(X) (struct Value, X , (const Instance * const ops, struct Ecc * const ecc))
-Interface(
+#define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
+Interface(Op,
+	
 	(struct Op, make ,(const Native native, struct Value value, struct Text text))
 	(const char *, toChars ,(const Native native))
 	

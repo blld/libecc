@@ -38,7 +38,8 @@ enum Object(Flags)
 	Object(isValue) = 0x80,
 };
 
-Interface(
+Interface(Object,
+	
 	(void, setupPrototype ,(void))
 	(void, setup ,(void))
 	(void, teardown ,(void))
@@ -46,31 +47,31 @@ Interface(
 	(struct Object *, prototype ,(void))
 	(struct Function *, constructor ,(void))
 	
-	(Instance, create ,(Instance prototype))
-	(Instance, createSized ,(Instance prototype, uint32_t size))
-	(Instance, initialize ,(Instance, Instance prototype))
-	(Instance, initializeSized ,(Instance, Instance prototype, uint32_t size))
-	(Instance, finalize ,(Instance))
-	(Instance, copy ,(const Instance original))
-	(void, destroy ,(Instance))
+	(struct Object *, create ,(struct Object * prototype))
+	(struct Object *, createSized ,(struct Object * prototype, uint32_t size))
+	(struct Object *, initialize ,(struct Object * restrict, struct Object * restrict prototype))
+	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint32_t size))
+	(struct Object *, finalize ,(struct Object *))
+	(struct Object *, copy ,(const struct Object * original))
+	(void, destroy ,(struct Object *))
 	
-	(struct Value, get ,(Instance, struct Identifier))
-	(struct Entry, getMember ,(Instance, struct Identifier))
-	(struct Entry, getOwnProperty ,(Instance, struct Value))
-	(struct Entry, getProperty ,(Instance, struct Value))
-	(void, setProperty ,(Instance, struct Value, struct Value))
-	(void, add ,(Instance, struct Identifier, struct Value, enum Object(Flags)))
-	(struct Value, delete ,(Instance, struct Identifier))
-	(struct Value, deleteProperty ,(Instance, struct Value))
-	(void, packValue ,(Instance))
+	(struct Value, get ,(struct Object *, struct Identifier))
+	(struct Entry, getMember ,(struct Object *, struct Identifier))
+	(struct Entry, getOwnProperty ,(struct Object *, struct Value))
+	(struct Entry, getProperty ,(struct Object *, struct Value))
+	(void, setProperty ,(struct Object *, struct Value, struct Value))
+	(void, add ,(struct Object *, struct Identifier, struct Value, enum Object(Flags)))
+	(struct Value, delete ,(struct Object *, struct Identifier))
+	(struct Value, deleteProperty ,(struct Object *, struct Value))
+	(void, packValue ,(struct Object *))
 	
-	(void, resizeElement ,(Instance, uint32_t size))
-	(void, addElementAtIndex ,(Instance, uint32_t index, struct Value, enum Object(Flags)))
+	(void, resizeElement ,(struct Object *, uint32_t size))
+	(void, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Object(Flags)))
 	
-	(void, dumpTo ,(Instance self, FILE *file))
+	(void, dumpTo ,(struct Object *, FILE *file))
 	,
 	{
-		Instance prototype;
+		struct Object *prototype;
 		
 		const struct Text *type;
 		

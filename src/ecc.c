@@ -93,18 +93,18 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 
 // MARK: - Static Members
 
-static struct Input * findInput (Instance ecc, struct Text text)
+static struct Input * findInput (struct Ecc *self, struct Text text)
 {
 	uint16_t i;
 	
-	for (i = 0; i < ecc->inputCount; ++i)
-		if (text.location >= ecc->inputs[i]->bytes && text.location <= ecc->inputs[i]->bytes + ecc->inputs[i]->length)
-			return ecc->inputs[i];
+	for (i = 0; i < self->inputCount; ++i)
+		if (text.location >= self->inputs[i]->bytes && text.location <= self->inputs[i]->bytes + self->inputs[i]->length)
+			return self->inputs[i];
 	
 	return NULL;
 }
 
-static void addInput(Instance self, struct Input *input)
+static void addInput(struct Ecc *self, struct Input *input)
 {
 	self->inputs = realloc(self->inputs, sizeof(*self->inputs) * (self->inputCount + 1));
 	self->inputs[self->inputCount++] = input;
@@ -112,9 +112,9 @@ static void addInput(Instance self, struct Input *input)
 
 // MARK: - Methods
 
-Instance create (void)
+struct Ecc *create (void)
 {
-	Instance self;
+	struct Ecc *self;
 	
 	if (!instanceCount++)
 	{
@@ -163,7 +163,7 @@ Instance create (void)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Ecc *self)
 {
 	assert(self);
 	
@@ -189,21 +189,21 @@ void destroy (Instance self)
 	}
 }
 
-void addNative (Instance self, const char *name, const Native native, int argumentCount, enum Object(Flags) flags)
+void addNative (struct Ecc *self, const char *name, const Native native, int argumentCount, enum Object(Flags) flags)
 {
 	assert(self);
 	
 	Function.addNative(self->global, name, native, argumentCount, flags);
 }
 
-void addValue (Instance self, const char *name, struct Value value, enum Object(Flags) flags)
+void addValue (struct Ecc *self, const char *name, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	
 	Function.addValue(self->global, name, value, flags);
 }
 
-int evalInput (Instance self, struct Input *input)
+int evalInput (struct Ecc *self, struct Input *input)
 {
 	int result;
 	struct Object *parentContext;
@@ -253,8 +253,8 @@ int evalInput (Instance self, struct Input *input)
 			
 			if (Value.isObject(value))
 			{
-				name = Value.toString(Object.get(value.data.object, Identifier.name()));
-				message = Value.toString(Object.get(value.data.object, Identifier.message()));
+				name = Value.toString(Object.get(value.data.object, Identifier(name)));
+				message = Value.toString(Object.get(value.data.object, Identifier(message)));
 			}
 			else
 				message = Value.toString(value);
@@ -277,7 +277,7 @@ int evalInput (Instance self, struct Input *input)
 	return result;
 }
 
-jmp_buf * pushEnv(Instance self)
+jmp_buf * pushEnv(struct Ecc *self)
 {
 	if (self->envCount >= self->envCapacity)
 	{
@@ -291,7 +291,7 @@ jmp_buf * pushEnv(Instance self)
 	return &self->envList[self->envCount++].buf;
 }
 
-void popEnv(Instance self)
+void popEnv(struct Ecc *self)
 {
 	assert(self->envCount);
 	
@@ -300,7 +300,7 @@ void popEnv(Instance self)
 	self->this = self->envList[self->envCount].this;
 }
 
-void jmpEnv (Instance self, struct Value value)
+void jmpEnv (struct Ecc *self, struct Value value)
 {
 	assert(self);
 	
@@ -309,7 +309,7 @@ void jmpEnv (Instance self, struct Value value)
 	longjmp(self->envList[self->envCount - 1].buf, 1);
 }
 
-void printTextInput (Instance self, struct Text text)
+void printTextInput (struct Ecc *self, struct Text text)
 {
 	struct Input *input;
 	
@@ -327,7 +327,7 @@ void printTextInput (Instance self, struct Text text)
 	}
 }
 
-void garbageCollect(Instance self)
+void garbageCollect(struct Ecc *self)
 {
 	Pool.markAll();
 	Pool.unmarkValue(Value.function(self->global));

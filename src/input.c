@@ -12,10 +12,10 @@
 
 // MARK: - Static Members
 
-static Instance create()
+static struct Input * create()
 {
 	size_t linesBytes;
-	Instance self = malloc(sizeof(*self));
+	struct Input *self = malloc(sizeof(*self));
 	
 	assert(self);
 	*self = Module.identity;
@@ -32,12 +32,12 @@ static Instance create()
 
 // MARK: - Methods
 
-Instance createFromFile (const char *filename)
+struct Input * createFromFile (const char *filename)
 {
 	struct Text inputError;
 	FILE *file;
 	long size;
-	Instance self;
+	struct Input *self;
 	
 	assert(filename);
 	
@@ -67,9 +67,9 @@ Instance createFromFile (const char *filename)
 	return self;
 }
 
-Instance createFromBytes (const char *bytes, uint32_t length, const char *name, ...)
+struct Input * createFromBytes (const char *bytes, uint32_t length, const char *name, ...)
 {
-	Instance self;
+	struct Input *self;
 	
 	assert(bytes);
 	
@@ -89,7 +89,7 @@ Instance createFromBytes (const char *bytes, uint32_t length, const char *name, 
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Input *self)
 {
 	assert(self);
 	
@@ -102,7 +102,7 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-void printText (Instance self, struct Text text)
+void printText (struct Input *self, struct Text text)
 {
 	int32_t line;
 	
@@ -164,7 +164,7 @@ void printText (Instance self, struct Text text)
 	Env.newline();
 }
 
-int32_t findLine (Instance self, struct Text text)
+int32_t findLine (struct Input *self, struct Text text)
 {
 	uint16_t line = self->lineCount + 1;
 	while (line--)
@@ -174,7 +174,7 @@ int32_t findLine (Instance self, struct Text text)
 	return -1;
 }
 
-void addEscapedText (Instance self, struct Text escapedText)
+void addEscapedText (struct Input *self, struct Text escapedText)
 {
 	self->escapedTextList = realloc(self->escapedTextList, sizeof(*self->escapedTextList) * (self->escapedTextCount + 1));
 	self->escapedTextList[self->escapedTextCount++] = escapedText;

@@ -19,7 +19,8 @@
 #define Module \
 	io_libecc_Array
 
-Interface(
+Interface(Array,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	

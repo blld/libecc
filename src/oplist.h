@@ -19,19 +19,20 @@
 #define Module \
 	io_libecc_OpList
 
-Interface(
-	(Instance, create ,(const Native native, struct Value value, struct Text text))
-	(void, destroy ,(Instance))
+Interface(OpList,
 	
-	(Instance, join ,(Instance, Instance))
-	(Instance, unshift ,(struct Op op, Instance))
-	(Instance, append ,(Instance, struct Op op))
-	(Instance, appendNoop ,(Instance))
-	(Instance, createLoop ,(Instance initial, Instance condition, Instance step, Instance body, int reverseCondition))
+	(struct OpList *, create ,(const Native native, struct Value value, struct Text text))
+	(void, destroy ,(struct OpList *))
 	
-	(void, optimizeWithContext, (Instance, struct Object *context))
+	(struct OpList *, join ,(struct OpList *, struct OpList *))
+	(struct OpList *, unshift ,(struct Op op, struct OpList *))
+	(struct OpList *, append ,(struct OpList *, struct Op op))
+	(struct OpList *, appendNoop ,(struct OpList *))
+	(struct OpList *, createLoop ,(struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition))
 	
-	(void, dumpTo ,(Instance, FILE *file))
+	(void, optimizeWithContext, (struct OpList *, struct Object *context))
+	
+	(void, dumpTo ,(struct OpList *, FILE *file))
 	(struct Text, text ,(struct OpList *oplist))
 	,
 	{

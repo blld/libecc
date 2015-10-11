@@ -20,23 +20,24 @@
 #define Module \
 	io_libecc_Function
 
-Interface(
+Interface(Function,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
 	(struct Object *, prototype ,(void))
 	(struct Function *, constructor ,(void))
 	
-	(Instance, create ,(struct Object *prototype))
-	(Instance, createSized ,(struct Object *prototype, uint32_t size))
-	(Instance, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
-	(Instance, createWithNativeAccessor ,(struct Object *prototype, const Native getter, const Native setter))
-	(Instance, copy ,(Instance original))
-	(void, destroy ,(Instance))
+	(struct Function *, create ,(struct Object *prototype))
+	(struct Function *, createSized ,(struct Object *prototype, uint32_t size))
+	(struct Function *, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
+	(struct Function *, createWithNativeAccessor ,(struct Object *prototype, const Native getter, const Native setter))
+	(struct Function *, copy ,(struct Function * original))
+	(void, destroy ,(struct Function *))
 	
-	(void, addValue ,(Instance self, const char *name, struct Value value, enum Object(Flags)))
-	(Instance, addNative ,(Instance self, const char *name, const Native native, int argumentCount, enum Object(Flags)))
-	(Instance, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags)))
+	(void, addValue ,(struct Function *, const char *name, struct Value value, enum Object(Flags)))
+	(struct Function *, addNative ,(struct Function *, const char *name, const Native native, int argumentCount, enum Object(Flags)))
+	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags)))
 	,
 	{
 		struct Object object;
@@ -47,7 +48,7 @@ Interface(
 		int needHeap;
 		int needArguments;
 		int isAccessor;
-		Instance pair;
+		struct Function *pair;
 	}
 )
 

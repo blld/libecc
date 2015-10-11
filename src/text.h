@@ -54,11 +54,12 @@ extern const struct Text Text(uriErrorName);
 extern const struct Text Text(inputErrorName);
 
 
-Interface(
-	(Structure, make ,(const char *location, uint16_t length))
-	(Structure, join ,(Structure from, Structure to))
+Interface(Text,
 	
-	(uint16_t, toUTF16 ,(Structure, uint16_t *wbuffer))
+	(struct Text, make ,(const char *location, uint16_t length))
+	(struct Text, join ,(struct Text from, struct Text to))
+	
+	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
 	,
 	{
 		uint16_t length;

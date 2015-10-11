@@ -11,17 +11,17 @@
 
 #if __INCLUDE_LEVEL__ > 2
 
-	#define Interface(methods, object) \
-		struct Module object; \
-		io_libecc_interface_External(methods) \
+	#define Interface(module, methods, object) \
+		struct module object; \
+		io_libecc_interface_External(module, methods) \
 
 #else
 
-	#define Interface(methods, object) \
-		struct Module object; \
+	#define Interface(module, methods, object) \
+		struct module object; \
 		io_libecc_interface_Declaration(methods) \
-		io_libecc_interface_External(methods) \
-		io_libecc_interface_Initialization(methods) \
+		io_libecc_interface_External(module, methods) \
+		io_libecc_interface_Initialization(module, methods) \
 
 #endif
 
@@ -29,10 +29,7 @@
 #ifndef io_libecc_interface_h
 #define io_libecc_interface_h
 
-	#define Structure struct Module
-	#define Instance struct Module *
-
-	#define io_libecc_interface_External(methods) struct { io_libecc_interface_CAT(_end, io_libecc_interface_E_even methods) const struct Module identity; } extern const Module;
+	#define io_libecc_interface_External(module, methods) struct { io_libecc_interface_CAT(_end, io_libecc_interface_E_even methods) const struct Module identity; } extern const module;
 	#define io_libecc_interface_E_even(R, N, P) io_libecc_interface_E(R, N, P) io_libecc_interface_E_odd
 	#define io_libecc_interface_E_odd(R, N, P) io_libecc_interface_E(R, N, P) io_libecc_interface_E_even
 	#define io_libecc_interface_E_even_end
@@ -46,9 +43,9 @@
 	#define io_libecc_interface_D_odd_end
 	#define io_libecc_interface_D(R, N, P) static R N P;
 
-	#define io_libecc_interface_Initialization(methods) __typeof__(Module) Module = { io_libecc_interface_CAT(_end, io_libecc_interface_I_even methods) };
-	#define io_libecc_interface_I_even(R, N, P) io_libecc_interface_Unbox io_libecc_interface_I(R, N, P) io_libecc_interface_I_odd
-	#define io_libecc_interface_I_odd(R, N, P) io_libecc_interface_Unbox io_libecc_interface_I(R, N, P) io_libecc_interface_I_even
+	#define io_libecc_interface_Initialization(module, methods) __typeof__(Module) module = { io_libecc_interface_CAT(_end, io_libecc_interface_I_even methods) };
+	#define io_libecc_interface_I_even(R, N, P) io_libecc_interface_Wrap io_libecc_interface_I(R, N, P) io_libecc_interface_I_odd
+	#define io_libecc_interface_I_odd(R, N, P) io_libecc_interface_Wrap io_libecc_interface_I(R, N, P) io_libecc_interface_I_even
 	#define io_libecc_interface_I_even_end
 	#define io_libecc_interface_I_odd_end
 	#define io_libecc_interface_I(R, N, P) (N,)
@@ -56,6 +53,6 @@
 	#define io_libecc_interface__CAT(last, entries) entries ## last
 	#define io_libecc_interface_CAT(last, entries) io_libecc_interface__CAT(last, entries)
 
-	#define io_libecc_interface_Unbox(x,y) x,
+	#define io_libecc_interface_Wrap(x,y) x,
 
 #endif

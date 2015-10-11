@@ -18,22 +18,22 @@ static void changeNative (struct Op *op, const Native native)
 
 // MARK: - Static Members
 
-static struct OpList * new (Instance self);
-static struct OpList * assignment (Instance self, int noIn);
-static struct OpList * expression (Instance self, int noIn);
-static struct OpList * statement (Instance self);
-static struct OpList * function (Instance self, int isDeclaration, int isGetter, int isSetter);
-static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken);
+static struct OpList * new (struct Parser *);
+static struct OpList * assignment (struct Parser *, int noIn);
+static struct OpList * expression (struct Parser *, int noIn);
+static struct OpList * statement (struct Parser *);
+static struct OpList * function (struct Parser *, int isDeclaration, int isGetter, int isSetter);
+static struct OpList * sourceElements (struct Parser *, enum Lexer(Token) endToken);
 
 
 // MARK: Token
 
-static inline enum Lexer(Token) previewToken (Instance self)
+static inline enum Lexer(Token) previewToken (struct Parser *self)
 {
 	return self->previewToken;
 }
 
-static void error (Instance self, struct Error *error)
+static void error (struct Parser *self, struct Error *error)
 {
 	if (!self->error)
 	{
@@ -44,7 +44,7 @@ static void error (Instance self, struct Error *error)
 //		Error.destroy(error);
 }
 
-static inline enum Lexer(Token) nextToken (Instance self)
+static inline enum Lexer(Token) nextToken (struct Parser *self)
 {
 	if (self->previewToken != Lexer(errorToken))
 	{
@@ -56,7 +56,7 @@ static inline enum Lexer(Token) nextToken (Instance self)
 	return self->previewToken;
 }
 
-static inline int acceptToken (Instance self, enum Lexer(Token) token)
+static inline int acceptToken (struct Parser *self, enum Lexer(Token) token)
 {
 	if (previewToken(self) != token)
 		return 0;
@@ -65,7 +65,7 @@ static inline int acceptToken (Instance self, enum Lexer(Token) token)
 	return 1;
 }
 
-static inline int expectToken (Instance self, enum Lexer(Token) token)
+static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
 {
 	if (previewToken(self) != token)
 	{
@@ -84,7 +84,7 @@ static inline int expectToken (Instance self, enum Lexer(Token) token)
 
 // MARK: Depth
 
-static void pushDepth (Instance self, struct Identifier identifier, char depth)
+static void pushDepth (struct Parser *self, struct Identifier identifier, char depth)
 {
 	self->depths = realloc(self->depths, (self->depthCount + 1) * sizeof(*self->depths));
 	self->depths[self->depthCount].identifier = identifier;
@@ -92,7 +92,7 @@ static void pushDepth (Instance self, struct Identifier identifier, char depth)
 	++self->depthCount;
 }
 
-static void popDepth (Instance self)
+static void popDepth (struct Parser *self)
 {
 	--self->depthCount;
 }
@@ -100,15 +100,15 @@ static void popDepth (Instance self)
 
 // MARK: Expression
 
-static struct OpList * expressionRef (Instance self, struct OpList *oplist, const char *name)
+static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
 {
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 	{
 		if (oplist->ops[0].value.type == Value(identifier))
 		{
-			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval()))
+			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval)))
 				error(self, Error.syntaxError(OpList.text(oplist), name));
-			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.arguments()))
+			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(arguments)))
 				error(self, Error.syntaxError(OpList.text(oplist), name));
 		}
 		
@@ -124,7 +124,7 @@ static struct OpList * expressionRef (Instance self, struct OpList *oplist, cons
 	return oplist;
 }
 
-static void semicolon (Instance self)
+static void semicolon (struct Parser *self)
 {
 	if (previewToken(self) == ';')
 	{
@@ -137,7 +137,7 @@ static void semicolon (Instance self)
 	error(self, Error.syntaxError(self->lexer->text, "missing ; before statement"));
 }
 
-static struct Op identifier (Instance self)
+static struct Op identifier (struct Parser *self)
 {
 	struct Value value = self->lexer->value;
 	struct Text text = self->lexer->text;
@@ -147,7 +147,7 @@ static struct Op identifier (Instance self)
 	return Op.make(Op.value, value, text);
 }
 
-static struct OpList * array (Instance self)
+static struct OpList * array (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
@@ -170,30 +170,30 @@ static struct OpList * array (Instance self)
 	return OpList.unshift(Op.make(Op.array, Value.integer(count), OpList.text(oplist)), oplist);
 }
 
-static struct OpList * propertyAssignment (Instance self)
+static struct OpList * propertyAssignment (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	int isGetter = 0, isSetter = 0;
 	
 	if (previewToken(self) == Lexer(identifierToken))
 	{
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.get()))
+		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(get)))
 		{
 			nextToken(self);
 			if (previewToken(self) == ':')
 			{
-				oplist = OpList.create(Op.value, Value.identifier(Identifier.get()), self->lexer->text);
+				oplist = OpList.create(Op.value, Value.identifier(Identifier(get)), self->lexer->text);
 				goto skipProperty;
 			}
 			else
 				isGetter = 1;
 		}
-		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.set()))
+		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(set)))
 		{
 			nextToken(self);
 			if (previewToken(self) == ':')
 			{
-				oplist = OpList.create(Op.value, Value.identifier(Identifier.set()), self->lexer->text);
+				oplist = OpList.create(Op.value, Value.identifier(Identifier(set)), self->lexer->text);
 				goto skipProperty;
 			}
 			else
@@ -219,9 +219,9 @@ static struct OpList * propertyAssignment (Instance self)
 	}
 	else if (previewToken(self) == Lexer(identifierToken))
 	{
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.eval()))
+		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(eval)))
 			error(self, Error.syntaxError(self->lexer->text, "eval in object identifier"));
-		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.arguments()))
+		else if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(arguments)))
 			error(self, Error.syntaxError(self->lexer->text, "arguments in object identifier"));
 		else
 			oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
@@ -244,7 +244,7 @@ static struct OpList * propertyAssignment (Instance self)
 	return OpList.join(oplist, assignment(self, 0));
 }
 
-static struct OpList * object (Instance self)
+static struct OpList * object (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
@@ -260,7 +260,7 @@ static struct OpList * object (Instance self)
 	return OpList.unshift(Op.make(Op.object, Value.integer(count), OpList.text(oplist)), oplist);
 }
 
-static struct OpList * primary (Instance self)
+static struct OpList * primary (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	
@@ -268,7 +268,7 @@ static struct OpList * primary (Instance self)
 	{
 		oplist = OpList.create(Op.getLocal, self->lexer->value, self->lexer->text);
 		
-		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier.arguments()))
+		if (Identifier.isEqual(self->lexer->value.data.identifier, Identifier(arguments)))
 		{
 			self->function->needArguments = 1;
 			self->function->needHeap = 1;
@@ -314,7 +314,7 @@ static struct OpList * primary (Instance self)
 	return oplist;
 }
 
-static struct OpList * arguments (Instance self, int *count)
+static struct OpList * arguments (struct Parser *self, int *count)
 {
 	struct OpList *oplist = NULL;
 	*count = 0;
@@ -328,7 +328,7 @@ static struct OpList * arguments (Instance self, int *count)
 	return oplist;
 }
 
-static struct OpList * member (Instance self)
+static struct OpList * member (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
 	struct Text text = OpList.text(oplist);
@@ -358,7 +358,7 @@ static struct OpList * member (Instance self)
 	return oplist;
 }
 
-static struct OpList * new (Instance self)
+static struct OpList * new (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	
@@ -379,7 +379,7 @@ static struct OpList * new (Instance self)
 		return primary(self);
 }
 
-static struct OpList * leftHandSide (Instance self)
+static struct OpList * leftHandSide (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
 	struct Text text = OpList.text(oplist);
@@ -407,7 +407,7 @@ static struct OpList * leftHandSide (Instance self)
 		{
 			int count = 0;
 			
-			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval());
+			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval));
 			if (isEval)
 				OpList.destroy(oplist), oplist = NULL;
 			
@@ -428,7 +428,7 @@ static struct OpList * leftHandSide (Instance self)
 	return oplist;
 }
 
-static struct OpList * postfix (Instance self)
+static struct OpList * postfix (struct Parser *self)
 {
 	struct OpList *oplist = leftHandSide(self);
 	
@@ -440,7 +440,7 @@ static struct OpList * postfix (Instance self)
 	return oplist;
 }
 
-static struct OpList * unary (Instance self)
+static struct OpList * unary (struct Parser *self)
 {
 	if (acceptToken(self, Lexer(deleteToken)))
 	{
@@ -479,7 +479,7 @@ static struct OpList * unary (Instance self)
 		return postfix(self);
 }
 
-static struct OpList * multiplicative (Instance self)
+static struct OpList * multiplicative (struct Parser *self)
 {
 	struct OpList *oplist = unary(self);
 	while (1)
@@ -506,7 +506,7 @@ static struct OpList * multiplicative (Instance self)
 	}
 }
 
-static struct OpList * additive (Instance self)
+static struct OpList * additive (struct Parser *self)
 {
 	struct OpList *oplist = multiplicative(self);
 	while (1)
@@ -531,7 +531,7 @@ static struct OpList * additive (Instance self)
 	}
 }
 
-static struct OpList * shift (Instance self)
+static struct OpList * shift (struct Parser *self)
 {
 	struct OpList *oplist = additive(self);
 	while (1)
@@ -558,7 +558,7 @@ static struct OpList * shift (Instance self)
 	}
 }
 
-static struct OpList * relational (Instance self, int noIn)
+static struct OpList * relational (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = shift(self);
 	while (1)
@@ -591,7 +591,7 @@ static struct OpList * relational (Instance self, int noIn)
 	}
 }
 
-static struct OpList * equality (Instance self, int noIn)
+static struct OpList * equality (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = relational(self, noIn);
 	while (1)
@@ -620,7 +620,7 @@ static struct OpList * equality (Instance self, int noIn)
 	}
 }
 
-static struct OpList * bitwiseAnd (Instance self, int noIn)
+static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = equality(self, noIn);
 	struct Text text = self->lexer->text;
@@ -636,7 +636,7 @@ static struct OpList * bitwiseAnd (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * bitwiseXor (Instance self, int noIn)
+static struct OpList * bitwiseXor (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseAnd(self, noIn);
 	struct Text text = self->lexer->text;
@@ -652,7 +652,7 @@ static struct OpList * bitwiseXor (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * bitwiseOr (Instance self, int noIn)
+static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseXor(self, noIn);
 	struct Text text = self->lexer->text;
@@ -668,7 +668,7 @@ static struct OpList * bitwiseOr (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * logicalAnd (Instance self, int noIn)
+static struct OpList * logicalAnd (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseOr(self, noIn), *nextOp = NULL;
 	struct Text text = self->lexer->text;
@@ -685,7 +685,7 @@ static struct OpList * logicalAnd (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * logicalOr (Instance self, int noIn)
+static struct OpList * logicalOr (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = logicalAnd(self, noIn), *nextOp = NULL;
 	struct Text text = self->lexer->text;
@@ -702,7 +702,7 @@ static struct OpList * logicalOr (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * conditional (Instance self, int noIn)
+static struct OpList * conditional (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = logicalOr(self, noIn);
 	struct Text text = self->lexer->text;
@@ -731,7 +731,7 @@ static struct OpList * conditional (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * assignment (Instance self, int noIn)
+static struct OpList * assignment (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = conditional(self, noIn);
 	struct Text text = self->lexer->text;
@@ -743,9 +743,9 @@ static struct OpList * assignment (Instance self, int noIn)
 			error(self, Error.syntaxError(text, "expected expression, got '='"));
 		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 		{
-			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.eval()))
+			if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(eval)))
 				error(self, Error.syntaxError(text, "can't assign to eval"));
-			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier.arguments()))
+			else if (Identifier.isEqual(oplist->ops[0].value.data.identifier, Identifier(arguments)))
 				error(self, Error.syntaxError(text, "can't assign to arguments"));
 			
 			changeNative(oplist->ops, Op.setLocal);
@@ -792,7 +792,7 @@ static struct OpList * assignment (Instance self, int noIn)
 	return NULL;
 }
 
-static struct OpList * expression (Instance self, int noIn)
+static struct OpList * expression (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = assignment(self, noIn);
 	while (acceptToken(self, ','))
@@ -804,7 +804,7 @@ static struct OpList * expression (Instance self, int noIn)
 
 // MARK: Statements
 
-static struct OpList * statementList (Instance self)
+static struct OpList * statementList (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *statementOps = NULL;
 	
@@ -814,7 +814,7 @@ static struct OpList * statementList (Instance self)
 	return oplist;
 }
 
-static struct OpList * block (Instance self)
+static struct OpList * block (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	expectToken(self, '{');
@@ -827,16 +827,16 @@ static struct OpList * block (Instance self)
 	return oplist;
 }
 
-static struct OpList * variableDeclaration (Instance self, int noIn)
+static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 {
 	struct Value value = self->lexer->value;
 	struct Text text = self->lexer->text;
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
 	
-	if (Identifier.isEqual(value.data.identifier, Identifier.eval()))
+	if (Identifier.isEqual(value.data.identifier, Identifier(eval)))
 		error(self, Error.syntaxError(text, "redefining eval is deprecated"));
-	else if (Identifier.isEqual(value.data.identifier, Identifier.arguments()))
+	else if (Identifier.isEqual(value.data.identifier, Identifier(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
 	Object.add(&self->function->context, value.data.identifier, Value.undefined(), Object(writable));
@@ -847,7 +847,7 @@ static struct OpList * variableDeclaration (Instance self, int noIn)
 		return OpList.create(Op.next, value, text);
 }
 
-static struct OpList * variableDeclarationList (Instance self, int noIn)
+static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = NULL;
 	do
@@ -857,7 +857,7 @@ static struct OpList * variableDeclarationList (Instance self, int noIn)
 	return oplist;
 }
 
-static struct OpList * ifStatement (Instance self)
+static struct OpList * ifStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *trueOps = NULL, *falseOps = NULL;
 	expectToken(self, '(');
@@ -878,11 +878,11 @@ static struct OpList * ifStatement (Instance self)
 	return oplist;
 }
 
-static struct OpList * doStatement (Instance self)
+static struct OpList * doStatement (struct Parser *self)
 {
 	struct OpList *oplist, *condition;
 	
-	pushDepth(self, Identifier.none(), 2);
+	pushDepth(self, Identifier(none), 2);
 	oplist = statement(self);
 	popDepth(self);
 	
@@ -895,7 +895,7 @@ static struct OpList * doStatement (Instance self)
 	return OpList.createLoop(NULL, condition, NULL, oplist, 1);
 }
 
-static struct OpList * whileStatement (Instance self)
+static struct OpList * whileStatement (struct Parser *self)
 {
 	struct OpList *oplist, *condition;
 	
@@ -903,14 +903,14 @@ static struct OpList * whileStatement (Instance self)
 	condition = expression(self, 0);
 	expectToken(self, ')');
 	
-	pushDepth(self, Identifier.none(), 2);
+	pushDepth(self, Identifier(none), 2);
 	oplist = statement(self);
 	popDepth(self);
 	
 	return OpList.createLoop(NULL, condition, NULL, oplist, 0);
 }
 
-static struct OpList * forStatement (Instance self)
+static struct OpList * forStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *condition = NULL, *increment = NULL, *body = NULL;
 	
@@ -946,7 +946,7 @@ static struct OpList * forStatement (Instance self)
 		oplist = OpList.join(oplist, expression(self, 0));
 		expectToken(self, ')');
 		
-		pushDepth(self, Identifier.none(), 2);
+		pushDepth(self, Identifier(none), 2);
 		body = statement(self);
 		popDepth(self);
 		
@@ -967,7 +967,7 @@ static struct OpList * forStatement (Instance self)
 		
 		expectToken(self, ')');
 		
-		pushDepth(self, Identifier.none(), 2);
+		pushDepth(self, Identifier(none), 2);
 		body = statement(self);
 		popDepth(self);
 		
@@ -975,10 +975,10 @@ static struct OpList * forStatement (Instance self)
 	}
 }
 
-static struct OpList * continueStatement (Instance self, struct Text text)
+static struct OpList * continueStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
-	struct Identifier label = Identifier.none();
+	struct Identifier label = Identifier(none);
 	struct Text labelText = self->lexer->text;
 	uint16_t depth, lastestDepth, breaker = 0;
 	
@@ -1001,17 +1001,17 @@ static struct OpList * continueStatement (Instance self, struct Text text)
 			lastestDepth = self->depths[depth].depth;
 		
 		if (lastestDepth == 2)
-			if (Identifier.isEqual(label, Identifier.none()) || Identifier.isEqual(label, self->depths[depth].identifier))
+			if (Identifier.isEqual(label, Identifier(none)) || Identifier.isEqual(label, self->depths[depth].identifier))
 				return OpList.create(Op.value, Value.breaker(breaker - 1), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
 	return oplist;
 }
 
-static struct OpList * breakStatement (Instance self, struct Text text)
+static struct OpList * breakStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
-	struct Identifier label = Identifier.none();
+	struct Identifier label = Identifier(none);
 	struct Text labelText = self->lexer->text;
 	uint16_t depth, breaker = 0;
 	
@@ -1029,14 +1029,14 @@ static struct OpList * breakStatement (Instance self, struct Text text)
 	while (depth--)
 	{
 		breaker += self->depths[depth].depth;
-		if (Identifier.isEqual(label, Identifier.none()) || Identifier.isEqual(label, self->depths[depth].identifier))
+		if (Identifier.isEqual(label, Identifier(none)) || Identifier.isEqual(label, self->depths[depth].identifier))
 			return OpList.create(Op.value, Value.breaker(breaker), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
 	return oplist;
 }
 
-static struct OpList * returnStatement (Instance self, struct Text text)
+static struct OpList * returnStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
 	
@@ -1052,7 +1052,7 @@ static struct OpList * returnStatement (Instance self, struct Text text)
 	return oplist;
 }
 
-static struct OpList * switchStatement (Instance self)
+static struct OpList * switchStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *conditionOps = NULL, *defaultOps = NULL;
 	struct Text text;
@@ -1062,7 +1062,7 @@ static struct OpList * switchStatement (Instance self)
 	conditionOps = expression(self, 0);
 	expectToken(self, ')');
 	expectToken(self, '{');
-	pushDepth(self, Identifier.none(), 1);
+	pushDepth(self, Identifier(none), 1);
 	
 	while (previewToken(self) != '}' && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 	{
@@ -1103,7 +1103,7 @@ static struct OpList * switchStatement (Instance self)
 	return oplist;
 }
 
-static struct OpList * statement (Instance self)
+static struct OpList * statement (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	struct Text text = self->lexer->text;
@@ -1226,7 +1226,7 @@ static struct OpList * statement (Instance self)
 
 // MARK: Function
 
-static struct OpList * parameters (Instance self, int *count)
+static struct OpList * parameters (struct Parser *self, int *count)
 {
 	struct Op op;
 	*count = 0;
@@ -1238,9 +1238,9 @@ static struct OpList * parameters (Instance self, int *count)
 			
 			if (op.value.data.identifier.data.integer)
 			{
-				if (Identifier.isEqual(op.value.data.identifier, Identifier.eval()))
+				if (Identifier.isEqual(op.value.data.identifier, Identifier(eval)))
 					error(self, Error.syntaxError(op.text, "redefining eval is deprecated"));
-				else if (Identifier.isEqual(op.value.data.identifier, Identifier.arguments()))
+				else if (Identifier.isEqual(op.value.data.identifier, Identifier(arguments)))
 					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
 				
 				Object.add(&self->function->context, op.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
@@ -1250,7 +1250,7 @@ static struct OpList * parameters (Instance self, int *count)
 	return NULL;
 }
 
-static struct OpList * function (Instance self, int isDeclaration, int isGetter, int isSetter)
+static struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
 {
 	struct Text text = self->lexer->text;
 	
@@ -1269,9 +1269,9 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 		{
 			identifierOp = identifier(self);
 			
-			if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier.eval()))
+			if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier(eval)))
 				error(self, Error.syntaxError(identifierOp.text, "redefining eval is deprecated"));
-			else if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier.arguments()))
+			else if (Identifier.isEqual(identifierOp.value.data.identifier, Identifier(arguments)))
 				error(self, Error.syntaxError(identifierOp.text, "redefining arguments is deprecated"));
 		}
 		else if (isDeclaration)
@@ -1283,7 +1283,7 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 	
 	parentClosure = self->function;
 	function = Function.create(NULL);
-	Object.add(&function->context, Identifier.arguments(), Value.undefined(), Object(writable));
+	Object.add(&function->context, Identifier(arguments), Value.undefined(), Object(writable));
 	
 	self->function = function;
 	expectToken(self, '(');
@@ -1314,7 +1314,7 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 	function->parameterCount = parameterCount;
 	parentClosure->needHeap = 1;
 	
-	Object.add(&function->object, Identifier.length(), Value.integer(parameterCount), Object(configurable));
+	Object.add(&function->object, Identifier(length), Value.integer(parameterCount), Object(configurable));
 	
 	if (isDeclaration)
 		Object.add(&parentClosure->context, identifierOp.value.data.identifier, Value.undefined(), Object(writable) | Object(configurable));
@@ -1330,7 +1330,7 @@ static struct OpList * function (Instance self, int isDeclaration, int isGetter,
 
 // MARK: Source
 
-static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken)
+static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
 {
 	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL;
 	
@@ -1367,9 +1367,9 @@ static struct OpList * sourceElements (Instance self, enum Lexer(Token) endToken
 
 // MARK: - Methods
 
-Instance createWithLexer (struct Lexer *lexer)
+struct Parser * createWithLexer (struct Lexer *lexer)
 {
-	Instance self = malloc(sizeof(*self));
+	struct Parser *self = malloc(sizeof(*self));
 	assert(self);
 	*self = Module.identity;
 	
@@ -1378,7 +1378,7 @@ Instance createWithLexer (struct Lexer *lexer)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Parser *self)
 {
 	assert(self);
 	
@@ -1387,7 +1387,7 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-struct Function * parseWithContext (Instance const self, struct Object *context)
+struct Function * parseWithContext (struct Parser * const self, struct Object *context)
 {
 	struct Function *function;
 	struct OpList *oplist;

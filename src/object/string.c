@@ -14,11 +14,11 @@
 
 // MARK: - Methods
 
-Instance create (const char *format, ...)
+struct String * create (const char *format, ...)
 {
 	va_list ap;
 	
-	Instance self = malloc(sizeof(*self));
+	struct String *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(&self->object);
 	*self = Module.identity;
@@ -40,7 +40,7 @@ Instance create (const char *format, ...)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct String *self)
 {
 	assert(self);
 	

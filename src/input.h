@@ -20,15 +20,16 @@
 #define Module \
 	io_libecc_Input
 
-Interface(
-	(Instance, createFromFile ,(const char *filename))
-	(Instance, createFromBytes ,(const char *bytes, uint32_t length, const char *name, ...))
-	(void, destroy ,(Instance))
+Interface(Input,
 	
-	(void, printText, (Instance, struct Text text))
-	(int32_t, findLine, (Instance, struct Text text))
+	(struct Input *, createFromFile ,(const char *filename))
+	(struct Input *, createFromBytes ,(const char *bytes, uint32_t length, const char *name, ...))
+	(void, destroy ,(struct Input *))
 	
-	(void, addEscapedText, (Instance, struct Text escapedText))
+	(void, printText, (struct Input *, struct Text text))
+	(int32_t, findLine, (struct Input *, struct Text text))
+	
+	(void, addEscapedText, (struct Input *, struct Text escapedText))
 	,
 	{
 		char name[FILENAME_MAX];

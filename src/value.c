@@ -14,152 +14,152 @@
 
 // MARK: - Methods
 
-Structure undefined (void)
+struct Value undefined (void)
 {
-	return (Structure){
+	return (struct Value){
 		.type = Value(undefined),
 	};
 }
 
-Structure null (void)
+struct Value null (void)
 {
-	return (Structure){
+	return (struct Value){
 		.type = Value(null),
 	};
 }
 
-Structure true (void)
+struct Value true (void)
 {
-	return (Structure){
+	return (struct Value){
 		.type = Value(true),
 	};
 }
 
-Structure false (void)
+struct Value false (void)
 {
-	return (Structure){
+	return (struct Value){
 		.type = Value(false),
 	};
 }
 
-Structure boolean (int boolean)
+struct Value boolean (int boolean)
 {
-	return (Structure){
+	return (struct Value){
 		.type = boolean? Value(true): Value(false),
 	};
 }
 
-Structure integer (int32_t integer)
+struct Value integer (int32_t integer)
 {
-	return (Structure){
+	return (struct Value){
 		.data = { .integer = integer },
 		.type = Value(integer),
 	};
 }
 
-Structure binary (double binary)
+struct Value binary (double binary)
 {
-	return (Structure){
+	return (struct Value){
 		.data = { .binary = binary },
 		.type = Value(binary),
 	};
 }
 
-Structure identifier (struct Identifier identifier)
+struct Value identifier (struct Identifier identifier)
 {
-	return (Structure){
+	return (struct Value){
 		.data = { .identifier = identifier },
 		.type = Value(identifier),
 	};
 }
 
-Structure text (const struct Text *text)
+struct Value text (const struct Text *text)
 {
-	return (Structure){
+	return (struct Value){
 		.data = { .text = text },
 		.type = Value(text),
 	};
 }
 
-Structure chars (struct Chars *chars)
+struct Value chars (struct Chars *chars)
 {
 	assert(chars);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .chars = chars },
 		.type = Value(chars),
 	};
 }
 
-Structure object (struct Object *object)
+struct Value object (struct Object *object)
 {
 	assert(object);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .object = object },
 		.type = Value(object),
 	};
 }
 
-Structure error (struct Error *error)
+struct Value error (struct Error *error)
 {
 	assert(error);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .error = error },
 		.type = Value(error),
 	};
 }
 
-Structure string (struct String *string)
+struct Value string (struct String *string)
 {
 	assert(string);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .string = string },
 		.type = Value(string),
 	};
 }
 
-Structure date (struct Date *date)
+struct Value date (struct Date *date)
 {
 	assert(date);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .date = date },
 		.type = Value(date),
 	};
 }
 
-Structure function (struct Function *function)
+struct Value function (struct Function *function)
 {
 	assert(function);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .function = function },
 		.type = Value(function),
 	};
 }
 
-Structure breaker (int32_t integer)
+struct Value breaker (int32_t integer)
 {
-	return (Structure){
+	return (struct Value){
 		.data = { .integer = integer },
 		.type = Value(breaker),
 	};
 }
 
-Structure reference (Instance reference)
+struct Value reference (struct Value *reference)
 {
 	assert(reference);
 	
-	return (Structure){
+	return (struct Value){
 		.data = { .reference = reference },
 		.type = Value(reference),
 	};
 }
 
-Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text, int hint)
+struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text *text, int hint)
 {
 	struct Object *object;
 	struct Identifier aIdentifier;
@@ -174,8 +174,8 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	if (!hint)
 		hint = value.type == Value(date)? 1: -1;
 	
-	aIdentifier = hint > 0? Identifier.toString(): Identifier.valueOf();
-	bIdentifier = hint > 0? Identifier.valueOf(): Identifier.toString();
+	aIdentifier = hint > 0? Identifier(toString): Identifier(valueOf);
+	bIdentifier = hint > 0? Identifier(valueOf): Identifier(toString);
 	
 	aClosure = Object.get(object, aIdentifier);
 	if (aClosure.type == Value(function))
@@ -196,22 +196,22 @@ Structure toPrimitive (Structure value, struct Ecc *ecc, const struct Text *text
 	Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
 }
 
-int isPrimitive (Structure value)
+int isPrimitive (struct Value value)
 {
 	return value.type < Value(object);
 }
 
-int isBoolean (Structure value)
+int isBoolean (struct Value value)
 {
 	return value.type & 0x01;
 }
 
-int isDynamic (Structure value)
+int isDynamic (struct Value value)
 {
 	return value.type >= Value(chars);
 }
 
-int isTrue (Structure value)
+int isTrue (struct Value value)
 {
 	if (value.type <= 0)
 		return 0;
@@ -225,7 +225,7 @@ int isTrue (Structure value)
 		return 1;
 }
 
-Structure toString (Structure value)
+struct Value toString (struct Value value)
 {
 	switch (value.type)
 	{
@@ -283,8 +283,8 @@ Structure toString (Structure value)
 		case Value(error):
 		{
 			struct Object *object = value.data.object;
-			struct Value name = Value.toString(Object.get(object, Identifier.name()));
-			struct Value message = Value.toString(Object.get(object, Identifier.message()));
+			struct Value name = Value.toString(Object.get(object, Identifier(name)));
+			struct Value message = Value.toString(Object.get(object, Identifier(message)));
 			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 		}
 		
@@ -297,12 +297,12 @@ Structure toString (Structure value)
 	abort();
 }
 
-int isString (Structure value)
+int isString (struct Value value)
 {
 	return value.type & 0x20;
 }
 
-const char * stringChars (Structure value)
+const char * stringChars (struct Value value)
 {
 	if (value.type == Value(chars))
 		return value.data.chars->chars;
@@ -314,7 +314,7 @@ const char * stringChars (Structure value)
 		return NULL;
 }
 
-uint16_t stringLength (Structure value)
+uint16_t stringLength (struct Value value)
 {
 	if (value.type == Value(chars))
 		return value.data.chars->length;
@@ -326,7 +326,7 @@ uint16_t stringLength (Structure value)
 		return 0;
 }
 
-Structure toBinary (Structure value)
+struct Value toBinary (struct Value value)
 {
 	switch (value.type)
 	{
@@ -381,7 +381,7 @@ Structure toBinary (Structure value)
 	abort();
 }
 
-Structure toInteger (Structure value)
+struct Value toInteger (struct Value value)
 {
 	value = toBinary(value);
 	
@@ -391,12 +391,12 @@ Structure toInteger (Structure value)
 		return Value.integer(value.data.binary);
 }
 
-int isNumber (Structure value)
+int isNumber (struct Value value)
 {
 	return value.type & 0x10;
 }
 
-Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
+struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *text)
 {
 	switch (value.type)
 	{
@@ -430,12 +430,12 @@ Structure toObject (Structure value, struct Ecc *ecc, const struct Text *text)
 	abort();
 }
 
-int isObject (Structure value)
+int isObject (struct Value value)
 {
 	return value.type >= Value(object);
 }
 
-Structure toType (Structure value)
+struct Value toType (struct Value value)
 {
 	switch (value.type)
 	{
@@ -473,7 +473,7 @@ Structure toType (Structure value)
 	abort();
 }
 
-void dumpTo (Structure value, FILE *file)
+void dumpTo (struct Value value, FILE *file)
 {
 	switch (value.type)
 	{
@@ -531,8 +531,8 @@ void dumpTo (Structure value, FILE *file)
 		
 		case Value(error):
 		{
-			struct Value name = toString(Object.get(&value.data.error->object, Identifier.name()));
-			struct Value message = toString(Object.get(&value.data.error->object, Identifier.message()));
+			struct Value name = toString(Object.get(&value.data.error->object, Identifier(name)));
+			struct Value message = toString(Object.get(&value.data.error->object, Identifier(message)));
 			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
 			fputs(": ", file);
 			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);

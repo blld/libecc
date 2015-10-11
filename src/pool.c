@@ -13,7 +13,7 @@
 static void unmarkValue (struct Value value);
 static void unmarkObject (struct Object *object);
 
-static Instance self = NULL;
+static struct Pool *self = NULL;
 
 // MARK: - Static Members
 
@@ -83,11 +83,6 @@ void teardown (void)
 	free(self->chars), self->chars = NULL;
 	
 	free(self), self = NULL;
-}
-
-Instance shared (void)
-{
-	return self;
 }
 
 void addFunction (struct Function *function)

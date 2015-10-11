@@ -36,11 +36,10 @@ enum Env(Attribute) {
 	Env(invisible) = 8,
 };
 
-Interface(
+Interface(Env,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
-	(struct Env *, shared ,(void))
 	
 	(void, print ,(const char *format, ...))
 	(void, printColor ,(enum Env(Color) color, enum Env(Attribute) attribute, const char *format, ...))

@@ -16,7 +16,7 @@ static const uint8_t zeroFlag = 0;
 static struct Object *objectPrototype = NULL;
 static struct Function *objectConstructor = NULL;
 
-static inline uint32_t getSlot (Instance self, struct Identifier identifier)
+static inline uint32_t getSlot (struct Object *self, struct Identifier identifier)
 {
 	return
 		self->hashmap[
@@ -209,10 +209,10 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 		
 		struct Object *result = Object.create(Object.prototype());
 		
-		Object.add(result, Identifier.value(), *entry.value, resultFlags);
-		Object.add(result, Identifier.writable(), Value.boolean(*entry.flags & Object(writable)), resultFlags);
-		Object.add(result, Identifier.enumerable(), Value.boolean(*entry.flags & Object(enumerable)), resultFlags);
-		Object.add(result, Identifier.configurable(), Value.boolean(*entry.flags & Object(configurable)), resultFlags);
+		Object.add(result, Identifier(value), *entry.value, resultFlags);
+		Object.add(result, Identifier(writable), Value.boolean(*entry.flags & Object(writable)), resultFlags);
+		Object.add(result, Identifier(enumerable), Value.boolean(*entry.flags & Object(enumerable)), resultFlags);
+		Object.add(result, Identifier(configurable), Value.boolean(*entry.flags & Object(configurable)), resultFlags);
 		
 		ecc->result = Value.object(result);
 	}
@@ -261,16 +261,16 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	Op.assertParameterCount(ecc, 1);
 	
 	property = checkObject(ops, ecc, Op.argument(ecc, 1));
-	value = Object.get(property, Identifier.value());
+	value = Object.get(property, Identifier(value));
 	flags = 0;
 	
-	if (Value.isTrue(Object.get(property, Identifier.enumerable())))
+	if (Value.isTrue(Object.get(property, Identifier(enumerable))))
 		flags |= Object(enumerable);
 	
-	if (Value.isTrue(Object.get(property, Identifier.configurable())))
+	if (Value.isTrue(Object.get(property, Identifier(configurable))))
 		flags |= Object(configurable);
 	
-	if (Value.isTrue(Object.get(property, Identifier.writable())))
+	if (Value.isTrue(Object.get(property, Identifier(writable))))
 		flags |= Object(writable);
 	
 	#define TODO
@@ -462,8 +462,8 @@ void setup ()
 	Function.addToObject(&objectConstructor->object, "isExtensible", isExtensible, 1, flags);
 	Function.addToObject(&objectConstructor->object, "keys", keys, 1, flags);
 	
-	Object.add(objectPrototype, Identifier.constructor(), Value.function(objectConstructor), 0);
-	Object.add(&objectConstructor->object, Identifier.prototype(), Value.object(objectPrototype), 0);
+	Object.add(objectPrototype, Identifier(constructor), Value.function(objectConstructor), 0);
+	Object.add(&objectConstructor->object, Identifier(prototype), Value.object(objectPrototype), 0);
 }
 
 void teardown (void)
@@ -482,25 +482,25 @@ struct Function *constructor (void)
 	return objectConstructor;
 }
 
-Instance create (Instance prototype)
+struct Object * create (struct Object *prototype)
 {
 	return createSized(prototype, defaultSize);
 }
 
-Instance createSized (Instance prototype, uint32_t size)
+struct Object * createSized (struct Object *prototype, uint32_t size)
 {
-	Instance self = malloc(sizeof(*self));
+	struct Object *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(self);
 	return initializeSized(self, prototype, size);
 }
 
-Instance initialize (Instance self, Instance prototype)
+struct Object * initialize (struct Object * restrict self, struct Object * restrict prototype)
 {
 	return initializeSized(self, prototype, defaultSize);
 }
 
-Instance initializeSized (Instance self, Instance prototype, uint32_t size)
+struct Object * initializeSized (struct Object * restrict self, struct Object * restrict prototype, uint32_t size)
 {
 	size_t byteSize;
 	
@@ -526,7 +526,7 @@ Instance initializeSized (Instance self, Instance prototype, uint32_t size)
 	return self;
 }
 
-Instance finalize (Instance self)
+struct Object * finalize (struct Object *self)
 {
 	assert(self);
 	
@@ -536,11 +536,11 @@ Instance finalize (Instance self)
 	return self;
 }
 
-Instance copy (const Instance original)
+struct Object * copy (const struct Object *original)
 {
 	size_t byteSize;
 	
-	Instance self = malloc(sizeof(*self));
+	struct Object *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addObject(self);
 	
@@ -557,7 +557,7 @@ Instance copy (const Instance original)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Object *self)
 {
 	assert(self);
 	
@@ -566,16 +566,16 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-struct Value getOwn (Instance self, struct Identifier identifier)
+struct Value getOwn (struct Object *self, struct Identifier identifier)
 {
 	assert(self);
 	
 	return self->hashmap[getSlot(self, identifier)].data.value;
 }
 
-struct Value get (Instance self, struct Identifier identifier)
+struct Value get (struct Object *self, struct Identifier identifier)
 {
-	Instance object = self;
+	struct Object *object = self;
 	uint32_t slot = 0;
 	
 	assert(object);
@@ -589,13 +589,13 @@ struct Value get (Instance self, struct Identifier identifier)
 		return Value.undefined();
 }
 
-struct Entry getMember (Instance self, struct Identifier identifier)
+struct Entry getMember (struct Object *self, struct Identifier identifier)
 {
 //	fprintf(stderr, "--- > ");
 //	Identifier.dumpTo(identifier, stderr);
 //	fprintf(stderr, " <\n");
 	
-	Instance object = self;
+	struct Object *object = self;
 	uint32_t slot;
 	
 	assert(object);
@@ -618,7 +618,7 @@ struct Entry getMember (Instance self, struct Identifier identifier)
 	};
 }
 
-struct Entry getOwnProperty (Instance self, struct Value property)
+struct Entry getOwnProperty (struct Object *self, struct Value property)
 {
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
@@ -647,9 +647,9 @@ struct Entry getOwnProperty (Instance self, struct Value property)
 	};
 }
 
-struct Entry getProperty (Instance self, struct Value property)
+struct Entry getProperty (struct Object *self, struct Value property)
 {
-	Instance object = self;
+	struct Object *object = self;
 	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
@@ -684,9 +684,9 @@ struct Entry getProperty (Instance self, struct Value property)
 	};
 }
 
-void setProperty (Instance self, struct Value property, struct Value value)
+void setProperty (struct Object *self, struct Value property, struct Value value)
 {
-	Instance object = self;
+	struct Object *object = self;
 	
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
@@ -730,7 +730,7 @@ void setProperty (Instance self, struct Value property, struct Value value)
 	}
 }
 
-void add (Instance self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
+void add (struct Object *self, struct Identifier identifier, struct Value value, enum Object(Flags) flags)
 {
 	uint32_t slot = 1;
 	int depth = 0;
@@ -773,9 +773,9 @@ void add (Instance self, struct Identifier identifier, struct Value value, enum 
 	self->hashmap[slot].data.flags = Object(isValue) | flags;
 }
 
-struct Value delete (Instance self, struct Identifier identifier)
+struct Value delete (struct Object *self, struct Identifier identifier)
 {
-	Instance object = self;
+	struct Object *object = self;
 	uint32_t slot;
 	
 	assert(object);
@@ -797,7 +797,7 @@ struct Value delete (Instance self, struct Identifier identifier)
 		return Value.false();
 }
 
-struct Value deleteProperty (Instance self, struct Value property)
+struct Value deleteProperty (struct Object *self, struct Value property)
 {
 	struct Identifier identifier;
 	int32_t element = getElementOrIdentifier(property, &identifier);
@@ -826,7 +826,7 @@ struct Value deleteProperty (Instance self, struct Value property)
 	return Value.true();
 }
 
-void packValue (Instance self)
+void packValue (struct Object *self)
 {
 	__typeof__(*self->hashmap) data;
 	uint32_t index = 2, valueIndex = 2, copyIndex, slot;
@@ -860,7 +860,7 @@ void packValue (Instance self)
 	self->hashmapCapacity = self->hashmapCount + 1;
 }
 
-void resizeElement (Instance self, uint32_t size)
+void resizeElement (struct Object *self, uint32_t size)
 {
 	assert(self);
 	
@@ -871,7 +871,7 @@ void resizeElement (Instance self, uint32_t size)
 	self->elementCount = self->elementCapacity = size;
 }
 
-void addElementAtIndex (Instance self, uint32_t index, struct Value value, enum Object(Flags) flags)
+void addElementAtIndex (struct Object *self, uint32_t index, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	
@@ -882,7 +882,7 @@ void addElementAtIndex (Instance self, uint32_t index, struct Value value, enum 
 	self->element[index].data.flags |= Object(isValue) | flags;
 }
 
-void dumpTo(Instance self, FILE *file)
+void dumpTo(struct Object *self, FILE *file)
 {
 	uint32_t index;
 	int isArray;

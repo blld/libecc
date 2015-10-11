@@ -19,9 +19,10 @@
 #define Module \
 	io_libecc_String
 
-Interface(
-	(Instance, create ,(const char *format, ...))
-	(void, destroy ,(Instance))
+Interface(String,
+	
+	(struct String *, create ,(const char *format, ...))
+	(void, destroy ,(struct String *))
 	,
 	{
 		struct Object object;

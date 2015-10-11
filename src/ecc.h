@@ -20,21 +20,22 @@
 #define Module \
 	io_libecc_Ecc
 
-Interface(
-	(Instance, create ,(void))
-	(void, destroy, (Instance))
+Interface(Ecc,
 	
-	(void, addNative ,(Instance, const char *name, const Native native, int argumentCount, enum Object(Flags)))
-	(void, addValue ,(Instance, const char *name, struct Value value, enum Object(Flags)))
-	(int, evalInput, (Instance, struct Input *))
+	(struct Ecc *, create ,(void))
+	(void, destroy, (struct Ecc *))
 	
-	(jmp_buf *, pushEnv ,(Instance))
-	(void, popEnv ,(Instance))
-	(void, jmpEnv, (Instance, struct Value value) dead)
+	(void, addNative ,(struct Ecc *, const char *name, const Native native, int argumentCount, enum Object(Flags)))
+	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Object(Flags)))
+	(int, evalInput, (struct Ecc *, struct Input *))
 	
-	(void, printTextInput, (Instance, struct Text text))
+	(jmp_buf *, pushEnv ,(struct Ecc *))
+	(void, popEnv ,(struct Ecc *))
+	(void, jmpEnv, (struct Ecc *, struct Value value) dead)
 	
-	(void, garbageCollect ,(Instance))
+	(void, printTextInput, (struct Ecc *, struct Text text))
+	
+	(void, garbageCollect ,(struct Ecc *))
 	,
 	{
 		struct Object *context;

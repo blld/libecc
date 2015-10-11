@@ -19,33 +19,37 @@
 #define Module \
 	io_libecc_Identifier
 
-Interface(
+#define io_libecc_Identifier(X) io_libecc_identifier_ ## X
+
+extern struct Identifier Identifier(none);
+extern struct Identifier Identifier(prototype);
+extern struct Identifier Identifier(constructor);
+extern struct Identifier Identifier(length);
+extern struct Identifier Identifier(arguments);
+extern struct Identifier Identifier(name);
+extern struct Identifier Identifier(message);
+extern struct Identifier Identifier(toString);
+extern struct Identifier Identifier(valueOf);
+extern struct Identifier Identifier(eval);
+extern struct Identifier Identifier(value);
+extern struct Identifier Identifier(writable);
+extern struct Identifier Identifier(enumerable);
+extern struct Identifier Identifier(configurable);
+extern struct Identifier Identifier(get);
+extern struct Identifier Identifier(set);
+
+Interface(Identifier,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(Structure, none ,(void))
-	(Structure, prototype ,(void))
-	(Structure, constructor ,(void))
-	(Structure, length ,(void))
-	(Structure, arguments ,(void))
-	(Structure, name ,(void))
-	(Structure, message ,(void))
-	(Structure, toString ,(void))
-	(Structure, valueOf ,(void))
-	(Structure, eval ,(void))
-	(Structure, value ,(void))
-	(Structure, writable ,(void))
-	(Structure, enumerable ,(void))
-	(Structure, configurable ,(void))
-	(Structure, get ,(void))
-	(Structure, set ,(void))
-	(Structure, makeWithCString ,(const char *cString))
-	(Structure, makeWithText ,(const struct Text text, int copyOnCreate))
+	(struct Identifier, makeWithCString ,(const char *cString))
+	(struct Identifier, makeWithText ,(const struct Text text, int copyOnCreate))
 	
-	(int, isEqual, (Structure, Structure))
-	(struct Text *, textOf, (Structure))
+	(int, isEqual, (struct Identifier, struct Identifier))
+	(struct Text *, textOf, (struct Identifier))
 	
-	(void, dumpTo, (Structure, FILE *))
+	(void, dumpTo, (struct Identifier, FILE *))
 	,
 	{
 		union {

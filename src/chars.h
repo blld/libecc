@@ -26,12 +26,13 @@ enum Chars(Flags)
 	Chars(mark) = 1 << 0,
 };
 
-Interface(
-	(Instance, createVA ,(int16_t length, const char *format, va_list ap))
-	(Instance, create ,(const char *format, ...))
-	(Instance, createSized ,(uint16_t size))
+Interface(Chars,
 	
-	(void, destroy ,(Instance))
+	(struct Chars *, createVA ,(int16_t length, const char *format, va_list ap))
+	(struct Chars *, create ,(const char *format, ...))
+	(struct Chars *, createSized ,(uint16_t size))
+	
+	(void, destroy ,(struct Chars *))
 	,
 	{
 		uint16_t length;

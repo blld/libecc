@@ -22,7 +22,7 @@ struct EnvInternal {
 #endif
 } static const EnvInternalIdentity;
 
-static Instance self = NULL;
+static struct Env *self = NULL;
 
 
 static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
@@ -137,11 +137,6 @@ void teardown (void)
 	
 	free(self->internal), self->internal = NULL;
 	free(self), self = NULL;
-}
-
-Instance shared (void)
-{
-	return self;
 }
 
 void print (const char *format, ...)

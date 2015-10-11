@@ -14,16 +14,16 @@
 
 // MARK: - Methods
 
-Instance create (const Native native, struct Value value, struct Text text)
+struct OpList * create (const Native native, struct Value value, struct Text text)
 {
-	Instance self = malloc(sizeof(*self) + sizeof(*self->ops) * 1);
+	struct OpList *self = malloc(sizeof(*self) + sizeof(*self->ops) * 1);
 	assert(self);
 	self->ops[0] = Op.make(native, value, text);
 	self->opCount = 1;
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct OpList * self)
 {
 	assert(self);
 	
@@ -33,7 +33,7 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-Instance join (Instance self, Instance with)
+struct OpList * join (struct OpList *self, struct OpList *with)
 {
 	if (!self)
 		return with;
@@ -48,7 +48,7 @@ Instance join (Instance self, Instance with)
 	return self;
 }
 
-Instance unshift (struct Op op, Instance self)
+struct OpList * unshift (struct Op op, struct OpList *self)
 {
 	if (!self)
 		return create(op.native, op.value, op.text);
@@ -59,7 +59,7 @@ Instance unshift (struct Op op, Instance self)
 	return self;
 }
 
-Instance append (Instance self, struct Op op)
+struct OpList * append (struct OpList *self, struct Op op)
 {
 	if (!self)
 		return create(op.native, op.value, op.text);
@@ -69,12 +69,12 @@ Instance append (Instance self, struct Op op)
 	return self;
 }
 
-Instance appendNoop (Instance self)
+struct OpList * appendNoop (struct OpList *self)
 {
 	return append(self, Op.make(Op.noop, Value.undefined(), Text.make(NULL, 0)));
 }
 
-Instance createLoop (Instance initial, Instance condition, Instance step, Instance body, int reverseCondition)
+struct OpList * createLoop (struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition)
 {
 	if (condition && step && condition->opCount == 3 && !reverseCondition)
 	{
@@ -154,7 +154,7 @@ normal:
 	}
 }
 
-void optimizeWithContext (Instance self, struct Object *context)
+void optimizeWithContext (struct OpList *self, struct Object *context)
 {
 	uint32_t index, count, slotIndex, slotCount;
 	
@@ -190,7 +190,7 @@ void optimizeWithContext (Instance self, struct Object *context)
 	}
 }
 
-void dumpTo (Instance self, FILE *file)
+void dumpTo (struct OpList *self, FILE *file)
 {
 	int i;
 	

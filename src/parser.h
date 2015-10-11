@@ -21,11 +21,12 @@
 #define Module \
 	io_libecc_Parser
 
-Interface(
-	(Instance, createWithLexer ,(struct Lexer *))
-	(void, destroy, (Instance))
+Interface(Parser,
 	
-	(struct Function *, parseWithContext ,(Instance const, struct Object *context))
+	(struct Parser *, createWithLexer ,(struct Lexer *))
+	(void, destroy, (struct Parser *))
+	
+	(struct Function *, parseWithContext ,(struct Parser * const, struct Object *context))
 	,
 	{
 		struct Lexer *lexer;

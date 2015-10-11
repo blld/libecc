@@ -153,8 +153,8 @@ void setup ()
 	
 	functionConstructor = Function.createWithNative(functionPrototype, constructorFunction, -1);
 	
-	Object.add(functionPrototype, Identifier.constructor(), Value.function(functionConstructor), 0);
-	Object.add(&functionConstructor->object, Identifier.prototype(), Value.function(functionPrototypeFunction), 0);
+	Object.add(functionPrototype, Identifier(constructor), Value.function(functionConstructor), 0);
+	Object.add(&functionConstructor->object, Identifier(prototype), Value.function(functionPrototypeFunction), 0);
 }
 
 void teardown (void)
@@ -163,25 +163,25 @@ void teardown (void)
 	functionConstructor = NULL;
 }
 
-struct Object *prototype (void)
+struct Object * prototype (void)
 {
 	return functionPrototype;
 }
 
-struct Function *constructor (void)
+struct Function * constructor (void)
 {
 	return functionConstructor;
 }
 
-Instance create (struct Object *prototype)
+struct Function * create (struct Object *prototype)
 {
 	return createSized(prototype, 8);
 }
 
-Instance createSized (struct Object *prototype, uint32_t size)
+struct Function * createSized (struct Object *prototype, uint32_t size)
 {
 	struct Object *proto;
-	Instance self = malloc(sizeof(*self));
+	struct Function *self = malloc(sizeof(*self));
 	assert(self);
 	Pool.addFunction(self);
 	
@@ -193,15 +193,15 @@ Instance createSized (struct Object *prototype, uint32_t size)
 	self->object.type = &Text(functionType);
 	
 	proto = Object.create(Object.prototype());
-	Object.add(proto, Identifier.constructor(), Value.function(self), Object(writable) | Object(configurable));
-	Object.add(&self->object, Identifier.prototype(), Value.object(proto), Object(writable));
+	Object.add(proto, Identifier(constructor), Value.function(self), Object(writable) | Object(configurable));
+	Object.add(&self->object, Identifier(prototype), Value.object(proto), Object(writable));
 	
 	return self;
 }
 
-Instance createWithNative (struct Object *prototype, const Native native, int parameterCount)
+struct Function * createWithNative (struct Object *prototype, const Native native, int parameterCount)
 {
-	Instance self = NULL;
+	struct Function *self = NULL;
 	
 	if (parameterCount < 0)
 	{
@@ -209,7 +209,7 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 		self->needHeap = 1;
 		self->needArguments = 1;
 		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
-		self->object.hashmap[2].data.identifier = Identifier.arguments();
+		self->object.hashmap[2].data.identifier = Identifier(arguments);
 	}
 	else
 	{
@@ -225,14 +225,14 @@ Instance createWithNative (struct Object *prototype, const Native native, int pa
 	self->oplist = OpList.create(native, Value.undefined(), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
-	Object.add(&self->object, Identifier.length(), Value.integer(abs(parameterCount)), 0);
+	Object.add(&self->object, Identifier(length), Value.integer(abs(parameterCount)), 0);
 	
 	return self;
 }
 
-Instance createWithNativeAccessor (struct Object *prototype, const Native getter, const Native setter)
+struct Function * createWithNativeAccessor (struct Object *prototype, const Native getter, const Native setter)
 {
-	Instance self = createWithNative(prototype, getter, 0);
+	struct Function *self = createWithNative(prototype, getter, 0);
 	
 	self->isAccessor = 1;
 	self->pair = createWithNative(prototype, setter, 1);
@@ -240,9 +240,9 @@ Instance createWithNativeAccessor (struct Object *prototype, const Native getter
 	return self;
 }
 
-Instance copy (Instance original)
+struct Function * copy (struct Function *original)
 {
-	Instance self = malloc(sizeof(*self));
+	struct Function *self = malloc(sizeof(*self));
 	size_t byteSize;
 	
 	assert(self);
@@ -258,7 +258,7 @@ Instance copy (Instance original)
 	return self;
 }
 
-void destroy (Instance self)
+void destroy (struct Function *self)
 {
 	assert(self);
 	
@@ -271,23 +271,23 @@ void destroy (Instance self)
 	free(self), self = NULL;
 }
 
-void addValue(Instance self, const char *name, struct Value value, enum Object(Flags) flags)
+void addValue(struct Function *self, const char *name, struct Value value, enum Object(Flags) flags)
 {
 	assert(self);
 	
 	Object.add(&self->context, Identifier.makeWithCString(name), value, flags);
 }
 
-Instance addNative(Instance self, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
+struct Function * addNative(struct Function *self, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
 {
 	assert(self);
 	
 	return addToObject(&self->context, name, native, parameterCount, flags);
 }
 
-Instance addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
+struct Function * addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
 {
-	Instance function;
+	struct Function *function;
 	
 	assert(object);
 	

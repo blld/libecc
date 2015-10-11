@@ -21,7 +21,8 @@
 #define Module \
 	io_libecc_Error
 
-Interface(
+Interface(Error,
+	
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
@@ -32,14 +33,14 @@ Interface(
 	(struct Object *, typePrototype ,(void))
 	(struct Object *, uriPrototype ,(void))
 	
-	(Instance, error ,(struct Text, const char *format, ...))
-	(Instance, rangeError ,(struct Text, const char *format, ...))
-	(Instance, referenceError ,(struct Text, const char *format, ...))
-	(Instance, syntaxError ,(struct Text, const char *format, ...))
-	(Instance, typeError ,(struct Text, const char *format, ...))
-	(Instance, uriError ,(struct Text, const char *format, ...))
+	(struct Error *, error ,(struct Text, const char *format, ...))
+	(struct Error *, rangeError ,(struct Text, const char *format, ...))
+	(struct Error *, referenceError ,(struct Text, const char *format, ...))
+	(struct Error *, syntaxError ,(struct Text, const char *format, ...))
+	(struct Error *, typeError ,(struct Text, const char *format, ...))
+	(struct Error *, uriError ,(struct Text, const char *format, ...))
 	
-	(void, destroy ,(Instance))
+	(void, destroy ,(struct Error *))
 	,
 	{
 		struct Object object;

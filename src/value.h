@@ -23,80 +23,81 @@ struct Ecc;
 
 #define io_libecc_Value(X) io_libecc_value_ ## X
 
-enum Module(Type) {
+enum Value(Type) {
 	
 	/* Primitive */
 	
 	/* static */
 	
-	Module(null) = -2 & ~0x70,
-	Module(false) = -1 & ~0x70,
-	Module(undefined) = 0x00,
-	Module(true) = 0x01,
+	Value(null) = -2 & ~0x70,
+	Value(false) = -1 & ~0x70,
+	Value(undefined) = 0x00,
+	Value(true) = 0x01,
 	
-	Module(breaker) = 0x02,
+	Value(breaker) = 0x02,
 	
-	Module(integer) = 0x10,
-	Module(binary) = 0x12,
+	Value(integer) = 0x10,
+	Value(binary) = 0x12,
 	
-	Module(identifier) = 0x20,
-	Module(text) = 0x22,
+	Value(identifier) = 0x20,
+	Value(text) = 0x22,
 	
 	/* dynamic */
 	
-	Module(chars) = 0x24,
+	Value(chars) = 0x24,
 	
 	/* Objects */
 	
-	Module(object) = 0x40,
-	Module(error) = 0x42,
-	Module(function) = 0x44,
-	Module(string) = 0x46,
-	Module(date) = 0x48,
+	Value(object) = 0x40,
+	Value(error) = 0x42,
+	Value(function) = 0x44,
+	Value(string) = 0x46,
+	Value(date) = 0x48,
 	
-	Module(reference) = 0x4e,
+	Value(reference) = 0x4e,
 };
 
-Interface(
-	(Structure, undefined ,(void))
-	(Structure, null ,(void))
-	(Structure, false ,(void))
-	(Structure, true ,(void))
-	(Structure, boolean ,(int))
-	(Structure, integer ,(int32_t integer))
-	(Structure, binary ,(double binary))
-	(Structure, identifier ,(struct Identifier identifier))
-	(Structure, text ,(const struct Text *text))
-	(Structure, chars ,(struct Chars *chars))
-	(Structure, object ,(struct Object *))
-	(Structure, error ,(struct Error *))
-	(Structure, string ,(struct String *))
-	(Structure, date ,(struct Date *))
-	(Structure, function ,(struct Function *))
-	(Structure, breaker ,(int32_t integer))
-	(Structure, reference ,(Instance))
+Interface(Value,
 	
-	(Structure, toPrimitive ,(Structure, struct Ecc *ecc, const struct Text *text, int hint /* 0: auto, 1: String, -1: Number */))
-	(int, isPrimitive ,(Structure))
-	(int, isBoolean ,(Structure))
-	(int, isDynamic ,(Structure))
-	(int, isTrue ,(Structure))
+	(struct Value, undefined ,(void))
+	(struct Value, null ,(void))
+	(struct Value, false ,(void))
+	(struct Value, true ,(void))
+	(struct Value, boolean ,(int))
+	(struct Value, integer ,(int32_t integer))
+	(struct Value, binary ,(double binary))
+	(struct Value, identifier ,(struct Identifier identifier))
+	(struct Value, text ,(const struct Text *text))
+	(struct Value, chars ,(struct Chars *chars))
+	(struct Value, object ,(struct Object *))
+	(struct Value, error ,(struct Error *))
+	(struct Value, string ,(struct String *))
+	(struct Value, date ,(struct Date *))
+	(struct Value, function ,(struct Function *))
+	(struct Value, breaker ,(int32_t integer))
+	(struct Value, reference ,(struct Value *))
 	
-	(Structure, toString ,(Structure))
-	(int, isString ,(Structure))
-	(const char *, stringChars ,(Structure))
-	(uint16_t, stringLength ,(Structure))
+	(struct Value, toPrimitive ,(struct Value, struct Ecc *ecc, const struct Text *text, int hint /* 0: auto, 1: String, -1: Number */))
+	(int, isPrimitive ,(struct Value))
+	(int, isBoolean ,(struct Value))
+	(int, isDynamic ,(struct Value))
+	(int, isTrue ,(struct Value))
 	
-	(Structure, toBinary ,(Structure))
-	(Structure, toInteger ,(Structure))
-	(int, isNumber ,(Structure))
+	(struct Value, toString ,(struct Value))
+	(int, isString ,(struct Value))
+	(const char *, stringChars ,(struct Value))
+	(uint16_t, stringLength ,(struct Value))
 	
-	(Structure, toObject ,(Structure, struct Ecc *ecc, const struct Text *text))
-	(int, isObject ,(Structure))
+	(struct Value, toBinary ,(struct Value))
+	(struct Value, toInteger ,(struct Value))
+	(int, isNumber ,(struct Value))
 	
-	(Structure, toType ,(Structure))
+	(struct Value, toObject ,(struct Value, struct Ecc *ecc, const struct Text *text))
+	(int, isObject ,(struct Value))
 	
-	(void, dumpTo ,(Structure, FILE *))
+	(struct Value, toType ,(struct Value))
+	
+	(void, dumpTo ,(struct Value, FILE *))
 	,
 	{
 		union
@@ -114,9 +115,9 @@ Interface(
 			struct Date *date;
 			struct Function *function;
 			
-			Instance reference;
+			struct Value *reference;
 		} data;
-		enum Module(Type) type;
+		enum Value(Type) type;
 	}
 )
 
