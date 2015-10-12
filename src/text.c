@@ -48,7 +48,47 @@ const struct Text Text(inputErrorName) = textMake("InputError");
 
 // MARK: - Static Members
 
-static inline uint32_t toCodepoint (struct Text *text)
+// MARK: - Methods
+
+struct Text make (const char *location, uint16_t length)
+{
+	return (struct Text){
+		length,
+		location,
+	};
+}
+
+struct Text join (struct Text from, struct Text to)
+{
+	return make(from.location, to.location - from.location + to.length);
+}
+
+uint16_t nextCodepointBytes (struct Text text)
+{
+	switch (text.length)
+	{
+		default:
+		case 4:
+			if ((text.location[0] & 0xf8) == 0xf0 && (text.location[1] & 0xc0) == 0x80 && (text.location[2] & 0xc0) == 0x80 && (text.location[3] & 0xc0) == 0x80)
+				return 4;
+		
+		case 3:
+			if ((text.location[0] & 0xf0) == 0xe0 && (text.location[1] & 0xc0) == 0x80 && (text.location[2] & 0xc0) == 0x80 )
+				return 3;
+		
+		case 2:
+			if ((text.location[0] & 0xe0) == 0xc0 && (text.location[1] & 0xc0) == 0x80)
+				return 2;
+		
+		case 1:
+			return 1;
+		
+		case 0:
+			return 0;
+	}
+}
+
+uint32_t nextCodepoint (struct Text *text)
 {
 	uint32_t cp;
 	
@@ -94,30 +134,12 @@ static inline uint32_t toCodepoint (struct Text *text)
 	}
 }
 
-// MARK: - Methods
-
-struct Text make (const char *location, uint16_t length)
-{
-	return (struct Text){
-		length,
-		location,
-	};
-}
-
-struct Text join (struct Text from, struct Text to)
-{
-	return make(from.location, to.location - from.location + to.length);
-}
-
-uint16_t lengthToUTF16 (struct Text text)
+uint16_t toUTF16Bytes (struct Text text)
 {
 	uint16_t windex = 0;
 	
 	while (text.length)
-		if (toCodepoint(&text) > 0x010000)
-			windex += 2;
-		else
-			++windex;
+		windex += nextCodepoint(&text) > 0x010000? 2: 1;
 	
 	return windex;
 }
@@ -129,7 +151,7 @@ uint16_t toUTF16 (struct Text text, uint16_t *wbuffer)
 	
 	while (text.length)
 	{
-		cp = toCodepoint(&text);
+		cp = nextCodepoint(&text);
 		
 		if (cp > 0x010000)
 		{

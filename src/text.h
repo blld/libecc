@@ -56,7 +56,10 @@ Interface(Text,
 	(struct Text, make ,(const char *location, uint16_t length))
 	(struct Text, join ,(struct Text from, struct Text to))
 	
-	(uint16_t, lengthToUTF16 ,(struct Text))
+	(uint16_t, nextCodepointBytes ,(struct Text))
+	(uint32_t, nextCodepoint ,(struct Text *text))
+	
+	(uint16_t, toUTF16Bytes ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
 	,
 	{
