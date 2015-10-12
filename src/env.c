@@ -16,7 +16,7 @@ struct EnvInternal {
 #elif _WIN32 || _WIN64
 	HANDLE console;
 	int defaultAttribute;
-	int oldOutputCP;
+	int defaultOutputCP;
 #else
 	char unused;
 #endif
@@ -112,7 +112,7 @@ void setup (void)
 	self->internal->defaultAttribute = textInfo.normattr;
 	#elif _WIN32 || _WIN64
 	self->internal->console = GetStdHandle(STD_OUTPUT_HANDLE);
-	self->internal->oldOutputCP = GetConsoleOutputCP();
+	self->internal->defaultOutputCP = GetConsoleOutputCP();
 	SetConsoleOutputCP(CP_UTF8);
 	
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
@@ -128,7 +128,7 @@ void teardown (void)
 	#if __MSDOS__
 	textcolor(self->internal->defaultAttribute);
 	#elif _WIN32 || _WIN64
-	SetConsoleOutputCP(self->internal->oldOutputCP);
+	SetConsoleOutputCP(self->internal->defaultOutputCP);
 	SetConsoleTextAttribute(self->internal->console, self->internal->defaultAttribute);
 	#endif
 	
