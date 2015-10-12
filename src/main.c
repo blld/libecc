@@ -510,9 +510,6 @@ static int runTest (int verbosity)
 	testAccessor();
 	testArray();
 	
-	test("'𝌆 ça oué! Blåbærsyltetøy! 日本国 кошка!Bjørn Bråten Sæter', b", "");
-	
-	
 	Env.newline();
 	
 	if (testErrorCount)

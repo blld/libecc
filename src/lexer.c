@@ -592,11 +592,12 @@ const char * tokenChars (enum Lexer(Token) token)
 
 struct Value parseBinary (struct Text text)
 {
+	double binary;
 	char buffer[text.length + 1];
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';
 	
-	double binary = strtod(buffer, NULL);
+	binary = strtod(buffer, NULL);
 	
 	return Value.binary(binary);
 }
