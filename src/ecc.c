@@ -41,7 +41,7 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 	struct Text text;
 	int32_t radix;
 	
-	Op.assertParameterCount(ecc, 1);
+	Op.assertParameterCount(ecc, 2);
 	
 	value = Value.toString(Op.argument(ecc, 0));
 	radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
