@@ -44,10 +44,11 @@ struct Chars * create (const char *format, ...)
 struct Chars * createSized (uint16_t length)
 {
 	struct Chars *self = malloc(sizeof(*self) + length);
-	assert(self);
 	Pool.addChars(self);
+	*self = Chars.identity;
+	
 	self->length = length;
-	self->flags = 0;
+	
 	return self;
 }
 

@@ -28,11 +28,13 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	if (ecc->this.data.object->elementCount)
 	{
-		struct Chars *chars = NULL;
+		struct Chars *chars = malloc(sizeof(*chars));
 		uint32_t length = 0, stringLength;
 		int notLast = 0;
 		struct Value value;
 		uint32_t index;
+		
+		*chars = Chars.identity;
 		
 		for (index = 0; ; ++index)
 		{
