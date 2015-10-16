@@ -22,24 +22,23 @@
 	_( no ,"end of script",= 0)\
 	_( error ,,= 128)\
 	\
+	/* literal */\
+	_( null ,,)\
+	_( true ,,)\
+	_( false ,,)\
 	_( integer ,"number",)\
 	_( binary ,"number",)\
 	_( string ,,)\
 	_( identifier ,,)\
-	_( null ,,)\
-	_( true ,,)\
-	_( false ,,)\
 	_( regex ,,)\
 	\
-	_( this ,,)\
-	_( instanceof ,,)\
-	_( typeof ,,)\
+	/* keyword */\
 	_( break ,,)\
 	_( case ,,)\
-	_( default ,,)\
 	_( catch ,,)\
 	_( continue ,,)\
 	_( debugger ,,)\
+	_( default ,,)\
 	_( delete ,,)\
 	_( do ,,)\
 	_( else ,,)\
@@ -48,16 +47,20 @@
 	_( function ,,)\
 	_( if ,,)\
 	_( in ,,)\
+	_( instanceof ,,)\
 	_( new ,,)\
 	_( return ,,)\
 	_( switch ,,)\
+	_( this ,,)\
 	_( throw ,,)\
 	_( try ,,)\
+	_( typeof ,,)\
 	_( var ,,)\
 	_( void ,,)\
-	_( while ,,)\
 	_( with ,,)\
+	_( while ,,)\
 	\
+	/* operator */\
 	_( equal ,"'=='",)\
 	_( notEqual ,"'!='",)\
 	_( identical ,"'==='",)\
@@ -114,6 +117,7 @@ Interface(Lexer,
 		struct Text text;
 		int didLineBreak;
 		int disallowRegex;
+		int disallowKeyword;
 	}
 )
 
