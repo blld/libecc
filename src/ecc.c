@@ -189,14 +189,6 @@ void destroy (struct Ecc *self)
 	}
 }
 
-void directGlobalAccess (struct Ecc *self, int allow)
-{
-	if (allow)
-		self->this = Value.object(&self->global->context);
-	else
-		self->this = Value.undefined();
-}
-
 void addNative (struct Ecc *self, const char *name, const Native native, int argumentCount, enum Object(Flags) flags)
 {
 	assert(self);

@@ -29,10 +29,7 @@ int main (int argc, const char * argv[])
 	else if (!strcmp(argv[1], "--test-verbose"))
 		result = runTest(1);
 	else
-	{
-		Ecc.directGlobalAccess(ecc, 1);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
-	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
@@ -325,10 +322,10 @@ static void testGlobal (void)
 	test("global.undefined", "undefined");
 	test("typeof global.eval", "function");
 	
-	// direct this => global mapping (avoid auto closure)
-	Ecc.directGlobalAccess(ecc, 1);
+	// direct this === global mapping (avoid automatic closure)
+	ecc->this = Value.object(&ecc->global->context);
 	test("this.NaN", "NaN");
-	Ecc.directGlobalAccess(ecc, 0);
+	ecc->this = Value.undefined();
 }
 
 static void testFunction (void)
