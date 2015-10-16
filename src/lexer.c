@@ -153,6 +153,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					while (( c = nextChar(self) ))
 						if (c == '\r' || c == '\n')
 							goto retry;
+					
+					return 0;
 				}
 				else if (!disallowRegex)
 				{
