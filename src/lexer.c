@@ -135,6 +135,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			case '\n':
 			case '\r':
 			case '\t':
+			case '\v':
+			case '\f':
 			case ' ':
 				goto retry;
 			
