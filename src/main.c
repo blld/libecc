@@ -119,6 +119,7 @@ static void testLexer (void)
 	test("0x", "SyntaxError: missing hexadecimal digits after '0x'");
 	test("0e+", "SyntaxError: missing exponent");
 	test("0a", "SyntaxError: identifier starts immediately after numeric literal");
+	test(".e+1", "SyntaxError: expected expression, got '.'");
 	test("\\", "SyntaxError: invalid character '\\'");
 	test("'\\a\\b\\f\\n\\r\\t\\v'", "\a\b\f\n\r\t\v");
 	test("'xxx\\xrrabc'", "SyntaxError: malformed hexadecimal character escape sequence");

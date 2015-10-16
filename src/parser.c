@@ -385,8 +385,13 @@ static struct OpList * leftHandSide (struct Parser *self)
 	struct Text text = OpList.text(oplist);
 	while (1)
 	{
-		if (acceptToken(self, '.'))
+		if (previewToken(self) == '.')
 		{
+			if (!oplist)
+				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			
+			nextToken(self);
+			
 			struct Value value = self->lexer->value;
 			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
