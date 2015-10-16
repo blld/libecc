@@ -10,9 +10,7 @@
 
 static int printUsage (void);
 static int runTest (int verbosity);
-
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc);
-static struct Value gc (const struct Op ** const ops, struct Ecc * const ecc);
 
 static struct Ecc *ecc = NULL;
 
@@ -23,7 +21,6 @@ int main (int argc, const char * argv[])
 	ecc = Ecc.create();
 	
 	Function.addNative(ecc->global, "print", print, 1, 0);
-	Function.addNative(ecc->global, "gc", gc, 0, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -56,17 +53,6 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Value.dumpTo(Op.argument(ecc, 0), stdout);
 	putc('\n', stdout);
-	
-	ecc->result = Value.undefined();
-	
-	return Value.undefined();
-}
-
-static struct Value gc (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	Op.assertParameterCount(ecc, 0);
-	
-	Ecc.garbageCollect(ecc);
 	
 	ecc->result = Value.undefined();
 	
