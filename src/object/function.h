@@ -15,6 +15,18 @@
 #include "native.h"
 
 
+#define io_libecc_Function(X) io_libecc_function_ ## X
+
+enum Function(Flags) {
+	Function(strictMode)    = 1 << 0,
+	Function(needHeap)      = 1 << 1,
+	Function(needArguments) = 1 << 2,
+	Function(isGetter)      = 1 << 3,
+	Function(isSetter)      = 1 << 4,
+	Function(isAccessor)    = Function(isGetter) | Function(isSetter),
+};
+
+
 #include "interface.h"
 
 Interface(Function,
@@ -40,12 +52,10 @@ Interface(Function,
 		struct Object object;
 		struct Object context;
 		struct OpList *oplist;
+		struct Function *pair;
 		struct Text text;
 		int parameterCount;
-		int needHeap;
-		int needArguments;
-		int isAccessor;
-		struct Function *pair;
+		enum Function(Flags) flags;
 	}
 )
 

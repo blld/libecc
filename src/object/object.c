@@ -764,9 +764,9 @@ void add (struct Object *self, struct Key key, struct Value value, enum Object(F
 		slot = self->hashmap[slot].slot[key.data.depth[depth]];
 	} while (++depth < 4);
 	
-	if (value.type == Value(function) && value.data.function->isAccessor)
-		if (self->hashmap[slot].data.flags & Object(isValue) && self->hashmap[slot].data.value.type == Value(function) && self->hashmap[slot].data.value.data.function->isAccessor)
-			if (self->hashmap[slot].data.value.data.function->isAccessor != value.data.function->isAccessor)
+	if (value.type == Value(function) && value.data.function->flags & Function(isAccessor))
+		if (self->hashmap[slot].data.flags & Object(isValue) && self->hashmap[slot].data.value.type == Value(function) && self->hashmap[slot].data.value.data.function->flags & Function(isAccessor))
+			if ((self->hashmap[slot].data.value.data.function->flags & Function(isAccessor)) != (value.data.function->flags & Function(isAccessor)))
 				value.data.function->pair = self->hashmap[slot].data.value.data.function;
 	
 	self->hashmap[slot].data.value = value;

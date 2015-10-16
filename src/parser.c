@@ -269,10 +269,7 @@ static struct OpList * primary (struct Parser *self)
 		oplist = OpList.create(Op.getLocal, self->lexer->value, self->lexer->text);
 		
 		if (Key.isEqual(self->lexer->value.data.key, Key(arguments)))
-		{
-			self->function->needArguments = 1;
-			self->function->needHeap = 1;
-		}
+			self->function->flags |= Function(needArguments) | Function(needHeap);
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 		oplist = OpList.create(Op.text, Value.undefined(), self->lexer->text);
@@ -1296,13 +1293,13 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	if (isGetter)
 	{
-		function->isAccessor = 1;
+		function->flags |= Function(isGetter);
 		if (parameterCount != 0)
 			error(self, Error.syntaxError(self->lexer->text, "getter functions must have no arguments"));
 	}
 	else if (isSetter)
 	{
-		function->isAccessor = 2;
+		function->flags |= Function(isSetter);
 		if (parameterCount != 1)
 			error(self, Error.syntaxError(self->lexer->text, "setter functions must have one argument"));
 	}
@@ -1317,7 +1314,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->oplist = oplist;
 	function->text = text;
 	function->parameterCount = parameterCount;
-	parentFunction->needHeap = 1;
+	parentFunction->flags |= Function(needHeap);
 	
 	Object.add(&function->object, Key(length), Value.integer(parameterCount), Object(configurable));
 	

@@ -206,8 +206,7 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 	if (parameterCount < 0)
 	{
 		self = createSized(prototype, 3);
-		self->needHeap = 1;
-		self->needArguments = 1;
+		self->flags |= Function(needHeap) | Function(needArguments);
 		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
 		self->object.hashmap[2].data.key = Key(arguments);
 	}
@@ -234,7 +233,7 @@ struct Function * createWithNativeAccessor (struct Object *prototype, const Nati
 {
 	struct Function *self = createWithNative(prototype, getter, 0);
 	
-	self->isAccessor = 1;
+	self->flags |= Function(isGetter);
 	self->pair = createWithNative(prototype, setter, 1);
 	
 	return self;

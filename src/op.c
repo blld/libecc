@@ -221,9 +221,9 @@ static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value t
 	if (!entry.value)
 		return Value.undefined();
 	
-	if (entry.value->type == Value(function) && entry.value->data.function->isAccessor)
+	if (entry.value->type == Value(function) && entry.value->data.function->flags & Function(isAccessor))
 	{
-		if (entry.value->data.function->isAccessor == 1)
+		if (entry.value->data.function->flags & Function(isGetter))
 			return callFunctionVA(entry.value->data.function, ecc, this, 0);
 		else if (entry.value->data.function->pair)
 			return callFunctionVA(entry.value->data.function->pair, ecc, this, 0);
@@ -234,9 +234,9 @@ static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value t
 
 static struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value)
 {
-	if (entry.value->type == Value(function) && entry.value->data.function->isAccessor)
+	if (entry.value->type == Value(function) && entry.value->data.function->flags & Function(isAccessor))
 	{
-		if (entry.value->data.function->isAccessor == 2)
+		if (entry.value->data.function->flags & Function(isSetter))
 			return callFunctionVA(entry.value->data.function, ecc, this, 1, value);
 		else if (entry.value->data.function->pair)
 			return callFunctionVA(entry.value->data.function->pair, ecc, this, 1, value);
@@ -464,13 +464,13 @@ struct Value callFunctionArguments (struct Function *function, struct Ecc * cons
 
 struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... )
 {
-	if (function->needHeap)
+	if (function->flags & Function(needHeap))
 	{
 		struct Object *context = Object.copy(&function->context);
 		va_list ap;
 		
 		va_start(ap, argumentCount);
-		if (function->needArguments)
+		if (function->flags & Function(needArguments))
 			populateContextWithArgumentsVA(context, function->parameterCount, argumentCount, ap);
 		else
 			populateContextVA(context, function->parameterCount, argumentCount, ap);
@@ -502,11 +502,11 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 {
 	struct Value this = ecc->refObject;
 	
-	if (function->needHeap)
+	if (function->flags & Function(needHeap))
 	{
 		struct Object *context = Object.copy(&function->context);
 		
-		if (function->needArguments)
+		if (function->flags & Function(needArguments))
 			populateContextWithArguments(ops, ecc, context, function->parameterCount, argumentCount);
 		else
 			populateContext(ops, ecc, context, function->parameterCount, argumentCount);

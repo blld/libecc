@@ -29,7 +29,11 @@ int main (int argc, const char * argv[])
 	else if (!strcmp(argv[1], "--test-verbose"))
 		result = runTest(1);
 	else
+	{
+//		ecc->global->
+		ecc->this = Value.object(&ecc->global->context);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
+	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
