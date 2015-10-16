@@ -438,6 +438,9 @@ static void testObject (void)
 	test("var a = { eval: 123 }", "SyntaxError: eval in object identifier");
 	test("var a = { arguments: 123 }", "SyntaxError: arguments in object identifier");
 	
+	test("var a = {}; a.null = 123; a.null", "123");
+	test("var a = {}; a.function = 123; a.function", "123");
+	
 	test("typeof Object", "function");
 	test("typeof Object.prototype", "object");
 }

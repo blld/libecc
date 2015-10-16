@@ -110,14 +110,16 @@ void destroy (struct Lexer *self)
 
 enum Lexer(Token) nextToken (struct Lexer *self)
 {
-	int c, disallowRegex;
+	int c, disallowRegex, disallowKeyword;
 	assert(self);
 	
 	disallowRegex = self->disallowRegex;
+	disallowKeyword = self->disallowKeyword;
 	
 	self->value = Value.undefined();
 	self->didLineBreak = 0;
 	self->disallowRegex = 0;
+	self->disallowKeyword = 0;
 	
 	retry:
 	self->text.location = self->input->bytes + self->offset;
@@ -258,6 +260,12 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			}
 			
 			case '.':
+				if (!isdigit(previewChar(self)))
+				{
+					self->disallowKeyword = 1;
+					return c;
+				}
+				/* fallthrough */
 			case '0':
 			case '1':
 			case '2':
@@ -270,9 +278,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			case '9':
 			{
 				int binary = 0;
-				
-				if (c == '.' && !isdigit(previewChar(self)))
-					return c;
 				
 				self->disallowRegex = 1;
 				
@@ -532,16 +537,19 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
 						nextChar(self);
 					
-					for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
-						if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
-						{
-							self->disallowRegex |= keywords[k].disallowRegex;
-							return keywords[k].token;
-						}
-					
-					for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
-						if (self->text.length == reservedKeywords[k].length && memcmp(self->text.location, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
-							return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
+					if (!disallowKeyword)
+					{
+						for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
+							if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
+							{
+								self->disallowRegex |= keywords[k].disallowRegex;
+								return keywords[k].token;
+							}
+						
+						for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
+							if (self->text.length == reservedKeywords[k].length && memcmp(self->text.location, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
+								return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
+					}
 					
 					self->disallowRegex = 1;
 					self->value = Value.key(Key.makeWithText(self->text, 0));
