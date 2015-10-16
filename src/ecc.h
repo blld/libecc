@@ -22,6 +22,7 @@ Interface(Ecc,
 	(struct Ecc *, create ,(void))
 	(void, destroy, (struct Ecc *))
 	
+	(void, directGlobalAccess ,(struct Ecc *, int allow))
 	(void, addNative ,(struct Ecc *, const char *name, const Native native, int argumentCount, enum Object(Flags)))
 	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Object(Flags)))
 	(int, evalInput, (struct Ecc *, struct Input *))

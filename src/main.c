@@ -29,7 +29,10 @@ int main (int argc, const char * argv[])
 	else if (!strcmp(argv[1], "--test-verbose"))
 		result = runTest(1);
 	else
+	{
+		Ecc.directGlobalAccess(ecc, 1);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
+	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
@@ -312,13 +315,20 @@ static void testDelete (void)
 static void testGlobal (void)
 {
 	test("typeof this", "undefined");
+	test("typeof global", "object");
 	
 	test("null", "null");
-	test("Infinity", "Infinity");
-	test("-Infinity", "-Infinity");
-	test("NaN", "NaN");
-	test("undefined", "undefined");
-	test("typeof eval", "function");
+	test("global.null", "undefined");
+	test("global.Infinity", "Infinity");
+	test("-global.Infinity", "-Infinity");
+	test("global.NaN", "NaN");
+	test("global.undefined", "undefined");
+	test("typeof global.eval", "function");
+	
+	// direct this => global mapping (avoid auto closure)
+	Ecc.directGlobalAccess(ecc, 1);
+	test("this.NaN", "NaN");
+	Ecc.directGlobalAccess(ecc, 0);
 }
 
 static void testFunction (void)
@@ -480,6 +490,8 @@ static void testArray (void)
 
 static int runTest (int verbosity)
 {
+	Function.addValue(ecc->global, "global", Value.object(&ecc->global->context), 0);
+	
 	testVerbosity = verbosity;
 	
 	testLexer();
