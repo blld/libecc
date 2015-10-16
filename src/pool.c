@@ -41,15 +41,12 @@ static void unmarkObject (struct Object *object)
 			unmarkObject(object->prototype);
 		
 		for (index = 0, count = object->elementCount; index < count; ++index)
-			unmarkValue(object->element[index].data.value);
+			if (object->element[index].data.flags & Object(isValue))
+				unmarkValue(object->element[index].data.value);
 		
 		for (index = 2, count = object->hashmapCount; index < count; ++index)
 			if (object->hashmap[index].data.flags & Object(isValue))
-			{
-//				Key.dumpTo(object->hashmap[index].data.key, stderr);
-//				fprintf(stderr, " < unmark\n");
 				unmarkValue(object->hashmap[index].data.value);
-			}
 	}
 }
 
@@ -159,8 +156,6 @@ void unmarkValue (struct Value value)
 
 void collectMarked (void)
 {
-	int total = 0;
-	
 	uint32_t index;
 	
 	index = self->functionsCount;
@@ -169,7 +164,6 @@ void collectMarked (void)
 		{
 			Function.destroy(self->functions[index]);
 			self->functions[index] = self->functions[--self->functionsCount];
-			++total;
 		}
 	
 	index = self->objectsCount;
@@ -178,7 +172,6 @@ void collectMarked (void)
 		{
 			Object.destroy(self->objects[index]);
 			self->objects[index] = self->objects[--self->objectsCount];
-			++total;
 		}
 	
 	index = self->charsCount;
@@ -187,8 +180,5 @@ void collectMarked (void)
 		{
 			Chars.destroy(self->chars[index]);
 			self->chars[index] = self->chars[--self->charsCount];
-			++total;
 		}
-	
-//	fprintf(stderr, "collected total: %d\n", total);
 }
