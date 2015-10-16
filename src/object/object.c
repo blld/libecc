@@ -726,7 +726,7 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(extensible))
-			add(self, key, value, 0);
+			add(self, key, value, Object(writable) | Object(enumerable) | Object(configurable));
 	}
 }
 

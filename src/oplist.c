@@ -183,6 +183,8 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 							self->ops[index].native == Op.getLocalRef? Op.getLocalSlotRef:
 							self->ops[index].native == Op.setLocal? Op.setLocalSlot: NULL
 							, Value.integer(slotIndex), self->ops[index].text);
+						
+						break;
 					}
 				}
 			}

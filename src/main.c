@@ -30,7 +30,6 @@ int main (int argc, const char * argv[])
 		result = runTest(1);
 	else
 	{
-//		ecc->global->
 		ecc->this = Value.object(&ecc->global->context);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
 	}
