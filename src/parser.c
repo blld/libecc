@@ -112,12 +112,12 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 				error(self, Error.syntaxError(OpList.text(oplist), name));
 		}
 		
-		changeNative(oplist->ops, Op.getLocalRef);
+		oplist->ops[0].native = Op.getLocalRef;
 	}
-	else if (oplist->ops[oplist->opCount - 1].native == Op.getMember)
-		changeNative(oplist->ops, Op.getMemberRef);
+	else if (oplist->ops[0].native == Op.getMember)
+		oplist->ops[0].native = Op.getMemberRef;
 	else if (oplist->ops[0].native == Op.getProperty)
-		changeNative(oplist->ops, Op.getPropertyRef);
+		oplist->ops[0].native = Op.getPropertyRef;
 	else
 		error(self, Error.referenceError(OpList.text(oplist), "%s", name));
 	

@@ -537,6 +537,9 @@ struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 	if (value.type != Value(function))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", text.length, text.location)));
 	
+	// TODO
+	ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
+	
 	return callFunction(ops, ecc, value.data.function, argumentCount, 1);
 }
 
@@ -728,11 +731,13 @@ struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
+//	const struct Text *text = opText();
 	struct Value value = nextOp();
 	struct Value object = Value.toObject(value, ecc, opText());
 	struct Entry entry = Object.getMember(object.data.object, key);
 	if (!entry.value)
-		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
+		entry = Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
+//		Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not defined", text->length, text->location)));
 	
 	return Value.reference(entry.value);
 }

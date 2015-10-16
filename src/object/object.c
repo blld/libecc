@@ -730,7 +730,7 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 	}
 }
 
-void add (struct Object *self, struct Key key, struct Value value, enum Object(Flags) flags)
+struct Entry add (struct Object *self, struct Key key, struct Value value, enum Object(Flags) flags)
 {
 	uint32_t slot = 1;
 	int depth = 0;
@@ -739,7 +739,10 @@ void add (struct Object *self, struct Key key, struct Value value, enum Object(F
 	assert(key.data.integer);
 	
 	if (!(self->flags & Object(extensible)))
-		return;
+		return (struct Entry){
+			NULL,
+			(uint8_t *)&zeroFlag,
+		};
 	
 	do
 	{
@@ -771,6 +774,11 @@ void add (struct Object *self, struct Key key, struct Value value, enum Object(F
 	
 	self->hashmap[slot].data.value = value;
 	self->hashmap[slot].data.flags = Object(isValue) | flags;
+	
+	return (struct Entry){
+		&self->hashmap[slot].data.value,
+		&self->hashmap[slot].data.flags,
+	};
 }
 
 struct Value delete (struct Object *self, struct Key key)
