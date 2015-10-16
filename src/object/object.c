@@ -905,17 +905,17 @@ void dumpTo(struct Object *self, FILE *file)
 		}
 	}
 	
-	for (index = 0; index < self->hashmapCount; ++index)
+	if (!isArray)
 	{
-		if (self->hashmap[index].data.flags & Object(isValue))
+		for (index = 0; index < self->hashmapCount; ++index)
 		{
-			if (!isArray)
+			if (self->hashmap[index].data.flags & Object(isValue))
 			{
 				Key.dumpTo(self->hashmap[index].data.key, file);
 				fprintf(file, ": ");
+				Value.dumpTo(self->hashmap[index].data.value, file);
+				fprintf(file, ", ");
 			}
-			Value.dumpTo(self->hashmap[index].data.value, file);
-			fprintf(file, ", ");
 		}
 	}
 	
