@@ -34,16 +34,16 @@ Interface(Pool,
 	,
 	{
 		struct Function **functions;
-		uint16_t functionsCount;
-		uint16_t functionsCapacity;
+		uint32_t functionsCount;
+		uint32_t functionsCapacity;
 		
 		struct Object **objects;
-		uint16_t objectsCount;
-		uint16_t objectsCapacity;
+		uint32_t objectsCount;
+		uint32_t objectsCapacity;
 		
 		struct Chars **chars;
-		uint16_t charsCount;
-		uint16_t charsCapacity;
+		uint32_t charsCount;
+		uint32_t charsCapacity;
 	}
 )
 

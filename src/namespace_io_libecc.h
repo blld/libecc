@@ -31,5 +31,8 @@
 #define Chars io_libecc_Chars
 #define Pool io_libecc_Pool
 #define Entry io_libecc_Entry
+#define Math io_libecc_Math
+#define Number io_libecc_Number
+#define RegExp io_libecc_RegExp
 
 #endif

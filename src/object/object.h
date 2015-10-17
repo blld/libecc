@@ -19,6 +19,9 @@
 
 #define io_libecc_Object(X) io_libecc_object_ ## X
 
+extern struct Object * Object(prototype);
+extern struct Function * Object(constructor);
+
 enum Object(Flags)
 {
 	/* object flags */
@@ -37,12 +40,8 @@ enum Object(Flags)
 #include "interface.h"
 Interface(Object,
 	
-	(void, setupPrototype ,(void))
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
-	(struct Object *, prototype ,(void))
-	(struct Function *, constructor ,(void))
 	
 	(struct Object *, create ,(struct Object * prototype))
 	(struct Object *, createSized ,(struct Object * prototype, uint32_t size))

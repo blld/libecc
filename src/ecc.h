@@ -13,6 +13,9 @@
 
 #include "value.h"
 #include "parser.h"
+#include "object/math.h"
+#include "object/number.h"
+#include "object/regexp.h"
 
 
 #include "interface.h"

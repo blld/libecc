@@ -13,9 +13,6 @@
 static const int defaultSize = 8;
 static const uint8_t zeroFlag = 0;
 
-static struct Object *objectPrototype = NULL;
-static struct Function *objectConstructor = NULL;
-
 static inline uint32_t getSlot (struct Object *self, struct Key key)
 {
 	return
@@ -167,7 +164,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	value = Op.argument(ecc, 0);
 	
 	if (value.type == Value(null) || value.type == Value(undefined))
-		ecc->result = Value.object(Object.create(objectPrototype));
+		ecc->result = Value.object(Object.create(Object(prototype)));
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
@@ -207,7 +204,7 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	{
 		const enum Object(Flags) resultFlags = Object(writable) | Object(enumerable) | Object(configurable);
 		
-		struct Object *result = Object.create(Object.prototype());
+		struct Object *result = Object.create(Object(prototype));
 		
 		Object.add(result, Key(value), *entry.value, resultFlags);
 		Object.add(result, Key(writable), Value.boolean(*entry.flags & Object(writable)), resultFlags);
@@ -431,55 +428,43 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 
 // MARK: - Methods
 
-void setupPrototype ()
-{
-	objectPrototype = create(NULL);
-}
+struct Object * Object(prototype) = NULL;
+struct Function * Object(constructor) = NULL;
 
 void setup ()
 {
 	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
-	Function.addToObject(objectPrototype, "toString", toString, 0, flags);
-	Function.addToObject(objectPrototype, "toLocaleString", toString, 0, flags);
-	Function.addToObject(objectPrototype, "valueOf", valueOf, 0, flags);
-	Function.addToObject(objectPrototype, "hasOwnProperty", hasOwnProperty, 1, flags);
-	Function.addToObject(objectPrototype, "isPrototypeOf", isPrototypeOf, 1, flags);
-	Function.addToObject(objectPrototype, "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
+	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
+	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, flags);
+	Function.addToObject(Object(prototype), "hasOwnProperty", hasOwnProperty, 1, flags);
+	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
+	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	objectConstructor = Function.createWithNative(NULL, constructorFunction, 1);
-	Function.addToObject(&objectConstructor->object, "getPrototypeOf", getPrototypeOf, 1, flags);
-	Function.addToObject(&objectConstructor->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
-	Function.addToObject(&objectConstructor->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
-	Function.addToObject(&objectConstructor->object, "create", objectCreate, -1, flags);
-	Function.addToObject(&objectConstructor->object, "defineProperty", defineProperty, 1, flags);
-	Function.addToObject(&objectConstructor->object, "defineProperties", defineProperties, 1, flags);
-	Function.addToObject(&objectConstructor->object, "seal", seal, 1, flags);
-	Function.addToObject(&objectConstructor->object, "freeze", freeze, 1, flags);
-	Function.addToObject(&objectConstructor->object, "preventExtensions", preventExtensions, 1, flags);
-	Function.addToObject(&objectConstructor->object, "isSealed", isSealed, 1, flags);
-	Function.addToObject(&objectConstructor->object, "isFrozen", isFrozen, 1, flags);
-	Function.addToObject(&objectConstructor->object, "isExtensible", isExtensible, 1, flags);
-	Function.addToObject(&objectConstructor->object, "keys", keys, 1, flags);
+	Object(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
+	Function.addToObject(&Object(constructor)->object, "getPrototypeOf", getPrototypeOf, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
+	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "create", objectCreate, -1, flags);
+	Function.addToObject(&Object(constructor)->object, "defineProperty", defineProperty, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "defineProperties", defineProperties, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "seal", seal, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "freeze", freeze, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "preventExtensions", preventExtensions, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "isSealed", isSealed, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "isFrozen", isFrozen, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "isExtensible", isExtensible, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "keys", keys, 1, flags);
 	
-	Object.add(objectPrototype, Key(constructor), Value.function(objectConstructor), 0);
-	Object.add(&objectConstructor->object, Key(prototype), Value.object(objectPrototype), 0);
+	Object.add(Object(prototype), Key(constructor), Value.function(Object(constructor)), 0);
+	Object.add(&Object(constructor)->object, Key(prototype), Value.object(Object(prototype)), 0);
 }
 
 void teardown (void)
 {
-	objectPrototype = NULL;
-	objectConstructor = NULL;
-}
-
-struct Object *prototype (void)
-{
-	return objectPrototype;
-}
-
-struct Function *constructor (void)
-{
-	return objectConstructor;
+	Object(prototype) = NULL;
+	Object(constructor) = NULL;
 }
 
 struct Object * create (struct Object *prototype)
@@ -897,7 +882,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->prototype == Array.prototype();
+	isArray = self->prototype == Array(prototype);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	

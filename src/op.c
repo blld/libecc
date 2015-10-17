@@ -328,7 +328,7 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 {
 	uint32_t index = 0;
 	
-	struct Object *arguments = Object.create(Object.prototype());
+	struct Object *arguments = Object.create(Object(prototype));
 	Object.resizeElement(arguments, argumentCount);
 	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 	arguments->type = &Text(argumentsType);
@@ -360,7 +360,7 @@ static inline void populateContextWithArguments (const struct Op ** const ops, s
 {
 	uint32_t index = 0;
 	
-	struct Object *arguments = Object.create(Object.prototype());
+	struct Object *arguments = Object.create(Object(prototype));
 	Object.resizeElement(arguments, argumentCount);
 	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
 	arguments->type = &Text(argumentsType);
@@ -424,9 +424,7 @@ static inline struct Value callOps (const struct Op * const ops, struct Ecc * co
 {
 	struct Value callerThis = ecc->this;
 	struct Object *callerContext = ecc->context;
-	int callerConstruct = ecc->construct;
 	const struct Op *callOps = ops;
-	struct Value value;
 	
 	ecc->this = this;
 	ecc->context = context;
@@ -434,13 +432,11 @@ static inline struct Value callOps (const struct Op * const ops, struct Ecc * co
 	ecc->result = Value.undefined();
 	
 	ops->native(&callOps, ecc);
-	value = ecc->result;
 	
 	ecc->this = callerThis;
 	ecc->context = callerContext;
-	ecc->construct = callerConstruct;
 	
-	return value;
+	return ecc->result;
 }
 
 struct Value callFunctionArguments (struct Function *function, struct Ecc * const ecc, struct Value this, struct Object *arguments)
@@ -605,7 +601,7 @@ struct Value function (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Object *object = Object.create(Object.prototype());
+	struct Object *object = Object.create(Object(prototype));
 	struct Value value;
 	int isGetter, isSetter;
 	uint32_t count;
@@ -1242,10 +1238,10 @@ struct Value bitOrAssignRef (const struct Op ** const ops, struct Ecc * const ec
 
 // MARK: Statement
 
-struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
+struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
-	struct Object *context = Object.create(ecc->context);
+	struct Object *context = ecc->context;
 	struct Key key = Key(none);
 	
 	const struct Op * volatile rethrowOps = NULL;
@@ -1253,12 +1249,11 @@ struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 	volatile struct Value value = Value.undefined();
 	struct Value finallyValue;
 	
-	ecc->context = context;
-	
 	if (!setjmp(*Ecc.pushEnv(ecc))) // try
 		value = nextOp();
 	else
 	{
+		ecc->context = Object.create(context);
 		value = ecc->result;
 		rethrowOps = *ops;
 		
@@ -1270,7 +1265,7 @@ struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(context, key, ecc->result, 0);
+				Object.add(ecc->context, key, ecc->result, 0);
 				ecc->result = Value.undefined();
 				value = nextOp(); // execute until noop
 				rethrow = 0;
@@ -1279,8 +1274,6 @@ struct Value try(const struct Op ** const ops, struct Ecc * const ecc)
 	}
 	
 	Ecc.popEnv(ecc);
-	
-	ecc->context = context->prototype;
 	
 	*ops = end; // op[end] = Op.jump, to after catch
 	finallyValue = nextOp(); // jump to after catch, and execute until noop

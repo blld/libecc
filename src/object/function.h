@@ -17,6 +17,9 @@
 
 #define io_libecc_Function(X) io_libecc_function_ ## X
 
+extern struct Object * Function(prototype);
+extern struct Function * Function(constructor);
+
 enum Function(Flags) {
 	Function(needHeap)      = 1 << 1,
 	Function(needArguments) = 1 << 2,
@@ -32,9 +35,6 @@ Interface(Function,
 	
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
-	(struct Object *, prototype ,(void))
-	(struct Function *, constructor ,(void))
 	
 	(struct Function *, create ,(struct Object *prototype))
 	(struct Function *, createSized ,(struct Object *prototype, uint32_t size))

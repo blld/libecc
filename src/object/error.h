@@ -16,19 +16,29 @@
 #include "object.h"
 
 
+#define io_libecc_Error(X) io_libecc_error_ ## X
+
+extern struct Object * Error(prototype);
+extern struct Object * Error(rangePrototype);
+extern struct Object * Error(referencePrototype);
+extern struct Object * Error(syntaxPrototype);
+extern struct Object * Error(typePrototype);
+extern struct Object * Error(uriPrototype);
+
+extern struct Function * Error(constructor);
+extern struct Function * Error(rangeConstructor);
+extern struct Function * Error(referenceConstructor);
+extern struct Function * Error(syntaxConstructor);
+extern struct Function * Error(typeConstructor);
+extern struct Function * Error(uriConstructor);
+
+
 #include "interface.h"
 
 Interface(Error,
 	
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
-	(struct Object *, prototype ,(void))
-	(struct Object *, rangePrototype ,(void))
-	(struct Object *, referencePrototype ,(void))
-	(struct Object *, syntaxPrototype ,(void))
-	(struct Object *, typePrototype ,(void))
-	(struct Object *, uriPrototype ,(void))
 	
 	(struct Error *, error ,(struct Text, const char *format, ...))
 	(struct Error *, rangeError ,(struct Text, const char *format, ...))

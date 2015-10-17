@@ -672,14 +672,15 @@ static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 
 static struct OpList * logicalAnd (struct Parser *self, int noIn)
 {
+	int32_t opCount;
 	struct OpList *oplist = bitwiseOr(self, noIn), *nextOp = NULL;
 	struct Text text = self->lexer->text;
 	while (acceptToken(self, Lexer(logicalAndToken)))
-		if (oplist)
+		if (oplist && (nextOp = bitwiseOr(self, noIn)))
 		{
-			nextOp = bitwiseOr(self, noIn);
+			opCount = nextOp->opCount;
 			oplist = OpList.join(oplist, nextOp);
-			oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.integer(nextOp->opCount), OpList.text(oplist)), oplist);
+			oplist = OpList.unshift(Op.make(Op.logicalAnd, Value.integer(opCount), OpList.text(oplist)), oplist);
 		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
@@ -689,14 +690,15 @@ static struct OpList * logicalAnd (struct Parser *self, int noIn)
 
 static struct OpList * logicalOr (struct Parser *self, int noIn)
 {
+	int32_t opCount;
 	struct OpList *oplist = logicalAnd(self, noIn), *nextOp = NULL;
 	struct Text text = self->lexer->text;
 	while (acceptToken(self, Lexer(logicalOrToken)))
-		if (oplist)
+		if (oplist && (nextOp = logicalAnd(self, noIn)))
 		{
-			nextOp = logicalAnd(self, noIn);
+			opCount = nextOp->opCount;
 			oplist = OpList.join(oplist, nextOp);
-			oplist = OpList.unshift(Op.make(Op.logicalOr, Value.integer(nextOp->opCount), OpList.text(oplist)), oplist);
+			oplist = OpList.unshift(Op.make(Op.logicalOr, Value.integer(opCount), OpList.text(oplist)), oplist);
 		}
 		else
 			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));

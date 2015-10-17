@@ -10,8 +10,8 @@
 
 // MARK: - Private
 
-static struct Object *arrayPrototype = NULL;
-static struct Function *arrayConstructor = NULL;
+struct Object * Array(prototype) = NULL;
+struct Function * Array(constructor) = NULL;
 
 //static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 //{
@@ -103,25 +103,21 @@ void setup (void)
 {
 	enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
-	arrayPrototype = Object.create(Object.prototype());
-	arrayPrototype->type = &Text(arrayType);
+	Array(prototype) = Object.create(Object(prototype));
+	Array(prototype)->type = &Text(arrayType);
 	
-	Function.addToObject(arrayPrototype, "toString", toString, 0, flags);
-//	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);
-//	Function.addToObject(arrayPrototype, "valueOf", valueOf, 0);
-//	Function.addToObject(arrayPrototype, "hasOwnProperty", hasOwnProperty, 0);
-//	Function.addToObject(arrayPrototype, "isPrototypeOf", isPrototypeOf, 0);
-//	Function.addToObject(arrayPrototype, "propertyIsEnumerable", propertyIsEnumerable, 0);
-	Object.add(arrayPrototype, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
+	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
+	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	
-	arrayConstructor = Function.createWithNative(arrayPrototype, constructorFunction, 1);
+	Array(constructor) = Function.createWithNative(Array(prototype), constructorFunction, 1);
 	
-	Object.add(arrayPrototype, Key(constructor), Value.function(arrayConstructor), 0);
+	Object.add(Array(prototype), Key(constructor), Value.function(Array(constructor)), 0);
 }
 
 void teardown (void)
 {
-//	Object.destroy(arrayPrototype), arrayPrototype = NULL;
+	Array(prototype) = NULL;
+	Array(constructor) = NULL;
 }
 
 struct Object *create (void)
@@ -131,20 +127,10 @@ struct Object *create (void)
 
 struct Object *createSized (uint32_t size)
 {
-	struct Object *self = Object.create(arrayPrototype);
+	struct Object *self = Object.create(Array(prototype));
 	assert(self);
 	Object.resizeElement(self, size);
 	self->type = &Text(arrayType);
 	
 	return self;
-}
-
-struct Object *prototype (void)
-{
-	return arrayPrototype;
-}
-
-struct Function *constructor (void)
-{
-	return arrayConstructor;
 }

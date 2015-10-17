@@ -10,12 +10,19 @@
 
 // MARK: - Private
 
-static struct Object *errorPrototype = NULL;
-static struct Object *rangeErrorPrototype = NULL;
-static struct Object *referenceErrorPrototype = NULL;
-static struct Object *syntaxErrorPrototype = NULL;
-static struct Object *typeErrorPrototype = NULL;
-static struct Object *uriErrorPrototype = NULL;
+struct Object * Error(prototype) = NULL;
+struct Object * Error(rangePrototype) = NULL;
+struct Object * Error(referencePrototype) = NULL;
+struct Object * Error(syntaxPrototype) = NULL;
+struct Object * Error(typePrototype) = NULL;
+struct Object * Error(uriPrototype) = NULL;
+
+struct Function * Error(constructor) = NULL;
+struct Function * Error(rangeConstructor) = NULL;
+struct Function * Error(referenceConstructor) = NULL;
+struct Function * Error(syntaxConstructor) = NULL;
+struct Function * Error(typeConstructor) = NULL;
+struct Function * Error(uriConstructor) = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
@@ -56,7 +63,7 @@ static void initName(struct Object *object, const struct Text *text)
 
 static struct Object *createErrorType (const struct Text *text)
 {
-	struct Object *object = Object.create(errorPrototype);
+	struct Object *object = Object.create(Error(prototype));
 	initName(object, text);
 	return object;
 }
@@ -65,15 +72,15 @@ static struct Object *createErrorType (const struct Text *text)
 
 void setup (void)
 {
-	errorPrototype = Object.create(Object.prototype());
-	errorPrototype->type = &Text(errorType);
-	initName(errorPrototype, &Text(errorName));
+	Error(prototype) = Object.create(Object(prototype));
+	Error(prototype)->type = &Text(errorType);
+	initName(Error(prototype), &Text(errorName));
 	
-	rangeErrorPrototype = createErrorType(&Text(rangeErrorName));
-	referenceErrorPrototype = createErrorType(&Text(referenceErrorName));
-	syntaxErrorPrototype = createErrorType(&Text(syntaxErrorName));
-	typeErrorPrototype = createErrorType(&Text(typeErrorName));
-	uriErrorPrototype = createErrorType(&Text(uriErrorName));
+	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
+	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
+	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
+	Error(typePrototype) = createErrorType(&Text(typeErrorName));
+	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
 }
 
 void teardown (void)
@@ -87,36 +94,6 @@ void teardown (void)
 //	Object.destroy(uriErrorPrototype), uriErrorPrototype = NULL;
 }
 
-struct Object *prototype (void)
-{
-	return errorPrototype;
-}
-
-struct Object *rangePrototype (void)
-{
-	return rangeErrorPrototype;
-}
-
-struct Object *referencePrototype (void)
-{
-	return referenceErrorPrototype;
-}
-
-struct Object *syntaxPrototype (void)
-{
-	return syntaxErrorPrototype;
-}
-
-struct Object *typePrototype (void)
-{
-	return typeErrorPrototype;
-}
-
-struct Object *uriPrototype (void)
-{
-	return uriErrorPrototype;
-}
-
 struct Error * error (struct Text text, const char *format, ...)
 {
 	struct Error *self;
@@ -128,7 +105,7 @@ struct Error * error (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(errorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(prototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	
 	return self;
@@ -145,7 +122,7 @@ struct Error * rangeError (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(rangeErrorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(rangePrototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	
 	return self;
@@ -162,7 +139,7 @@ struct Error * referenceError (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(referenceErrorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(referencePrototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	
 	return self;
@@ -179,7 +156,7 @@ struct Error * syntaxError (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(syntaxErrorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(syntaxPrototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }
@@ -195,7 +172,7 @@ struct Error * typeError (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(typeErrorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(typePrototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }
@@ -211,7 +188,7 @@ struct Error * uriError (struct Text text, const char *format, ...)
 	va_end(ap);
 	
 	va_start(ap, format);
-	self = createVA(uriErrorPrototype, text, Chars.createVA(length, format, ap));
+	self = createVA(Error(uriPrototype), text, Chars.createVA(length, format, ap));
 	va_end(ap);
 	return self;
 }

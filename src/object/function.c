@@ -10,8 +10,8 @@
 
 // MARK: - Private
 
-static struct Object *functionPrototype = NULL;
-static struct Function *functionConstructor = NULL;
+struct Object * Function(prototype) = NULL;
+struct Function * Function(constructor) = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
@@ -144,33 +144,23 @@ void setup ()
 {
 	struct Function *functionPrototypeFunction;
 	
-	functionPrototype = Object.prototype();
+	Function(prototype) = Object(prototype);
 	functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
-	functionPrototype = &functionPrototypeFunction->object;
-	Function.addToObject(functionPrototype, "toString", toString, 0, 0);
-	Function.addToObject(functionPrototype, "apply", apply, 2, 0);
-	Function.addToObject(functionPrototype, "call", call, -1, 0);
+	Function(prototype) = &functionPrototypeFunction->object;
+	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
+	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
+	Function.addToObject(Function(prototype), "call", call, -1, 0);
 	
-	functionConstructor = Function.createWithNative(functionPrototype, constructorFunction, -1);
+	Function(constructor) = Function.createWithNative(Function(prototype), constructorFunction, -1);
 	
-	Object.add(functionPrototype, Key(constructor), Value.function(functionConstructor), 0);
-	Object.add(&functionConstructor->object, Key(prototype), Value.function(functionPrototypeFunction), 0);
+	Object.add(Function(prototype), Key(constructor), Value.function(Function(constructor)), 0);
+	Object.add(&Function(constructor)->object, Key(prototype), Value.function(functionPrototypeFunction), 0);
 }
 
 void teardown (void)
 {
-	functionPrototype = NULL;
-	functionConstructor = NULL;
-}
-
-struct Object * prototype (void)
-{
-	return functionPrototype;
-}
-
-struct Function * constructor (void)
-{
-	return functionConstructor;
+	Function(prototype) = NULL;
+	Function(constructor) = NULL;
 }
 
 struct Function * create (struct Object *prototype)
@@ -187,12 +177,12 @@ struct Function * createSized (struct Object *prototype, uint32_t size)
 	
 	*self = Function.identity;
 	
-	Object.initialize(&self->object, functionPrototype);
+	Object.initialize(&self->object, Function(prototype));
 	Object.initializeSized(&self->context, prototype, size);
 	
 	self->object.type = &Text(functionType);
 	
-	proto = Object.create(Object.prototype());
+	proto = Object.create(Object(prototype));
 	Object.add(proto, Key(constructor), Value.function(self), Object(writable) | Object(configurable));
 	Object.add(&self->object, Key(prototype), Value.object(proto), Object(writable));
 	

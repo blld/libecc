@@ -19,7 +19,7 @@ static struct Object *dateConstructor = NULL;
 
 void setup (void)
 {
-	datePrototype = Object.create(Object.prototype());
+	datePrototype = Object.create(Object(prototype));
 	datePrototype->type = &Text(dateType);
 	
 //	Function.addToObject(arrayPrototype, "toString", toString, 0);
