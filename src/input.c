@@ -149,10 +149,11 @@ void printText (struct Input *self, struct Text text)
 					mark[b] = location[b];
 			
 			index = text.location - location;
-			while (++index < text.location - location + text.length)
+			while (++index <= length)
 				mark[index] = '~';
 			
 			mark[text.location - location] = '^';
+			mark[length + 1] = '\0';
 			
 			if ((text.location - location) > 0)
 				Env.printColor(0, Env(invisible), "%.*s", (text.location - location), mark);
