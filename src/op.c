@@ -657,15 +657,12 @@ struct Value this (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Key key;
-	struct Entry entry;
-	
-	ecc->refObject = Value.undefined();
-	key = opValue().data.key;
-	entry = Object.getMember(ecc->context, key);
+	struct Key key = opValue().data.key;
+	struct Entry entry = Object.getMember(ecc->context, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
+	ecc->refObject = Value.undefined();
 	return *entry.value;
 }
 
@@ -681,22 +678,18 @@ struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Value value;
 	struct Key key = opValue().data.key;
 	struct Entry entry = Object.getMember(ecc->context, key);
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	value = nextOp();
-	return *entry.value = value;
+	return *entry.value = nextOp();
 }
 
 struct Value getLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	int32_t slot;
-	
+	int32_t slot = opValue().data.integer;
 	ecc->refObject = Value.undefined();
-	slot = opValue().data.integer;
 	return ecc->context->hashmap[slot].data.value;
 }
 
@@ -709,19 +702,16 @@ struct Value getLocalSlotRef (const struct Op ** const ops, struct Ecc * const e
 struct Value setLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	struct Value value = nextOp();
-	return ecc->context->hashmap[slot].data.value = value;
+	return ecc->context->hashmap[slot].data.value = nextOp();
 }
 
 struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
-	struct Entry entry;
+	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Entry entry = Object.getMember(object.data.object, key);
 	ecc->refObject = object;
-	entry = Object.getMember(object.data.object, key);
 	return getEntry(entry, ecc, object);
 }
 
@@ -729,12 +719,11 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Entry entry = Object.getMember(object.data.object, key);
 	if (!entry.value)
 	{
-		entry = Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
+		entry = Object.add(object.data.object, key, Value.undefined(), Object(writable) | Object(enumerable) | Object(configurable));
 		if (!entry.value)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
@@ -746,14 +735,14 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Entry entry = Object.getMember(object.data.object, key);
-	value = nextOp();
+	struct Value value = nextOp();
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
+	else
+		Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
 	
-	Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
 	return value;
 }
 
@@ -761,8 +750,7 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
 	struct Key key = opValue().data.key;
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, opText());
+	struct Value object = Value.toObject(nextOp(), ecc, opText());
 	struct Value result = Object.delete(object.data.object, key);
 	if (!Value.isTrue(result))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
@@ -773,46 +761,41 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
-	struct Entry entry;
+	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value property = nextOp();
+	struct Entry entry = Object.getProperty(object.data.object, property);
 	ecc->refObject = object;
-	entry = Object.getProperty(object.data.object, nextOp());
 	return getEntry(entry, ecc, object);
 }
 
 struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
-	struct Entry entry;
-	ecc->refObject = object;
-	entry = Object.getProperty(object.data.object, nextOp());
+	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value property = nextOp();
+	struct Entry entry = Object.getProperty(object.data.object, property);
 	if (!entry.value)
 	{
-		entry = Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
+		Object.setProperty(object.data.object, property, Value.undefined());
+		entry = Object.getProperty(object.data.object, property);
 		if (!entry.value)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
-	
+	ecc->refObject = object;
 	return Value.reference(entry.value);
 }
 
 struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value property = nextOp();
-	struct Entry entry;
-	value = nextOp();
-	
-	entry = Object.getProperty(object.data.object, property);
+	struct Value value = nextOp();
+	struct Entry entry = Object.getProperty(object.data.object, property);
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
-	
-	Object.setProperty(object.data.object, property, value);
+	else
+		Object.setProperty(object.data.object, property, value);
 	
 	return value;
 }
@@ -820,8 +803,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
-	struct Value value = nextOp();
-	struct Value object = Value.toObject(value, ecc, text);
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value property = nextOp();
 	struct Value result = Object.deleteProperty(object.data.object, property);
 	if (!Value.isTrue(result))
@@ -829,7 +811,6 @@ struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ec
 		struct Value string = Value.toString(property);
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
 	}
-	
 	return result;
 }
 
