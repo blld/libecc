@@ -1,6 +1,6 @@
 
-object/
-bin/
+build/object/
+build/bin/
 
 
 # Created by https://www.gitignore.io
