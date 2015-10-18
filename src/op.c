@@ -527,11 +527,11 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 
 struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Text text = (*ops)->text;
+	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(function))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a constructor", text.length, text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
 	
 	// TODO
 	ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
@@ -541,11 +541,11 @@ struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Text text = (*ops)->text;
+	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(function))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(text, "%.*s is not a function", text.length, text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a function", text->length, text->location)));
 	
 	return callFunction(ops, ecc, value.data.function, argumentCount, 0);
 }
@@ -1245,7 +1245,6 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 		value = nextOp();
 	else
 	{
-		ecc->context = Object.create(context);
 		value = ecc->result;
 		rethrowOps = *ops;
 		
@@ -1257,6 +1256,7 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
+				ecc->context = Object.create(context);
 				Object.add(ecc->context, key, ecc->result, 0);
 				ecc->result = Value.undefined();
 				value = nextOp(); // execute until noop
