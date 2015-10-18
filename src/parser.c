@@ -414,13 +414,13 @@ static struct OpList * leftHandSide (struct Parser *self)
 				OpList.destroy(oplist), oplist = NULL;
 			
 			oplist = OpList.join(oplist, arguments(self, &count));
+			text = Text.join(OpList.text(oplist), self->lexer->text);
 			
 			if (isEval)
 				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), text), oplist);
 			else
 				oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), text), oplist);
 			
-			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, ')'))
 				return oplist;
 		}
