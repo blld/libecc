@@ -148,13 +148,13 @@ struct Ecc *create (void)
 	Function.addNative(self->global, "parseFloat", parseFloat, 1, 0);
 	Function.addNative(self->global, "isNaN", isNaN, 1, 0);
 	Function.addNative(self->global, "isFinite", isFinite, 1, 0);
-	
 	Function.addValue(self->global, "Object", Value.function(Object(constructor)), 0);
 	Function.addValue(self->global, "Array", Value.function(Array(constructor)), 0);
 	Function.addValue(self->global, "Function", Value.function(Function(constructor)), 0);
 	Function.addValue(self->global, "String", Value.function(String(constructor)), 0);
 	Function.addValue(self->global, "Number", Value.function(Number(constructor)), 0);
 	Function.addValue(self->global, "RegExp", Value.function(RegExp(constructor)), 0);
+	Function.addValue(self->global, "Math", Value.object(Math(object)), 0);
 	
 	Function.addValue(self->global, "Error", Value.object(Error(prototype)), 0);
 	Function.addValue(self->global, "RangeError", Value.object(Error(rangePrototype)), 0);
@@ -162,9 +162,7 @@ struct Ecc *create (void)
 	Function.addValue(self->global, "SyntaxError", Value.object(Error(syntaxPrototype)), 0);
 	Function.addValue(self->global, "TypeError", Value.object(Error(typePrototype)), 0);
 	Function.addValue(self->global, "URIError", Value.object(Error(uriPrototype)), 0);
-	
 	Function.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
-	Function.addValue(self->global, "Math", Value.object(Math.object()), 0);
 	
 	self->context = &self->global->context;
 	
@@ -187,17 +185,16 @@ void destroy (struct Ecc *self)
 		Function.teardown();
 		Object.teardown();
 		String.teardown();
-//		Error.teardown();
-//		Array.teardown();
-//		Date.teardown();
+		Error.teardown();
+		Array.teardown();
+		Date.teardown();
 		Math.teardown();
 		Number.teardown();
 		RegExp.teardown();
 		
 		Key.teardown();
-		Env.teardown();
-		
 		Pool.teardown();
+		Env.teardown();
 	}
 }
 
