@@ -15,8 +15,8 @@
 #include "value.h"
 #include "object/error.h"
 
+#include "interface.h"
 
-#define io_libecc_Lexer(X) io_libecc_lexer_ ## X
 
 #define io_libecc_lexer_Tokens \
 	_( no ,"end of script",= 0)\
@@ -87,14 +87,12 @@
 	_( xorAssign ,"'^='",)\
 	\
 
-#define _(X, S, ...) Lexer(X ## Token) __VA_ARGS__,
+#define _(X, S, V) Lexer(X ## Token) V,
 enum Lexer(Token) {
 	io_libecc_lexer_Tokens
 };
 #undef _
 
-
-#include "interface.h"
 
 Interface(Lexer,
 	

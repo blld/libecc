@@ -583,7 +583,7 @@ const char * tokenChars (enum Lexer(Token) token)
 		const char *name;
 		const enum Lexer(Token) token;
 	} static const tokenList[] = {
-		#define _(X, S, I) { sizeof(S "") > sizeof("")? S "": #X, Lexer(X ## Token), },
+		#define _(X, S, V) { sizeof(S "") > sizeof("")? S "": #X, Lexer(X ## Token), },
 		io_libecc_lexer_Tokens
 		#undef _
 	};

@@ -15,6 +15,8 @@
 #include "value.h"
 #include "object/function.h"
 
+#include "interface.h"
+
 
 #define io_libecc_op_List \
 	\
@@ -116,8 +118,6 @@
 	_( iterateMoreOrEqualRef )\
 	_( iterateInRef )\
 
-
-#include "interface.h"
 
 #define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
 Interface(Op,

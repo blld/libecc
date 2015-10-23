@@ -13,16 +13,14 @@
 
 #include "pool.h"
 
+#include "interface.h"
 
-#define io_libecc_Chars(X) io_libecc_chars_ ## X
 
 enum Chars(Flags)
 {
 	Chars(mark) = 1 << 0,
 };
 
-
-#include "interface.h"
 
 Interface(Chars,
 	

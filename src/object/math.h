@@ -13,13 +13,11 @@
 
 #include "object.h"
 
+#include "interface.h"
 
-#define io_libecc_Math(X) io_libecc_math_ ## X
 
 extern struct Object * Math(object);
 
-
-#include "interface.h"
 
 Interface(Math,
 	

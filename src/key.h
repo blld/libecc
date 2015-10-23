@@ -13,8 +13,8 @@
 
 #include "text.h"
 
+#include "interface.h"
 
-#define io_libecc_Key(X) io_libecc_key_ ## X
 
 extern struct Key Key(none);
 extern struct Key Key(prototype);
@@ -33,8 +33,6 @@ extern struct Key Key(configurable);
 extern struct Key Key(get);
 extern struct Key Key(set);
 
-
-#include "interface.h"
 
 Interface(Key,
 	

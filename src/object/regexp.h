@@ -13,14 +13,12 @@
 
 #include "object.h"
 
+#include "interface.h"
 
-#define io_libecc_RegExp(X) io_libecc_regexp_ ## X
 
 extern struct Object * RegExp(prototype);
 extern struct Function * RegExp(constructor);
 
-
-#include "interface.h"
 
 Interface(RegExp,
 	

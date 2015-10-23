@@ -10,9 +10,11 @@
 #define io_libecc_native_h
 
 #include "namespace_io_libecc.h"
+
 struct Op;
 struct Ecc;
 struct Value;
+
 
 typedef __typeof__(struct Value) (* io_libecc_Native) (const struct Op ** const ops, struct Ecc * const ecc);
 

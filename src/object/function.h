@@ -14,11 +14,8 @@
 #include "object.h"
 #include "native.h"
 
+#include "interface.h"
 
-#define io_libecc_Function(X) io_libecc_function_ ## X
-
-extern struct Object * Function(prototype);
-extern struct Function * Function(constructor);
 
 enum Function(Flags) {
 	Function(needHeap)      = 1 << 1,
@@ -28,8 +25,9 @@ enum Function(Flags) {
 	Function(isAccessor)    = Function(isGetter) | Function(isSetter),
 };
 
+extern struct Object * Function(prototype);
+extern struct Function * Function(constructor);
 
-#include "interface.h"
 
 Interface(Function,
 	

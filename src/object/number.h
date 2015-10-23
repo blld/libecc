@@ -13,14 +13,12 @@
 
 #include "object.h"
 
+#include "interface.h"
 
-#define io_libecc_Number(X) io_libecc_number_ ## X
 
 extern struct Object * Number(prototype);
 extern struct Function * Number(constructor);
 
-
-#include "interface.h"
 
 Interface(Number,
 	

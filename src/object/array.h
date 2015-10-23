@@ -13,14 +13,12 @@
 
 #include "value.h"
 
+#include "interface.h"
 
-#define io_libecc_Array(X) io_libecc_array_ ## X
 
 extern struct Object * Array(prototype);
 extern struct Function * Array(constructor);
 
-
-#include "interface.h"
 
 Interface(Array,
 	

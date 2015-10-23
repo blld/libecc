@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-#define textMake(T) { sizeof(T) - 1, T }
+#define textMake(T) { T, sizeof(T) - 1 }
 
 const struct Text Text(undefined) = textMake("undefined");
 const struct Text Text(null) = textMake("null");
@@ -53,8 +53,8 @@ const struct Text Text(inputErrorName) = textMake("InputError");
 struct Text make (const char *location, uint16_t length)
 {
 	return (struct Text){
-		length,
 		location,
+		length,
 	};
 }
 

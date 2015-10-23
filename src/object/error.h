@@ -15,8 +15,8 @@
 #include "chars.h"
 #include "object.h"
 
+#include "interface.h"
 
-#define io_libecc_Error(X) io_libecc_error_ ## X
 
 extern struct Object * Error(prototype);
 extern struct Object * Error(rangePrototype);
@@ -32,8 +32,6 @@ extern struct Function * Error(syntaxConstructor);
 extern struct Function * Error(typeConstructor);
 extern struct Function * Error(uriConstructor);
 
-
-#include "interface.h"
 
 Interface(Error,
 	

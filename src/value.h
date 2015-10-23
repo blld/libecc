@@ -15,8 +15,8 @@ struct Ecc;
 
 #include "key.h"
 
+#include "interface.h"
 
-#define io_libecc_Value(X) io_libecc_value_ ## X
 
 enum Value(Type) {
 	
@@ -52,8 +52,6 @@ enum Value(Type) {
 	Value(reference) = 0x4e,
 };
 
-
-#include "interface.h"
 
 Interface(Value,
 	

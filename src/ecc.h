@@ -17,8 +17,8 @@
 #include "object/number.h"
 #include "object/regexp.h"
 
-
 #include "interface.h"
+
 
 Interface(Ecc,
 	

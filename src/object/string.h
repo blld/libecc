@@ -13,14 +13,12 @@
 
 #include "object.h"
 
+#include "interface.h"
 
-#define io_libecc_String(X) io_libecc_string_ ## X
 
 extern struct Object * String(prototype);
 extern struct Function * String(constructor);
 
-
-#include "interface.h"
 
 Interface(String,
 	

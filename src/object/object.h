@@ -16,11 +16,8 @@
 #include "pool.h"
 #include "entry.h"
 
+#include "interface.h"
 
-#define io_libecc_Object(X) io_libecc_object_ ## X
-
-extern struct Object * Object(prototype);
-extern struct Function * Object(constructor);
 
 enum Object(Flags)
 {
@@ -36,8 +33,10 @@ enum Object(Flags)
 	Object(isValue) = 0x80,
 };
 
+extern struct Object * Object(prototype);
+extern struct Function * Object(constructor);
 
-#include "interface.h"
+
 Interface(Object,
 	
 	(void, setup ,(void))

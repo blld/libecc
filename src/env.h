@@ -11,8 +11,8 @@
 
 #include "namespace_io_libecc.h"
 
+#include "interface.h"
 
-#define io_libecc_Env(X) io_libecc_env_ ## X
 
 enum Env(Color) {
 	Env(black) = 30,
@@ -31,8 +31,6 @@ enum Env(Attribute) {
 	Env(invisible) = 8,
 };
 
-
-#include "interface.h"
 
 Interface(Env,
 	
