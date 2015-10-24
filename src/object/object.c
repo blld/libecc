@@ -102,12 +102,10 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	v = Value.toString(Op.argument(ecc, 0), NULL);
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
-	if (v.type == Value(key))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, v.data.key));
-	else if (v.type == Value(text))
+	if (v.type == Value(text))
 		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
 	else if (v.type == Value(chars))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.string->chars, v.data.string->length), 1)));
+		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.chars->chars, v.data.chars->length), 1)));
 	
 	return Value.undefined();
 }

@@ -231,8 +231,13 @@ struct Value toString (struct Value value, struct Text *buffer)
 	{
 		case Value(text):
 		case Value(chars):
-		case Value(string):
 			return value;
+		
+		case Value(key):
+			return Value.text(Key.textOf(value.data.key));
+		
+		case Value(string):
+			return Value.chars(value.data.string->value);
 		
 		case Value(null):
 			return Value.text(&Text(null));
@@ -280,9 +285,6 @@ struct Value toString (struct Value value, struct Text *buffer)
 			}
 			else
 				return Value.chars(Chars.create("%g", value.data.binary));
-		
-		case Value(key):
-			return Value.text(Key.textOf(value.data.key));
 		
 		case Value(object):
 			return Value.text(value.data.object->type);
@@ -419,7 +421,7 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(key):
 		case Value(text):
 		case Value(chars):
-			return Value.string(String.create("%.*s", Value.stringLength(value), Value.stringChars(value)));
+			return Value.string(String.create(Chars.create(stringChars(value), stringLength(value))));
 		
 		case Value(function):
 		case Value(object):

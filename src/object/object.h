@@ -92,7 +92,6 @@ Interface(Object,
 		uint32_t hashmapCount;
 		uint32_t hashmapCapacity;
 		
-		uint8_t traceCount;
 		uint8_t flags;
 	}
 )
