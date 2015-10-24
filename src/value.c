@@ -251,11 +251,11 @@ struct Value toString (struct Value value, struct Text *buffer)
 				return Value.text(&Text(zero));
 			else if (value.data.integer == 1)
 				return Value.text(&Text(one));
-//			else if (buffer && buffer->length > snprintf(NULL, 0, "%d", value.data.integer))
-//			{
-//				buffer->length = snprintf((char *)buffer->location, buffer->length, "%d", value.data.integer);
-//				return Value.text(buffer);
-//			}
+			else if (buffer && buffer->length > snprintf(NULL, 0, "%d", value.data.integer))
+			{
+				buffer->length = snprintf((char *)buffer->location, buffer->length, "%d", value.data.integer);
+				return Value.text(buffer);
+			}
 			else
 				return Value.chars(Chars.create("%d", value.data.integer));
 		
@@ -273,11 +273,11 @@ struct Value toString (struct Value value, struct Text *buffer)
 				else
 					return Value.text(&Text(infinity));
 			}
-//			else if (buffer && buffer->length > snprintf(NULL, 0, "%g", value.data.binary))
-//			{
-//				buffer->length = snprintf((char *)buffer->location, buffer->length, "%g", value.data.binary);
-//				return Value.text(buffer);
-//			}
+			else if (buffer && buffer->length > snprintf(NULL, 0, "%g", value.data.binary))
+			{
+				buffer->length = snprintf((char *)buffer->location, buffer->length, "%g", value.data.binary);
+				return Value.text(buffer);
+			}
 			else
 				return Value.chars(Chars.create("%g", value.data.binary));
 		
