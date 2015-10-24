@@ -23,7 +23,6 @@ Interface(Math,
 	
 	(void, setup ,(void))
 	(void, teardown ,(void))
-	
 	,
 	{
 		char empty;

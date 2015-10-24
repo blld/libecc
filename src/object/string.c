@@ -52,11 +52,15 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	
-	
-	ecc->result = Value.undefined();
+	value = Value.toString(Op.argument(ecc, 0), 0);
+	if (ecc->construct)
+		ecc->result = Value.string(String.create(Value.stringChars(value), Value.stringLength(value)));
+	else
+		ecc->result = value;
 	
 	return Value.undefined();
 }

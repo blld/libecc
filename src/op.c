@@ -1391,10 +1391,7 @@ struct Value switchOp (const struct Op ** const ops, struct Ecc * const ecc)
 		if (--value.data.integer) \
 			return value; /* return breaker */\
 		else \
-		{ \
-			*ops = endOps; \
-			return nextOp(); \
-		} \
+			break; \
 	} \
 	else \
 		*ops = nextOps;
