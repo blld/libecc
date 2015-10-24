@@ -42,6 +42,9 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 		else *b++ = '\0';
 	}
 	
+	while (chars->length && !chars->chars[chars->length - 1])
+		--chars->length;
+	
 	ecc->result = Value.chars(chars);
 	
 	return Value.undefined();

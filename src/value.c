@@ -225,7 +225,7 @@ int isTrue (struct Value value)
 		return 1;
 }
 
-struct Value toString (struct Value value)
+struct Value toString (struct Value value, struct Text *buffer)
 {
 	switch (value.type)
 	{
@@ -251,6 +251,11 @@ struct Value toString (struct Value value)
 				return Value.text(&Text(zero));
 			else if (value.data.integer == 1)
 				return Value.text(&Text(one));
+//			else if (buffer && buffer->length > snprintf(NULL, 0, "%d", value.data.integer))
+//			{
+//				buffer->length = snprintf((char *)buffer->location, buffer->length, "%d", value.data.integer);
+//				return Value.text(buffer);
+//			}
 			else
 				return Value.chars(Chars.create("%d", value.data.integer));
 		
@@ -268,6 +273,11 @@ struct Value toString (struct Value value)
 				else
 					return Value.text(&Text(infinity));
 			}
+//			else if (buffer && buffer->length > snprintf(NULL, 0, "%g", value.data.binary))
+//			{
+//				buffer->length = snprintf((char *)buffer->location, buffer->length, "%g", value.data.binary);
+//				return Value.text(buffer);
+//			}
 			else
 				return Value.chars(Chars.create("%g", value.data.binary));
 		
@@ -283,8 +293,8 @@ struct Value toString (struct Value value)
 		case Value(error):
 		{
 			struct Object *object = value.data.object;
-			struct Value name = Value.toString(Object.get(object, Key(name)));
-			struct Value message = Value.toString(Object.get(object, Key(message)));
+			struct Value name = Value.toString(Object.get(object, Key(name)), NULL);
+			struct Value message = Value.toString(Object.get(object, Key(message)), NULL);
 			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 		}
 		
@@ -531,8 +541,8 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(error):
 		{
-			struct Value name = toString(Object.get(&value.data.error->object, Key(name)));
-			struct Value message = toString(Object.get(&value.data.error->object, Key(message)));
+			struct Value name = toString(Object.get(&value.data.error->object, Key(name)), NULL);
+			struct Value message = toString(Object.get(&value.data.error->object, Key(message)), NULL);
 			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
 			fputs(": ", file);
 			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);

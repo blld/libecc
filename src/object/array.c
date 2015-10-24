@@ -28,6 +28,8 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	if (ecc->this.data.object->elementCount)
 	{
+		char bytes[256];
+		struct Text buffer = Text.make(bytes, 0);
 		struct Chars *chars = malloc(sizeof(*chars));
 		uint32_t length = 0, stringLength;
 		int notLast = 0;
@@ -44,7 +46,8 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 			{
 				value = ecc->this.data.object->element[index].data.value;
 				
-				value = Value.toString(value);
+				buffer.length = sizeof(bytes);
+				value = Value.toString(value, &buffer);
 				
 				stringLength = Value.stringLength(value);
 				chars = realloc(chars, sizeof(*chars) + length + stringLength + (notLast? 1: 0));
@@ -52,7 +55,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 				memcpy(chars->chars + length, Value.stringChars(value), stringLength);
 				length += stringLength;
 			}
-		
+			
 			if (notLast)
 				chars->chars[length++] = ',';
 			else

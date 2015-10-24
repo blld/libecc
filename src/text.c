@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-#define textMake(T) { T, sizeof(T) - 1 }
+#define textMake(T) { T, sizeof(T)-1 }
 
 const struct Text Text(undefined) = textMake("undefined");
 const struct Text Text(null) = textMake("null");
@@ -27,6 +27,7 @@ const struct Text Text(nan) = textMake("NaN");
 const struct Text Text(infinity) = textMake("Infinity");
 const struct Text Text(negativeInfinity) = textMake("-Infinity");
 const struct Text Text(nativeCode) = textMake("[native code]");
+const struct Text Text(empty) = textMake("");
 
 const struct Text Text(nullType) = textMake("[object Null]");
 const struct Text Text(undefinedType) =  textMake("[object Undefined]");

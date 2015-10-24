@@ -29,6 +29,8 @@ static inline uint32_t getSlot (struct Object *self, struct Key key)
 static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 {
 	int32_t element = -1;
+	char bytes[256];
+	struct Text buffer = Text.make(bytes, sizeof(bytes));
 	
 	if (property.type == Value(key))
 		*key = property.data.key;
@@ -40,7 +42,7 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 			element = property.data.integer;
 		else
 		{
-			property = Value.toString(property);
+			property = Value.toString(property, &buffer);
 			text = Text.make(Value.stringChars(property), Value.stringLength(property));
 			element = Lexer.parseElement(text);
 		}
@@ -97,7 +99,7 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	v = Value.toString(Op.argument(ecc, 0));
+	v = Value.toString(Op.argument(ecc, 0), NULL);
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	if (v.type == Value(key))

@@ -29,6 +29,7 @@ extern const struct Text Text(nan);
 extern const struct Text Text(infinity);
 extern const struct Text Text(negativeInfinity);
 extern const struct Text Text(nativeCode);
+extern const struct Text Text(empty);
 
 extern const struct Text Text(nullType);
 extern const struct Text Text(undefinedType);

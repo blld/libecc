@@ -112,7 +112,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 				chars[length++] = '{';
 			}
 			
-			value = Value.toString(Op.variableArgument(ecc, index));
+			value = Value.toString(Op.variableArgument(ecc, index), NULL);
 			valueLength = Value.stringLength(value);
 			chars = realloc(chars, sizeof(*chars) + length + valueLength + (index >= argumentCount - 2? 2: 1));
 			memcpy(chars + length, Value.stringChars(value), valueLength);

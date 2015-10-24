@@ -79,7 +79,7 @@ Interface(Value,
 	(int, isDynamic ,(struct Value))
 	(int, isTrue ,(struct Value))
 	
-	(struct Value, toString ,(struct Value))
+	(struct Value, toString ,(struct Value, struct Text *buffer))
 	(int, isString ,(struct Value))
 	(const char *, stringChars ,(struct Value))
 	(uint16_t, stringLength ,(struct Value))

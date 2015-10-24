@@ -31,9 +31,19 @@ static struct Value addition (struct Ecc * const ecc, struct Value a, const stru
 		
 		if (Value.isString(a) || Value.isString(b))
 		{
-			a = Value.toString(a);
-			b = Value.toString(b);
-			return Value.chars(Chars.create("%.*s%.*s", Value.stringLength(a), Value.stringChars(a), Value.stringLength(b), Value.stringChars(b)));
+			char charsA[256], charsB[256];
+			struct Text bufferA = Text.make(charsA, sizeof(charsA));
+			struct Text bufferB = Text.make(charsB, sizeof(charsB));
+			struct Chars *chars;
+			uint16_t lengthA, lengthB;
+			a = Value.toString(a, &bufferA);
+			b = Value.toString(b, &bufferB);
+			lengthA = Value.stringLength(a);
+			lengthB = Value.stringLength(b);
+			chars = Chars.createSized(lengthA + lengthB);
+			memcpy(chars->chars, Value.stringChars(a), lengthA);
+			memcpy(chars->chars + lengthA, Value.stringChars(b), lengthB);
+			return Value.chars(chars);
 		}
 		else
 			return Value.binary(Value.toBinary(a).data.binary + Value.toBinary(b).data.binary);
@@ -808,7 +818,7 @@ struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ec
 	struct Value result = Object.deleteProperty(object.data.object, property);
 	if (!Value.isTrue(result))
 	{
-		struct Value string = Value.toString(property);
+		struct Value string = Value.toString(property, NULL);
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
 	}
 	return result;

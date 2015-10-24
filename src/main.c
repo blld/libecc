@@ -78,7 +78,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 	if (!testVerbosity)
 		Ecc.popEnv(ecc);
 	
-	result = Value.toString(ecc->result);
+	result = Value.toString(ecc->result, NULL);
 	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))

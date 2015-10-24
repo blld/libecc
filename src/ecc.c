@@ -21,7 +21,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Op.argument(ecc, 0), NULL);
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
 	context = ecc->context;
@@ -43,7 +43,7 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Op.argument(ecc, 0), NULL);
 	radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
@@ -59,7 +59,7 @@ static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Op.argument(ecc, 0), NULL);
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseBinary(text);
@@ -262,11 +262,11 @@ int evalInput (struct Ecc *self, struct Input *input)
 			
 			if (Value.isObject(value))
 			{
-				name = Value.toString(Object.get(value.data.object, Key(name)));
-				message = Value.toString(Object.get(value.data.object, Key(message)));
+				name = Value.toString(Object.get(value.data.object, Key(name)), NULL);
+				message = Value.toString(Object.get(value.data.object, Key(message)), NULL);
 			}
 			else
-				message = Value.toString(value);
+				message = Value.toString(value, NULL);
 			
 			if (name.type == Value(undefined))
 				name = Value.text(&Text(errorName));

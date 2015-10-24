@@ -32,8 +32,8 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	name = Value.toString(Object.get(object, Key(name)));
-	message = Value.toString(Object.get(object, Key(message)));
+	name = Value.toString(Object.get(object, Key(name)), NULL);
+	message = Value.toString(Object.get(object, Key(message)), NULL);
 	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 	return Value.undefined();
 }
