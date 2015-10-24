@@ -513,7 +513,9 @@ static int runTest (int verbosity)
 	testAccessor();
 	testArray();
 	
-(testErrorCount)
+	Env.newline();
+	
+	if (testErrorCount)
 		Env.printColor(0, Env(bold), "test failure: %d", testErrorCount);
 	else
 		Env.printColor(0, Env(bold), "all success");
