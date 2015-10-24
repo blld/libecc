@@ -98,7 +98,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				else
 					goto normal;
 				
-				body = OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body);
+				body = OpList.appendNoop(OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body));
 				body = OpList.unshift(Op.make(Op.value, stepValue, condition->ops[0].text), body);
 				body = OpList.unshift(Op.make(condition->ops[0].native == Op.less? Op.iterateLessRef: Op.iterateLessOrEqualRef, Value.integer(body->opCount), condition->ops[0].text), body);
 				OpList.destroy(condition), condition = NULL;
@@ -126,7 +126,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				else
 					goto normal;
 				
-				body = OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body);
+				body = OpList.appendNoop(OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body));
 				body = OpList.unshift(Op.make(Op.value, stepValue, condition->ops[0].text), body);
 				body = OpList.unshift(Op.make(condition->ops[0].native == Op.more? Op.iterateMoreRef: Op.iterateMoreOrEqualRef, Value.integer(body->opCount), condition->ops[0].text), body);
 				OpList.destroy(condition), condition = NULL;
