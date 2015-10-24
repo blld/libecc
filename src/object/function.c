@@ -196,7 +196,7 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 	if (parameterCount < 0)
 	{
 		self = createSized(prototype, 3);
-		self->flags |= Function(needHeap) | Function(needArguments);
+		self->flags |= Function(needArguments);
 		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
 		self->object.hashmap[2].data.key = Key(arguments);
 	}

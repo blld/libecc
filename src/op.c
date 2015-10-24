@@ -366,16 +366,11 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	}
 }
 
-static inline void populateContextWithArguments (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
+static inline void populateContextWithArguments (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Object *arguments, int parameterCount, int argumentCount)
 {
-	uint32_t index = 0;
-	
-	struct Object *arguments = Object.create(Object(prototype));
-	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-	arguments->type = &Text(argumentsType);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
+	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 		{
@@ -513,25 +508,44 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		struct Object *context = Object.copy(&function->context);
 		
 		if (function->flags & Function(needArguments))
-			populateContextWithArguments(ops, ecc, context, function->parameterCount, argumentCount);
+		{
+			struct Object *arguments = Object.create(Object(prototype));
+			Object.resizeElement(arguments, argumentCount);
+			Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
+			arguments->type = &Text(argumentsType);
+			
+			populateContextWithArguments(ops, ecc, context, arguments, function->parameterCount, argumentCount);
+		}
 		else
 			populateContext(ops, ecc, context, function->parameterCount, argumentCount);
 		
 		return callOps(function->oplist->ops, ecc, context, this, construct);
 	}
+	else if (function->flags & Function(needArguments))
+	{
+		struct Object context = function->context;
+		struct Object arguments = Object.identity;
+		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
+		__typeof__(*arguments.element) argumentsElement[argumentCount];
+		
+		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
+		context.hashmap = contextHashmap;
+		arguments.element = argumentsElement;
+		arguments.elementCount = argumentCount;
+		populateContextWithArguments(ops, ecc, &context, &arguments, function->parameterCount, argumentCount);
+		
+		return callOps(function->oplist->ops, ecc, &context, this, construct);
+	}
 	else
 	{
-		struct Object stackContext;
-		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		struct Object context = function->context;
+		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
 		
-		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
+		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
+		context.hashmap = contextHashmap;
+		populateContext(ops, ecc, &context, function->parameterCount, argumentCount);
 		
-		stackContext = function->context;
-		stackContext.hashmap = hashmap;
-		
-		populateContext(ops, ecc, &stackContext, function->parameterCount, argumentCount);
-		
-		return callOps(function->oplist->ops, ecc, &stackContext, this, construct);
+		return callOps(function->oplist->ops, ecc, &context, this, construct);
 	}
 }
 
