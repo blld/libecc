@@ -283,9 +283,9 @@ static struct OpList * primary (struct Parser *self)
 	else if (previewToken(self) == Lexer(nullToken))
 		oplist = OpList.create(Op.value, Value.null(), self->lexer->text);
 	else if (previewToken(self) == Lexer(trueToken))
-		oplist = OpList.create(Op.value, Value.boolean(1), self->lexer->text);
+		oplist = OpList.create(Op.value, Value.truth(1), self->lexer->text);
 	else if (previewToken(self) == Lexer(falseToken))
-		oplist = OpList.create(Op.value, Value.boolean(0), self->lexer->text);
+		oplist = OpList.create(Op.value, Value.truth(0), self->lexer->text);
 	else if (acceptToken(self, '{'))
 	{
 		oplist = object(self);

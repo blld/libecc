@@ -63,11 +63,11 @@ static struct Value subtraction (struct Ecc * const ecc, struct Value a, const s
 static struct Value equality (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	if (a.type == Value(binary) && b.type == Value(binary))
-		return Value.boolean(a.data.binary == b.data.binary);
+		return Value.truth(a.data.binary == b.data.binary);
 	else if (a.type == Value(integer) && b.type == Value(integer))
-		return Value.boolean(a.data.integer == b.data.integer);
+		return Value.truth(a.data.integer == b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
-		return Value.boolean(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
+		return Value.truth(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
 	else if (Value.isString(a) && Value.isString(b))
 	{
 		uint32_t aLength = Value.stringLength(a);
@@ -75,12 +75,12 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 		if (aLength != bLength)
 			return Value.false();
 		
-		return Value.boolean(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
+		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
 	else if (Value.isBoolean(a) && Value.isBoolean(b))
-		return Value.boolean(a.type == b.type);
+		return Value.truth(a.type == b.type);
 	else if (Value.isObject(a) && Value.isObject(b))
-		return Value.boolean(a.data.object == b.data.object);
+		return Value.truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
 		return Value.true();
 	else if (a.type == Value(null) && b.type == Value(undefined))
@@ -110,11 +110,11 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 static struct Value identicality (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	if (a.type == Value(binary) && b.type == Value(binary))
-		return Value.boolean(a.data.binary == b.data.binary);
+		return Value.truth(a.data.binary == b.data.binary);
 	else if (a.type == Value(integer) && b.type == Value(integer))
-		return Value.boolean(a.data.integer == b.data.integer);
+		return Value.truth(a.data.integer == b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
-		return Value.boolean(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
+		return Value.truth(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
 	else if (Value.isString(a) && Value.isString(b))
 	{
 		uint32_t aLength = Value.stringLength(a);
@@ -122,12 +122,12 @@ static struct Value identicality (struct Ecc * const ecc, struct Value a, const 
 		if (aLength != bLength)
 			return Value.false();
 		
-		return Value.boolean(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
+		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
 	else if (Value.isBoolean(a) && Value.isBoolean(b))
-		return Value.boolean(a.type == b.type);
+		return Value.truth(a.type == b.type);
 	else if (Value.isObject(a) && Value.isObject(b))
-		return Value.boolean(a.data.object == b.data.object);
+		return Value.truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
 		return Value.true();
 	
@@ -144,9 +144,9 @@ static struct Value compare (struct Ecc * const ecc, struct Value a, const struc
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength == bLength)
-			return Value.boolean(memcmp(Value.stringChars(a), Value.stringChars(b), aLength) < 0);
+			return Value.truth(memcmp(Value.stringChars(a), Value.stringChars(b), aLength) < 0);
 		else
-			return Value.boolean(aLength < bLength);
+			return Value.truth(aLength < bLength);
 	}
 	else
 	{
@@ -156,7 +156,7 @@ static struct Value compare (struct Ecc * const ecc, struct Value a, const struc
 		if (isnan(a.data.binary) || isnan(b.data.binary))
 			return Value.undefined();
 		
-		return Value.boolean(a.data.binary < b.data.binary);
+		return Value.truth(a.data.binary < b.data.binary);
 	}
 }
 
@@ -870,7 +870,7 @@ struct Value notEqual (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return Value.boolean(!Value.isTrue(equality(ecc, a, text, b, opText())));
+	return Value.truth(!Value.isTrue(equality(ecc, a, text, b, opText())));
 }
 
 struct Value identical (const struct Op ** const ops, struct Ecc * const ecc)
@@ -886,7 +886,7 @@ struct Value notIdentical (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return Value.boolean(!Value.isTrue(identicality(ecc, a, text, b, opText())));
+	return Value.truth(!Value.isTrue(identicality(ecc, a, text, b, opText())));
 }
 
 struct Value less (const struct Op ** const ops, struct Ecc * const ecc)
@@ -955,7 +955,7 @@ struct Value in (const struct Op ** const ops, struct Ecc * const ecc)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
 	
 	entry = Object.getProperty(object.data.object, property);
-	return Value.boolean(*entry.flags & Object(isValue));
+	return Value.truth(*entry.flags & Object(isValue));
 }
 
 struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1045,7 +1045,7 @@ struct Value logicalAnd (const struct Op ** const ops, struct Ecc * const ecc)
 		return Value.false();
 	}
 	else
-		return Value.boolean(Value.isTrue(nextOp()));
+		return Value.truth(Value.isTrue(nextOp()));
 }
 
 struct Value logicalOr (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1057,7 +1057,7 @@ struct Value logicalOr (const struct Op ** const ops, struct Ecc * const ecc)
 		return Value.true();
 	}
 	else
-		return Value.boolean(Value.isTrue(nextOp()));
+		return Value.truth(Value.isTrue(nextOp()));
 }
 
 struct Value positive (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1081,7 +1081,7 @@ struct Value invert (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value not (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	return Value.boolean(!Value.isTrue(a));
+	return Value.truth(!Value.isTrue(a));
 }
 
 // MARK: assignement

@@ -42,10 +42,10 @@ struct Value false (void)
 	};
 }
 
-struct Value boolean (int boolean)
+struct Value truth (int truth)
 {
 	return (struct Value){
-		.type = boolean? Value(true): Value(false),
+		.type = truth? Value(true): Value(false),
 	};
 }
 
@@ -127,6 +127,16 @@ struct Value number (struct Number *number)
 	
 	return (struct Value){
 		.data = { .number = number },
+		.type = Value(number),
+	};
+}
+
+struct Value boolean (struct Boolean *boolean)
+{
+	assert(boolean);
+	
+	return (struct Value){
+		.data = { .boolean = boolean },
 		.type = Value(number),
 	};
 }
@@ -261,6 +271,9 @@ struct Value toString (struct Value value, struct Text *buffer)
 		case Value(true):
 			return Value.text(&Text(true));
 		
+		case Value(boolean):
+			return value.data.boolean->truth? Value.text(&Text(true)): Value.text(&Text(false));
+		
 		case Value(integer):
 			if (value.data.integer == 0)
 				return Value.text(&Text(zero));
@@ -372,6 +385,9 @@ struct Value toBinary (struct Value value)
 		case Value(true):
 			return Value.binary(1);
 		
+		case Value(boolean):
+			return Value.binary(value.data.boolean->truth? 1: 0);
+		
 		case Value(undefined):
 			return Value.binary(NAN);
 		
@@ -444,12 +460,19 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(string):
 		case Value(number):
 		case Value(date):
+		case Value(boolean):
 			return value;
 		
-		case Value(integer):
-		case Value(binary):
 		case Value(false):
 		case Value(true):
+			return Value.boolean(Boolean.create(value.type == Value(true)));
+		
+		case Value(integer):
+			return Value.number(Number.create(value.data.integer));
+		
+		case Value(binary):
+			return Value.number(Number.create(value.data.binary));
+		
 		case Value(breaker):
 		case Value(reference):
 			break;
@@ -487,6 +510,7 @@ struct Value toType (struct Value value)
 		case Value(object):
 		case Value(string):
 		case Value(number):
+		case Value(boolean):
 		case Value(error):
 		case Value(date):
 			return Value.text(&Text(object));
@@ -520,6 +544,10 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(true):
 			fputs("true", file);
+			return;
+		
+		case Value(boolean):
+			fputs(value.data.boolean->truth? "true": "false", file);
 			return;
 		
 		case Value(integer):

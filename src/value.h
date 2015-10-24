@@ -44,6 +44,7 @@ enum Value(Type) {
 	/* Objects */
 	
 	Value(object) = 0x40,
+	Value(boolean) = 0x41,
 	Value(error) = 0x42,
 	Value(function) = 0x44,
 	Value(string) = 0x46,
@@ -60,7 +61,7 @@ Interface(Value,
 	(struct Value, null ,(void))
 	(struct Value, false ,(void))
 	(struct Value, true ,(void))
-	(struct Value, boolean ,(int))
+	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
 	(struct Value, key ,(struct Key key))
@@ -70,6 +71,7 @@ Interface(Value,
 	(struct Value, error ,(struct Error *))
 	(struct Value, string ,(struct String *))
 	(struct Value, number ,(struct Number *))
+	(struct Value, boolean ,(struct Boolean *))
 	(struct Value, date ,(struct Date *))
 	(struct Value, function ,(struct Function *))
 	(struct Value, breaker ,(int32_t integer))
@@ -111,6 +113,7 @@ Interface(Value,
 			struct Error *error;
 			struct String *string;
 			struct Number *number;
+			struct Boolean *boolean;
 			struct Date *date;
 			struct Function *function;
 			
@@ -127,6 +130,8 @@ Interface(Value,
 #include "object/function.h"
 #include "object/object.h"
 #include "object/string.h"
+#include "object/boolean.h"
+#include "object/number.h"
 #include "object/array.h"
 #include "object/date.h"
 #include "object/error.h"

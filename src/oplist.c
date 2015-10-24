@@ -143,7 +143,7 @@ normal:
 			step = OpList.unshift(Op.make(Op.discard, Value.undefined(), text(step)), step);
 		
 		if (!condition)
-		 condition = OpList.create(Op.value, Value.boolean(1), OpList.text(body));
+			condition = OpList.create(Op.value, Value.truth(1), OpList.text(body));
 		
 		skipOpCount = reverseCondition? condition->opCount - 1: 0;
 		body = OpList.appendNoop(OpList.join(condition, body));

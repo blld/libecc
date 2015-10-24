@@ -99,6 +99,10 @@
 #define          io_libecc_Number(X) \
                  io_libecc_number_## X
 
+#define Boolean  io_libecc_Boolean
+#define          io_libecc_Boolean(X) \
+                 io_libecc_boolean_## X
+
 #define RegExp   io_libecc_RegExp
 #define          io_libecc_RegExp(X) \
                  io_libecc_regexp_## X

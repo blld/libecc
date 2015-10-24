@@ -103,9 +103,9 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
 	if (v.type == Value(text))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
+		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
 	else if (v.type == Value(chars))
-		ecc->result = Value.boolean(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.chars->chars, v.data.chars->length), 1)));
+		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.chars->chars, v.data.chars->length), 1)));
 	
 	return Value.undefined();
 }
@@ -148,7 +148,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	entry = getOwnProperty(object, property);
 	
 	if (*entry.flags & Object(isValue))
-		ecc->result = Value.boolean(*entry.flags & Object(enumerable));
+		ecc->result = Value.truth(*entry.flags & Object(enumerable));
 	else
 		ecc->result = Value.undefined();
 	
@@ -207,9 +207,9 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 		struct Object *result = Object.create(Object(prototype));
 		
 		Object.add(result, Key(value), *entry.value, resultFlags);
-		Object.add(result, Key(writable), Value.boolean(*entry.flags & Object(writable)), resultFlags);
-		Object.add(result, Key(enumerable), Value.boolean(*entry.flags & Object(enumerable)), resultFlags);
-		Object.add(result, Key(configurable), Value.boolean(*entry.flags & Object(configurable)), resultFlags);
+		Object.add(result, Key(writable), Value.truth(*entry.flags & Object(writable)), resultFlags);
+		Object.add(result, Key(enumerable), Value.truth(*entry.flags & Object(enumerable)), resultFlags);
+		Object.add(result, Key(configurable), Value.truth(*entry.flags & Object(configurable)), resultFlags);
 		
 		ecc->result = Value.object(result);
 	}
@@ -394,7 +394,7 @@ static struct Value isExtensible (const struct Op ** const ops, struct Ecc * con
 	Op.assertParameterCount(ecc, 1);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	ecc->result = Value.boolean(object->flags & Object(extensible));
+	ecc->result = Value.truth(object->flags & Object(extensible));
 	
 	return Value.undefined();
 }

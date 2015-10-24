@@ -36,6 +36,7 @@ const struct Text Text(errorType) = textMake("[object Error]");
 const struct Text Text(arrayType) = textMake("[object Array]");
 const struct Text Text(stringType) = textMake("[object String]");
 const struct Text Text(numberType) = textMake("[object Number]");
+const struct Text Text(booleanType) = textMake("[object Boolean]");
 const struct Text Text(dateType) = textMake("[object Date]");
 const struct Text Text(functionType) = textMake("[object Function]");
 const struct Text Text(argumentsType) = textMake("[object Arguments]");

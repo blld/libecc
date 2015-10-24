@@ -17,7 +17,7 @@ struct Function * Array(constructor) = NULL;
 //{
 //	Op.assertParameterCount(ecc, 0);
 //	
-//	Ecc.result(ecc, Value.boolean(ecc->this.type == Value(object) && ecc->this.data.object->type == &arrayType));
+//	Ecc.result(ecc, Value.truth(ecc->this.type == Value(object) && ecc->this.data.object->type == &arrayType));
 //	
 //	return Value.undefined();
 //}

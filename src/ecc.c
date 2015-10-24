@@ -74,7 +74,7 @@ static struct Value isFinite (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 1);
 	
 	value = Value.toBinary(Op.argument(ecc, 0));
-	ecc->result = Value.boolean(!isnan(value.data.binary) && !isinf(value.data.binary));
+	ecc->result = Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 	
 	return Value.undefined();
 }
@@ -86,7 +86,7 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 1);
 	
 	value = Value.toBinary(Op.argument(ecc, 0));
-	ecc->result = Value.boolean(isnan(value.data.binary));
+	ecc->result = Value.truth(isnan(value.data.binary));
 	
 	return Value.undefined();
 }
