@@ -25,7 +25,7 @@ Interface(Pool,
 	(void, teardown ,(void))
 	
 	(void, addFunction ,(struct Function *function))
-	(void, addObject ,(struct Object *chars))
+	(void, addObject ,(struct Object *object))
 	(void, addChars ,(struct Chars *chars))
 	
 	(void, markAll ,(void))
@@ -33,15 +33,15 @@ Interface(Pool,
 	(void, collectMarked ,(void))
 	,
 	{
-		struct Function **functions;
-		uint32_t functionsCount;
-		uint32_t functionsCapacity;
+		struct Function **functionList;
+		uint32_t functionCount;
+		uint32_t functionCapacity;
 		
-		struct Object **objects;
-		uint32_t objectsCount;
-		uint32_t objectsCapacity;
+		struct Object **objectList;
+		uint32_t objectCount;
+		uint32_t objectCapacity;
 		
-		struct Chars **chars;
+		struct Chars **charsList;
 		uint32_t charsCount;
 		uint32_t charsCapacity;
 	}

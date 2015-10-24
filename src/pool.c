@@ -75,9 +75,9 @@ void teardown (void)
 	markAll();
 	collectMarked();
 	
-	free(self->functions), self->functions = NULL;
-	free(self->objects), self->objects = NULL;
-	free(self->chars), self->chars = NULL;
+	free(self->functionList), self->functionList = NULL;
+	free(self->objectList), self->objectList = NULL;
+	free(self->charsList), self->charsList = NULL;
 	
 	free(self), self = NULL;
 }
@@ -86,14 +86,14 @@ void addFunction (struct Function *function)
 {
 	assert(function);
 	
-	if (self->functionsCount >= self->functionsCapacity)
+	if (self->functionCount >= self->functionCapacity)
 	{
-		self->functionsCapacity = self->functionsCapacity? self->functionsCapacity * 2: 8;
-		self->functions = realloc(self->functions, self->functionsCapacity * sizeof(*self->functions));
-		memset(self->functions + self->functionsCount, 0, sizeof(*self->functions) * (self->functionsCapacity - self->functionsCount));
+		self->functionCapacity = self->functionCapacity? self->functionCapacity * 2: 8;
+		self->functionList = realloc(self->functionList, self->functionCapacity * sizeof(*self->functionList));
+		memset(self->functionList + self->functionCount, 0, sizeof(*self->functionList) * (self->functionCapacity - self->functionCount));
 	}
 	
-	self->functions[self->functionsCount++] = function;
+	self->functionList[self->functionCount++] = function;
 }
 
 void addObject (struct Object *object)
@@ -103,14 +103,14 @@ void addObject (struct Object *object)
 //	Object.dumpTo(object, stderr);
 //	fprintf(stderr, " > add %p %u\n", object, self->objectsCount);
 	
-	if (self->objectsCount >= self->objectsCapacity)
+	if (self->objectCount >= self->objectCapacity)
 	{
-		self->objectsCapacity = self->objectsCapacity? self->objectsCapacity * 2: 8;
-		self->objects = realloc(self->objects, self->objectsCapacity * sizeof(*self->objects));
-		memset(self->objects + self->objectsCount, 0, sizeof(*self->objects) * (self->objectsCapacity - self->objectsCount));
+		self->objectCapacity = self->objectCapacity? self->objectCapacity * 2: 8;
+		self->objectList = realloc(self->objectList, self->objectCapacity * sizeof(*self->objectList));
+		memset(self->objectList + self->objectCount, 0, sizeof(*self->objectList) * (self->objectCapacity - self->objectCount));
 	}
 	
-	self->objects[self->objectsCount++] = object;
+	self->objectList[self->objectCount++] = object;
 }
 
 void addChars (struct Chars *chars)
@@ -120,28 +120,28 @@ void addChars (struct Chars *chars)
 	if (self->charsCount >= self->charsCapacity)
 	{
 		self->charsCapacity = self->charsCapacity? self->charsCapacity * 2: 8;
-		self->chars = realloc(self->chars, self->charsCapacity * sizeof(*self->chars));
-		memset(self->chars + self->charsCount, 0, sizeof(*self->chars) * (self->charsCapacity - self->charsCount));
+		self->charsList = realloc(self->charsList, self->charsCapacity * sizeof(*self->charsList));
+		memset(self->charsList + self->charsCount, 0, sizeof(*self->charsList) * (self->charsCapacity - self->charsCount));
 	}
 	
-	self->chars[self->charsCount++] = chars;
+	self->charsList[self->charsCount++] = chars;
 }
 
 void markAll (void)
 {
 	uint32_t index, count;
 	
-	for (index = 0, count = self->functionsCount; index < count; ++index)
+	for (index = 0, count = self->functionCount; index < count; ++index)
 	{
-		self->functions[index]->object.flags |= Object(mark);
-		self->functions[index]->context.flags |= Object(mark);
+		self->functionList[index]->object.flags |= Object(mark);
+		self->functionList[index]->context.flags |= Object(mark);
 	}
 	
-	for (index = 0, count = self->objectsCount; index < count; ++index)
-		self->objects[index]->flags |= Object(mark);
+	for (index = 0, count = self->objectCount; index < count; ++index)
+		self->objectList[index]->flags |= Object(mark);
 	
 	for (index = 0, count = self->charsCount; index < count; ++index)
-		self->chars[index]->flags |= Chars(mark);
+		self->charsList[index]->flags |= Chars(mark);
 }
 
 void unmarkValue (struct Value value)
@@ -158,27 +158,27 @@ void collectMarked (void)
 {
 	uint32_t index;
 	
-	index = self->functionsCount;
+	index = self->functionCount;
 	while (index--)
-		if (self->functions[index]->object.flags & Object(mark))
+		if (self->functionList[index]->object.flags & Object(mark))
 		{
-			Function.destroy(self->functions[index]);
-			self->functions[index] = self->functions[--self->functionsCount];
+			Function.destroy(self->functionList[index]);
+			self->functionList[index] = self->functionList[--self->functionCount];
 		}
 	
-	index = self->objectsCount;
+	index = self->objectCount;
 	while (index--)
-		if (self->objects[index]->flags & Object(mark))
+		if (self->objectList[index]->flags & Object(mark))
 		{
-			Object.destroy(self->objects[index]);
-			self->objects[index] = self->objects[--self->objectsCount];
+			Object.destroy(self->objectList[index]);
+			self->objectList[index] = self->objectList[--self->objectCount];
 		}
 	
 	index = self->charsCount;
 	while (index--)
-		if (self->chars[index]->flags & Chars(mark))
+		if (self->charsList[index]->flags & Chars(mark))
 		{
-			Chars.destroy(self->chars[index]);
-			self->chars[index] = self->chars[--self->charsCount];
+			Chars.destroy(self->charsList[index]);
+			self->charsList[index] = self->charsList[--self->charsCount];
 		}
 }
