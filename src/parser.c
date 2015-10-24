@@ -737,7 +737,7 @@ static struct OpList * conditional (struct Parser *self, int noIn)
 
 static struct OpList * assignment (struct Parser *self, int noIn)
 {
-	struct OpList *oplist = conditional(self, noIn);
+	struct OpList *oplist = conditional(self, noIn), *opassign = NULL;
 	struct Text text = self->lexer->text;
 	Native native = NULL;
 	
@@ -761,7 +761,10 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		else
 			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
 		
-		return OpList.join(oplist, assignment(self, noIn));
+		if (!( opassign = assignment(self, noIn) ))
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+		
+		return OpList.join(oplist, opassign);
 	}
 	else if (acceptToken(self, Lexer(multiplyAssignToken)))
 		native = Op.multiplyAssignRef;
@@ -789,7 +792,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		return oplist;
 	
 	if (oplist)
-		return OpList.join(OpList.unshift(Op.make(native, Value.undefined(), text), expressionRef(self, oplist, "invalid assignment left-hand side")), assignment(self, noIn));
+	{
+		if (!( opassign = assignment(self, noIn) ))
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+		
+		return OpList.join(OpList.unshift(Op.make(native, Value.undefined(), text), expressionRef(self, oplist, "invalid assignment left-hand side")), opassign);
+	}
 	
 	error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
 	
@@ -846,7 +854,13 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	Object.add(&self->function->context, value.data.key, Value.undefined(), Object(writable));
 	
 	if (acceptToken(self, '='))
-		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), assignment(self, noIn)));
+	{
+		struct OpList *opassign = assignment(self, noIn);
+		if (!opassign)
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+		
+		return OpList.unshift(Op.make(Op.discard, Value.undefined(), self->lexer->text), OpList.join(OpList.create(Op.setLocal, value, text), opassign));
+	}
 	else
 		return OpList.create(Op.next, value, text);
 }
