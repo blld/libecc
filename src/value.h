@@ -48,6 +48,7 @@ enum Value(Type) {
 	Value(function) = 0x44,
 	Value(string) = 0x46,
 	Value(date) = 0x48,
+	Value(number) = 0x50,
 	
 	Value(reference) = 0x4e,
 };
@@ -68,6 +69,7 @@ Interface(Value,
 	(struct Value, object ,(struct Object *))
 	(struct Value, error ,(struct Error *))
 	(struct Value, string ,(struct String *))
+	(struct Value, number ,(struct Number *))
 	(struct Value, date ,(struct Date *))
 	(struct Value, function ,(struct Function *))
 	(struct Value, breaker ,(int32_t integer))
@@ -108,6 +110,7 @@ Interface(Value,
 			struct Object *object;
 			struct Error *error;
 			struct String *string;
+			struct Number *number;
 			struct Date *date;
 			struct Function *function;
 			

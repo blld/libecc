@@ -17,9 +17,15 @@ struct Function * Number(constructor) = NULL;
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
+	
 	Op.assertParameterCount(ecc, 1);
 	
-	ecc->result = Value.toBinary(Op.argument(ecc, 0));
+	value = Value.toBinary(Op.argument(ecc, 0));
+	if (ecc->construct)
+		ecc->result = Value.number(Number.create(value.data.binary));
+	else
+		ecc->result = value;
 	
 	return Value.undefined();
 }
@@ -43,4 +49,17 @@ void teardown (void)
 {
 	Number(prototype) = NULL;
 	Number(constructor) = NULL;
+}
+
+struct Number * create (double binary)
+{
+	struct Number *self = malloc(sizeof(*self));
+	*self = Number.identity;
+	Pool.addObject(&self->object);
+	Object.initialize(&self->object, NULL);
+	
+	self->object.type = &Text(numberType);
+	self->value = binary;
+	
+	return self;
 }

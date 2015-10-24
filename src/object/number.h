@@ -24,6 +24,8 @@ Interface(Number,
 	
 	(void, setup ,(void))
 	(void, teardown ,(void))
+	
+	(struct Number *, create ,(double))
 	,
 	{
 		struct Object object;

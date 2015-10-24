@@ -37,6 +37,7 @@ extern const struct Text Text(objectType);
 extern const struct Text Text(errorType);
 extern const struct Text Text(arrayType);
 extern const struct Text Text(stringType);
+extern const struct Text Text(numberType);
 extern const struct Text Text(dateType);
 extern const struct Text Text(functionType);
 extern const struct Text Text(argumentsType);

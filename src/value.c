@@ -121,6 +121,16 @@ struct Value string (struct String *string)
 	};
 }
 
+struct Value number (struct Number *number)
+{
+	assert(number);
+	
+	return (struct Value){
+		.data = { .number = number },
+		.type = Value(number),
+	};
+}
+
 struct Value date (struct Date *date)
 {
 	assert(date);
@@ -264,6 +274,10 @@ struct Value toString (struct Value value, struct Text *buffer)
 			else
 				return Value.chars(Chars.create("%d", value.data.integer));
 		
+		case Value(number):
+			value.data.binary = value.data.number->value;
+			/*vvv*/
+			
 		case Value(binary):
 			if (value.data.binary == 0)
 				return Value.text(&Text(zero));
@@ -348,6 +362,9 @@ struct Value toBinary (struct Value value)
 		case Value(integer):
 			return Value.binary(value.data.integer);
 		
+		case Value(number):
+			return Value.binary(value.data.number->value);
+		
 		case Value(null):
 		case Value(false):
 			return Value.binary(0);
@@ -359,7 +376,6 @@ struct Value toBinary (struct Value value)
 			return Value.binary(NAN);
 		
 		case Value(text):
-		{
 			if (value.data.text == &Text(zero))
 				return Value.binary(0);
 			else if (value.data.text == &Text(one))
@@ -371,9 +387,8 @@ struct Value toBinary (struct Value value)
 			else if (value.data.text == &Text(negativeInfinity))
 				return Value.binary(-INFINITY);
 			
-			/* fallthrought */
-		}
-		
+			/*vvv*/
+			
 		case Value(key):
 		case Value(chars):
 		case Value(string):
@@ -427,6 +442,7 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(object):
 		case Value(error):
 		case Value(string):
+		case Value(number):
 		case Value(date):
 			return value;
 		
@@ -470,6 +486,7 @@ struct Value toType (struct Value value)
 		case Value(null):
 		case Value(object):
 		case Value(string):
+		case Value(number):
 		case Value(error):
 		case Value(date):
 			return Value.text(&Text(object));
@@ -513,8 +530,12 @@ void dumpTo (struct Value value, FILE *file)
 			fprintf(file, "[[breaker:%d]]", value.data.integer);
 			return;
 		
+		case Value(number):
+			value.data.binary = value.data.number->value;
+			/*vvv*/
+			
 		case Value(binary):
-			fprintf(file, "%lf", value.data.binary);
+			fprintf(file, "%g", value.data.binary);
 			return;
 		
 		case Value(key):
