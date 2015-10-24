@@ -58,7 +58,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	
 	value = Value.toString(Op.argument(ecc, 0), 0);
 	if (ecc->construct)
-		ecc->result = Value.string(String.create(Value.stringChars(value), Value.stringLength(value)));
+		ecc->result = Value.string(String.create(Chars.create(Value.stringChars(value), Value.stringLength(value))));
 	else
 		ecc->result = value;
 	
@@ -88,36 +88,15 @@ void teardown (void)
 	String(constructor) = NULL;
 }
 
-struct String * create (const char *format, ...)
+struct String * create (struct Chars *chars)
 {
-	va_list ap;
-	
 	struct String *self = malloc(sizeof(*self));
-	assert(self);
-	Pool.addObject(&self->object);
 	*self = String.identity;
-	
+	Pool.addObject(&self->object);
 	Object.initialize(&self->object, NULL);
 	
 	self->object.type = &Text(stringType);
-	
-	va_start(ap, format);
-	self->length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	self->chars = malloc(self->length + 1);
-	
-	va_start(ap, format);
-	vsprintf(self->chars, format, ap);
-	va_end(ap);
+	self->value = chars;
 	
 	return self;
-}
-
-void destroy (struct String *self)
-{
-	assert(self);
-	
-	free(self->chars), self->chars = NULL;
-	free(self), self = NULL;
 }

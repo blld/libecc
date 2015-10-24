@@ -149,7 +149,12 @@ void unmarkValue (struct Value value)
 	if (value.type == Value(function))
 		unmarkFunction(value.data.function);
 	else if (value.type >= Value(object))
+	{
 		unmarkObject(value.data.object);
+		
+		if (value.type == Value(string))
+			unmarkChars(value.data.string->value);
+	}
 	else if (value.type == Value(chars))
 		unmarkChars(value.data.chars);
 }

@@ -319,7 +319,7 @@ const char * stringChars (struct Value value)
 	else if (value.type == Value(text))
 		return value.data.text->location;
 	else if (value.type == Value(string))
-		return value.data.string->chars;
+		return value.data.string->value->chars;
 	else
 		return NULL;
 }
@@ -331,7 +331,7 @@ uint16_t stringLength (struct Value value)
 	else if (value.type == Value(text))
 		return value.data.text->length;
 	else if (value.type == Value(string))
-		return value.data.string->length;
+		return value.data.string->value->length;
 	else
 		return 0;
 }
@@ -531,7 +531,7 @@ void dumpTo (struct Value value, FILE *file)
 			return;
 		
 		case Value(string):
-			fwrite(value.data.string->chars, sizeof(char), value.data.string->length, file);
+			fwrite(value.data.string->value->chars, sizeof(char), value.data.string->value->length, file);
 			return;
 		
 		case Value(object):

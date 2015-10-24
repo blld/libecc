@@ -25,13 +25,11 @@ Interface(String,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct String *, create ,(const char *format, ...))
-	(void, destroy ,(struct String *))
+	(struct String *, create ,(struct Chars *))
 	,
 	{
 		struct Object object;
-		uint32_t length;
-		char *chars;
+		struct Chars *value;
 	}
 )
 
