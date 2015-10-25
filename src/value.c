@@ -137,7 +137,7 @@ struct Value boolean (struct Boolean *boolean)
 	
 	return (struct Value){
 		.data = { .boolean = boolean },
-		.type = Value(number),
+		.type = Value(boolean),
 	};
 }
 

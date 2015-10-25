@@ -441,6 +441,10 @@ static void testObject (void)
 	
 	test("typeof Object", "function");
 	test("typeof Object.prototype", "object");
+	
+	test("Object.prototype.toString.call(true)", "[object Boolean]");
+	test("Object.prototype.toString.call('abc')", "[object String]");
+	test("Object.prototype.toString.call(123)", "[object Number]");
 }
 
 static void testAccessor (void)
@@ -489,6 +493,14 @@ static void testArray (void)
 	test("typeof Array.prototype", "object");
 }
 
+static void testBoolean (void)
+{
+	test("var b = new Boolean('a'); b.valueOf() === true", "true");
+	test("var b = Boolean('a'); b.valueOf() === true", "true");
+	test("var b = new Boolean(0); b.toString()", "false");
+	test("var b = Boolean(); b.toString()", "false");
+}
+
 static int runTest (int verbosity)
 {
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->context), 0);
@@ -512,6 +524,7 @@ static int runTest (int verbosity)
 	testObject();
 	testAccessor();
 	testArray();
+	testBoolean();
 	
 	Env.newline();
 	

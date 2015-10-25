@@ -13,6 +13,26 @@
 struct Object * Boolean(prototype) = NULL;
 struct Function * Boolean(constructor) = NULL;
 
+static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	if (ecc->this.type != Value(boolean))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
+	
+	ecc->result = Value.text(ecc->this.data.boolean->truth? &Text(true): &Text(false));
+	return Value.undefined();
+}
+
+static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	Op.assertParameterCount(ecc, 0);
+	if (ecc->this.type != Value(boolean))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
+	
+	ecc->result = Value.truth(ecc->this.data.boolean->truth);
+	return Value.undefined();
+}
+
 // MARK: - Static Members
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
@@ -34,12 +54,16 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 void setup ()
 {
+	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	
 	Boolean(prototype) = Object.create(Object(prototype));
+	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
 	
 	Boolean(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
 	
-	Object.add(Number(prototype), Key(constructor), Value.function(Number(constructor)), 0);
-	Object.add(&Number(constructor)->object, Key(prototype), Value.object(Number(prototype)), 0);
+	Object.add(Boolean(prototype), Key(constructor), Value.function(Boolean(constructor)), 0);
+	Object.add(&Boolean(constructor)->object, Key(prototype), Value.object(Boolean(prototype)), 0);
 }
 
 void teardown (void)
@@ -53,7 +77,7 @@ struct Boolean * create (int truth)
 	struct Boolean *self = malloc(sizeof(*self));
 	*self = Boolean.identity;
 	Pool.addObject(&self->object);
-	Object.initialize(&self->object, NULL);
+	Object.initialize(&self->object, Boolean(prototype));
 	
 	self->object.type = &Text(booleanType);
 	self->truth = truth;

@@ -132,6 +132,7 @@ struct Ecc *create (void)
 		Date.setup();
 		Math.setup();
 		Number.setup();
+		Boolean.setup();
 		RegExp.setup();
 	}
 	
@@ -153,6 +154,7 @@ struct Ecc *create (void)
 	Function.addValue(self->global, "Function", Value.function(Function(constructor)), 0);
 	Function.addValue(self->global, "String", Value.function(String(constructor)), 0);
 	Function.addValue(self->global, "Number", Value.function(Number(constructor)), 0);
+	Function.addValue(self->global, "Boolean", Value.function(Boolean(constructor)), 0);
 	Function.addValue(self->global, "RegExp", Value.function(RegExp(constructor)), 0);
 	Function.addValue(self->global, "Math", Value.object(Math(object)), 0);
 	
@@ -190,6 +192,7 @@ void destroy (struct Ecc *self)
 		Date.teardown();
 		Math.teardown();
 		Number.teardown();
+		Boolean.teardown();
 		RegExp.teardown();
 		
 		Key.teardown();
