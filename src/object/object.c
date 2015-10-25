@@ -71,9 +71,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	else if (ecc->this.type == Value(undefined))
 		ecc->result = Value.text(&Text(undefinedType));
 	else if (Value.isObject(ecc->this))
-//		TODO: check
 		ecc->result = Value.text(ecc->this.data.object->type);
-//		ecc->result = Value.toString(ecc->this);
 	else
 	{
 		// null & undefined is already checked

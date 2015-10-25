@@ -379,6 +379,7 @@ static void testLoop (void)
 	test("for (var a = 0; a <= 100;) ++a; a", "101");
 	test("for (var a = 0; a <= 100; ++a); a", "101");
 	test("for (var a = 0, b = 0; a <= 100; ++a) ++b; b", "101");
+	test("var a = 123; for (var i = 10; i >= 0; i--) --a; (a + a)", "224");
 	test("var a = 100, b = 0; while (a--) ++b;", "100");
 	test("var a = 100, b = 0; do ++b; while (a--)", "101");
 	

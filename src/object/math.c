@@ -168,8 +168,6 @@ struct Object * Math(object) = NULL;
 
 void setup ()
 {
-	srand((unsigned)time(NULL));
-	
 	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	Math(object) = Object.create(Object(prototype));
@@ -201,6 +199,8 @@ void setup ()
 	Function.addToObject(Math(object), "sin", mathSin, 1, flags);
 	Function.addToObject(Math(object), "sqrt", mathSqrt, 1, flags);
 	Function.addToObject(Math(object), "tan", mathTan, 1, flags);
+	
+	srand((unsigned)time(NULL));
 }
 
 void teardown (void)
