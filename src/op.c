@@ -21,7 +21,7 @@ static struct Value addition (struct Ecc * const ecc, struct Value a, const stru
 	if (a.type == Value(binary) && b.type == Value(binary))
 		return Value.binary(a.data.binary + b.data.binary);
 	else if (a.type == Value(integer) && b.type == Value(integer))
-		return Value.binary(a.data.integer + b.data.integer);
+		return Value.binary((double)a.data.integer + (double)b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
 		return Value.binary(Value.toBinary(a).data.binary + Value.toBinary(b).data.binary);
 	else

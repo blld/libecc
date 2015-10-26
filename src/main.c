@@ -502,6 +502,56 @@ static void testBoolean (void)
 	test("var b = Boolean(); b.toString()", "false");
 }
 
+static void testNumber (void)
+{
+	test("0xf", "15");
+	test("0xff", "255");
+	test("0xffff", "65535");
+	test("0xffffffff", "4294967295");
+	test("0xffffffffffffffff", "18446744073709551616");
+	test("0x3635c9adc5de9e0000", "999999999999999868928");
+	test("0x3635c9adc5de9f0000", "1e+21");
+	
+	test("-0xf", "-15");
+	test("-0xff", "-255");
+	test("-0xffff", "-65535");
+	test("-0xffffffff", "-4294967295");
+	test("-0xffffffffffffffff", "-18446744073709551616");
+	test("-0x3635c9adc5de9e0000", "-999999999999999868928");
+	test("-0x3635c9adc5de9f0000", "-1e+21");
+	
+	test("0x7fffffff | 0", "2147483647");
+	test("0xffffffff | 0", "-1");
+	test("0x1fffffff0 | 0", "-16");
+	test("-0x7fffffff | 0", "-2147483647");
+	test("-0xffffffff | 0", "1");
+	test("-0x1fffffff0 | 0", "16");
+	
+	// toString
+	// radix 10 -> libc %g (double)
+	// radix  8 -> libc %lo (long int)
+	// radix 16 -> libc %lx (long int)
+	// other radices are custom code (long int)
+	
+	test("123.456.toString(2)", "1111011");
+	test("123.456.toString(4)", "1323");
+	test("123.456.toString(8)", "173");
+	test("123.456.toString(10)", "123.456");
+	test("123.456.toString(16)", "7b");
+	test("123.456.toString(24)", "53");
+	test("123.456.toString(32)", "3r");
+	test("123.456.toString(36)", "3f");
+	
+	test("2147483647..toString(2)", "1111111111111111111111111111111");
+	test("(-2147483647).toString(2)", "-1111111111111111111111111111111");
+	test("2147483647..toString(8)", "17777777777");
+	test("(-2147483647).toString(8)", "-17777777777");
+	test("Number.MAX_VALUE.toString(10)", "1.79769313486231570815e+308");
+	test("Number.MIN_VALUE.toString(10)", "2.225073858507201e-308");
+	test("2147483647..toString(16)", "7fffffff");
+	test("(-2147483647).toString(16)", "-7fffffff");
+}
+
 static int runTest (int verbosity)
 {
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->context), 0);
@@ -526,6 +576,7 @@ static int runTest (int verbosity)
 	testAccessor();
 	testArray();
 	testBoolean();
+	testNumber();
 	
 	Env.newline();
 	

@@ -84,6 +84,7 @@ Interface(Value,
 	(int, isTrue ,(struct Value))
 	
 	(struct Value, toString ,(struct Value, struct Text *buffer))
+	(struct Value, binaryToString ,(double binary, struct Text *buffer, int base /* support only 2, 8, 10, 16 */))
 	(int, isString ,(struct Value))
 	(const char *, stringChars ,(struct Value))
 	(uint16_t, stringLength ,(struct Value))

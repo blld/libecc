@@ -275,43 +275,14 @@ struct Value toString (struct Value value, struct Text *buffer)
 			return value.data.boolean->truth? Value.text(&Text(true)): Value.text(&Text(false));
 		
 		case Value(integer):
-			if (value.data.integer == 0)
-				return Value.text(&Text(zero));
-			else if (value.data.integer == 1)
-				return Value.text(&Text(one));
-			else if (buffer && buffer->length > snprintf(NULL, 0, "%d", value.data.integer))
-			{
-				buffer->length = snprintf((char *)buffer->location, buffer->length, "%d", value.data.integer);
-				return Value.text(buffer);
-			}
-			else
-				return Value.chars(Chars.create("%d", value.data.integer));
+			return binaryToString(value.data.integer, buffer, 10);
 		
 		case Value(number):
 			value.data.binary = value.data.number->value;
 			/*vvv*/
-			
+		
 		case Value(binary):
-			if (value.data.binary == 0)
-				return Value.text(&Text(zero));
-			else if (value.data.binary == 1)
-				return Value.text(&Text(one));
-			else if (isnan(value.data.binary))
-				return Value.text(&Text(nan));
-			else if (isinf(value.data.binary))
-			{
-				if (signbit(value.data.binary))
-					return Value.text(&Text(negativeInfinity));
-				else
-					return Value.text(&Text(infinity));
-			}
-			else if (buffer && buffer->length > snprintf(NULL, 0, "%g", value.data.binary))
-			{
-				buffer->length = snprintf((char *)buffer->location, buffer->length, "%g", value.data.binary);
-				return Value.text(buffer);
-			}
-			else
-				return Value.chars(Chars.create("%g", value.data.binary));
+			return binaryToString(value.data.binary, buffer, 10);
 		
 		case Value(object):
 			return Value.text(value.data.object->type);
@@ -334,6 +305,87 @@ struct Value toString (struct Value value, struct Text *buffer)
 	}
 	assert(0);
 	abort();
+}
+
+struct Value binaryToString (double binary, struct Text *buffer, int base)
+{
+	if (binary == 0)
+		return Value.text(&Text(zero));
+	else if (binary == 1)
+		return Value.text(&Text(one));
+	else if (isnan(binary))
+		return Value.text(&Text(nan));
+	else if (isinf(binary))
+	{
+		if (signbit(binary))
+			return Value.text(&Text(negativeInfinity));
+		else
+			return Value.text(&Text(infinity));
+	}
+	
+	if (!base || base == 10)
+	{
+		const char *format = binary >= -999999999999999 && binary <= 999999999999999? "%.16g": "%.21g";
+		
+		if (buffer && buffer->length > snprintf(NULL, 0, format, binary))
+		{
+			buffer->length = snprintf((char *)buffer->location, buffer->length, format, binary);
+			return Value.text(buffer);
+		}
+		else
+			return Value.chars(Chars.create(format, binary));
+	}
+	else
+	{
+		int sign = signbit(binary);
+		unsigned long integer = sign? -binary: binary;
+		if (integer == 0)
+			return Value.text(&Text(zero));
+		else if (integer == 1)
+			return Value.text(&Text(one));
+		
+		if (base == 8 || base == 16)
+		{
+			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
+			
+			if (buffer && buffer->length > snprintf(NULL, 0, format, integer))
+			{
+				buffer->length = snprintf((char *)buffer->location, buffer->length, format, integer);
+				return Value.text(buffer);
+			}
+			else
+				return Value.chars(Chars.create(format, integer));
+		}
+		else
+		{
+			static char const digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+			char bytes[1 + sizeof(integer) * CHAR_BIT];
+			char *p = bytes + sizeof(bytes);
+			long length;
+			
+			while (integer) {
+				*(--p) = digits[integer % base];
+				integer /= base;
+			}
+			if (sign)
+				*(--p) = '-';
+			
+			length = bytes + sizeof(bytes) - p;
+			
+			if (buffer && buffer->length >= length)
+			{
+				memcpy((char *)buffer->location, p, length);
+				buffer->length = length;
+				return Value.text(buffer);
+			}
+			else
+			{
+				struct Chars *chars = Chars.createSized(length);
+				memcpy(chars->chars, p, length);
+				return Value.chars(chars);
+			}
+		}
+	}
 }
 
 int isString (struct Value value)
@@ -426,12 +478,12 @@ struct Value toBinary (struct Value value)
 
 struct Value toInteger (struct Value value)
 {
-	value = toBinary(value);
+	double binary = toBinary(value).data.binary;
 	
-	if (isnan(value.data.binary) || isinf(value.data.binary))
+	if (isnan(binary) || isinf(binary))
 		return Value.integer(0);
 	else
-		return Value.integer(value.data.binary);
+		return Value.integer((uint32_t)binary);
 }
 
 int isNumber (struct Value value)

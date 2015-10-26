@@ -614,19 +614,30 @@ struct Value parseBinary (struct Text text)
 	return Value.binary(binary);
 }
 
-struct Value parseInteger (struct Text text, int radix)
+struct Value parseInteger (struct Text text, int base)
 {
 	long integer;
 	char buffer[text.length + 1];
+	
+	if (!text.length)
+		return Value.binary(NAN);
+	else if (!base && text.length > 1 && text.location[0] == '0' && tolower(text.location[1]) != 'x')
+		base = 10; // avoid auto-detect octal
 	
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';
 	
 	errno = 0;
-	integer = strtol(buffer, NULL, 0);
+	integer = strtol(buffer, NULL, base);
 	
 	if (errno == ERANGE)
-		return Value.binary(strtod(buffer, NULL));
+	{
+		if (!base || base == 10)
+			return Value.binary(strtod(buffer, NULL));
+		
+		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.location, base);
+		return Value.binary(NAN);
+	}
 	if (integer < INT32_MIN || integer > INT32_MAX)
 		return Value.binary(integer);
 	else
