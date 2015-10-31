@@ -325,15 +325,16 @@ struct Value binaryToString (double binary, struct Text *buffer, int base)
 	
 	if (!base || base == 10)
 	{
-		const char *format = binary >= -999999999999999 && binary <= 999999999999999? "%.16g": "%.21g";
+		long dblDig10 = pow(10, DBL_DIG);
+		int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: DECIMAL_DIG;
 		
-		if (buffer && buffer->length > snprintf(NULL, 0, format, binary))
+		if (buffer && buffer->length > snprintf(NULL, 0, "%.*g", precision, binary))
 		{
-			buffer->length = snprintf((char *)buffer->location, buffer->length, format, binary);
+			buffer->length = snprintf((char *)buffer->location, buffer->length, "%.*g", precision, binary);
 			return Value.text(buffer);
 		}
 		else
-			return Value.chars(Chars.create(format, binary));
+			return Value.chars(Chars.create("%.*g", precision, binary));
 	}
 	else
 	{
