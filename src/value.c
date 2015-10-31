@@ -501,11 +501,6 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(undefined):
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
 		
-		case Value(key):
-		case Value(text):
-		case Value(chars):
-			return Value.string(String.create(Chars.create(stringChars(value), stringLength(value))));
-		
 		case Value(function):
 		case Value(object):
 		case Value(error):
@@ -514,6 +509,11 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(date):
 		case Value(boolean):
 			return value;
+		
+		case Value(key):
+		case Value(text):
+		case Value(chars):
+			return Value.string(String.create(Chars.create("%.*s", stringLength(value), stringChars(value))));
 		
 		case Value(false):
 		case Value(true):
