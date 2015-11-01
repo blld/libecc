@@ -26,14 +26,61 @@ static struct Value toExponential (const struct Op ** const ops, struct Ecc * co
 	if (value.type != Value(undefined))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
-		
-		if (precision < 0 || precision > 48)
+		if (precision < 0 || precision > DECIMAL_DIG)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "precision %d out of range", precision)));
 		
 		ecc->result = Value.chars(Chars.create("%.*e", precision, ecc->this.data.number->value));
 	}
 	else
 		ecc->result = Value.chars(Chars.create("%e", ecc->this.data.number->value));
+	
+	return Value.undefined();
+}
+
+static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value value;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	if (ecc->this.type != Value(number))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(undefined))
+	{
+		int32_t precision = Value.toInteger(value).data.integer;
+		if (precision < 0 || precision > DECIMAL_DIG)
+			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "precision %d out of range", precision)));
+		
+		ecc->result = Value.chars(Chars.create("%.*f", precision, ecc->this.data.number->value));
+	}
+	else
+		ecc->result = Value.chars(Chars.create("%f", ecc->this.data.number->value));
+	
+	return Value.undefined();
+}
+
+static struct Value toPrecision (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value value;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	if (ecc->this.type != Value(number))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(undefined))
+	{
+		int32_t precision = Value.toInteger(value).data.integer;
+		if (precision < 0 || precision > 100)
+			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "precision %d out of range", precision)));
+		
+		ecc->result = Value.chars(Chars.create("%.*g", precision, ecc->this.data.number->value));
+	}
+	else
+		ecc->result = Value.binaryToString(ecc->this.data.number->value, NULL, 10);
 	
 	return Value.undefined();
 }
@@ -101,6 +148,8 @@ void setup ()
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
+	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
+	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
 	Number(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
