@@ -485,6 +485,9 @@ static void testArray (void)
 	test("[1, , 3].toString()", "1,,3");
 	test("typeof []", "object");
 	test("Object.prototype.toString.call([])", "[object Array]");
+	test("Array.isArray([])", "true");
+	test("Array.isArray({})", "false");
+	test("Array.isArray(Array.prototype)", "true");
 	
 	test("var a = [1, 2]; a.length", "2");
 	test("var a = [1, 2]; a.length = 5; a.length", "5");
