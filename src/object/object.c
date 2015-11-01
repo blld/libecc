@@ -70,6 +70,12 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		ecc->result = Value.text(&Text(nullType));
 	else if (ecc->this.type == Value(undefined))
 		ecc->result = Value.text(&Text(undefinedType));
+	else if (Value.isString(ecc->this))
+		ecc->result = Value.text(&Text(stringType));
+	else if (Value.isNumber(ecc->this))
+		ecc->result = Value.text(&Text(numberType));
+	else if (Value.isBoolean(ecc->this))
+		ecc->result = Value.text(&Text(booleanType));
 	else if (Value.isObject(ecc->this))
 		ecc->result = Value.text(ecc->this.data.object->type);
 	else
