@@ -27,9 +27,6 @@ void destroy (struct OpList * self)
 {
 	assert(self);
 	
-//	while (self->opCount--)
-//		Value.finalize(&self->ops[self->opCount].value);
-	
 	free(self), self = NULL;
 }
 

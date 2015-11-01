@@ -536,6 +536,7 @@ static void testNumber (void)
 	test("123.456.toString(2)", "1111011");
 	test("123.456.toString(4)", "1323");
 	test("123.456.toString(8)", "173");
+	test("123.456.toString()", "123.456");
 	test("123.456.toString(10)", "123.456");
 	test("123.456.toString(16)", "7b");
 	test("123.456.toString(24)", "53");
@@ -547,9 +548,12 @@ static void testNumber (void)
 	test("2147483647..toString(8)", "17777777777");
 	test("(-2147483647).toString(8)", "-17777777777");
 	test("Number.MAX_VALUE.toString(10)", "1.79769313486231570815e+308");
-	test("Number.MIN_VALUE.toString(10)", "2.225073858507201e-308");
-	test("2147483647..toString(16)", "7fffffff");
+	test("Number.MIN_VALUE.toString(10)", "2.2250738585072e-308");
+	test("(2147483647).toString(16)", "7fffffff");
 	test("(-2147483647).toString(16)", "-7fffffff");
+	test("-2147483647..toString(16)", "NaN");
+	test("-2147483647..toString(10)", "-2147483647");
+	test("-2147483647 .toString()", "-2147483647");
 }
 
 static int runTest (int verbosity)

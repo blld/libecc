@@ -40,8 +40,6 @@ static void error (struct Parser *self, struct Error *error)
 		self->error = error;
 		self->previewToken = Lexer(errorToken);
 	}
-//	else
-//		Error.destroy(error);
 }
 
 static inline enum Lexer(Token) nextToken (struct Parser *self)
