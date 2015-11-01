@@ -257,6 +257,7 @@ int evalInput (struct Ecc *self, struct Input *input)
 			struct Value value;
 			struct Value name;
 			struct Value message;
+			struct Text text;
 			
 			result = EXIT_FAILURE;
 			
@@ -276,7 +277,17 @@ int evalInput (struct Ecc *self, struct Input *input)
 			
 			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
-			printTextInput(self, value.type == Value(error)? value.data.error->text: ops->text);
+			
+			text = value.type == Value(error)? value.data.error->text: ops->text;
+			if (text.location == Text(nativeCode).location)
+			{
+				// show caller's ops for [native code] error
+				while (ops->native != Op.call && ops > function->oplist->ops)
+					--ops;
+				
+				text = ops->text;
+			}
+			printTextInput(self, text);
 		}
 		
 		popEnv(self);
