@@ -606,10 +606,14 @@ struct Value parseBinary (struct Text text)
 {
 	double binary;
 	char buffer[text.length + 1];
+	char *end;
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';
 	
-	binary = strtod(buffer, NULL);
+	binary = strtod(buffer, &end);
+	
+	if (end - buffer != text.length)
+		return Value.binary(NAN);
 	
 	return Value.binary(binary);
 }
