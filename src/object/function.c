@@ -65,9 +65,11 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	{
 		struct Value this = arguments->element[0].data.value;
 		
+		--arguments->elementCount;
 		++arguments->element;
 		Op.callFunctionArguments(ecc->this.data.function, ecc, this, arguments);
 		--arguments->element;
+		++arguments->elementCount;
 	}
 	else
 		Op.callFunctionVA(ecc->this.data.function, ecc, Value.undefined(), 0);
