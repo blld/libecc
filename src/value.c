@@ -497,10 +497,10 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 	switch (value.type)
 	{
 		case Value(null):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is null", text->length, text->location)));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert null to object")));
 		
 		case Value(undefined):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is undefined", text->length, text->location)));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert undefined to object")));
 		
 		case Value(function):
 		case Value(object):

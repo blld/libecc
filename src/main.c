@@ -334,8 +334,8 @@ static void testGlobal (void)
 
 static void testFunction (void)
 {
-	test("var a; a.prototype", "TypeError: a is undefined");
-	test("var a = null; a.prototype", "TypeError: a is null");
+	test("var a; a.prototype", "TypeError: can't convert undefined to object");
+	test("var a = null; a.prototype", "TypeError: can't convert null to object");
 	
 	test("function a() {} a.prototype.toString.length", "0");
 	test("function a() {} a.prototype.toString()", "[object Object]");
