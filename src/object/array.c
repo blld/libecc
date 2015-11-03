@@ -13,12 +13,64 @@
 struct Object * Array(prototype) = NULL;
 struct Function * Array(constructor) = NULL;
 
+static int valueIsArray(struct Value value)
+{
+	return value.type == Value(object) && value.data.object->type == &Text(arrayType);
+}
+
+static uint32_t valueArrayLength(struct Value value)
+{
+	if (valueIsArray(value))
+		return value.data.object->elementCount;
+	
+	return 1;
+}
+
+static void valueAppendFromElement (struct Value value, struct Object *object, uint32_t *element)
+{
+	if (valueIsArray(value))
+	{
+		uint32_t index, count;
+		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
+			object->element[(*element)++] = value.data.object->element[index];
+	}
+	else
+	{
+		object->element[*element].data.value = value;
+		object->element[(*element)++].data.flags = Object(isValue) | Object(enumerable) | Object(writable) | Object(configurable);
+	}
+}
+
 static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	Op.assertParameterCount(ecc, 1);
 	value = Op.argument(ecc, 0);
 	ecc->result = Value.truth(value.type == Value(object) && value.data.object->type == &Text(arrayType));
+	return Value.undefined();
+}
+
+static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value value;
+	uint32_t element = 0, length = 0, index, count;
+	struct Object *array = NULL;
+	Op.assertVariableParameter(ecc);
+	
+	value = Value.toObject(ecc->this, ecc, &(*ops)->text);
+	count = Op.variableArgumentCount(ecc);
+	
+	length += valueArrayLength(ecc->this);
+	for (index = 0; index < count; ++index)
+		length += valueArrayLength(Op.variableArgument(ecc, index));
+	
+	array = Array.createSized(length);
+	
+	valueAppendFromElement(ecc->this, array, &element);
+	for (index = 0; index < count; ++index)
+		valueAppendFromElement(Op.variableArgument(ecc, index), array, &element);
+	
+	ecc->result = Value.object(array);
 	return Value.undefined();
 }
 
@@ -104,6 +156,7 @@ void setup (void)
 	
 	Array(prototype) = Object.create(Object(prototype));
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	

@@ -488,6 +488,9 @@ static void testArray (void)
 	test("Array.isArray([])", "true");
 	test("Array.isArray({})", "false");
 	test("Array.isArray(Array.prototype)", "true");
+	test("var alpha = ['a', 'b', 'c'], numeric = [1, 2, 3]; alpha.concat(numeric).toString()", "a,b,c,1,2,3");
+	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object");
+	test("Array.prototype.concat.call(123, 'abc', [{}, 456]).toString()", "123,abc,[object Object],456");
 	
 	test("var a = [1, 2]; a.length", "2");
 	test("var a = [1, 2]; a.length = 5; a.length", "5");
