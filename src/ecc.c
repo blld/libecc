@@ -21,6 +21,9 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 1);
 	
+	if (ecc->construct)
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "eval is not a constructor")));
+	
 	value = Value.toString(Op.argument(ecc, 0), NULL);
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	

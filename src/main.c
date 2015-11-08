@@ -165,6 +165,7 @@ static void testEval (void)
 	
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
+	test("new eval('123')", "TypeError: eval is not a constructor");
 }
 
 static void testException (void)
