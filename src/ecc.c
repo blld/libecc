@@ -282,7 +282,7 @@ int evalInput (struct Ecc *self, struct Input *input)
 			if (text.location == Text(nativeCode).location)
 			{
 				// show caller's ops for [native code] error
-				while (ops->native != Op.call && ops->native != Op.eval && ops > function->oplist->ops)
+				while (ops->native != Op.call && ops->native != Op.eval  && ops->native != Op.construct && ops > function->oplist->ops)
 					--ops;
 				
 				text = ops->text;

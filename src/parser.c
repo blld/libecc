@@ -356,17 +356,20 @@ static struct OpList * member (struct Parser *self)
 static struct OpList * new (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
+	struct Text text = self->lexer->text;
 	
 	if (acceptToken(self, Lexer(newToken)))
 	{
 		int count = 0;
 		oplist = member(self);
+		text = Text.join(text, OpList.text(oplist));
 		if (acceptToken(self, '('))
 		{
 			oplist = OpList.join(oplist, arguments(self, &count));
+			text = Text.join(text, self->lexer->text);
 			expectToken(self, ')');
 		}
-		return OpList.unshift(Op.make(Op.construct, Value.integer(count), OpList.text(oplist)), oplist);
+		return OpList.unshift(Op.make(Op.construct, Value.integer(count), text), oplist);
 	}
 	else if (previewToken(self) == Lexer(functionToken))
 		return function(self, 0, 0, 0);
