@@ -409,10 +409,13 @@ static struct OpList * leftHandSide (struct Parser *self)
 			
 			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Key.isEqual(oplist->ops[0].value.data.key, Key(eval));
 			if (isEval)
+			{
+				text = Text.join(OpList.text(oplist), self->lexer->text);
 				OpList.destroy(oplist), oplist = NULL;
+			}
 			
 			oplist = OpList.join(oplist, arguments(self, &count));
-			text = Text.join(OpList.text(oplist), self->lexer->text);
+			text = Text.join(Text.join(text, OpList.text(oplist)), self->lexer->text);
 			
 			if (isEval)
 				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), text), oplist);
