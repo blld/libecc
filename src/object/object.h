@@ -82,7 +82,7 @@ Interface(Object,
 			struct {
 				struct Value value;
 				struct Key key;
-				char unused[63 - sizeof(void *) * 2 - sizeof(struct Key)];
+				char unused[sizeof(uint32_t) * 16 - sizeof(void *) * 2 - sizeof(struct Key)];
 				uint8_t flags;
 			} data;
 		} *hashmap;

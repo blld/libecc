@@ -68,7 +68,7 @@ struct OpList * append (struct OpList *self, struct Op op)
 
 struct OpList * appendNoop (struct OpList *self)
 {
-	return append(self, Op.make(Op.noop, Value.undefined(), Text.make(NULL, 0)));
+	return append(self, Op.make(Op.noop, Value(undefined), Text.make(NULL, 0)));
 }
 
 struct OpList * createLoop (struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition)
@@ -83,7 +83,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				struct Value stepValue;
 				if (step->opCount == 2 && (step->ops[0].native == Op.incrementRef || step->ops[0].native == Op.postIncrementRef))
 					stepValue = Value.integer(1);
-				else if (step->opCount == 3 && step->ops[0].native == Op.addAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integer) && step->ops[2].value.data.integer > 0)
+				else if (step->opCount == 3 && step->ops[0].native == Op.addAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
 					stepValue = step->ops[2].value;
 				else
 					goto normal;
@@ -111,7 +111,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				struct Value stepValue;
 				if (step->opCount == 2 && (step->ops[0].native == Op.decrementRef || step->ops[0].native == Op.postDecrementRef))
 					stepValue = Value.integer(1);
-				else if (step->opCount == 3 && step->ops[0].native == Op.minusAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integer) && step->ops[2].value.data.integer > 0)
+				else if (step->opCount == 3 && step->ops[0].native == Op.minusAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
 					stepValue = step->ops[2].value;
 				else
 					goto normal;
@@ -137,7 +137,7 @@ normal:
 		int skipOpCount;
 		
 		if (step && step->ops[0].native != Op.discard)
-			step = OpList.unshift(Op.make(Op.discard, Value.undefined(), text(step)), step);
+			step = OpList.unshift(Op.make(Op.discard, Value(undefined), text(step)), step);
 		
 		if (!condition)
 			condition = OpList.create(Op.value, Value.truth(1), OpList.text(body));
@@ -203,7 +203,7 @@ void dumpTo (struct OpList *self, FILE *file)
 	{
 		fprintf(file, "[%03d] %s ", i, Op.toChars(self->ops[i].native));
 		
-		if (self->ops[i].value.type != Value(undefined) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
+		if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)

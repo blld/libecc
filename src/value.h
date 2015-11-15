@@ -24,43 +24,44 @@ enum Value(Type) {
 	
 	/* static */
 	
-	Value(null) = -2 & ~0x70,
-	Value(false) = -1 & ~0x70,
-	Value(undefined) = 0x00,
-	Value(true) = 0x01,
+	Value(nullType) = -2 & ~0x70,
+	Value(falseType) = -1 & ~0x70,
+	Value(undefinedType) = 0x00,
+	Value(trueType) = 0x01,
 	
-	Value(breaker) = 0x02,
+	Value(breakerType) = 0x02,
 	
-	Value(integer) = 0x10,
-	Value(binary) = 0x12,
+	Value(integerType) = 0x10,
+	Value(binaryType) = 0x12,
 	
-	Value(key) = 0x20,
-	Value(text) = 0x22,
+	Value(keyType) = 0x20,
+	Value(textType) = 0x22,
 	
 	/* dynamic */
 	
-	Value(chars) = 0x24,
+	Value(charsType) = 0x24,
 	
 	/* Objects */
 	
-	Value(object) = 0x40,
-	Value(boolean) = 0x41,
-	Value(error) = 0x42,
-	Value(function) = 0x44,
-	Value(string) = 0x46,
-	Value(date) = 0x48,
-	Value(number) = 0x50,
+	Value(objectType) = 0x40,
+	Value(booleanType) = 0x41,
+	Value(errorType) = 0x42,
+	Value(functionType) = 0x44,
+	Value(stringType) = 0x46,
+	Value(dateType) = 0x48,
+	Value(numberType) = 0x50,
 	
-	Value(reference) = 0x4e,
+	Value(referenceType) = 0x4e,
 };
+
+extern const struct Value Value(undefined);
+extern const struct Value Value(true);
+extern const struct Value Value(false);
+extern const struct Value Value(null);
 
 
 Interface(Value,
 	
-	(struct Value, undefined ,(void))
-	(struct Value, null ,(void))
-	(struct Value, false ,(void))
-	(struct Value, true ,(void))
 	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
@@ -83,8 +84,10 @@ Interface(Value,
 	(int, isDynamic ,(struct Value))
 	(int, isTrue ,(struct Value))
 	
-	(struct Value, toString ,(struct Value, struct Text *buffer))
-	(struct Value, binaryToString ,(double binary, struct Text *buffer, int base /* support only 2, 8, 10, 16 */))
+	(struct Value, toString ,(struct Value))
+	(struct Value, binaryToString ,(double binary, int base /* support only 2, 8, 10, 16 */))
+	(uint16_t, toBufferLength ,(struct Value))
+	(uint16_t, toBuffer ,(struct Value, struct Text buffer))
 	(int, isString ,(struct Value))
 	(const char *, stringChars ,(struct Value))
 	(uint16_t, stringLength ,(struct Value))

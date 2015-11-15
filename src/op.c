@@ -18,9 +18,9 @@
 
 static struct Value addition (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
-	if (a.type == Value(binary) && b.type == Value(binary))
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.binary(a.data.binary + b.data.binary);
-	else if (a.type == Value(integer) && b.type == Value(integer))
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return Value.binary((double)a.data.integer + (double)b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
 		return Value.binary(Value.toBinary(a).data.binary + Value.toBinary(b).data.binary);
@@ -31,18 +31,11 @@ static struct Value addition (struct Ecc * const ecc, struct Value a, const stru
 		
 		if (Value.isString(a) || Value.isString(b))
 		{
-			char charsA[256], charsB[256];
-			struct Text bufferA = Text.make(charsA, sizeof(charsA));
-			struct Text bufferB = Text.make(charsB, sizeof(charsB));
-			struct Chars *chars;
-			uint16_t lengthA, lengthB;
-			a = Value.toString(a, &bufferA);
-			b = Value.toString(b, &bufferB);
-			lengthA = Value.stringLength(a);
-			lengthB = Value.stringLength(b);
-			chars = Chars.createSized(lengthA + lengthB);
-			memcpy(chars->chars, Value.stringChars(a), lengthA);
-			memcpy(chars->chars + lengthA, Value.stringChars(b), lengthB);
+			uint16_t lengthA = Value.toBufferLength(a);
+			uint16_t lengthB = Value.toBufferLength(b);
+			struct Chars *chars = Chars.createSized(lengthA + lengthB);
+			Value.toBuffer(a, (struct Text){ chars->chars, chars->length + 1 });
+			Value.toBuffer(b, (struct Text){ chars->chars + lengthA, chars->length - lengthA + 1 });
 			return Value.chars(chars);
 		}
 		else
@@ -52,9 +45,9 @@ static struct Value addition (struct Ecc * const ecc, struct Value a, const stru
 
 static struct Value subtraction (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
-	if (a.type == Value(binary) && b.type == Value(binary))
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.binary(a.data.binary - b.data.binary);
-	else if (a.type == Value(integer) && b.type == Value(integer))
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return Value.binary(a.data.integer - b.data.integer);
 	
 	return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
@@ -62,9 +55,9 @@ static struct Value subtraction (struct Ecc * const ecc, struct Value a, const s
 
 static struct Value equality (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
-	if (a.type == Value(binary) && b.type == Value(binary))
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
-	else if (a.type == Value(integer) && b.type == Value(integer))
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return Value.truth(a.data.integer == b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
 		return Value.truth(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
@@ -73,7 +66,7 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength != bLength)
-			return Value.false();
+			return Value(false);
 		
 		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
@@ -82,11 +75,11 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 	else if (Value.isObject(a) && Value.isObject(b))
 		return Value.truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
-		return Value.true();
-	else if (a.type == Value(null) && b.type == Value(undefined))
-		return Value.true();
-	else if (a.type == Value(undefined) && b.type == Value(null))
-		return Value.true();
+		return Value(true);
+	else if (a.type == Value(nullType) && b.type == Value(undefinedType))
+		return Value(true);
+	else if (a.type == Value(undefinedType) && b.type == Value(nullType))
+		return Value(true);
 	else if (Value.isNumber(a) && Value.isString(b))
 		return equality(ecc, a, aText, Value.toBinary(b), bText);
 	else if (Value.isString(a) && Value.isNumber(b))
@@ -104,14 +97,14 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 		return equality(ecc, a, aText, b, bText);
 	}
 	
-	return Value.false();
+	return Value(false);
 }
 
 static struct Value identicality (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
-	if (a.type == Value(binary) && b.type == Value(binary))
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
-	else if (a.type == Value(integer) && b.type == Value(integer))
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return Value.truth(a.data.integer == b.data.integer);
 	else if (Value.isNumber(a) && Value.isNumber(b))
 		return Value.truth(Value.toBinary(a).data.binary == Value.toBinary(b).data.binary);
@@ -120,7 +113,7 @@ static struct Value identicality (struct Ecc * const ecc, struct Value a, const 
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength != bLength)
-			return Value.false();
+			return Value(false);
 		
 		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
 	}
@@ -129,9 +122,9 @@ static struct Value identicality (struct Ecc * const ecc, struct Value a, const 
 	else if (Value.isObject(a) && Value.isObject(b))
 		return Value.truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
-		return Value.true();
+		return Value(true);
 	
-	return Value.false();
+	return Value(false);
 }
 
 static struct Value compare (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
@@ -154,7 +147,7 @@ static struct Value compare (struct Ecc * const ecc, struct Value a, const struc
 		b = Value.toBinary(b);
 		
 		if (isnan(a.data.binary) || isnan(b.data.binary))
-			return Value.undefined();
+			return Value(undefined);
 		
 		return Value.truth(a.data.binary < b.data.binary);
 	}
@@ -163,8 +156,8 @@ static struct Value compare (struct Ecc * const ecc, struct Value a, const struc
 static struct Value valueLess (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	a = compare(ecc, a, aText, b, bText);
-	if (a.type == Value(undefined))
-		return Value.false();
+	if (a.type == Value(undefinedType))
+		return Value(false);
 	else
 		return a;
 }
@@ -172,8 +165,8 @@ static struct Value valueLess (struct Ecc * const ecc, struct Value a, const str
 static struct Value valueMore (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	a = compare(ecc, b, bText, a, aText);
-	if (a.type == Value(undefined))
-		return Value.false();
+	if (a.type == Value(undefinedType))
+		return Value(false);
 	else
 		return a;
 }
@@ -181,19 +174,19 @@ static struct Value valueMore (struct Ecc * const ecc, struct Value a, const str
 static struct Value valueLessOrEqual (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	a = compare(ecc, b, bText, a, aText);
-	if (a.type == Value(undefined) || a.type == Value(true))
-		return Value.false();
+	if (a.type == Value(undefinedType) || a.type == Value(trueType))
+		return Value(false);
 	else
-		return Value.true();
+		return Value(true);
 }
 
 static struct Value valueMoreOrEqual (struct Ecc * const ecc, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	a = compare(ecc, a, aText, b, bText);
-	if (a.type == Value(undefined) || a.type == Value(true))
-		return Value.false();
+	if (a.type == Value(undefinedType) || a.type == Value(trueType))
+		return Value(false);
 	else
-		return Value.true();
+		return Value(true);
 }
 
 static int integerLess(int32_t a, int32_t b)
@@ -229,9 +222,9 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value this)
 {
 	if (!entry.value)
-		return Value.undefined();
+		return Value(undefined);
 	
-	if (entry.value->type == Value(function) && entry.value->data.function->flags & Function(isAccessor))
+	if (entry.value->type == Value(functionType) && entry.value->data.function->flags & Function(isAccessor))
 	{
 		if (entry.value->data.function->flags & Function(isGetter))
 			return callFunctionVA(entry.value->data.function, ecc, this, 0);
@@ -244,7 +237,7 @@ static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value t
 
 static struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value)
 {
-	if (entry.value->type == Value(function) && entry.value->data.function->flags & Function(isAccessor))
+	if (entry.value->type == Value(functionType) && entry.value->data.function->flags & Function(isAccessor))
 	{
 		if (entry.value->data.function->flags & Function(isSetter))
 			return callFunctionVA(entry.value->data.function, ecc, this, 1, value);
@@ -304,7 +297,7 @@ struct Value argument (struct Ecc * const ecc, int argumentIndex)
 
 void assertVariableParameter (struct Ecc * const ecc)
 {
-	assert(ecc->context->hashmap[2].data.value.type == Value(object));
+	assert(ecc->context->hashmap[2].data.value.type == Value(objectType));
 }
 
 int variableArgumentCount (struct Ecc * const ecc)
@@ -324,14 +317,14 @@ static struct Value getArgumentsLength (const struct Op ** const ops, struct Ecc
 {
 	Op.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary(ecc->this.data.object->elementCount);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value setArgumentsLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
 	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
@@ -434,7 +427,7 @@ static inline struct Value callOps (const struct Op * const ops, struct Ecc * co
 	ecc->this = this;
 	ecc->context = context;
 	ecc->construct = construct;
-	ecc->result = Value.undefined();
+	ecc->result = Value(undefined);
 	
 	ops->native(&callOps, ecc);
 	
@@ -541,6 +534,9 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		struct Object context = function->context;
 		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
 		
+//		Object.dumpTo(&context, stderr);
+//		fprintf(stderr, "\n%ld\n", sizeof(contextHashmap));
+		
 		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
 		context.hashmap = contextHashmap;
 		populateContext(ops, ecc, &context, function->parameterCount, argumentCount);
@@ -553,14 +549,14 @@ struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
+	struct Value object;
 	struct Value value = nextOp();
-	if (value.type != Value(function))
+	if (value.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
 	
-	// TODO
-	ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
-	
-	return callFunction(ops, ecc, value.data.function, argumentCount, 1);
+	object = ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
+	callFunction(ops, ecc, value.data.function, argumentCount, 1);
+	return object;
 }
 
 struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
@@ -568,7 +564,7 @@ struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
-	if (value.type != Value(function))
+	if (value.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a function", text->length, text->location)));
 	
 	return callFunction(ops, ecc, value.data.function, argumentCount, 0);
@@ -598,7 +594,7 @@ struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value noop (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	return Value.undefined();
+	return Value(undefined);
 }
 
 struct Value value (const struct Op ** const ops, struct Ecc * const ecc)
@@ -636,7 +632,7 @@ struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 		isGetter = 0;
 		isSetter = 0;
 		
-		if (value.type == Value(breaker))
+		if (value.type == Value(breakerType))
 		{
 			if (value.data.integer == 0)
 				isGetter = 1;
@@ -646,9 +642,9 @@ struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 			value = nextOp();
 		}
 		
-		if (value.type == Value(key))
+		if (value.type == Value(keyType))
 			Object.add(object, value.data.key, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
-		else if (value.type == Value(integer))
+		else if (value.type == Value(integerType))
 			Object.addElementAtIndex(object, value.data.integer, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
 	}
 	return Value.object(object);
@@ -664,7 +660,7 @@ struct Value array (const struct Op ** const ops, struct Ecc * const ecc)
 	for (index = 0; index < length; ++index)
 	{
 		value = nextOp();
-		if (value.type != Value(breaker))
+		if (value.type != Value(breakerType))
 		{
 			object->element[index].data.value = value;
 			object->element[index].data.flags = Object(isValue) | Object(writable) | Object(enumerable) | Object(configurable);
@@ -686,7 +682,7 @@ struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!entry.value)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	ecc->refObject = Value.undefined();
+	ecc->refObject = Value(undefined);
 	return *entry.value;
 }
 
@@ -713,7 +709,7 @@ struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	ecc->refObject = Value.undefined();
+	ecc->refObject = Value(undefined);
 	return ecc->context->hashmap[slot].data.value;
 }
 
@@ -747,7 +743,7 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Entry entry = Object.getMember(object.data.object, key);
 	if (!entry.value)
 	{
-		entry = Object.add(object.data.object, key, Value.undefined(), Object(writable) | Object(enumerable) | Object(configurable));
+		entry = Object.add(object.data.object, key, Value(undefined), Object(writable) | Object(enumerable) | Object(configurable));
 		if (!entry.value)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
@@ -800,7 +796,7 @@ struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ec
 	struct Entry entry = Object.getProperty(object.data.object, property);
 	if (!entry.value)
 	{
-		Object.setProperty(object.data.object, property, Value.undefined());
+		Object.setProperty(object.data.object, property, Value(undefined));
 		entry = Object.getProperty(object.data.object, property);
 		if (!entry.value)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
@@ -832,7 +828,7 @@ struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ec
 	struct Value result = Object.deleteProperty(object.data.object, property);
 	if (!Value.isTrue(result))
 	{
-		struct Value string = Value.toString(property, NULL);
+		struct Value string = Value.toString(property);
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
 	}
 	return result;
@@ -929,7 +925,7 @@ struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Object *object;
 	
 	if (!Value.isObject(a))
-		return Value.false();
+		return Value(false);
 	
 	text = opText();
 	b = nextOp();
@@ -939,10 +935,10 @@ struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 	object = b.data.object;
 	do
 		if (a.data.object->prototype == object)
-			return Value.true();
+			return Value(true);
 	while (( object = object->prototype ));
 	
-	return Value.false();
+	return Value(false);
 }
 
 struct Value in (const struct Op ** const ops, struct Ecc * const ecc)
@@ -962,7 +958,12 @@ struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.binary(a.data.binary * b.data.binary);
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
+		return Value.binary((double)a.data.integer * (double)b.data.integer);
+	else
+		return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
 }
 
 struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1042,7 +1043,7 @@ struct Value logicalAnd (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isTrue(nextOp()))
 	{
 		*ops += opCount;
-		return Value.false();
+		return Value(false);
 	}
 	else
 		return Value.truth(Value.isTrue(nextOp()));
@@ -1054,7 +1055,7 @@ struct Value logicalOr (const struct Op ** const ops, struct Ecc * const ecc)
 	if (Value.isTrue(nextOp()))
 	{
 		*ops += opCount;
-		return Value.true();
+		return Value(true);
 	}
 	else
 		return Value.truth(Value.isTrue(nextOp()));
@@ -1089,9 +1090,9 @@ struct Value not (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value incrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
-	if (ref->type == Value(integer))
+	if (ref->type == Value(integerType) && integerWontOverflowPositive(ref->data.integer, 1))
 		++ref->data.integer;
-	else if (ref->type == Value(binary))
+	else if (ref->type == Value(binaryType))
 		++ref->data.binary;
 	else
 	{
@@ -1104,9 +1105,9 @@ struct Value incrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value decrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
-	if (ref->type == Value(integer))
+	if (ref->type == Value(integerType) && integerWontOverflowNegative(ref->data.integer, -1))
 		--ref->data.integer;
-	else if (ref->type == Value(binary))
+	else if (ref->type == Value(binaryType))
 		--ref->data.binary;
 	else
 	{
@@ -1120,9 +1121,9 @@ struct Value postIncrementRef (const struct Op ** const ops, struct Ecc * const 
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
-	if (ref->type == Value(integer))
+	if (ref->type == Value(integerType))
 		++ref->data.integer;
-	else if (ref->type == Value(binary))
+	else if (ref->type == Value(binaryType))
 		++ref->data.binary;
 	else
 	{
@@ -1136,9 +1137,9 @@ struct Value postDecrementRef (const struct Op ** const ops, struct Ecc * const 
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
-	if (ref->type == Value(integer))
+	if (ref->type == Value(integerType))
 		--ref->data.integer;
-	else if (ref->type == Value(binary))
+	else if (ref->type == Value(binaryType))
 		--ref->data.binary;
 	else
 	{
@@ -1262,7 +1263,7 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	const struct Op * volatile rethrowOps = NULL;
 	volatile int rethrow = 0;
-	volatile struct Value value = Value.undefined();
+	volatile struct Value value = Value(undefined);
 	struct Value finallyValue;
 	
 	if (!setjmp(*Ecc.pushEnv(ecc))) // try
@@ -1282,7 +1283,7 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 			{
 				ecc->context = Object.create(context);
 				Object.add(ecc->context, key, ecc->result, 0);
-				ecc->result = Value.undefined();
+				ecc->result = Value(undefined);
 				value = nextOp(); // execute until noop
 				rethrow = 0;
 			}
@@ -1294,14 +1295,14 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 	*ops = end; // op[end] = Op.jump, to after catch
 	finallyValue = nextOp(); // jump to after catch, and execute until noop
 	
-	if (finallyValue.type != Value(undefined)) /* return breaker */
+	if (finallyValue.type != Value(undefinedType)) /* return breaker */
 		return finallyValue;
 	else if (rethrow)
 	{
 		*ops = rethrowOps;
 		Ecc.jmpEnv(ecc, value);
 	}
-	else if (value.type != Value(undefined)) /* return breaker */
+	else if (value.type != Value(undefinedType)) /* return breaker */
 		return value;
 	else
 		return nextOp();
@@ -1400,7 +1401,7 @@ struct Value switchOp (const struct Op ** const ops, struct Ecc * const ecc)
 // MARK: Iteration
 
 #define stepIteration(value, nextOps) \
-	if (( value = nextOp() ).type == Value(breaker) && --value.data.integer) \
+	if (( value = nextOp() ).type == Value(breakerType) && --value.data.integer) \
 	{ \
 		if (--value.data.integer) \
 			return value; /* return breaker */\
@@ -1444,14 +1445,20 @@ static struct Value iterateIntegerRef (
 	const struct Op *nextOps = *ops;
 	struct Value value;
 	
-	if (indexRef->type == Value(integer) && countRef->type == Value(integer))
+//	if (indexRef->type == Value(binary) && (double)Value.toInteger(*indexRef).data.binary == indexRef->data.binary)
+//		*indexRef = Value.toInteger(*indexRef);
+//	
+//	if (countRef->type == Value(binary) && (double)Value.toInteger(*countRef).data.binary == countRef->data.binary)
+//		*countRef = Value.toInteger(*countRef);
+	
+	if (indexRef->type == Value(integerType) && countRef->type == Value(integerType))
 	{
 		int32_t step = valueStep == addition? stepValue.data.integer: -stepValue.data.integer;
 		for (; compareInteger(indexRef->data.integer, countRef->data.integer); indexRef->data.integer += step)
 		{
 			stepIteration(value, nextOps);
 			
-			if (indexRef->type == Value(integer) && countRef->type == Value(integer) && wontOverflow(indexRef->data.integer, step))
+			if (indexRef->type == Value(integerType) && countRef->type == Value(integerType) && wontOverflow(indexRef->data.integer, step))
 				continue;
 			else
 			{

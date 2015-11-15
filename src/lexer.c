@@ -116,7 +116,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 	disallowRegex = self->disallowRegex;
 	disallowKeyword = self->disallowKeyword;
 	
-	self->value = Value.undefined();
+	self->value = Value(undefined);
 	self->didLineBreak = 0;
 	self->disallowRegex = 0;
 	self->disallowKeyword = 0;
@@ -338,7 +338,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				{
 					self->value = parseInteger(self->text, 0);
 					
-					if (self->value.type == Value(integer))
+					if (self->value.type == Value(integerType))
 						return Lexer(integerToken);
 					else
 						return Lexer(binaryToken);
@@ -667,7 +667,7 @@ int32_t parseElement (struct Text text)
 		return -1;
 	
 	value = parseInteger(text, 0);
-	if (value.type != Value(integer))
+	if (value.type != Value(integerType))
 		return -1;
 	
 	return value.data.integer;

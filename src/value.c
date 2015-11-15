@@ -10,42 +10,19 @@
 
 // MARK: - Private
 
+const struct Value Value(undefined) = { { 0 }, Value(undefinedType) };
+const struct Value Value(true) = { { 0 }, Value(trueType) };
+const struct Value Value(false) = { { 0 }, Value(falseType) };
+const struct Value Value(null) = { { 0 }, Value(nullType) };
+
 // MARK: - Static Members
 
 // MARK: - Methods
 
-struct Value undefined (void)
-{
-	return (struct Value){
-		.type = Value(undefined),
-	};
-}
-
-struct Value null (void)
-{
-	return (struct Value){
-		.type = Value(null),
-	};
-}
-
-struct Value true (void)
-{
-	return (struct Value){
-		.type = Value(true),
-	};
-}
-
-struct Value false (void)
-{
-	return (struct Value){
-		.type = Value(false),
-	};
-}
-
 struct Value truth (int truth)
 {
 	return (struct Value){
-		.type = truth? Value(true): Value(false),
+		.type = truth? Value(trueType): Value(falseType),
 	};
 }
 
@@ -53,7 +30,7 @@ struct Value integer (int32_t integer)
 {
 	return (struct Value){
 		.data = { .integer = integer },
-		.type = Value(integer),
+		.type = Value(integerType),
 	};
 }
 
@@ -61,7 +38,7 @@ struct Value binary (double binary)
 {
 	return (struct Value){
 		.data = { .binary = binary },
-		.type = Value(binary),
+		.type = Value(binaryType),
 	};
 }
 
@@ -69,7 +46,7 @@ struct Value key (struct Key key)
 {
 	return (struct Value){
 		.data = { .key = key },
-		.type = Value(key),
+		.type = Value(keyType),
 	};
 }
 
@@ -77,7 +54,7 @@ struct Value text (const struct Text *text)
 {
 	return (struct Value){
 		.data = { .text = text },
-		.type = Value(text),
+		.type = Value(textType),
 	};
 }
 
@@ -87,7 +64,7 @@ struct Value chars (struct Chars *chars)
 	
 	return (struct Value){
 		.data = { .chars = chars },
-		.type = Value(chars),
+		.type = Value(charsType),
 	};
 }
 
@@ -97,7 +74,7 @@ struct Value object (struct Object *object)
 	
 	return (struct Value){
 		.data = { .object = object },
-		.type = Value(object),
+		.type = Value(objectType),
 	};
 }
 
@@ -107,7 +84,7 @@ struct Value error (struct Error *error)
 	
 	return (struct Value){
 		.data = { .error = error },
-		.type = Value(error),
+		.type = Value(errorType),
 	};
 }
 
@@ -117,7 +94,7 @@ struct Value string (struct String *string)
 	
 	return (struct Value){
 		.data = { .string = string },
-		.type = Value(string),
+		.type = Value(stringType),
 	};
 }
 
@@ -127,7 +104,7 @@ struct Value number (struct Number *number)
 	
 	return (struct Value){
 		.data = { .number = number },
-		.type = Value(number),
+		.type = Value(numberType),
 	};
 }
 
@@ -137,7 +114,7 @@ struct Value boolean (struct Boolean *boolean)
 	
 	return (struct Value){
 		.data = { .boolean = boolean },
-		.type = Value(boolean),
+		.type = Value(booleanType),
 	};
 }
 
@@ -147,7 +124,7 @@ struct Value date (struct Date *date)
 	
 	return (struct Value){
 		.data = { .date = date },
-		.type = Value(date),
+		.type = Value(dateType),
 	};
 }
 
@@ -157,7 +134,7 @@ struct Value function (struct Function *function)
 	
 	return (struct Value){
 		.data = { .function = function },
-		.type = Value(function),
+		.type = Value(functionType),
 	};
 }
 
@@ -165,7 +142,7 @@ struct Value breaker (int32_t integer)
 {
 	return (struct Value){
 		.data = { .integer = integer },
-		.type = Value(breaker),
+		.type = Value(breakerType),
 	};
 }
 
@@ -175,7 +152,7 @@ struct Value reference (struct Value *reference)
 	
 	return (struct Value){
 		.data = { .reference = reference },
-		.type = Value(reference),
+		.type = Value(referenceType),
 	};
 }
 
@@ -187,18 +164,18 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	struct Value aFunction;
 	struct Value bFunction;
 	
-	if (value.type < Value(object))
+	if (value.type < Value(objectType))
 		return value;
 	
 	object = value.data.object;
 	if (!hint)
-		hint = value.type == Value(date)? 1: -1;
+		hint = value.type == Value(dateType)? 1: -1;
 	
 	aKey = hint > 0? Key(toString): Key(valueOf);
 	bKey = hint > 0? Key(valueOf): Key(toString);
 	
 	aFunction = Object.get(object, aKey);
-	if (aFunction.type == Value(function))
+	if (aFunction.type == Value(functionType))
 	{
 		struct Value result = Op.callFunctionVA(aFunction.data.function, ecc, value, 0);
 		if (isPrimitive(result))
@@ -206,7 +183,7 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	}
 	
 	bFunction = Object.get(object, bKey);
-	if (bFunction.type == Value(function))
+	if (bFunction.type == Value(functionType))
 	{
 		struct Value result = Op.callFunctionVA(bFunction.data.function, ecc, value, 0);
 		if (isPrimitive(result))
@@ -218,7 +195,7 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 
 int isPrimitive (struct Value value)
 {
-	return value.type < Value(object);
+	return value.type < Value(objectType);
 }
 
 int isBoolean (struct Value value)
@@ -228,16 +205,16 @@ int isBoolean (struct Value value)
 
 int isDynamic (struct Value value)
 {
-	return value.type >= Value(chars);
+	return value.type >= Value(charsType);
 }
 
 int isTrue (struct Value value)
 {
 	if (value.type <= 0)
 		return 0;
-	else if (value.type == Value(integer))
+	else if (value.type == Value(integerType))
 		return value.data.integer != 0;
-	else if (value.type == Value(binary))
+	else if (value.type == Value(binaryType))
 		return value.data.binary != 0;
 	else if (isString(value))
 		return stringLength(value) > 0;
@@ -245,70 +222,227 @@ int isTrue (struct Value value)
 		return 1;
 }
 
-struct Value toString (struct Value value, struct Text *buffer)
+struct Value toString (struct Value value)
 {
 	switch (value.type)
 	{
-		case Value(text):
-		case Value(chars):
+		case Value(textType):
+		case Value(charsType):
 			return value;
 		
-		case Value(key):
+		case Value(keyType):
 			return Value.text(Key.textOf(value.data.key));
 		
-		case Value(string):
+		case Value(stringType):
 			return Value.chars(value.data.string->value);
 		
-		case Value(null):
+		case Value(nullType):
 			return Value.text(&Text(null));
 		
-		case Value(undefined):
+		case Value(undefinedType):
 			return Value.text(&Text(undefined));
 		
-		case Value(false):
+		case Value(falseType):
 			return Value.text(&Text(false));
 		
-		case Value(true):
+		case Value(trueType):
 			return Value.text(&Text(true));
 		
-		case Value(boolean):
+		case Value(booleanType):
 			return value.data.boolean->truth? Value.text(&Text(true)): Value.text(&Text(false));
 		
-		case Value(integer):
-			return binaryToString(value.data.integer, buffer, 10);
+		case Value(integerType):
+			return binaryToString(value.data.integer, 10);
 		
-		case Value(number):
+		case Value(numberType):
 			value.data.binary = value.data.number->value;
 			/*vvv*/
 		
-		case Value(binary):
-			return binaryToString(value.data.binary, buffer, 10);
+		case Value(binaryType):
+			return binaryToString(value.data.binary, 10);
 		
-		case Value(object):
+		case Value(objectType):
 			return Value.text(value.data.object->type);
 		
-		case Value(function):
+		case Value(functionType):
 			return Value.text(&value.data.function->text);
 		
-		case Value(error):
+		case Value(errorType):
 		{
 			struct Object *object = value.data.object;
-			struct Value name = Value.toString(Object.get(object, Key(name)), NULL);
-			struct Value message = Value.toString(Object.get(object, Key(message)), NULL);
+			struct Value name = Value.toString(Object.get(object, Key(name)));
+			struct Value message = Value.toString(Object.get(object, Key(message)));
 			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
 		}
 		
-		case Value(date):
-		case Value(breaker):
-		case Value(reference):
+		case Value(dateType):
+		case Value(breakerType):
+		case Value(referenceType):
 			break;
 	}
 	assert(0);
 	abort();
 }
 
-struct Value binaryToString (double binary, struct Text *buffer, int base)
+uint16_t toBufferLength (struct Value value)
 {
+	switch (value.type)
+	{
+		case Value(keyType):
+			return Key.textOf(value.data.key)->length;
+		
+		case Value(textType):
+			return value.data.text->length;
+		
+		case Value(stringType):
+			return value.data.string->value->length;
+		
+		case Value(charsType):
+			return value.data.chars->length;
+		
+		case Value(nullType):
+			return Text(null).length;
+		
+		case Value(undefinedType):
+			return Text(undefined).length;
+		
+		case Value(falseType):
+			return Text(false).length;
+		
+		case Value(trueType):
+			return Text(true).length;
+		
+		case Value(booleanType):
+			if (value.data.boolean->truth)
+				return Text(true).length;
+			else
+				return Text(false).length;
+		
+		case Value(integerType):
+			return Text.writeBinary((struct Text){ NULL, 0 }, value.data.integer, 10);
+		
+		case Value(numberType):
+			return Text.writeBinary((struct Text){ NULL, 0 }, value.data.number->value, 10);
+		
+		case Value(binaryType):
+			return Text.writeBinary((struct Text){ NULL, 0 }, value.data.binary, 10);
+		
+		case Value(objectType):
+			return value.data.object->type->length;
+		
+		case Value(functionType):
+			return value.data.function->text.length;
+		
+		case Value(errorType):
+		{
+			struct Object *object = value.data.object;
+			uint16_t length = 0;
+			
+			length += toBufferLength(Object.get(object, Key(name)));
+			length++;
+			length++;
+			length += toBufferLength(Object.get(object, Key(message)));
+			return length;
+		}
+		
+		case Value(dateType):
+		case Value(breakerType):
+		case Value(referenceType):
+			assert(0);
+			abort();
+	}
+}
+
+uint16_t toBuffer (struct Value value, struct Text buffer)
+{
+	struct Text text;
+	
+	switch (value.type)
+	{
+		case Value(keyType):
+			text = *Key.textOf(value.data.key);
+			break;
+		
+		case Value(textType):
+			text = *value.data.text;
+			break;
+		
+		case Value(stringType):
+			text = (struct Text){ value.data.string->value->chars, value.data.string->value->length };
+			break;
+		
+		case Value(charsType):
+			text = (struct Text){ value.data.chars->chars, value.data.chars->length };
+			break;
+		
+		case Value(nullType):
+			text = Text(null);
+			break;
+		
+		case Value(undefinedType):
+			text = Text(undefined);
+			break;
+		
+		case Value(falseType):
+			text = Text(false);
+			break;
+		
+		case Value(trueType):
+			text = Text(true);
+			break;
+		
+		case Value(booleanType):
+			if (value.data.boolean->truth)
+				text = Text(true);
+			else
+				text = Text(false);
+			
+			break;
+		
+		case Value(integerType):
+			return Text.writeBinary(buffer, value.data.integer, 10);
+		
+		case Value(numberType):
+			return Text.writeBinary(buffer, value.data.number->value, 10);
+		
+		case Value(binaryType):
+			return Text.writeBinary(buffer, value.data.binary, 10);
+		
+		case Value(objectType):
+			text = *value.data.object->type;
+			break;
+		
+		case Value(functionType):
+			text = value.data.function->text;
+			break;
+		
+		case Value(errorType):
+		{
+			struct Object *object = value.data.object;
+			uint16_t length = 0;
+			
+			length += toBuffer(Object.get(object, Key(name)), buffer);
+			((char *)buffer.location)[length++] = ':';
+			((char *)buffer.location)[length++] = ' ';
+			length += toBuffer(Object.get(object, Key(message)), (struct Text){ buffer.location + length, buffer.length - length });
+			return length;
+		}
+		
+		case Value(dateType):
+		case Value(breakerType):
+		case Value(referenceType):
+			assert(0);
+			abort();
+	}
+	
+	memcpy((char *)buffer.location, text.location, text.length);
+	return text.length;
+}
+
+struct Value binaryToString (double binary, int base)
+{
+	uint16_t length;
+	
 	if (binary == 0)
 		return Value.text(&Text(zero));
 	else if (binary == 1)
@@ -323,70 +457,10 @@ struct Value binaryToString (double binary, struct Text *buffer, int base)
 			return Value.text(&Text(infinity));
 	}
 	
-	if (!base || base == 10)
-	{
-		long dblDig10 = pow(10, DBL_DIG);
-		int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: DECIMAL_DIG;
-		
-		if (buffer && buffer->length > snprintf(NULL, 0, "%.*g", precision, binary))
-		{
-			buffer->length = snprintf((char *)buffer->location, buffer->length, "%.*g", precision, binary);
-			return Value.text(buffer);
-		}
-		else
-			return Value.chars(Chars.create("%.*g", precision, binary));
-	}
-	else
-	{
-		int sign = signbit(binary);
-		unsigned long integer = sign? -binary: binary;
-		if (integer == 0)
-			return Value.text(&Text(zero));
-		else if (integer == 1)
-			return Value.text(&Text(one));
-		
-		if (base == 8 || base == 16)
-		{
-			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
-			
-			if (buffer && buffer->length > snprintf(NULL, 0, format, integer))
-			{
-				buffer->length = snprintf((char *)buffer->location, buffer->length, format, integer);
-				return Value.text(buffer);
-			}
-			else
-				return Value.chars(Chars.create(format, integer));
-		}
-		else
-		{
-			static char const digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-			char bytes[1 + sizeof(integer) * CHAR_BIT];
-			char *p = bytes + sizeof(bytes);
-			long length;
-			
-			while (integer) {
-				*(--p) = digits[integer % base];
-				integer /= base;
-			}
-			if (sign)
-				*(--p) = '-';
-			
-			length = bytes + sizeof(bytes) - p;
-			
-			if (buffer && buffer->length >= length)
-			{
-				memcpy((char *)buffer->location, p, length);
-				buffer->length = length;
-				return Value.text(buffer);
-			}
-			else
-			{
-				struct Chars *chars = Chars.createSized(length);
-				memcpy(chars->chars, p, length);
-				return Value.chars(chars);
-			}
-		}
-	}
+	length = Text.writeBinary((struct Text){ NULL, 0 }, binary, base);
+	struct Chars *chars = Chars.createSized(length);
+	Text.writeBinary((struct Text){ chars->chars, chars->length + 1 }, binary, base);
+	return Value.chars(chars);
 }
 
 int isString (struct Value value)
@@ -396,11 +470,11 @@ int isString (struct Value value)
 
 const char * stringChars (struct Value value)
 {
-	if (value.type == Value(chars))
+	if (value.type == Value(charsType))
 		return value.data.chars->chars;
-	else if (value.type == Value(text))
+	else if (value.type == Value(textType))
 		return value.data.text->location;
-	else if (value.type == Value(string))
+	else if (value.type == Value(stringType))
 		return value.data.string->value->chars;
 	else
 		return NULL;
@@ -408,11 +482,11 @@ const char * stringChars (struct Value value)
 
 uint16_t stringLength (struct Value value)
 {
-	if (value.type == Value(chars))
+	if (value.type == Value(charsType))
 		return value.data.chars->length;
-	else if (value.type == Value(text))
+	else if (value.type == Value(textType))
 		return value.data.text->length;
-	else if (value.type == Value(string))
+	else if (value.type == Value(stringType))
 		return value.data.string->value->length;
 	else
 		return 0;
@@ -422,29 +496,29 @@ struct Value toBinary (struct Value value)
 {
 	switch (value.type)
 	{
-		case Value(binary):
+		case Value(binaryType):
 			return value;
 		
-		case Value(integer):
+		case Value(integerType):
 			return Value.binary(value.data.integer);
 		
-		case Value(number):
+		case Value(numberType):
 			return Value.binary(value.data.number->value);
 		
-		case Value(null):
-		case Value(false):
+		case Value(nullType):
+		case Value(falseType):
 			return Value.binary(0);
 		
-		case Value(true):
+		case Value(trueType):
 			return Value.binary(1);
 		
-		case Value(boolean):
+		case Value(booleanType):
 			return Value.binary(value.data.boolean->truth? 1: 0);
 		
-		case Value(undefined):
+		case Value(undefinedType):
 			return Value.binary(NAN);
 		
-		case Value(text):
+		case Value(textType):
 			if (value.data.text == &Text(zero))
 				return Value.binary(0);
 			else if (value.data.text == &Text(one))
@@ -458,19 +532,19 @@ struct Value toBinary (struct Value value)
 			
 			/*vvv*/
 			
-		case Value(key):
-		case Value(chars):
-		case Value(string):
+		case Value(keyType):
+		case Value(charsType):
+		case Value(stringType):
 			return Lexer.parseBinary(Text.make(Value.stringChars(value), Value.stringLength(value)));
 		
-		case Value(object):
-		case Value(error):
-		case Value(date):
-		case Value(function):
+		case Value(objectType):
+		case Value(errorType):
+		case Value(dateType):
+		case Value(functionType):
 			return Value.binary(NAN);
 		
-		case Value(breaker):
-		case Value(reference):
+		case Value(breakerType):
+		case Value(referenceType):
 			break;
 	}
 	assert(0);
@@ -496,38 +570,38 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 {
 	switch (value.type)
 	{
-		case Value(null):
+		case Value(nullType):
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert null to object")));
 		
-		case Value(undefined):
+		case Value(undefinedType):
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert undefined to object")));
 		
-		case Value(function):
-		case Value(object):
-		case Value(error):
-		case Value(string):
-		case Value(number):
-		case Value(date):
-		case Value(boolean):
+		case Value(functionType):
+		case Value(objectType):
+		case Value(errorType):
+		case Value(stringType):
+		case Value(numberType):
+		case Value(dateType):
+		case Value(booleanType):
 			return value;
 		
-		case Value(key):
-		case Value(text):
-		case Value(chars):
+		case Value(keyType):
+		case Value(textType):
+		case Value(charsType):
 			return Value.string(String.create(Chars.create("%.*s", stringLength(value), stringChars(value))));
 		
-		case Value(false):
-		case Value(true):
-			return Value.boolean(Boolean.create(value.type == Value(true)));
+		case Value(falseType):
+		case Value(trueType):
+			return Value.boolean(Boolean.create(value.type == Value(trueType)));
 		
-		case Value(integer):
+		case Value(integerType):
 			return Value.number(Number.create(value.data.integer));
 		
-		case Value(binary):
+		case Value(binaryType):
 			return Value.number(Number.create(value.data.binary));
 		
-		case Value(breaker):
-		case Value(reference):
+		case Value(breakerType):
+		case Value(referenceType):
 			break;
 	}
 	assert(0);
@@ -536,43 +610,43 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 
 int isObject (struct Value value)
 {
-	return value.type >= Value(object);
+	return value.type >= Value(objectType);
 }
 
 struct Value toType (struct Value value)
 {
 	switch (value.type)
 	{
-		case Value(true):
-		case Value(false):
+		case Value(trueType):
+		case Value(falseType):
 			return Value.text(&Text(boolean));
 		
-		case Value(undefined):
+		case Value(undefinedType):
 			return Value.text(&Text(undefined));
 		
-		case Value(integer):
-		case Value(binary):
+		case Value(integerType):
+		case Value(binaryType):
 			return Value.text(&Text(number));
 		
-		case Value(key):
-		case Value(text):
-		case Value(chars):
+		case Value(keyType):
+		case Value(textType):
+		case Value(charsType):
 			return Value.text(&Text(string));
 		
-		case Value(null):
-		case Value(object):
-		case Value(string):
-		case Value(number):
-		case Value(boolean):
-		case Value(error):
-		case Value(date):
+		case Value(nullType):
+		case Value(objectType):
+		case Value(stringType):
+		case Value(numberType):
+		case Value(booleanType):
+		case Value(errorType):
+		case Value(dateType):
 			return Value.text(&Text(object));
 		
-		case Value(function):
+		case Value(functionType):
 			return Value.text(&Text(function));
 		
-		case Value(breaker):
-		case Value(reference):
+		case Value(breakerType):
+		case Value(referenceType):
 			break;
 	}
 	assert(0);
@@ -583,81 +657,81 @@ void dumpTo (struct Value value, FILE *file)
 {
 	switch (value.type)
 	{
-		case Value(null):
+		case Value(nullType):
 			fputs("null", file);
 			return;
 		
-		case Value(undefined):
+		case Value(undefinedType):
 			fputs("undefined", file);
 			return;
 		
-		case Value(false):
+		case Value(falseType):
 			fputs("false", file);
 			return;
 		
-		case Value(true):
+		case Value(trueType):
 			fputs("true", file);
 			return;
 		
-		case Value(boolean):
+		case Value(booleanType):
 			fputs(value.data.boolean->truth? "true": "false", file);
 			return;
 		
-		case Value(integer):
+		case Value(integerType):
 			fprintf(file, "%d", value.data.integer);
 			return;
 		
-		case Value(breaker):
+		case Value(breakerType):
 			fprintf(file, "[[breaker:%d]]", value.data.integer);
 			return;
 		
-		case Value(number):
+		case Value(numberType):
 			value.data.binary = value.data.number->value;
 			/*vvv*/
 			
-		case Value(binary):
+		case Value(binaryType):
 			fprintf(file, "%g", value.data.binary);
 			return;
 		
-		case Value(key):
+		case Value(keyType):
 		{
 			struct Text *text = Key.textOf(value.data.key);
 			fwrite(text->location, sizeof(char), text->length, file);
 			return;
 		}
 		
-		case Value(text):
+		case Value(textType):
 			fwrite(value.data.text->location, sizeof(char), value.data.text->length, file);
 			return;
 		
-		case Value(chars):
+		case Value(charsType):
 			fwrite(value.data.chars->chars, sizeof(char), value.data.chars->length, file);
 			return;
 		
-		case Value(string):
+		case Value(stringType):
 			fwrite(value.data.string->value->chars, sizeof(char), value.data.string->value->length, file);
 			return;
 		
-		case Value(object):
-		case Value(date):
+		case Value(objectType):
+		case Value(dateType):
 			Object.dumpTo(value.data.object, file);
 			return;
 		
-		case Value(error):
+		case Value(errorType):
 		{
-			struct Value name = toString(Object.get(&value.data.error->object, Key(name)), NULL);
-			struct Value message = toString(Object.get(&value.data.error->object, Key(message)), NULL);
+			struct Value name = toString(Object.get(&value.data.error->object, Key(name)));
+			struct Value message = toString(Object.get(&value.data.error->object, Key(message)));
 			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
 			fputs(": ", file);
 			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);
 			return;
 		}
 		
-		case Value(function):
+		case Value(functionType):
 			fwrite(value.data.function->text.location, sizeof(char), value.data.function->text.length, file);
 			return;
 		
-		case Value(reference):
+		case Value(referenceType):
 			fputs("-> ", file);
 			dumpTo(*value.data.reference, file);
 			return;

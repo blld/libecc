@@ -20,9 +20,9 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	Op.assertParameterCount(ecc, 1);
 	
 #warning TODO
-	ecc->result = Value.null();
+	ecc->result = Value(null);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Methods

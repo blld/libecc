@@ -47,7 +47,7 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 	
 	ecc->result = Value.chars(chars);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
@@ -56,13 +56,13 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0), 0);
+	value = Value.toString(Op.argument(ecc, 0));
 	if (ecc->construct)
 		ecc->result = Value.string(String.create(Chars.create(Value.stringChars(value), Value.stringLength(value))));
 	else
 		ecc->result = value;
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members

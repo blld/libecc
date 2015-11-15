@@ -19,11 +19,11 @@ static struct Value toExponential (const struct Op ** const ops, struct Ecc * co
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	if (ecc->this.type != Value(number))
+	if (ecc->this.type != Value(numberType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
 	
 	value = Op.argument(ecc, 0);
-	if (value.type != Value(undefined))
+	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > DECIMAL_DIG)
@@ -34,7 +34,7 @@ static struct Value toExponential (const struct Op ** const ops, struct Ecc * co
 	else
 		ecc->result = Value.chars(Chars.create("%e", ecc->this.data.number->value));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ecc)
@@ -43,11 +43,11 @@ static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ec
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	if (ecc->this.type != Value(number))
+	if (ecc->this.type != Value(numberType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
 	
 	value = Op.argument(ecc, 0);
-	if (value.type != Value(undefined))
+	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > DECIMAL_DIG)
@@ -58,7 +58,7 @@ static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ec
 	else
 		ecc->result = Value.chars(Chars.create("%f", ecc->this.data.number->value));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value toPrecision (const struct Op ** const ops, struct Ecc * const ecc)
@@ -67,11 +67,11 @@ static struct Value toPrecision (const struct Op ** const ops, struct Ecc * cons
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	if (ecc->this.type != Value(number))
+	if (ecc->this.type != Value(numberType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
 	
 	value = Op.argument(ecc, 0);
-	if (value.type != Value(undefined))
+	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 100)
@@ -80,9 +80,9 @@ static struct Value toPrecision (const struct Op ** const ops, struct Ecc * cons
 		ecc->result = Value.chars(Chars.create("%.*g", precision, ecc->this.data.number->value));
 	}
 	else
-		ecc->result = Value.binaryToString(ecc->this.data.number->value, NULL, 10);
+		ecc->result = Value.binaryToString(ecc->this.data.number->value, 10);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
@@ -92,11 +92,11 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	if (ecc->this.type != Value(number))
+	if (ecc->this.type != Value(numberType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
 	
 	value = Op.argument(ecc, 0);
-	if (value.type != Value(undefined))
+	if (value.type != Value(undefinedType))
 	{
 		radix = Value.toInteger(value).data.integer;
 		if (radix < 2 || radix > 36)
@@ -106,19 +106,19 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", ecc->this.data.number->value, radix);
 	}
 	
-	ecc->result = Value.binaryToString(ecc->this.data.number->value, NULL, radix);
+	ecc->result = Value.binaryToString(ecc->this.data.number->value, radix);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
-	if (ecc->this.type != Value(number))
+	if (ecc->this.type != Value(numberType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
 	
 	ecc->result = Value.binary(ecc->this.data.number->value);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
@@ -133,7 +133,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	else
 		ecc->result = value;
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members

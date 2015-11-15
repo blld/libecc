@@ -15,7 +15,7 @@ struct Function * Array(constructor) = NULL;
 
 static int valueIsArray(struct Value value)
 {
-	return value.type == Value(object) && value.data.object->type == &Text(arrayType);
+	return value.type == Value(objectType) && value.data.object->type == &Text(arrayType);
 }
 
 static uint32_t valueArrayLength(struct Value value)
@@ -41,13 +41,45 @@ static void valueAppendFromElement (struct Value value, struct Object *object, u
 	}
 }
 
+static struct Chars * joinWithText (struct Object *object, struct Text text)
+{
+	struct Chars *chars;
+	uint32_t length = 0, offset = 0;
+	uint32_t index, count = object->elementCount;
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+			length += text.length;
+		
+		if (object->element[index].data.flags & Object(isValue))
+			length += Value.toBufferLength(object->element[index].data.value);
+	}
+	
+	chars = Chars.createSized(length);
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+		{
+			memcpy(chars->chars + offset, text.location, text.length);
+			offset += text.length;
+		}
+		
+		if (object->element[index].data.flags & Object(isValue))
+			offset += Value.toBuffer(object->element[index].data.value, (struct Text){ chars->chars + offset, length - offset + 1 });
+	}
+	
+	return chars;
+}
+
 static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	Op.assertParameterCount(ecc, 1);
 	value = Op.argument(ecc, 0);
-	ecc->result = Value.truth(value.type == Value(object) && value.data.object->type == &Text(arrayType));
-	return Value.undefined();
+	ecc->result = Value.truth(value.type == Value(objectType) && value.data.object->type == &Text(arrayType));
+	return Value(undefined);
 }
 
 static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
@@ -71,55 +103,19 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 		valueAppendFromElement(Op.variableArgument(ecc, index), array, &element);
 	
 	ecc->result = Value.object(array);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Object *value;
+	
 	Op.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.data.object->elementCount)
-	{
-		char bytes[256];
-		struct Text buffer = Text.make(bytes, 0);
-		struct Chars *chars = malloc(sizeof(*chars));
-		uint32_t length = 0, stringLength;
-		int notLast = 0;
-		struct Value value;
-		uint32_t index;
-		
-		*chars = Chars.identity;
-		
-		for (index = 0; ; ++index)
-		{
-			notLast = index < ecc->this.data.object->elementCount - 1;
-			
-			if (ecc->this.data.object->element[index].data.flags & Object(isValue))
-			{
-				value = ecc->this.data.object->element[index].data.value;
-				
-				buffer.length = sizeof(bytes);
-				value = Value.toString(value, &buffer);
-				
-				stringLength = Value.stringLength(value);
-				chars = realloc(chars, sizeof(*chars) + length + stringLength + (notLast? 1: 0));
-				
-				memcpy(chars->chars + length, Value.stringChars(value), stringLength);
-				length += stringLength;
-			}
-			
-			if (notLast)
-				chars->chars[length++] = ',';
-			else
-				break;
-		}
-		
-		chars->length = length;
-		Pool.addChars(chars);
-		ecc->result = Value.chars(chars);
-	}
+	value = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	ecc->result = Value.chars(joinWithText(value, (struct Text){ ",", 1 }));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
@@ -128,7 +124,7 @@ static struct Value getLength (const struct Op ** const ops, struct Ecc * const 
 	
 	ecc->result = Value.binary(ecc->this.data.object->elementCount);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value setLength (const struct Op ** const ops, struct Ecc * const ecc)
@@ -136,14 +132,26 @@ static struct Value setLength (const struct Op ** const ops, struct Ecc * const 
 	Op.assertParameterCount(ecc, 1);
 	#warning TODO: check if object?
 	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 1);
-	#warning TODO
-	return Value.undefined();
+	int index, count;
+	struct Object *array;
+	Op.assertVariableParameter(ecc);
+	
+	count = Op.variableArgumentCount(ecc);
+	array = Array.createSized(count);
+	
+	for (index = 0; index < count; ++index)
+	{
+		array->element[index].data.value = Op.variableArgument(ecc, index);
+		array->element[index].data.flags = Object(isValue);
+	}
+	
+	ecc->result = Value.object(array);
+	return Value(undefined);
 }
 
 // MARK: - Static Members
@@ -160,7 +168,7 @@ void setup (void)
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	
-	Array(constructor) = Function.createWithNative(Array(prototype), constructorFunction, 1);
+	Array(constructor) = Function.createWithNative(Array(prototype), constructorFunction, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
 	
 	Object.add(Array(prototype), Key(constructor), Value.function(Array(constructor)), 0);

@@ -16,21 +16,21 @@ struct Function * Boolean(constructor) = NULL;
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
-	if (ecc->this.type != Value(boolean))
+	if (ecc->this.type != Value(booleanType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
 	
 	ecc->result = Value.text(ecc->this.data.boolean->truth? &Text(true): &Text(false));
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
-	if (ecc->this.type != Value(boolean))
+	if (ecc->this.type != Value(booleanType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
 	
 	ecc->result = Value.truth(ecc->this.data.boolean->truth);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members
@@ -47,7 +47,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	else
 		ecc->result = Value.truth(truth);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Methods

@@ -20,7 +20,7 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Function.addNative(ecc->global, "print", print, 1, 0);
+	Function.addNative(ecc->global, "print", print, -1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -52,14 +52,21 @@ static int printUsage (void)
 
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 1);
+	int index, count;
+	Op.assertVariableParameter(ecc);
 	
-	Value.dumpTo(Op.argument(ecc, 0), stdout);
+	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	{
+		if (index)
+			putc(' ', stdout);
+		
+		Value.dumpTo(Value.toPrimitive(Op.variableArgument(ecc, index), ecc, &(*ops)->text, 1), stdout);
+	}
 	putc('\n', stdout);
 	
-	ecc->result = Value.undefined();
+	ecc->result = Value(undefined);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 //
@@ -78,7 +85,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 	if (!testVerbosity)
 		Ecc.popEnv(ecc);
 	
-	result = Value.toString(ecc->result, NULL);
+	result = Value.toString(ecc->result);
 	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
@@ -330,7 +337,7 @@ static void testGlobal (void)
 	// direct this === global mapping (avoid automatic closure)
 	ecc->this = Value.object(&ecc->global->context);
 	test("this.NaN", "NaN");
-	ecc->this = Value.undefined();
+	ecc->this = Value(undefined);
 }
 
 static void testFunction (void)
@@ -596,6 +603,17 @@ static int runTest (int verbosity)
 	testArray();
 	testBoolean();
 	testNumber();
+	
+	double binary = -123.456;
+	int base = 8;
+	int length = Text.writeBinary(Text.make(NULL, 0), binary, base);
+	char *chars = malloc(length + 1);
+	struct Text text = Text.make(chars, length + 1);
+	Text.writeBinary(text, binary, base);
+	fprintf(stderr, "%d %.*s\n", length, length, chars);
+	
+//	test("var a = 'Array.prototype.concat.call(undefined)'; eval(a)", "");
+	test("function (){ this.a = 123 }", "");
 	
 	Env.newline();
 	

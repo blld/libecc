@@ -29,26 +29,29 @@ static inline uint32_t getSlot (struct Object *self, struct Key key)
 static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 {
 	int32_t element = -1;
-	char bytes[256];
-	struct Text buffer = Text.make(bytes, sizeof(bytes));
 	
-	if (property.type == Value(key))
+	if (property.type == Value(keyType))
 		*key = property.data.key;
 	else
 	{
-		struct Text text;
-		
-		if (property.type == Value(integer) && property.data.integer >= 0)
+		if (property.type == Value(integerType))
 			element = property.data.integer;
-		else
-		{
-			property = Value.toString(property, &buffer);
-			text = Text.make(Value.stringChars(property), Value.stringLength(property));
-			element = Lexer.parseElement(text);
-		}
+		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= INT32_MAX)
+			element = property.data.binary;
 		
 		if (element < 0)
-			*key = Key.makeWithText(text, 1);
+		{
+			uint16_t length = Value.toBufferLength(property);
+			{
+				char bytes[length + 1];
+				struct Text text = { bytes, length + 1 };
+				
+				Value.toBuffer(property, text);
+				element = Lexer.parseElement(text);
+				if (element < 0)
+					*key = Key.makeWithText(text, 1);
+			}
+		}
 	}
 	
 	return element;
@@ -66,9 +69,9 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 {
 	Op.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type == Value(null))
+	if (ecc->this.type == Value(nullType))
 		ecc->result = Value.text(&Text(nullType));
-	else if (ecc->this.type == Value(undefined))
+	else if (ecc->this.type == Value(undefinedType))
 		ecc->result = Value.text(&Text(undefinedType));
 	else if (Value.isString(ecc->this))
 		ecc->result = Value.text(&Text(stringType));
@@ -85,7 +88,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		toString(ops, ecc);
 	}
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
@@ -94,7 +97,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 	
 	ecc->result = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * const ecc)
@@ -103,15 +106,15 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	v = Value.toString(Op.argument(ecc, 0), NULL);
+	v = Value.toString(Op.argument(ecc, 0));
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	
-	if (v.type == Value(text))
+	if (v.type == Value(textType))
 		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
-	else if (v.type == Value(chars))
+	else if (v.type == Value(charsType))
 		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.chars->chars, v.data.chars->length), 1)));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
@@ -130,13 +133,13 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 		while (( v = v->prototype ))
 			if (v == o)
 			{
-				ecc->result = Value.true();
-				return Value.undefined();
+				ecc->result = Value(true);
+				return Value(undefined);
 			}
 	}
 	
-	ecc->result = Value.false();
-	return Value.undefined();
+	ecc->result = Value(false);
+	return Value(undefined);
 }
 
 static struct Value propertyIsEnumerable (const struct Op ** const ops, struct Ecc * const ecc)
@@ -154,9 +157,9 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	if (*entry.flags & Object(isValue))
 		ecc->result = Value.truth(*entry.flags & Object(enumerable));
 	else
-		ecc->result = Value.undefined();
+		ecc->result = Value(undefined);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
@@ -167,14 +170,14 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	
 	value = Op.argument(ecc, 0);
 	
-	if (value.type == Value(null) || value.type == Value(undefined))
+	if (value.type == Value(nullType) || value.type == Value(undefinedType))
 		ecc->result = Value.object(Object.create(Object(prototype)));
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
 		ecc->result = Value.toObject(value, ecc, &(*ops)->text);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
@@ -185,9 +188,9 @@ static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * c
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	
-	ecc->result = object->prototype? Value.object(object->prototype): Value.undefined();
+	ecc->result = object->prototype? Value.object(object->prototype): Value(undefined);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, struct Ecc * const ecc)
@@ -202,7 +205,7 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	property = Op.argument(ecc, 1);
 	entry = getOwnProperty(object, property);
 	
-	ecc->result = Value.undefined();
+	ecc->result = Value(undefined);
 	
 	if (*entry.flags & Object(isValue))
 	{
@@ -218,7 +221,7 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 		ecc->result = Value.object(result);
 	}
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ecc * const ecc)
@@ -243,14 +246,14 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	
 	ecc->result = Value.object(result);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value objectCreate (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
 	// TODO
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value defineProperty (const struct Op ** const ops, struct Ecc * const ecc)
@@ -276,14 +279,14 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	
 	#define TODO
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value defineProperties (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
 	// TODO
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
@@ -305,7 +308,7 @@ static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 			object->hashmap[index].data.flags &= ~Object(configurable);
 	
 	ecc->result = Value.object(object);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc)
@@ -327,7 +330,7 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 			object->hashmap[index].data.flags &= ~(Object(writable) | Object(configurable));
 	
 	ecc->result = Value.object(object);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value preventExtensions (const struct Op ** const ops, struct Ecc * const ecc)
@@ -340,7 +343,7 @@ static struct Value preventExtensions (const struct Op ** const ops, struct Ecc 
 	object->flags &= ~Object(extensible);
 	
 	ecc->result = Value.object(object);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isSealed (const struct Op ** const ops, struct Ecc * const ecc)
@@ -350,21 +353,21 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	ecc->result = Value.true();
+	ecc->result = Value(true);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	if (object->flags & Object(extensible))
-		ecc->result = Value.false();
+		ecc->result = Value(false);
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue) && object->element[index].data.flags & Object(configurable))
-			ecc->result = Value.false();
+			ecc->result = Value(false);
 	
 	for (index = 2; index <= object->hashmapCount; ++index)
 		if (object->hashmap[index].data.flags & Object(isValue) && object->hashmap[index].data.flags & Object(configurable))
-			ecc->result = Value.false();
+			ecc->result = Value(false);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const ecc)
@@ -374,21 +377,21 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	ecc->result = Value.true();
+	ecc->result = Value(true);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	if (object->flags & Object(extensible))
-		ecc->result = Value.false();
+		ecc->result = Value(false);
 		
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.flags & Object(isValue) && (object->element[index].data.flags & Object(writable) || object->element[index].data.flags & Object(configurable)))
-			ecc->result = Value.false();
+			ecc->result = Value(false);
 	
 	for (index = 2; index <= object->hashmapCount; ++index)
 		if (object->hashmap[index].data.flags & Object(isValue) && (object->hashmap[index].data.flags & Object(writable) || object->hashmap[index].data.flags & Object(configurable)))
-			ecc->result = Value.false();
+			ecc->result = Value(false);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isExtensible (const struct Op ** const ops, struct Ecc * const ecc)
@@ -400,7 +403,7 @@ static struct Value isExtensible (const struct Op ** const ops, struct Ecc * con
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	ecc->result = Value.truth(object->flags & Object(extensible));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
@@ -425,7 +428,7 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	ecc->result = Value.object(result);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members
@@ -575,7 +578,7 @@ struct Value get (struct Object *self, struct Key key)
 	if (slot)
 		return object->hashmap[slot].data.value;
 	else
-		return Value.undefined();
+		return Value(undefined);
 }
 
 struct Entry getMember (struct Object *self, struct Key key)
@@ -756,8 +759,8 @@ struct Entry add (struct Object *self, struct Key key, struct Value value, enum 
 		slot = self->hashmap[slot].slot[key.data.depth[depth]];
 	} while (++depth < 4);
 	
-	if (value.type == Value(function) && value.data.function->flags & Function(isAccessor))
-		if (self->hashmap[slot].data.flags & Object(isValue) && self->hashmap[slot].data.value.type == Value(function) && self->hashmap[slot].data.value.data.function->flags & Function(isAccessor))
+	if (value.type == Value(functionType) && value.data.function->flags & Function(isAccessor))
+		if (self->hashmap[slot].data.flags & Object(isValue) && self->hashmap[slot].data.value.type == Value(functionType) && self->hashmap[slot].data.value.data.function->flags & Function(isAccessor))
 			if ((self->hashmap[slot].data.value.data.function->flags & Function(isAccessor)) != (value.data.function->flags & Function(isAccessor)))
 				value.data.function->pair = self->hashmap[slot].data.value.data.function;
 	
@@ -783,15 +786,15 @@ struct Value delete (struct Object *self, struct Key key)
 	while (!slot && (object = object->prototype));
 	
 	if (!object || !(object->hashmap[slot].data.flags & Object(isValue)))
-		return Value.true();
+		return Value(true);
 	
 	if (object->hashmap[slot].data.flags & Object(configurable))
 	{
 		memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
-		return Value.true();
+		return Value(true);
 	}
 	else
-		return Value.false();
+		return Value(false);
 }
 
 struct Value deleteProperty (struct Object *self, struct Value property)
@@ -807,7 +810,7 @@ struct Value deleteProperty (struct Object *self, struct Value property)
 		if (element < self->elementCount)
 		{
 			if (!(self->element[element].data.flags & Object(configurable)))
-				return Value.false();
+				return Value(false);
 			
 			memset(&self->element[element], 0, sizeof(*self->element));
 		}
@@ -815,12 +818,12 @@ struct Value deleteProperty (struct Object *self, struct Value property)
 	else if (( slot = getSlot(self, key) ))
 	{
 		if (!(self->hashmap[slot].data.flags & Object(configurable)))
-			return Value.false();
+			return Value(false);
 		
 		memset(&self->hashmap[slot], 0, sizeof(*self->hashmap));
 	}
 	
-	return Value.true();
+	return Value(true);
 }
 
 void packValue (struct Object *self)
@@ -913,6 +916,12 @@ void dumpTo(struct Object *self, FILE *file)
 				Value.dumpTo(self->hashmap[index].data.value, file);
 				fprintf(file, ", ");
 			}
+//			else
+//			{
+//				fprintf(file, "\n");
+//				for (int j = 0; j < 16; ++j)
+//					fprintf(file, "%02x ", self->hashmap[index].slot[j]);
+//			}
 		}
 	}
 	

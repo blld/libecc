@@ -24,7 +24,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	if (ecc->construct)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "eval is not a constructor")));
 	
-	value = Value.toString(Op.argument(ecc, 0), NULL);
+	value = Value.toString(Op.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
 	context = ecc->context;
@@ -35,7 +35,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	ecc->context = context;
 	ecc->this = this;
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value parseInt (const struct Op ** const ops, struct Ecc * const ecc)
@@ -46,13 +46,13 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	value = Value.toString(Op.argument(ecc, 0), NULL);
+	value = Value.toString(Op.argument(ecc, 0));
 	radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseInteger(text, radix);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const ecc)
@@ -62,12 +62,12 @@ static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0), NULL);
+	value = Value.toString(Op.argument(ecc, 0));
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseBinary(text);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isFinite (const struct Op ** const ops, struct Ecc * const ecc)
@@ -79,7 +79,7 @@ static struct Value isFinite (const struct Op ** const ops, struct Ecc * const e
 	value = Value.toBinary(Op.argument(ecc, 0));
 	ecc->result = Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
@@ -91,7 +91,7 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 	value = Value.toBinary(Op.argument(ecc, 0));
 	ecc->result = Value.truth(isnan(value.data.binary));
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members
@@ -146,7 +146,7 @@ struct Ecc *create (void)
 	
 	Function.addValue(self->global, "NaN", Value.binary(NAN), 0);
 	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
-	Function.addValue(self->global, "undefined", Value.undefined(), 0);
+	Function.addValue(self->global, "undefined", Value(undefined), 0);
 	Function.addNative(self->global, "eval", eval, 1, 0);
 	Function.addNative(self->global, "parseInt", parseInt, 2, 0);
 	Function.addNative(self->global, "parseFloat", parseFloat, 1, 0);
@@ -246,7 +246,7 @@ int evalInput (struct Ecc *self, struct Input *input)
 	Parser.destroy(parser), parser = NULL;
 	
 	self->context = &function->context;
-	self->result = Value.undefined();
+	self->result = Value(undefined);
 	
 //	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
 //	OpList.dumpTo(function->oplist, stderr);
@@ -265,23 +265,23 @@ int evalInput (struct Ecc *self, struct Input *input)
 			result = EXIT_FAILURE;
 			
 			value = self->result;
-			name = Value.undefined();
+			name = Value(undefined);
 			
 			if (Value.isObject(value))
 			{
-				name = Value.toString(Object.get(value.data.object, Key(name)), NULL);
-				message = Value.toString(Object.get(value.data.object, Key(message)), NULL);
+				name = Value.toString(Object.get(value.data.object, Key(name)));
+				message = Value.toString(Object.get(value.data.object, Key(message)));
 			}
 			else
-				message = Value.toString(value, NULL);
+				message = Value.toString(value);
 			
-			if (name.type == Value(undefined))
+			if (name.type == Value(undefinedType))
 				name = Value.text(&Text(errorName));
 			
 			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 			
-			text = value.type == Value(error)? value.data.error->text: ops->text;
+			text = value.type == Value(errorType)? value.data.error->text: ops->text;
 			if (text.location == Text(nativeCode).location)
 			{
 				// show caller's ops for [native code] error

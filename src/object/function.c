@@ -17,12 +17,12 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 {
 	Op.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type != Value(function))
+	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
 	ecc->result = Value.text(&ecc->this.data.function->text);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
@@ -31,13 +31,13 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	if (ecc->this.type != Value(function))
+	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
 	
-	if (arguments.type == Value(undefined) || arguments.type == Value(null))
+	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
 		Op.callFunctionVA(ecc->this.data.function, ecc, this, 0);
 	else
 	{
@@ -47,7 +47,7 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 		Op.callFunctionArguments(ecc->this.data.function, ecc, this, Object.copy(arguments.data.object));
 	}
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
@@ -56,7 +56,7 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertVariableParameter(ecc);
 	
-	if (ecc->this.type != Value(function))
+	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
 	arguments = ecc->context->hashmap[2].data.value.data.object;
@@ -72,16 +72,16 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 		++arguments->elementCount;
 	}
 	else
-		Op.callFunctionVA(ecc->this.data.function, ecc, Value.undefined(), 0);
+		Op.callFunctionVA(ecc->this.data.function, ecc, Value(undefined), 0);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value prototypeFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	ecc->result = Value.undefined();
+	ecc->result = Value(undefined);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
@@ -95,39 +95,41 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	if (argumentCount)
 	{
 		static const char prefix[] = "(function(";
-		uint32_t length = 0;
-		char *chars = malloc(sizeof(prefix)-1 + (argumentCount == 1? 2: 0));
-		struct Value value;
-		uint32_t valueLength;
-		int last;
+		uint16_t length = sizeof(prefix)-1;
 		int_fast32_t index;
-		
-		memcpy(chars, prefix, sizeof(prefix)-1);
-		length += sizeof(prefix)-1;
 		
 		for (index = 0; index < argumentCount; ++index)
 		{
-			last = index == argumentCount - 1;
-			if (last)
-			{
-				chars[length++] = ')';
-				chars[length++] = '{';
-			}
+			if (index == argumentCount - 1)
+				length++, length++;
 			
-			value = Value.toString(Op.variableArgument(ecc, index), NULL);
-			valueLength = Value.stringLength(value);
-			chars = realloc(chars, sizeof(*chars) + length + valueLength + (index >= argumentCount - 2? 2: 1));
-			memcpy(chars + length, Value.stringChars(value), valueLength);
-			length += valueLength;
+			length += Value.toBufferLength(Op.variableArgument(ecc, index));
 			
 			if (index < argumentCount - 2)
-				chars[length++] = ',';
+				length++;
 		}
-		chars[length++] = '}';
-		chars[length++] = ')';
+		length++, length++;
 		
-		Ecc.evalInput(ecc, Input.createFromBytes(chars, length, "(Function)"));
-		free(chars), chars = NULL;
+		{
+			char chars[length];
+			uint16_t offset = 0;
+			
+			memcpy(chars, prefix, sizeof(prefix)-1);
+			offset += sizeof(prefix)-1;
+			
+			for (index = 0; index < argumentCount; ++index)
+			{
+				if (index == argumentCount - 1)
+					chars[offset++] = ')', chars[offset++] = '{';
+				
+				offset += Value.toBuffer(Op.variableArgument(ecc, index), (struct Text){ chars + offset, length - offset });
+				
+				if (index < argumentCount - 2)
+					chars[offset++] = ',';
+			}
+			chars[offset++] = '}', chars[offset++] = ')';
+			Ecc.evalInput(ecc, Input.createFromBytes(chars, length, "(Function)"));
+		}
 	}
 	else
 	{
@@ -135,7 +137,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"));
 	}
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 // MARK: - Static Members
@@ -201,8 +203,9 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 		self->flags |= Function(needArguments);
 		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
 		self->object.hashmap[2].data.key = Key(arguments);
+//		self->parameterCount = -parameterCount;
 	}
-	else
+	else //if (parameterCount > 0)
 	{
 		uint16_t index;
 		
@@ -212,9 +215,17 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 		for (index = 0; index < parameterCount; ++index)
 			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
+//	else
+//	{
+//		self = createSized(prototype, 0);
+//		self->parameterCount = 0;
+//	}
+	
 	self->context.hashmapCount = self->context.hashmapCapacity;
-	self->oplist = OpList.create(native, Value.undefined(), Text(nativeCode));
+	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
+	
+//	Object.dumpTo(&self->context, stderr);
 	
 	Object.add(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
 	

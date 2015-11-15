@@ -14,72 +14,136 @@
 
 static struct Value mathAbs (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(abs(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(abs(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathACos (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(acos(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(acos(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathASin (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(asin(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(asin(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathATan (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(atan(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(atan(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathATan2 (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value x, y;
 	Op.assertParameterCount(ecc, 2);
-	ecc->result = Value.binary(atan2(Value.toBinary(Op.argument(ecc, 0)).data.binary, Value.toBinary(Op.argument(ecc, 1)).data.binary));
-	return Value.undefined();
+	
+	x = Op.argument(ecc, 0);
+	if (x.type != Value(binaryType))
+		x = Value.toBinary(x);
+	
+	y = Op.argument(ecc, 0);
+	if (y.type != Value(binaryType))
+		y = Value.toBinary(y);
+	
+	ecc->result = Value.binary(atan2(x.data.binary, y.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathCeil (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(ceil(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(ceil(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathCos (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(cos(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(cos(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathExp (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(exp(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(exp(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathFloor (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(floor(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(floor(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathLog (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(log(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(log(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathMax (const struct Op ** const ops, struct Ecc * const ecc)
@@ -98,7 +162,7 @@ static struct Value mathMax (const struct Op ** const ops, struct Ecc * const ec
 	
 	ecc->result = Value.binary(result);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ecc)
@@ -117,49 +181,83 @@ static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ec
 	
 	ecc->result = Value.binary(result);
 	
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value mathPow (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value x, y;
 	Op.assertParameterCount(ecc, 2);
-	ecc->result = Value.binary(pow(Value.toBinary(Op.argument(ecc, 0)).data.binary, Value.toBinary(Op.argument(ecc, 1)).data.binary));
-	return Value.undefined();
+	
+	x = Op.argument(ecc, 0);
+	if (x.type != Value(binaryType))
+		x = Value.toBinary(x);
+	
+	y = Op.argument(ecc, 0);
+	if (y.type != Value(binaryType))
+		y = Value.toBinary(y);
+	
+	ecc->result = Value.binary(pow(x.data.binary, y.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathRandom (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary((double)rand() / (double)RAND_MAX);
-	return Value.undefined();
+	return Value(undefined);
 }
 
 static struct Value mathRound (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(round(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(round(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathSin (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(sin(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(sin(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathSqrt (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(sqrt(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(sqrt(value.data.binary));
+	return Value(undefined);
 }
 
 static struct Value mathTan (const struct Op ** const ops, struct Ecc * const ecc)
 {
+	struct Value value;
 	Op.assertParameterCount(ecc, 1);
-	ecc->result = Value.binary(tan(Value.toBinary(Op.argument(ecc, 0)).data.binary));
-	return Value.undefined();
+	
+	value = Op.argument(ecc, 0);
+	if (value.type != Value(binaryType))
+		value = Value.toBinary(value);
+	
+	ecc->result = Value.binary(tan(value.data.binary));
+	return Value(undefined);
 }
 
 // MARK: - Public

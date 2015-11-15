@@ -146,16 +146,16 @@ void markAll (void)
 
 void unmarkValue (struct Value value)
 {
-	if (value.type == Value(function))
+	if (value.type == Value(functionType))
 		unmarkFunction(value.data.function);
-	else if (value.type >= Value(object))
+	else if (value.type >= Value(objectType))
 	{
 		unmarkObject(value.data.object);
 		
-		if (value.type == Value(string))
+		if (value.type == Value(stringType))
 			unmarkChars(value.data.string->value);
 	}
-	else if (value.type == Value(chars))
+	else if (value.type == Value(charsType))
 		unmarkChars(value.data.chars);
 }
 
