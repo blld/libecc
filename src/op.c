@@ -555,8 +555,12 @@ struct Value construct (const struct Op ** const ops, struct Ecc * const ecc)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
 	
 	object = ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
-	callFunction(ops, ecc, value.data.function, argumentCount, 1);
-	return object;
+	value = callFunction(ops, ecc, value.data.function, argumentCount, 1);
+	
+	if (Value.isObject(value))
+		return value;
+	else
+		return object;
 }
 
 struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
@@ -837,6 +841,12 @@ struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ec
 struct Value result (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	ecc->result = nextOp();
+	return Value.breaker(0);
+}
+
+struct Value resultValue (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	ecc->result = opValue();
 	return Value.breaker(0);
 }
 

@@ -49,6 +49,7 @@
 	_( deleteProperty )\
 	\
 	_( result )\
+	_( resultValue )\
 	_( exchange )\
 	_( typeOf )\
 	_( equal )\

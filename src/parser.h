@@ -37,6 +37,7 @@ Interface(Parser,
 		uint16_t depthCount;
 		
 		struct Function *function;
+		uint16_t sourceDepth;
 	}
 )
 

@@ -350,10 +350,11 @@ static void testFunction (void)
 	test("function a() {} a.prototype.hasOwnProperty.length", "1");
 	test("function a() {} a.length", "0");
 	test("function a(b, c) {} a.length", "2");
-	test("function a(b, c) { b + c } a(1, 5)", "6");
-	test("function a(b, c) { arguments.toString() } a()", "[object Arguments]");
-	test("function a(b, c) { arguments.length } a(1, 5, 6)", "3");
-	test("function a(b, c) { arguments[0] + arguments[1] } a(1, 5)", "6");
+	test("function a(b, c) { b + c } a(1, 5)", "undefined");
+	test("function a(b, c) { return b + c } a(1, 5)", "6");
+	test("function a(b, c) { return arguments.toString() } a()", "[object Arguments]");
+	test("function a(b, c) { return arguments.length } a(1, 5, 6)", "3");
+	test("function a(b, c) { return arguments[0] + arguments[1] } a(1, 5)", "6");
 	
 	test("var n = 456; function b(c) { return 'c' + c + n } b(123)", "c123456");
 	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");

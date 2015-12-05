@@ -1241,7 +1241,7 @@ static struct OpList * statement (struct Parser *self)
 		}
 		
 		semicolon(self);
-		return OpList.unshift(Op.make(Op.expression, Value(undefined), OpList.text(oplist)), oplist);
+		return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.expression: Op.discard, Value(undefined), OpList.text(oplist)), oplist);
 	}
 }
 
@@ -1356,6 +1356,8 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 {
 	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL;
 	
+	++self->sourceDepth;
+	
 	while (previewToken(self) != endToken && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 		if (previewToken(self) == Lexer(functionToken))
 			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value(undefined), self->lexer->text), function(self, 1, 0, 0)));
@@ -1376,12 +1378,17 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 				error(self, Error.syntaxError(self->lexer->text, "expected statement, got %s", Lexer.tokenChars(previewToken(self))));
 		}
 	
-	last = OpList.appendNoop(last);
+	if (self->sourceDepth <= 1)
+		last = OpList.appendNoop(last);
+	else
+		last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), OpList.text(last)));
 	
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
 	OpList.optimizeWithContext(oplist, &self->function->context);
+	
+	--self->sourceDepth;
 	
 	return oplist;
 }
