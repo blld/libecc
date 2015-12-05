@@ -970,8 +970,6 @@ struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.binary(a.data.binary * b.data.binary);
-	else if (a.type == Value(integerType) && b.type == Value(integerType))
-		return Value.binary((double)a.data.integer * (double)b.data.integer);
 	else
 		return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
 }
@@ -980,14 +978,20 @@ struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.binary(a.data.binary / b.data.binary);
+	else
+		return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
 }
 
 struct Value modulo (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.binary(fmod(Value.toBinary(a).data.binary, Value.toBinary(b).data.binary));
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.binary(fmod(a.data.binary, b.data.binary));
+	else
+		return Value.binary(fmod(Value.toBinary(a).data.binary, Value.toBinary(b).data.binary));
 }
 
 struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
@@ -995,14 +999,20 @@ struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return addition(ecc, a, text, b, opText());
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.binary(a.data.binary + b.data.binary);
+	else
+		return addition(ecc, a, text, b, opText());
 }
 
 struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.binary(a.data.binary - b.data.binary);
+	else
+		return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
 }
 
 struct Value leftShift (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1074,13 +1084,19 @@ struct Value logicalOr (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value positive (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	return Value.toBinary(a);
+	if (a.type == Value(binaryType))
+		return a;
+	else
+		return Value.toBinary(a);
 }
 
 struct Value negative (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	return Value.binary(-Value.toBinary(a).data.binary);
+	if (a.type == Value(binaryType))
+		return Value.binary(-a.data.binary);
+	else
+		return Value.binary(-Value.toBinary(a).data.binary);
 }
 
 struct Value invert (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1455,11 +1471,19 @@ static struct Value iterateIntegerRef (
 	const struct Op *nextOps = *ops;
 	struct Value value;
 	
-//	if (indexRef->type == Value(binary) && (double)Value.toInteger(*indexRef).data.binary == indexRef->data.binary)
-//		*indexRef = Value.toInteger(*indexRef);
-//	
-//	if (countRef->type == Value(binary) && (double)Value.toInteger(*countRef).data.binary == countRef->data.binary)
-//		*countRef = Value.toInteger(*countRef);
+	if (indexRef->type == Value(binaryType) && indexRef->data.binary >= INT32_MIN && indexRef->data.binary <= INT32_MAX)
+	{
+		struct Value integerValue = Value.toInteger(*indexRef);
+		if (indexRef->data.binary == integerValue.data.integer)
+			*indexRef = integerValue;
+	}
+	
+	if (countRef->type == Value(binaryType) && countRef->data.binary >= INT32_MIN && countRef->data.binary <= INT32_MAX)
+	{
+		struct Value integerValue = Value.toInteger(*countRef);
+		if (countRef->data.binary == integerValue.data.integer)
+			*countRef = integerValue;
+	}
 	
 	if (indexRef->type == Value(integerType) && countRef->type == Value(integerType))
 	{
