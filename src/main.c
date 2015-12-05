@@ -604,17 +604,6 @@ static int runTest (int verbosity)
 	testBoolean();
 	testNumber();
 	
-	double binary = -123.456;
-	int base = 8;
-	int length = Text.writeBinary(Text.make(NULL, 0), binary, base);
-	char *chars = malloc(length + 1);
-	struct Text text = Text.make(chars, length + 1);
-	Text.writeBinary(text, binary, base);
-	fprintf(stderr, "%d %.*s\n", length, length, chars);
-	
-//	test("var a = 'Array.prototype.concat.call(undefined)'; eval(a)", "");
-	test("function (){ this.a = 123 }", "");
-	
 	Env.newline();
 	
 	if (testErrorCount)

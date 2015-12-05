@@ -203,7 +203,13 @@ void dumpTo (struct OpList *self, FILE *file)
 	{
 		fprintf(file, "[%03d] %s ", i, Op.toChars(self->ops[i].native));
 		
-		if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
+		if (self->ops[i].native == Op.function)
+		{
+			fprintf(file, "{\n");
+			OpList.dumpTo(self->ops[i].value.data.function->oplist, stderr);
+			fprintf(file, "}\n");
+		}
+		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)
