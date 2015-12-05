@@ -568,22 +568,16 @@ int isNumber (struct Value value)
 
 struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *text)
 {
+	if (value.type >= Value(objectType))
+		return value;
+	
 	switch (value.type)
 	{
-		case Value(nullType):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert null to object")));
+		case Value(binaryType):
+			return Value.number(Number.create(value.data.binary));
 		
-		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert undefined to object")));
-		
-		case Value(functionType):
-		case Value(objectType):
-		case Value(errorType):
-		case Value(stringType):
-		case Value(numberType):
-		case Value(dateType):
-		case Value(booleanType):
-			return value;
+		case Value(integerType):
+			return Value.number(Number.create(value.data.integer));
 		
 		case Value(keyType):
 		case Value(textType):
@@ -594,14 +588,21 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 		case Value(trueType):
 			return Value.boolean(Boolean.create(value.type == Value(trueType)));
 		
-		case Value(integerType):
-			return Value.number(Number.create(value.data.integer));
+		case Value(nullType):
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert null to object")));
 		
-		case Value(binaryType):
-			return Value.number(Number.create(value.data.binary));
+		case Value(undefinedType):
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert undefined to object")));
 		
 		case Value(breakerType):
 		case Value(referenceType):
+		case Value(functionType):
+		case Value(objectType):
+		case Value(errorType):
+		case Value(stringType):
+		case Value(numberType):
+		case Value(dateType):
+		case Value(booleanType):
 			break;
 	}
 	assert(0);
