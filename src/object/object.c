@@ -36,20 +36,30 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 	{
 		if (property.type == Value(integerType))
 			element = property.data.integer;
-		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= INT32_MAX)
+		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= INT32_MAX && property.data.binary == (int32_t)property.data.binary)
 			element = property.data.binary;
 		
 		if (element < 0)
 		{
-			uint16_t length = Value.toBufferLength(property);
+			if (Value.isString(property))
 			{
-				char bytes[length + 1];
-				struct Text text = { bytes, length + 1 };
+				struct Text text = Text.make(Value.stringChars(property), Value.stringLength(property));
 				
-				Value.toBuffer(property, text);
-				element = Lexer.parseElement(text);
-				if (element < 0)
+				if ((element = Lexer.parseElement(text)) < 0)
 					*key = Key.makeWithText(text, 1);
+			}
+			else
+			{
+				uint16_t length = Value.toBufferLength(property);
+				{
+					char bytes[length + 1];
+					struct Text text = Text.make(bytes, length);
+					
+					Value.toBuffer(property, text);
+					
+					if ((element = Lexer.parseElement(text)) < 0)
+						*key = Key.makeWithText(text, 1);
+				}
 			}
 		}
 	}
