@@ -732,8 +732,14 @@ struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(nextOp(), ecc, text);
-	struct Entry entry = Object.getMember(object.data.object, key);
+	struct Value object = nextOp();
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getMember(object.data.object, key);
+	
 	ecc->refObject = object;
 	return getEntry(entry, ecc, object);
 }
@@ -742,8 +748,14 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(nextOp(), ecc, text);
-	struct Entry entry = Object.getMember(object.data.object, key);
+	struct Value object = nextOp();
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getMember(object.data.object, key);
+	
 	if (!entry.value)
 	{
 		entry = Object.add(object.data.object, key, Value(undefined), Object(writable) | Object(enumerable) | Object(configurable));
@@ -758,9 +770,15 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(nextOp(), ecc, text);
-	struct Entry entry = Object.getMember(object.data.object, key);
+	struct Value object = nextOp();
 	struct Value value = nextOp();
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getMember(object.data.object, key);
+	
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
 	else
@@ -784,9 +802,14 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Entry entry = Object.getProperty(object.data.object, property);
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getProperty(object.data.object, property);
 	ecc->refObject = object;
 	return getEntry(entry, ecc, object);
 }
@@ -794,9 +817,15 @@ struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Entry entry = Object.getProperty(object.data.object, property);
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getProperty(object.data.object, property);
+	
 	if (!entry.value)
 	{
 		Object.setProperty(object.data.object, property, Value(undefined));
@@ -811,10 +840,16 @@ struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ec
 struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Value object = Value.toObject(nextOp(), ecc, text);
+	struct Value object = nextOp();
 	struct Value property = nextOp();
 	struct Value value = nextOp();
-	struct Entry entry = Object.getProperty(object.data.object, property);
+	struct Entry entry;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(object, ecc, text);
+	
+	entry = Object.getProperty(object.data.object, property);
+	
 	if (entry.value)
 		return setEntry(entry, ecc, object, value);
 	else
@@ -899,7 +934,10 @@ struct Value less (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return valueLess(ecc, a, text, b, opText());
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary < b.data.binary);
+	else
+		return valueLess(ecc, a, text, b, opText());
 }
 
 struct Value lessOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
@@ -907,7 +945,10 @@ struct Value lessOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return valueLessOrEqual(ecc, a, text, b, opText());
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary <= b.data.binary);
+	else
+		return valueLessOrEqual(ecc, a, text, b, opText());
 }
 
 struct Value more (const struct Op ** const ops, struct Ecc * const ecc)
@@ -915,7 +956,10 @@ struct Value more (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return valueMore(ecc, a, text, b, opText());
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary > b.data.binary);
+	else
+		return valueMore(ecc, a, text, b, opText());
 }
 
 struct Value moreOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
@@ -923,7 +967,10 @@ struct Value moreOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	return valueMoreOrEqual(ecc, a, text, b, opText());
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary >= b.data.binary);
+	else
+		return valueMoreOrEqual(ecc, a, text, b, opText());
 }
 
 struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
@@ -968,7 +1015,10 @@ struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return Value.binary(a.data.binary * b.data.binary);
+	{
+		a.data.binary *= b.data.binary;
+		return a;
+	}
 	else
 		return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
 }
@@ -978,7 +1028,10 @@ struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return Value.binary(a.data.binary / b.data.binary);
+	{
+		a.data.binary /= b.data.binary;
+		return a;
+	}
 	else
 		return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
 }
@@ -999,7 +1052,10 @@ struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText();
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return Value.binary(a.data.binary + b.data.binary);
+	{
+		a.data.binary += b.data.binary;
+		return a;
+	}
 	else
 		return addition(ecc, a, text, b, opText());
 }
@@ -1009,9 +1065,47 @@ struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return Value.binary(a.data.binary - b.data.binary);
+	{
+		a.data.binary -= b.data.binary;
+		return a;
+	}
 	else
 		return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
+}
+
+struct Value multiplyBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary *= nextOp().data.binary;
+	return a;
+}
+
+struct Value divideBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary /= nextOp().data.binary;
+	return a;
+}
+
+struct Value moduloBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary = fmod(a.data.binary, nextOp().data.binary);
+	return a;
+}
+
+struct Value addBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary += nextOp().data.binary;
+	return a;
+}
+
+struct Value minusBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary -= nextOp().data.binary;
+	return a;
 }
 
 struct Value leftShift (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1115,9 +1209,7 @@ struct Value not (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value incrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
-	if (ref->type == Value(integerType) && integerWontOverflowPositive(ref->data.integer, 1))
-		++ref->data.integer;
-	else if (ref->type == Value(binaryType))
+	if (ref->type == Value(binaryType))
 		++ref->data.binary;
 	else
 	{
@@ -1130,9 +1222,7 @@ struct Value incrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value decrementRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
-	if (ref->type == Value(integerType) && integerWontOverflowNegative(ref->data.integer, -1))
-		--ref->data.integer;
-	else if (ref->type == Value(binaryType))
+	if (ref->type == Value(binaryType))
 		--ref->data.binary;
 	else
 	{
@@ -1146,9 +1236,7 @@ struct Value postIncrementRef (const struct Op ** const ops, struct Ecc * const 
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
-	if (ref->type == Value(integerType))
-		++ref->data.integer;
-	else if (ref->type == Value(binaryType))
+	if (ref->type == Value(binaryType))
 		++ref->data.binary;
 	else
 	{
@@ -1162,9 +1250,7 @@ struct Value postDecrementRef (const struct Op ** const ops, struct Ecc * const 
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value value = *ref;
-	if (ref->type == Value(integerType))
-		--ref->data.integer;
-	else if (ref->type == Value(binaryType))
+	if (ref->type == Value(binaryType))
 		--ref->data.binary;
 	else
 	{
@@ -1178,6 +1264,11 @@ struct Value multiplyAssignRef (const struct Op ** const ops, struct Ecc * const
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
+	if (ref->type == Value(binaryType) && b.type == Value(binaryType))
+	{
+		ref->data.binary *= b.data.binary;
+		return *ref;
+	}
 	*ref = Value.toBinary(*ref);
 	ref->data.binary *= Value.toBinary(b).data.binary;
 	return *ref;
@@ -1187,6 +1278,11 @@ struct Value divideAssignRef (const struct Op ** const ops, struct Ecc * const e
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
+	if (ref->type == Value(binaryType) && b.type == Value(binaryType))
+	{
+		ref->data.binary /= b.data.binary;
+		return *ref;
+	}
 	*ref = Value.toBinary(*ref);
 	ref->data.binary /= Value.toBinary(b).data.binary;
 	return *ref;
@@ -1203,17 +1299,27 @@ struct Value moduloAssignRef (const struct Op ** const ops, struct Ecc * const e
 
 struct Value addAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Value *a = nextOp().data.reference;
+	struct Value *ref = nextOp().data.reference;
 	const struct Text *text = opText();
 	struct Value b = nextOp();
-	*a = addition(ecc, *a, text, b, opText());
-	return *a;
+	if (ref->type == Value(binaryType) && b.type == Value(binaryType))
+	{
+		ref->data.binary += b.data.binary;
+		return *ref;
+	}
+	*ref = addition(ecc, *ref, text, b, opText());
+	return *ref;
 }
 
 struct Value minusAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
+	if (ref->type == Value(binaryType) && b.type == Value(binaryType))
+	{
+		ref->data.binary -= b.data.binary;
+		return *ref;
+	}
 	*ref = Value.toBinary(*ref);
 	ref->data.binary -= Value.toBinary(b).data.binary;
 	return *ref;
@@ -1284,7 +1390,7 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
 	struct Object *context = ecc->context;
-	struct Key key = Key(none);
+	struct Key key;
 	
 	const struct Op * volatile rethrowOps = NULL;
 	volatile int rethrow = 0;
@@ -1370,6 +1476,96 @@ struct Value expression (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value discard (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	nextOp();
+	return nextOp();
+}
+
+struct Value discard2 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard3 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard4 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard5 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard6 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard7 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard8 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard9 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard10 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard11 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard12 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard13 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard14 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard15 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	return nextOp();
+}
+
+struct Value discard16 (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
 	return nextOp();
 }
 
@@ -1487,18 +1683,12 @@ static struct Value iterateIntegerRef (
 	if (indexRef->type == Value(integerType) && countRef->type == Value(integerType))
 	{
 		int32_t step = valueStep == addition? stepValue.data.integer: -stepValue.data.integer;
+		if (!wontOverflow(countRef->data.integer, step - 1))
+			goto deoptimize;
+		
 		for (; compareInteger(indexRef->data.integer, countRef->data.integer); indexRef->data.integer += step)
-		{
 			stepIteration(value, nextOps);
-			
-			if (indexRef->type == Value(integerType) && countRef->type == Value(integerType) && wontOverflow(indexRef->data.integer, step))
-				continue;
-			else
-			{
-				*indexRef = valueStep(ecc, *indexRef, indexText, *countRef, countText);
-				goto deoptimize;
-			}
-		}
+		
 		goto done;
 	}
 	

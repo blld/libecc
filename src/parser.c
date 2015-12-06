@@ -98,6 +98,25 @@ static void popDepth (struct Parser *self)
 
 // MARK: Expression
 
+static int resultIsBinary (struct Parser *self, struct OpList *oplist)
+{
+	return oplist && oplist->opCount
+		&&(oplist->ops->native == Op.multiply
+		|| oplist->ops->native == Op.multiplyBinary
+		|| oplist->ops->native == Op.divide
+		|| oplist->ops->native == Op.divideBinary
+		|| oplist->ops->native == Op.modulo
+		|| oplist->ops->native == Op.moduloBinary
+		|| oplist->ops->native == Op.add
+		|| oplist->ops->native == Op.addBinary
+		|| oplist->ops->native == Op.minus
+		|| oplist->ops->native == Op.minusBinary
+		|| oplist->ops->native == Op.positive
+		|| oplist->ops->native == Op.negative
+		|| (oplist->ops->native == Op.value && oplist->ops->value.type == Value(binaryType))
+		);
+}
+
 static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
 {
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
@@ -326,7 +345,7 @@ static struct OpList * arguments (struct Parser *self, int *count)
 static struct OpList * member (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
-	struct Text text = OpList.text(oplist);
+	struct Text text;
 	while (1)
 	{
 		if (acceptToken(self, '.'))
@@ -487,7 +506,7 @@ static struct OpList * unary (struct Parser *self)
 
 static struct OpList * multiplicative (struct Parser *self)
 {
-	struct OpList *oplist = unary(self);
+	struct OpList *oplist = unary(self), *alt;
 	while (1)
 	{
 		struct Text text = self->lexer->text;
@@ -504,7 +523,17 @@ static struct OpList * multiplicative (struct Parser *self)
 		
 		if (oplist)
 		{
-			oplist = OpList.join(oplist, unary(self));
+			alt = unary(self);
+			if (resultIsBinary(self, oplist) && resultIsBinary(self, alt))
+			{
+				if (native == Op.multiply)
+					native = Op.multiplyBinary;
+				else if (native == Op.divide)
+					native = Op.divideBinary;
+				else if (native == Op.modulo)
+					native = Op.moduloBinary;
+			}
+			oplist = OpList.join(oplist, alt);
 			oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
 		}
 		else
@@ -514,7 +543,7 @@ static struct OpList * multiplicative (struct Parser *self)
 
 static struct OpList * additive (struct Parser *self)
 {
-	struct OpList *oplist = multiplicative(self);
+	struct OpList *oplist = multiplicative(self), *alt;
 	while (1)
 	{
 		struct Text text = self->lexer->text;
@@ -529,7 +558,15 @@ static struct OpList * additive (struct Parser *self)
 		
 		if (oplist)
 		{
-			oplist = OpList.join(oplist, multiplicative(self));
+			alt = multiplicative(self);
+			if (resultIsBinary(self, oplist) && resultIsBinary(self, alt))
+			{
+				if (native == Op.add)
+					native = Op.addBinary;
+				else if (native == Op.minus)
+					native = Op.minusBinary;
+			}
+			oplist = OpList.join(oplist, alt);
 			oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
 		}
 		else
@@ -822,10 +859,34 @@ static struct OpList * expression (struct Parser *self, int noIn)
 
 static struct OpList * statementList (struct Parser *self)
 {
-	struct OpList *oplist = NULL, *statementOps = NULL;
+	struct OpList *oplist = NULL, *statementOps = NULL, *discardOps = NULL;
+	uint16_t discardCount = 0;
 	
 	while (( statementOps = statement(self) ))
-		oplist = OpList.join(oplist, statementOps);
+	{
+		if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
+			OpList.destroy(statementOps), statementOps = NULL;
+		else
+		{
+			if (statementOps->ops[0].native == Op.discard)
+			{
+				++discardCount;
+				discardOps = OpList.join(discardOps, OpList.shift(statementOps));
+				statementOps = NULL;
+			}
+			else if (discardOps)
+			{
+				oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
+				discardOps = NULL;
+				discardCount = 0;
+			}
+			
+			oplist = OpList.join(oplist, statementOps);
+		}
+	}
+	
+	if (discardOps)
+		oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
 	
 	return oplist;
 }
@@ -871,9 +932,15 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 
 static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 {
-	struct OpList *oplist = NULL;
+	struct OpList *oplist = NULL, *varOps;
 	do
-		oplist = OpList.join(oplist, variableDeclaration(self, noIn));
+	{
+		varOps = variableDeclaration(self, noIn);
+		if (oplist && varOps->opCount == 1 && varOps->ops[0].native == Op.next)
+			OpList.destroy(varOps), varOps = NULL;
+		else
+			oplist = OpList.join(oplist, varOps);
+	}
 	while (acceptToken(self, ','));
 	
 	return oplist;
@@ -950,9 +1017,7 @@ static struct OpList * forStatement (struct Parser *self)
 	
 	if (acceptToken(self, Lexer(inToken)))
 	{
-//		OpList.dumpTo(oplist, stderr);
-		
-		if (oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
+		if (oplist && oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
 			changeNative(oplist->ops, Op.iterateInRef);
 			changeNative(&oplist->ops[1], Op.getLocalRef);
@@ -1354,7 +1419,8 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 
 static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
 {
-	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL;
+	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL, *discardOps = NULL;
+	uint16_t discardCount = 0;
 	
 	++self->sourceDepth;
 	
@@ -1366,10 +1432,23 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 			statementOps = statement(self);
 			if (statementOps)
 			{
-				if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
+				if (statementOps->ops[0].native == Op.next)
 					OpList.destroy(statementOps), statementOps = NULL;
 				else
 				{
+					if (statementOps->ops[0].native == Op.discard)
+					{
+						++discardCount;
+						discardOps = OpList.join(discardOps, OpList.shift(statementOps));
+						statementOps = NULL;
+					}
+					else if (discardOps)
+					{
+						oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
+						discardOps = NULL;
+						discardCount = 0;
+					}
+					
 					oplist = OpList.join(oplist, last);
 					last = statementOps;
 				}
@@ -1378,10 +1457,16 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 				error(self, Error.syntaxError(self->lexer->text, "expected statement, got %s", Lexer.tokenChars(previewToken(self))));
 		}
 	
-	if (self->sourceDepth <= 1)
-		last = OpList.appendNoop(last);
-	else
-		last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), OpList.text(last)));
+	if (discardOps)
+		oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
+	
+	if (!last || last->ops[last->opCount - 1].native != Op.result)
+	{
+		if (self->sourceDepth <= 1)
+			last = OpList.appendNoop(last);
+		else
+			last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), OpList.text(last)));
+	}
 	
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);

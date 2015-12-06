@@ -67,6 +67,11 @@
 	_( modulo )\
 	_( add )\
 	_( minus )\
+	_( multiplyBinary )\
+	_( divideBinary )\
+	_( moduloBinary )\
+	_( addBinary )\
+	_( minusBinary )\
 	_( leftShift )\
 	_( rightShift )\
 	_( unsignedRightShift )\
@@ -108,6 +113,21 @@
 	_( nextIf )\
 	_( expression )\
 	_( discard )\
+	_( discard2 )\
+	_( discard3 )\
+	_( discard4 )\
+	_( discard5 )\
+	_( discard6 )\
+	_( discard7 )\
+	_( discard8 )\
+	_( discard9 )\
+	_( discard10 )\
+	_( discard11 )\
+	_( discard12 )\
+	_( discard13 )\
+	_( discard14 )\
+	_( discard15 )\
+	_( discard16 )\
 	_( jump )\
 	_( jumpIf )\
 	_( jumpIfNot )\

@@ -45,6 +45,67 @@ struct OpList * join (struct OpList *self, struct OpList *with)
 	return self;
 }
 
+struct OpList * joinDiscarded (struct OpList *self, uint16_t n, struct OpList *with)
+{
+	while (n >= 16)
+	{
+		self = OpList.append(self, Op.make(Op.discard16, Value(undefined), Text(empty)));
+		n -= 16;
+	}
+	
+	switch (n)
+	{
+		case 15:
+			self = OpList.append(self, Op.make(Op.discard15, Value(undefined), Text(empty)));
+			break;
+		case 14:
+			self = OpList.append(self, Op.make(Op.discard14, Value(undefined), Text(empty)));
+			break;
+		case 13:
+			self = OpList.append(self, Op.make(Op.discard13, Value(undefined), Text(empty)));
+			break;
+		case 12:
+			self = OpList.append(self, Op.make(Op.discard12, Value(undefined), Text(empty)));
+			break;
+		case 11:
+			self = OpList.append(self, Op.make(Op.discard11, Value(undefined), Text(empty)));
+			break;
+		case 10:
+			self = OpList.append(self, Op.make(Op.discard10, Value(undefined), Text(empty)));
+			break;
+		case 9:
+			self = OpList.append(self, Op.make(Op.discard9, Value(undefined), Text(empty)));
+			break;
+		case 8:
+			self = OpList.append(self, Op.make(Op.discard8, Value(undefined), Text(empty)));
+			break;
+		case 7:
+			self = OpList.append(self, Op.make(Op.discard7, Value(undefined), Text(empty)));
+			break;
+		case 6:
+			self = OpList.append(self, Op.make(Op.discard6, Value(undefined), Text(empty)));
+			break;
+		case 5:
+			self = OpList.append(self, Op.make(Op.discard5, Value(undefined), Text(empty)));
+			break;
+		case 4:
+			self = OpList.append(self, Op.make(Op.discard4, Value(undefined), Text(empty)));
+			break;
+		case 3:
+			self = OpList.append(self, Op.make(Op.discard3, Value(undefined), Text(empty)));
+			break;
+		case 2:
+			self = OpList.append(self, Op.make(Op.discard2, Value(undefined), Text(empty)));
+			break;
+		case 1:
+			self = OpList.append(self, Op.make(Op.discard, Value(undefined), Text(empty)));
+			break;
+		case 0:
+			break;
+	}
+	return join(self, with);
+}
+
 struct OpList * unshift (struct Op op, struct OpList *self)
 {
 	if (!self)
@@ -53,6 +114,12 @@ struct OpList * unshift (struct Op op, struct OpList *self)
 	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + 1));
 	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount++);
 	self->ops[0] = op;
+	return self;
+}
+
+struct OpList * shift (struct OpList *self)
+{
+	memmove(self->ops, self->ops + 1, sizeof(*self->ops) * --self->opCount);
 	return self;
 }
 
