@@ -92,13 +92,13 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	value = Value.toObject(ecc->this, ecc, &(*ops)->text);
 	count = Op.variableArgumentCount(ecc);
 	
-	length += valueArrayLength(ecc->this);
+	length += valueArrayLength(value);
 	for (index = 0; index < count; ++index)
 		length += valueArrayLength(Op.variableArgument(ecc, index));
 	
 	array = Array.createSized(length);
 	
-	valueAppendFromElement(ecc->this, array, &element);
+	valueAppendFromElement(value, array, &element);
 	for (index = 0; index < count; ++index)
 		valueAppendFromElement(Op.variableArgument(ecc, index), array, &element);
 	

@@ -13,7 +13,7 @@
 static const int defaultSize = 8;
 static const uint8_t zeroFlag = 0;
 
-static inline uint32_t getSlot (struct Object *self, struct Key key)
+static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
 {
 	return
 		self->hashmap[

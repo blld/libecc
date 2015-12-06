@@ -427,7 +427,6 @@ static inline struct Value callOps (const struct Op * const ops, struct Ecc * co
 	ecc->this = this;
 	ecc->context = context;
 	ecc->construct = construct;
-	ecc->result = Value(undefined);
 	
 	ops->native(&callOps, ecc);
 	
@@ -633,15 +632,15 @@ struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 	for (count = opValue().data.integer; count--;)
 	{
 		value = nextOp();
-		isGetter = 0;
-		isSetter = 0;
+		isGetter = 0; // TODO
+		isSetter = 0; // TODO
 		
 		if (value.type == Value(breakerType))
 		{
 			if (value.data.integer == 0)
-				isGetter = 1;
+				isGetter = 1; // TODO
 			else
-				isSetter = 1;
+				isSetter = 1; // TODO
 			
 			value = nextOp();
 		}
