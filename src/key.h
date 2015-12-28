@@ -51,7 +51,7 @@ Interface(Key,
 		union {
 			uint8_t depth[4];
 			uint32_t integer;
-		} const data;
+		} data;
 	}
 )
 
