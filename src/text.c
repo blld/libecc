@@ -176,7 +176,7 @@ uint16_t writeBinary (struct Text text, double binary, int base)
 	
 	if (!base || base == 10)
 	{
-		long dblDig10 = pow(10, DBL_DIG);
+		long dblDig10 = (long)pow(10, DBL_DIG);
 		int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: DECIMAL_DIG;
 		
 		return snprintf(buffer, length, "%.*g", precision, binary);

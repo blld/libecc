@@ -348,56 +348,49 @@ uint16_t toBufferLength (struct Value value)
 		case Value(dateType):
 		case Value(breakerType):
 		case Value(referenceType):
-			assert(0);
-			abort();
+			break;
 	}
+	
+	assert(0);
+	abort();
+}
+
+static inline uint16_t textToBuffer (struct Text text, struct Text buffer)
+{
+	memcpy((char *)buffer.location, text.location, text.length);
+	return text.length;
 }
 
 uint16_t toBuffer (struct Value value, struct Text buffer)
 {
-	struct Text text;
-	
 	switch (value.type)
 	{
 		case Value(keyType):
-			text = *Key.textOf(value.data.key);
-			break;
+			return textToBuffer(*Key.textOf(value.data.key), buffer);
 		
 		case Value(textType):
-			text = *value.data.text;
-			break;
+			return textToBuffer(*value.data.text, buffer);
 		
 		case Value(stringType):
-			text = (struct Text){ value.data.string->value->chars, value.data.string->value->length };
-			break;
+			return textToBuffer((struct Text){ value.data.string->value->chars, value.data.string->value->length }, buffer);
 		
 		case Value(charsType):
-			text = (struct Text){ value.data.chars->chars, value.data.chars->length };
-			break;
+			return textToBuffer((struct Text){ value.data.chars->chars, value.data.chars->length }, buffer);
 		
 		case Value(nullType):
-			text = Text(null);
-			break;
+			return textToBuffer(Text(null), buffer);
 		
 		case Value(undefinedType):
-			text = Text(undefined);
-			break;
+			return textToBuffer(Text(undefined), buffer);
 		
 		case Value(falseType):
-			text = Text(false);
-			break;
+			return textToBuffer(Text(false), buffer);
 		
 		case Value(trueType):
-			text = Text(true);
-			break;
+			return textToBuffer(Text(true), buffer);
 		
 		case Value(booleanType):
-			if (value.data.boolean->truth)
-				text = Text(true);
-			else
-				text = Text(false);
-			
-			break;
+			return textToBuffer(value.data.boolean->truth? Text(true): Text(false), buffer);
 		
 		case Value(integerType):
 			return Text.writeBinary(buffer, value.data.integer, 10);
@@ -409,12 +402,10 @@ uint16_t toBuffer (struct Value value, struct Text buffer)
 			return Text.writeBinary(buffer, value.data.binary, 10);
 		
 		case Value(objectType):
-			text = *value.data.object->type;
-			break;
+			return textToBuffer(*value.data.object->type, buffer);
 		
 		case Value(functionType):
-			text = value.data.function->text;
-			break;
+			return textToBuffer(value.data.function->text, buffer);
 		
 		case Value(errorType):
 		{
@@ -431,12 +422,11 @@ uint16_t toBuffer (struct Value value, struct Text buffer)
 		case Value(dateType):
 		case Value(breakerType):
 		case Value(referenceType):
-			assert(0);
-			abort();
+			break;
 	}
 	
-	memcpy((char *)buffer.location, text.location, text.length);
-	return text.length;
+	assert(0);
+	abort();
 }
 
 struct Value binaryToString (double binary, int base)

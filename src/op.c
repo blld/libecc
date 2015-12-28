@@ -791,7 +791,7 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText();
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(nextOp(), ecc, opText());
+	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value result = Object.delete(object.data.object, key);
 	if (!Value.isTrue(result))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
