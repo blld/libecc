@@ -642,7 +642,7 @@ struct Value parseInteger (struct Text text, int base)
 		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.location, base);
 		return Value.binary(NAN);
 	}
-	if (integer < INT32_MIN || integer > INT32_MAX)
+	else if (integer < INT32_MIN || integer > INT32_MAX)
 		return Value.binary(integer);
 	else
 		return Value.integer((int32_t)integer);
