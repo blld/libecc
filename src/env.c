@@ -24,6 +24,9 @@ struct EnvInternal {
 
 static struct Env *self = NULL;
 
+#ifdef __MINGW32__
+extern int _putenv(const char *);
+#endif
 
 static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 {
@@ -118,6 +121,13 @@ void setup (void)
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
 	GetConsoleScreenBufferInfo(self->internal->console, &consoleScreenBufferInfo);
 	self->internal->defaultAttribute = consoleScreenBufferInfo.wAttributes;
+	
+	#ifdef _MSC_VER
+	_set_output_format(_TWO_DIGIT_EXPONENT);
+	#else
+	_putenv("PRINTF_EXPONENT_DIGITS=2");
+	#endif
+	
 	#endif
 }
 
