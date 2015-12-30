@@ -12,7 +12,7 @@ else
 	warn ?= -Wall
 endif
 
-opts ?= -Os -fomit-frame-pointer -fstrict-aliasing
+opts ?= -Os -fstrict-aliasing
 flto ?= -flto
 libs ?= -lm
 
