@@ -625,8 +625,6 @@ struct Value parseInteger (struct Text text, int base)
 	
 	if (!text.length)
 		return Value.binary(NAN);
-	else if (!base && text.length > 1 && text.location[0] == '0' && tolower(text.location[1]) != 'x')
-		base = 10; // avoid auto-detect octal
 	
 	memcpy(buffer, text.location, text.length);
 	buffer[text.length] = '\0';

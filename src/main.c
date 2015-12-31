@@ -542,6 +542,11 @@ static void testNumber (void)
 	test("-0xffffffff | 0", "1");
 	test("-0x1fffffff0 | 0", "16");
 	
+	test("0123", "83");
+	test("-0123", "-83");
+	test("parseInt('0123')", "123");
+	test("parseInt('-0123')", "-123");
+	
 	// toString
 	// radix 10 -> libc %g (double)
 	// radix  8 -> libc %lo (long int)

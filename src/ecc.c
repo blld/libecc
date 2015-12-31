@@ -42,15 +42,29 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 {
 	struct Value value;
 	struct Text text;
-	int32_t radix;
+	int32_t base;
 	
 	Op.assertParameterCount(ecc, 2);
 	
 	value = Value.toString(Op.argument(ecc, 0));
-	radix = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	base = Value.toInteger(Op.argument(ecc, 1)).data.integer;
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
-	ecc->result = Lexer.parseInteger(text, radix);
+	
+	if (!base)
+	{
+		// prevent octal auto-detection
+		
+		if (text.length > 2 && text.location[0] == '-')
+		{
+			if (text.location[1] == '0' && tolower(text.location[2]) != 'x')
+				base = 10;
+		}
+		else if (text.length > 1 && text.location[0] == '0' && tolower(text.location[1]) != 'x')
+			base = 10;
+	}
+	
+	ecc->result = Lexer.parseInteger(text, base);
 	
 	return Value(undefined);
 }
