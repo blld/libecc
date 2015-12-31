@@ -17,6 +17,7 @@ struct EnvInternal {
 	HANDLE console;
 	int defaultAttribute;
 	int defaultOutputCP;
+	unsigned int outputFormat;
 #else
 	char unused;
 #endif
@@ -122,9 +123,11 @@ void setup (void)
 	GetConsoleScreenBufferInfo(self->internal->console, &consoleScreenBufferInfo);
 	self->internal->defaultAttribute = consoleScreenBufferInfo.wAttributes;
 	
-	#ifdef _MSC_VER
-	_set_output_format(_TWO_DIGIT_EXPONENT);
-	#else
+	#if _MSC_VER && _MSC_VER < 1900
+	self->internal->outputFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
+	#endif
+	
+	#if __MINGW32__
 	_putenv("PRINTF_EXPONENT_DIGITS=2");
 	#endif
 	
@@ -140,6 +143,11 @@ void teardown (void)
 	#elif _WIN32 || _WIN64
 	SetConsoleOutputCP(self->internal->defaultOutputCP);
 	SetConsoleTextAttribute(self->internal->console, self->internal->defaultAttribute);
+	
+	#if _MSC_VER && _MSC_VER < 1900
+	_set_output_format(self->internal->outputFormat);
+	#endif
+	
 	#endif
 	
 	print(" ");
