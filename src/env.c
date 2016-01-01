@@ -89,7 +89,7 @@ static inline void printVA(uint16_t length, const char *format, va_list ap)
 	char buffer[length + 1];
 	vsnprintf(buffer, length + 1, format, ap);
 	DWORD numberOfCharsWritten;
-	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, length, &numberOfCharsWritten, NULL);
+	WriteConsoleA(self->internal->console, buffer, length, &numberOfCharsWritten, NULL);
 }
 #endif
 
@@ -115,7 +115,7 @@ void setup (void)
 	gettextinfo(&textInfo);
 	self->internal->defaultAttribute = textInfo.normattr;
 	#elif _WIN32 || _WIN64
-	self->internal->console = GetStdHandle(STD_OUTPUT_HANDLE);
+	self->internal->console = GetStdHandle(STD_ERROR_HANDLE);
 	self->internal->defaultOutputCP = GetConsoleOutputCP();
 	SetConsoleOutputCP(CP_UTF8);
 	
