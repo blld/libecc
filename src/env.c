@@ -70,7 +70,7 @@ static inline void printVA(uint16_t length, const char *format, va_list ap)
 	char buffer[length + 1];
 	int16_t offset = 0;
 	
-	const char csize = 80;
+	const unsigned char csize = 80;
 	char cbuffer[csize + 1];
 	cbuffer[csize] = '\0';
 	
