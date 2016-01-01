@@ -50,6 +50,64 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 	return Value(undefined);
 }
 
+static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value fromValue, toValue;
+	int32_t from, to, length;
+	
+	Op.assertParameterCount(ecc, 2);
+	
+	if (ecc->this.type != Value(stringType))
+		ecc->this = Value.toString(ecc->this);
+	
+	length = Value.stringLength(ecc->this);
+	
+	fromValue = Op.argument(ecc, 0);
+	if (fromValue.type == Value(undefinedType))
+		from = 0;
+	else
+	{
+		from = Value.toInteger(fromValue).data.integer;
+		if (from < 0)
+		{
+			from = length + from;
+			if (from < 0)
+				from = 0;
+		}
+		else if (from > length)
+			from = length;
+	}
+	
+	toValue = Op.argument(ecc, 1);
+	if (toValue.type == Value(undefinedType))
+		to = length;
+	else
+	{
+		to = Value.toInteger(toValue).data.integer;
+		if (to < 0)
+		{
+			to = length + to;
+			if (to < 0)
+				to = 0;
+		}
+		else if (to > length)
+			to = length;
+	}
+	
+	length = to - from;
+	
+	if (length <= 0)
+		ecc->result = Value.text(&Text(empty));
+	else
+	{
+		struct Chars *chars = Chars.createSized(length);
+		memcpy(chars->chars, Value.stringChars(ecc->this) + from, length);
+		ecc->result = Value.chars(chars);
+	}
+	
+	return Value(undefined);
+}
+
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
@@ -77,6 +135,7 @@ void setup ()
 	
 	String(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
+	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	
 	Object.add(String(prototype), Key(constructor), Value.function(String(constructor)), 0);
 	Object.add(&String(constructor)->object, Key(prototype), Value.object(String(prototype)), 0);
@@ -93,7 +152,7 @@ struct String * create (struct Chars *chars)
 	struct String *self = malloc(sizeof(*self));
 	*self = String.identity;
 	Pool.addObject(&self->object);
-	Object.initialize(&self->object, NULL);
+	Object.initialize(&self->object, String(prototype));
 	
 	self->object.type = &Text(stringType);
 	self->value = chars;
