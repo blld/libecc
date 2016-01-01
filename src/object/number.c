@@ -26,7 +26,7 @@ static struct Value toExponential (const struct Op ** const ops, struct Ecc * co
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
-		if (precision < 0 || precision > DECIMAL_DIG)
+		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "precision %d out of range", precision)));
 		
 		ecc->result = Value.chars(Chars.create("%.*e", precision, ecc->this.data.number->value));
@@ -50,7 +50,7 @@ static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ec
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
-		if (precision < 0 || precision > DECIMAL_DIG)
+		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "precision %d out of range", precision)));
 		
 		ecc->result = Value.chars(Chars.create("%.*f", precision, ecc->this.data.number->value));
