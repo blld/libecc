@@ -154,6 +154,9 @@ static void testParser (void)
 	test("arguments++", "SyntaxError: invalid increment operand");
 	test("eval += 1", "SyntaxError: invalid assignment left-hand side");
 	test("arguments += 1", "SyntaxError: invalid assignment left-hand side");
+	
+	test("a(==)", "SyntaxError: expected expression, got '=='");
+	test("a(,1)", "SyntaxError: expected expression, got ','");
 }
 
 static void testEval (void)
