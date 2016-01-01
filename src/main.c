@@ -46,7 +46,7 @@ int main (int argc, const char * argv[])
 static int printUsage (void)
 {
 	const char error[] = "Usage";
-	Env.printError(sizeof(error)-1, error, "libecc <filename>|--test|--test-verbose|--test-quiet");
+	Env.printError(sizeof(error)-1, error, "libecc [<filename> | --test | --test-verbose | --test-quiet]");
 	
 	return EXIT_FAILURE;
 }
@@ -597,6 +597,17 @@ static void testNumber (void)
 	test("Math.round(-2147483647.6)", "-2147483648");
 }
 
+static void testString (void)
+{
+	test("'abcd'.slice()", "abcd");
+	test("'abcd'.slice(1)", "bcd");
+	test("'abcd'.slice(undefined,2)", "ab");
+	test("'abcd'.slice(1,2)", "b");
+	test("'abcd'.slice(-2)", "cd");
+	test("'abcd'.slice(undefined,-2)", "ab");
+	test("'abcd'.slice(-2,-1)", "c");
+}
+
 static int runTest (int verbosity)
 {
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->context), 0);
@@ -622,6 +633,7 @@ static int runTest (int verbosity)
 	testArray();
 	testBoolean();
 	testNumber();
+	testString();
 	
 	Env.newline();
 	
