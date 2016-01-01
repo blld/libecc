@@ -635,7 +635,43 @@ struct Value parseInteger (struct Text text, int base)
 	if (errno == ERANGE)
 	{
 		if (!base || base == 10)
-			return Value.binary(strtod(buffer, NULL));
+		{
+			double binary = strtod(buffer, NULL);
+			
+			if (!binary && !base)
+			{
+				/* strtod: hex fallback */
+				int sign = 1;
+				int offset = 0;
+				int c;
+				
+				if (text.location[offset] == '-')
+					sign = -1, ++offset;
+				
+				if (text.length - offset > 1 && text.location[offset] == '0' && tolower(text.location[offset + 1]) == 'x')
+				{
+					offset += 2;
+					
+					while (text.length - offset >= 1)
+					{
+						c = text.location[offset++];
+						
+						binary *= 16;
+						
+						if (isdigit(c))
+							binary += c - '0';
+						else if (isxdigit(c))
+							binary += tolower(c) - ('a' - 10);
+						else
+							return Value.binary(NAN);
+					}
+				}
+				
+				binary *= sign;
+			}
+			
+			return Value.binary(binary);
+		}
 		
 		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.location, base);
 		return Value.binary(NAN);
