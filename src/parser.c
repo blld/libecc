@@ -330,13 +330,17 @@ static struct OpList * primary (struct Parser *self)
 
 static struct OpList * arguments (struct Parser *self, int *count)
 {
-	struct OpList *oplist = NULL;
+	struct OpList *oplist = NULL, *argumentOps;
 	*count = 0;
 	if (previewToken(self) != ')')
 		do
 		{
 			++*count;
-			oplist = OpList.join(oplist, assignment(self, 0));
+			argumentOps = assignment(self, 0);
+			if (!argumentOps && previewToken(self) == ',')
+				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			
+			oplist = OpList.join(oplist, argumentOps);
 		} while (acceptToken(self, ','));
 	
 	return oplist;
