@@ -19,7 +19,7 @@ struct EnvInternal {
 	int defaultOutputCP;
 	unsigned int outputFormat;
 #else
-	char unused;
+	int isTerminal;
 #endif
 } static const EnvInternalIdentity;
 
@@ -50,7 +50,7 @@ static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 	#endif
 	
 	#else
-	if (self->isTerminal)
+	if (self->internal->isTerminal)
 	{
 		if (color && attribute)
 			fprintf(stderr, "\x1B[%d;%dm", color, attribute);
@@ -108,8 +108,6 @@ void setup (void)
 	self->internal = malloc(sizeof(*self->internal));
 	*self->internal = EnvInternalIdentity;
 	
-	self->isTerminal = getenv("TERM") != NULL;
-	
 	#if __MSDOS__
 	struct text_info textInfo;
 	gettextinfo(&textInfo);
@@ -131,6 +129,8 @@ void setup (void)
 	_putenv("PRINTF_EXPONENT_DIGITS=2");
 	#endif
 	
+	#else
+	self->internal->isTerminal = getenv("TERM") != NULL;
 	#endif
 }
 

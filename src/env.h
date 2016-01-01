@@ -44,7 +44,6 @@ Interface(Env,
 	(void, newline ,())
 	,
 	{
-		int isTerminal;
 		struct EnvInternal *internal;
 	}
 )
