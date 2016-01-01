@@ -217,7 +217,8 @@ static struct Value mathRound (const struct Op ** const ops, struct Ecc * const 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(round(value.data.binary));
+	ecc->result = Value.binary(floor(value.data.binary + 0.5));
+	
 	return Value(undefined);
 }
 
