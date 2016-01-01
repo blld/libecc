@@ -582,6 +582,11 @@ static void testNumber (void)
 	test("123.456.toExponential(10)", "1.2345600000e+02");
 	test("123.456.toFixed(10)", "123.4560000000");
 	test("123.456.toPrecision(10)", "123.456");
+	
+	test("Math.round(2147483647.4)", "2147483647");
+	test("Math.round(-2147483647.5)", "-2147483647");
+	test("Math.round(2147483647.5)", "2147483648");
+	test("Math.round(-2147483647.6)", "-2147483648");
 }
 
 static int runTest (int verbosity)
