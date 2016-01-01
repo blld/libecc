@@ -626,7 +626,5 @@ static int runTest (int verbosity)
 	else
 		Env.printColor(0, Env(bold), "all success");
 	
-	Env.newline();
-	
 	return testErrorCount? EXIT_FAILURE: EXIT_SUCCESS;
 }

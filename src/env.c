@@ -150,8 +150,7 @@ void teardown (void)
 	
 	#endif
 	
-	print(" ");
-	newline();
+	print("\n");
 	
 	free(self->internal), self->internal = NULL;
 	free(self), self = NULL;
