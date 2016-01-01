@@ -335,11 +335,11 @@ static struct OpList * arguments (struct Parser *self, int *count)
 	if (previewToken(self) != ')')
 		do
 		{
-			++*count;
 			argumentOps = assignment(self, 0);
-			if (!argumentOps && previewToken(self) == ',')
+			if (!argumentOps)
 				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
 			
+			++*count;
 			oplist = OpList.join(oplist, argumentOps);
 		} while (acceptToken(self, ','));
 	
