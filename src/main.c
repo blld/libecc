@@ -28,6 +28,8 @@ int main (int argc, const char * argv[])
 		result = runTest(0);
 	else if (!strcmp(argv[1], "--test-verbose"))
 		result = runTest(1);
+	else if (!strcmp(argv[1], "--test-quiet"))
+		result = runTest(-1);
 	else
 	{
 		ecc->this = Value.object(&ecc->global->context);
@@ -43,7 +45,8 @@ int main (int argc, const char * argv[])
 
 static int printUsage (void)
 {
-	fprintf(stderr, "usage: libecc <filename> or libecc --test or libecc --test-verbose\n");
+	const char error[] = "Usage";
+	Env.printError(sizeof(error)-1, error, "libecc <filename>|--test|--test-verbose|--test-quiet");
 	
 	return EXIT_FAILURE;
 }
@@ -79,10 +82,10 @@ static void test (const char *func, int line, const char *test, const char *expe
 	struct Value result;
 	uint16_t length;
 	
-	if (testVerbosity || !setjmp(*Ecc.pushEnv(ecc)))
+	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
 		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line));
 	
-	if (!testVerbosity)
+	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
 	
 	result = Value.toString(ecc->result);
@@ -94,13 +97,14 @@ static void test (const char *func, int line, const char *test, const char *expe
 		Env.printColor(Env(red), Env(bold), "[failure]");
 		Env.print(" %s:%d - ", func, line);
 		Env.printColor(0, Env(bold), "expect '%s' was '%.*s'", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.newline();
 	}
-	else
+	else if (testVerbosity >= 0)
 	{
 		Env.printColor(Env(green), Env(bold), "[success]");
 		Env.print(" %s:%d", func, line);
+		Env.newline();
 	}
-	Env.newline();
 	
 	Ecc.garbageCollect(ecc);
 }
@@ -625,6 +629,8 @@ static int runTest (int verbosity)
 		Env.printColor(0, Env(bold), "test failure: %d", testErrorCount);
 	else
 		Env.printColor(0, Env(bold), "all success");
+	
+	Env.newline();
 	
 	return testErrorCount? EXIT_FAILURE: EXIT_SUCCESS;
 }
