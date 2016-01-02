@@ -13,9 +13,9 @@
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
 
-static inline uint32_t positionIndex (const char *chars, uint32_t length, int32_t position, int enableReverse)
+static inline int32_t positionIndex (const char *chars, int32_t length, int32_t position, int enableReverse)
 {
-	uint32_t byte;
+	int32_t byte;
 	if (position >= 0)
 	{
 		byte = 0;
@@ -119,7 +119,7 @@ static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const
 static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Chars *result;
-	uint32_t length = 0, offset = 0, index, count;
+	int32_t length = 0, offset = 0, index, count;
 	
 	Op.assertVariableParameter(ecc);
 	
@@ -137,6 +137,53 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	
 	ecc->result = Value.chars(result);
 	
+	return Value(undefined);
+}
+
+static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value search;
+	int32_t position, index, offset, length, searchLength;
+	const char *chars, *searchChars;
+	
+	Op.assertParameterCount(ecc, 2);
+	
+	ecc->this = Value.toString(ecc->this);
+	chars = Value.stringChars(ecc->this);
+	length = Value.stringLength(ecc->this);
+	
+	search = Value.toString(Op.argument(ecc, 0));
+	searchChars = Value.stringChars(search);
+	searchLength = Value.stringLength(search);
+	
+	length -= searchLength;
+	position = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	index = positionIndex(chars, length, position, 0);
+	
+	for (; index <= length; ++index)
+	{
+		if ((chars[index] & 0xc0) == 0x80)
+			continue;
+		
+		if (chars[index] == searchChars[0])
+		{
+			offset = 0;
+			do
+			{
+				if (offset >= searchLength - 1)
+				{
+					ecc->result = Value.integer(position);
+					return Value(undefined);
+				}
+				++offset;
+			}
+			while (chars[index + offset] == searchChars[offset]);
+		}
+		
+		++position;
+	}
+	
+	ecc->result = Value.integer(-1);
 	return Value(undefined);
 }
 
@@ -293,6 +340,7 @@ void setup ()
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
 	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, flags);
 	Function.addToObject(String(prototype), "concat", concat, -1, flags);
+	Function.addToObject(String(prototype), "indexOf", indexOf, 2, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	

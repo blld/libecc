@@ -640,6 +640,16 @@ static void testString (void)
 	
 	test("'abせd'.concat()", "abせd");
 	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull");
+	
+	test("'abせd'.indexOf()", "-1");
+	test("'abundefinedd'.indexOf()", "2");
+	test("'abせd'.indexOf()", "-1");
+	test("'abせd'.indexOf('d')", "3");
+	test("'abせd'.indexOf('bせ')", "1");
+	test("'abせd'.indexOf('せ')", "2");
+	test("'aべcaべc'.indexOf('c')", "2");
+	test("'aべcaべc'.indexOf('c', 2)", "2");
+	test("'aべcaべc'.indexOf('c', 3)", "5");
 }
 
 static int runTest (int verbosity)
