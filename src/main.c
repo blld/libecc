@@ -630,6 +630,16 @@ static void testString (void)
 	test("'abせd'.charAt(3)", "d");
 	test("'abせd'.charAt(-1)", "");
 	test("'abせd'.charAt(2048)", "");
+	
+	test("'abせd'.charCodeAt()", "97");
+	test("'abせd'.charCodeAt(0)", "97");
+	test("'abせd'.charCodeAt(2)", "12379");
+	test("'abせd'.charCodeAt(3)", "100");
+	test("'abせd'.charCodeAt(-1)", "NaN");
+	test("'abせd'.charCodeAt(2048)", "NaN");
+	
+	test("'abせd'.concat()", "abせd");
+	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull");
 }
 
 static int runTest (int verbosity)

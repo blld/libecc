@@ -66,29 +66,76 @@ static struct Value charAt (const struct Op ** const ops, struct Ecc * const ecc
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	if (ecc->this.type != Value(stringType))
+	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
 	
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
 	position = Value.toInteger(Op.argument(ecc, 0)).data.integer;
-	if (position < 0)
+	index = positionIndex(chars, length, position, 0);
+	length = positionIndex(chars, length, position + 1, 0) - index;
+	
+	if (length <= 0)
 		ecc->result = Value.text(&Text(empty));
 	else
 	{
-		index = positionIndex(chars, length, position, 0);
-		length = positionIndex(chars, length, position + 1, 0) - index;
-		
-		if (length <= 0)
-			ecc->result = Value.text(&Text(empty));
-		else
-		{
-			struct Chars *chars = Chars.createSized(length);
-			memcpy(chars->chars, Value.stringChars(ecc->this) + index, length);
-			ecc->result = Value.chars(chars);
-		}
+		struct Chars *result = Chars.createSized(length);
+		memcpy(result->chars, chars + index, length);
+		ecc->result = Value.chars(result);
 	}
+	
+	return Value(undefined);
+}
+
+static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	int32_t position, index, length;
+	const char *chars;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	if (!Value.isString(ecc->this))
+		ecc->this = Value.toString(ecc->this);
+	
+	chars = Value.stringChars(ecc->this);
+	length = Value.stringLength(ecc->this);
+	
+	position = Value.toInteger(Op.argument(ecc, 0)).data.integer;
+	index = positionIndex(chars, length, position, 0);
+	length = positionIndex(chars, length, position + 1, 0) - index;
+	
+	if (length <= 0)
+		ecc->result = Value.binary(NAN);
+	else
+	{
+		struct Text text = { chars + index, length };
+		ecc->result = Value.binary(Text.nextCodepoint(&text));
+	}
+	
+	return Value(undefined);
+}
+
+static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Chars *result;
+	uint32_t length = 0, offset = 0, index, count;
+	
+	Op.assertVariableParameter(ecc);
+	
+	count = Op.variableArgumentCount(ecc);
+	
+	length += Value.toBufferLength(ecc->this);
+	for (index = 0; index < count; ++index)
+		length += Value.toBufferLength(Op.variableArgument(ecc, index));
+	
+	result = Chars.createSized(length);
+	
+	offset += Value.toBuffer(ecc->this, result->chars + offset, length - offset + 1);
+	for (index = 0; index < count; ++index)
+		offset += Value.toBuffer(Op.variableArgument(ecc, index), result->chars + offset, length - offset + 1);
+	
+	ecc->result = Value.chars(result);
 	
 	return Value(undefined);
 }
@@ -101,7 +148,7 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	if (ecc->this.type != Value(stringType))
+	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
 	
 	chars = Value.stringChars(ecc->this);
@@ -125,9 +172,9 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 		ecc->result = Value.text(&Text(empty));
 	else
 	{
-		struct Chars *chars = Chars.createSized(length);
-		memcpy(chars->chars, Value.stringChars(ecc->this) + start, length);
-		ecc->result = Value.chars(chars);
+		struct Chars *result = Chars.createSized(length);
+		memcpy(result->chars, chars + start, length);
+		ecc->result = Value.chars(result);
 	}
 	
 	return Value(undefined);
@@ -141,7 +188,7 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	if (ecc->this.type != Value(stringType))
+	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
 	
 	chars = Value.stringChars(ecc->this);
@@ -172,9 +219,9 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 		ecc->result = Value.text(&Text(empty));
 	else
 	{
-		struct Chars *chars = Chars.createSized(length);
-		memcpy(chars->chars, Value.stringChars(ecc->this) + start, length);
-		ecc->result = Value.chars(chars);
+		struct Chars *result = Chars.createSized(length);
+		memcpy(result->chars, chars + start, length);
+		ecc->result = Value.chars(result);
 	}
 	
 	return Value(undefined);
@@ -244,6 +291,8 @@ void setup ()
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
+	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, flags);
+	Function.addToObject(String(prototype), "concat", concat, -1, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
