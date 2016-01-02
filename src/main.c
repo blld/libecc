@@ -602,13 +602,31 @@ static void testNumber (void)
 
 static void testString (void)
 {
-	test("'abcd'.slice()", "abcd");
-	test("'abcd'.slice(1)", "bcd");
-	test("'abcd'.slice(undefined,2)", "ab");
-	test("'abcd'.slice(1,2)", "b");
-	test("'abcd'.slice(-2)", "cd");
-	test("'abcd'.slice(undefined,-2)", "ab");
-	test("'abcd'.slice(-2,-1)", "c");
+	test("'abせd'.slice()", "abせd");
+	test("'abせd'.slice(1)", "bせd");
+	test("'abせd'.slice(undefined,2)", "ab");
+	test("'abせd'.slice(1,2)", "b");
+	test("'abせd'.slice(-2)", "せd");
+	test("'abせd'.slice(undefined,-2)", "ab");
+	test("'abせd'.slice(-2,-1)", "せ");
+	test("'abせd'.slice(2,1)", "");
+	test("'abせd'.slice(2048)", "");
+	test("'abせd'.slice(0,2048)", "abせd");
+	test("'abせd'.slice(-2048)", "abせd");
+	test("'abせd'.slice(0,-2048)", "");
+	
+	test("'abせd'.substring()", "abせd");
+	test("'abせd'.substring(1)", "bせd");
+	test("'abせd'.substring(undefined,2)", "ab");
+	test("'abせd'.substring(1,2)", "b");
+	test("'abせd'.substring(-2)", "abせd");
+	test("'abせd'.substring(undefined,-2)", "");
+	test("'abせd'.substring(-2,-1)", "");
+	test("'abせd'.substring(2,1)", "b");
+	test("'abせd'.substring(2048)", "");
+	test("'abせd'.substring(0,2048)", "abせd");
+	test("'abせd'.substring(-2048)", "abせd");
+	test("'abせd'.substring(0,-2048)", "");
 }
 
 static int runTest (int verbosity)

@@ -13,6 +13,28 @@
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
 
+static inline uint32_t codepointIndex (const char *chars, uint32_t length, int32_t codepoint, int enableReverse)
+{
+	uint32_t byte;
+	if (codepoint >= 0)
+	{
+		byte = 0;
+		while (codepoint--)
+			while (byte < length && (chars[++byte] & 0xc0) == 0x80);
+	}
+	else if (enableReverse)
+	{
+		byte = length;
+		codepoint = -codepoint;
+		while (codepoint--)
+			while (byte && (chars[--byte] & 0xc0) == 0x80);
+	}
+	else
+		byte = 0;
+	
+	return byte;
+}
+
 static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t c, index, count, length = 0;
@@ -52,56 +74,85 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 
 static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Value fromValue, toValue;
-	int32_t from, to, length;
+	struct Value from, to;
+	int32_t start, end, length;
+	const char *chars;
 	
 	Op.assertParameterCount(ecc, 2);
 	
 	if (ecc->this.type != Value(stringType))
 		ecc->this = Value.toString(ecc->this);
 	
+	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	fromValue = Op.argument(ecc, 0);
-	if (fromValue.type == Value(undefinedType))
-		from = 0;
+	from = Op.argument(ecc, 0);
+	if (from.type == Value(undefinedType))
+		start = 0;
 	else
-	{
-		from = Value.toInteger(fromValue).data.integer;
-		if (from < 0)
-		{
-			from = length + from;
-			if (from < 0)
-				from = 0;
-		}
-		else if (from > length)
-			from = length;
-	}
+		start = codepointIndex(chars, length, Value.toInteger(from).data.integer, 1);
 	
-	toValue = Op.argument(ecc, 1);
-	if (toValue.type == Value(undefinedType))
-		to = length;
+	to = Op.argument(ecc, 1);
+	if (to.type == Value(undefinedType))
+		end = length;
 	else
-	{
-		to = Value.toInteger(toValue).data.integer;
-		if (to < 0)
-		{
-			to = length + to;
-			if (to < 0)
-				to = 0;
-		}
-		else if (to > length)
-			to = length;
-	}
+		end = codepointIndex(chars, length, Value.toInteger(to).data.integer, 1);
 	
-	length = to - from;
+	length = end - start;
 	
 	if (length <= 0)
 		ecc->result = Value.text(&Text(empty));
 	else
 	{
 		struct Chars *chars = Chars.createSized(length);
-		memcpy(chars->chars, Value.stringChars(ecc->this) + from, length);
+		memcpy(chars->chars, Value.stringChars(ecc->this) + start, length);
+		ecc->result = Value.chars(chars);
+	}
+	
+	return Value(undefined);
+}
+
+static struct Value substring (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value from, to;
+	int32_t start, end, length;
+	const char *chars;
+	
+	Op.assertParameterCount(ecc, 2);
+	
+	if (ecc->this.type != Value(stringType))
+		ecc->this = Value.toString(ecc->this);
+	
+	chars = Value.stringChars(ecc->this);
+	length = Value.stringLength(ecc->this);
+	
+	from = Op.argument(ecc, 0);
+	if (from.type == Value(undefinedType))
+		start = 0;
+	else
+		start = codepointIndex(chars, length, Value.toInteger(from).data.integer, 0);
+	
+	to = Op.argument(ecc, 1);
+	if (to.type == Value(undefinedType))
+		end = length;
+	else
+		end = codepointIndex(chars, length, Value.toInteger(to).data.integer, 0);
+	
+	if (start > end)
+	{
+		int32_t temp = start;
+		start = end;
+		end = temp;
+	}
+	
+	length = end - start;
+	
+	if (length <= 0)
+		ecc->result = Value.text(&Text(empty));
+	else
+	{
+		struct Chars *chars = Chars.createSized(length);
+		memcpy(chars->chars, Value.stringChars(ecc->this) + start, length);
 		ecc->result = Value.chars(chars);
 	}
 	
@@ -132,10 +183,11 @@ void setup ()
 	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	String(prototype) = Object.create(Object(prototype));
+	Function.addToObject(String(prototype), "slice", slice, 2, flags);
+	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
 	String(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
-	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	
 	Object.add(String(prototype), Key(constructor), Value.function(String(constructor)), 0);
 	Object.add(&String(constructor)->object, Key(prototype), Value.object(String(prototype)), 0);
