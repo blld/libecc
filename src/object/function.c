@@ -122,7 +122,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 				if (index == argumentCount - 1)
 					chars[offset++] = ')', chars[offset++] = '{';
 				
-				offset += Value.toBuffer(Op.variableArgument(ecc, index), (struct Text){ chars + offset, length - offset });
+				offset += Value.toBuffer(Op.variableArgument(ecc, index), chars + offset, length - offset);
 				
 				if (index < argumentCount - 2)
 					chars[offset++] = ',';

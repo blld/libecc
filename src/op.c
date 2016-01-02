@@ -34,8 +34,8 @@ static struct Value addition (struct Ecc * const ecc, struct Value a, const stru
 			uint16_t lengthA = Value.toBufferLength(a);
 			uint16_t lengthB = Value.toBufferLength(b);
 			struct Chars *chars = Chars.createSized(lengthA + lengthB);
-			Value.toBuffer(a, (struct Text){ chars->chars, chars->length + 1 });
-			Value.toBuffer(b, (struct Text){ chars->chars + lengthA, chars->length - lengthA + 1 });
+			Value.toBuffer(a, chars->chars, chars->length + 1);
+			Value.toBuffer(b, chars->chars + lengthA, chars->length - lengthA + 1);
 			return Value.chars(chars);
 		}
 		else

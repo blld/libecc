@@ -67,7 +67,7 @@ static struct Chars * joinWithText (struct Object *object, struct Text text)
 		}
 		
 		if (object->element[index].data.flags & Object(isValue))
-			offset += Value.toBuffer(object->element[index].data.value, (struct Text){ chars->chars + offset, length - offset + 1 });
+			offset += Value.toBuffer(object->element[index].data.value, chars->chars + offset, length - offset + 1);
 	}
 	
 	return chars;

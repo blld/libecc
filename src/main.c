@@ -532,9 +532,7 @@ static void testNumber (void)
 	test("0xffffffff", "4294967295");
 	test("0xffffffffffffffff", "18446744073709551616");
 	test("String(0x3635c9adc5de9e0000).slice(0, -6)", "999999999999999");
-	test("String(0x3635c9adc5de9e0000).slice(-4, -3) != 'e'", "true");
 	test("0x3635c9adc5de9f0000", "1e+21");
-	test("String(0x3635c9adc5de9f0000).slice(-4, -3) == 'e'", "true");
 	
 	test("-0xf", "-15");
 	test("-0xff", "-255");
@@ -542,9 +540,7 @@ static void testNumber (void)
 	test("-0xffffffff", "-4294967295");
 	test("-0xffffffffffffffff", "-18446744073709551616");
 	test("String(-0x3635c9adc5de9e0000).slice(0, -6)", "-999999999999999");
-	test("String(-0x3635c9adc5de9e0000).slice(-4, -3) != 'e'", "true");
 	test("-0x3635c9adc5de9f0000", "-1e+21");
-	test("String(-0x3635c9adc5de9f0000).slice(-4, -3) == 'e'", "true");
 	
 	test("0x7fffffff | 0", "2147483647");
 	test("0xffffffff | 0", "-1");
@@ -578,7 +574,7 @@ static void testNumber (void)
 	test("(-2147483647).toString(2)", "-1111111111111111111111111111111");
 	test("2147483647..toString(8)", "17777777777");
 	test("(-2147483647).toString(8)", "-17777777777");
-	test("Number.MAX_VALUE.toExponential(17)", "1.79769313486231571e+308");
+	test("Number.MAX_VALUE.toString(10)", "1.79769e+308");
 	test("Number.MIN_VALUE.toString(10)", "2.2250738585072e-308");
 	test("(2147483647).toString(16)", "7fffffff");
 	test("(-2147483647).toString(16)", "-7fffffff");
@@ -627,6 +623,13 @@ static void testString (void)
 	test("'abせd'.substring(0,2048)", "abせd");
 	test("'abせd'.substring(-2048)", "abせd");
 	test("'abせd'.substring(0,-2048)", "");
+	
+	test("'abせd'.charAt()", "a");
+	test("'abせd'.charAt(0)", "a");
+	test("'abせd'.charAt(2)", "せ");
+	test("'abせd'.charAt(3)", "d");
+	test("'abせd'.charAt(-1)", "");
+	test("'abせd'.charAt(2048)", "");
 }
 
 static int runTest (int verbosity)

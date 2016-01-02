@@ -62,8 +62,6 @@ Interface(Text,
 	
 	(uint16_t, toUTF16Bytes ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
-	
-	(uint16_t, writeBinary ,(struct Text, double binary, int base))
 	,
 	{
 		const char *location;

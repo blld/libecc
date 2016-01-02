@@ -55,7 +55,7 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 					char bytes[length + 1];
 					struct Text text = Text.make(bytes, length);
 					
-					Value.toBuffer(property, text);
+					Value.toBuffer(property, bytes, length);
 					
 					if ((element = Lexer.parseElement(text)) < 0)
 						*key = Key.makeWithText(text, 1);
@@ -906,7 +906,7 @@ void dumpTo(struct Object *self, FILE *file)
 	for (index = 0; index < self->elementCount; ++index)
 	{
 		if (!isArray)
-			fprintf(file, "%d: ", index);
+			fprintf(file, "%d: ", (int)index);
 		
 		if (self->element[index].data.flags & Object(isValue))
 		{
