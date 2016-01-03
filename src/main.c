@@ -598,6 +598,9 @@ static void testNumber (void)
 
 static void testString (void)
 {
+	test("''.toString.call(123)", "TypeError: not a string");
+	test("''.valueOf.call(123)", "TypeError: not a string");
+	
 	test("'abせd'.slice()", "abせd");
 	test("'abせd'.slice(1)", "bせd");
 	test("'abせd'.slice(undefined,2)", "ab");

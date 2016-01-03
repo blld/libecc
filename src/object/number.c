@@ -20,7 +20,7 @@ static struct Value toExponential (const struct Op ** const ops, struct Ecc * co
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->this.type != Value(numberType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an number")));
 	
 	value = Op.argument(ecc, 0);
 	if (value.type != Value(undefinedType))
@@ -44,7 +44,7 @@ static struct Value toFixed (const struct Op ** const ops, struct Ecc * const ec
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->this.type != Value(numberType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an number")));
 	
 	value = Op.argument(ecc, 0);
 	if (value.type != Value(undefinedType))
@@ -68,7 +68,7 @@ static struct Value toPrecision (const struct Op ** const ops, struct Ecc * cons
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->this.type != Value(numberType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an number")));
 	
 	value = Op.argument(ecc, 0);
 	if (value.type != Value(undefinedType))
@@ -93,7 +93,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->this.type != Value(numberType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an number")));
 	
 	value = Op.argument(ecc, 0);
 	if (value.type != Value(undefinedType))
@@ -115,7 +115,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 {
 	Op.assertParameterCount(ecc, 0);
 	if (ecc->this.type != Value(numberType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an number")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an number")));
 	
 	ecc->result = Value.binary(ecc->this.data.number->value);
 	return Value(undefined);
