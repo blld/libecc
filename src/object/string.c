@@ -157,21 +157,23 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value search;
-	int32_t position, index, offset, length, searchLength;
+	int32_t position, index, offset, length, searchLength, argumentCount;
 	const char *chars, *searchChars;
 	
-	Op.assertParameterCount(ecc, 2);
+	Op.assertVariableParameter(ecc);
+	
+	argumentCount = Op.variableArgumentCount(ecc);
 	
 	ecc->this = Value.toString(ecc->this);
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	search = Value.toString(Op.argument(ecc, 0));
+	search = argumentCount >= 1? Value.toString(Op.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
 	searchLength = Value.stringLength(search);
 	
 	length -= searchLength;
-	position = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	position = argumentCount >= 2? Value.toInteger(Op.variableArgument(ecc, 1)).data.integer: 0;
 	index = positionIndex(chars, length, position, 0);
 	
 	for (; index <= length; ++index)
@@ -204,23 +206,25 @@ static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ec
 static struct Value lastIndexOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value search;
-	int32_t position, index, offset, length, searchLength;
+	int32_t position, index, offset, length, searchLength, argumentCount;
 	const char *chars, *searchChars;
 	
-	Op.assertParameterCount(ecc, 2);
+	Op.assertVariableParameter(ecc);
+	
+	argumentCount = Op.variableArgumentCount(ecc);
 	
 	ecc->this = Value.toString(ecc->this);
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	search = Value.toString(Op.argument(ecc, 0));
+	search = argumentCount >= 1? Value.toString(Op.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
 	searchLength = Value.stringLength(search) - 1;
 	
-	if (Op.argument(ecc, 1).type == Value(undefinedType))
+	if (argumentCount < 2 || Op.variableArgument(ecc, 1).type == Value(undefinedType))
 		position = indexPosition(chars, length, length);
 	else
-		position = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+		position = Value.toInteger(Op.variableArgument(ecc, 1)).data.integer;
 	
 	position -= indexPosition(searchChars, searchLength, searchLength);
 	index = positionIndex(chars, length, position, 0);
@@ -405,8 +409,8 @@ void setup ()
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
 	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, flags);
 	Function.addToObject(String(prototype), "concat", concat, -1, flags);
-	Function.addToObject(String(prototype), "indexOf", indexOf, 2, flags);
-	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, 2, flags);
+	Function.addToObject(String(prototype), "indexOf", indexOf, -1, flags);
+	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	

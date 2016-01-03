@@ -649,6 +649,7 @@ static void testString (void)
 	test("'aべcaべc'.indexOf('c')", "2");
 	test("'aべcaべc'.indexOf('c', 2)", "2");
 	test("'aべcaべc'.indexOf('c', 3)", "5");
+	test("''.indexOf.length", "1");
 	
 	test("'aべundefined'.lastIndexOf()", "2");
 	test("'aべcaべc'.lastIndexOf()", "-1");
@@ -658,6 +659,7 @@ static void testString (void)
 	test("'aべcaべc'.lastIndexOf('c')", "5");
 	test("'aべcaべc'.lastIndexOf('c', 2)", "2");
 	test("'aべcaべc'.lastIndexOf('c', 3)", "2");
+	test("''.lastIndexOf.length", "1");
 }
 
 static int runTest (int verbosity)
