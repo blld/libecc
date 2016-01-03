@@ -641,15 +641,23 @@ static void testString (void)
 	test("'abせd'.concat()", "abせd");
 	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull");
 	
-	test("'abせd'.indexOf()", "-1");
-	test("'abundefinedd'.indexOf()", "2");
-	test("'abせd'.indexOf()", "-1");
-	test("'abせd'.indexOf('d')", "3");
-	test("'abせd'.indexOf('bせ')", "1");
-	test("'abせd'.indexOf('せ')", "2");
+	test("'aべundefined'.indexOf()", "2");
+	test("'aべcaべc'.indexOf()", "-1");
+	test("'aべcaべc'.indexOf('c')", "2");
+	test("'aべcaべc'.indexOf('aべ')", "0");
+	test("'aべcaべc'.indexOf('べc')", "1");
 	test("'aべcaべc'.indexOf('c')", "2");
 	test("'aべcaべc'.indexOf('c', 2)", "2");
 	test("'aべcaべc'.indexOf('c', 3)", "5");
+	
+	test("'aべundefined'.lastIndexOf()", "2");
+	test("'aべcaべc'.lastIndexOf()", "-1");
+	test("'aべcaべc'.lastIndexOf('c')", "5");
+	test("'aべcaべc'.lastIndexOf('aべ')", "3");
+	test("'aべcaべc'.lastIndexOf('べc')", "4");
+	test("'aべcaべc'.lastIndexOf('c')", "5");
+	test("'aべcaべc'.lastIndexOf('c', 2)", "2");
+	test("'aべcaべc'.lastIndexOf('c', 3)", "2");
 }
 
 static int runTest (int verbosity)

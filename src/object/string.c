@@ -35,6 +35,20 @@ static inline int32_t positionIndex (const char *chars, int32_t length, int32_t 
 	return byte;
 }
 
+static inline int32_t indexPosition (const char *chars, int32_t length, int32_t index)
+{
+	int32_t byte = 0, position = 0;
+	while (index--)
+	{
+		if (byte < length)
+		{
+			++position;
+			while ((chars[++byte] & 0xc0) == 0x80);
+		}
+	}
+	return position;
+}
+
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -181,6 +195,57 @@ static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ec
 		}
 		
 		++position;
+	}
+	
+	ecc->result = Value.integer(-1);
+	return Value(undefined);
+}
+
+static struct Value lastIndexOf (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value search;
+	int32_t position, index, offset, length, searchLength;
+	const char *chars, *searchChars;
+	
+	Op.assertParameterCount(ecc, 2);
+	
+	ecc->this = Value.toString(ecc->this);
+	chars = Value.stringChars(ecc->this);
+	length = Value.stringLength(ecc->this);
+	
+	search = Value.toString(Op.argument(ecc, 0));
+	searchChars = Value.stringChars(search);
+	searchLength = Value.stringLength(search) - 1;
+	
+	if (Op.argument(ecc, 1).type == Value(undefinedType))
+		position = indexPosition(chars, length, length);
+	else
+		position = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	
+	position -= indexPosition(searchChars, searchLength, searchLength);
+	index = positionIndex(chars, length, position, 0);
+	
+	for (; index >= 0; --index)
+	{
+		if ((chars[index] & 0xc0) == 0x80)
+			continue;
+		
+		if (chars[index] == searchChars[0])
+		{
+			offset = 0;
+			do
+			{
+				if (offset >= searchLength - 1)
+				{
+					ecc->result = Value.integer(position);
+					return Value(undefined);
+				}
+				++offset;
+			}
+			while (chars[index + offset] == searchChars[offset]);
+		}
+		
+		--position;
 	}
 	
 	ecc->result = Value.integer(-1);
@@ -341,6 +406,7 @@ void setup ()
 	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, flags);
 	Function.addToObject(String(prototype), "concat", concat, -1, flags);
 	Function.addToObject(String(prototype), "indexOf", indexOf, 2, flags);
+	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, 2, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
