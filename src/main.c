@@ -537,6 +537,8 @@ static void testArray (void)
 	test("var a = [1,2]; a.reverse(); a.toString()", "2,1");
 	test("var a = [1,2,'abc']; a.reverse(); a.toString()", "abc,2,1");
 	
+	test("var a = [1, 2], b = ''; b += a.shift(); b += a.shift(); b += a.shift()", "12undefined");
+	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");
 }

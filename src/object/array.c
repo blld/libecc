@@ -206,6 +206,25 @@ static struct Value reverse (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
+static struct Value shift (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	
+	Op.assertParameterCount(ecc, 0);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	
+	if (object->elementCount)
+	{
+		ecc->result = object->element[0].data.value;
+		memmove(object->element, object->element + 1, sizeof(*object->element) * --object->elementCount);
+	}
+	else
+		ecc->result = Value(undefined);
+	
+	return Value(undefined);
+}
+
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -257,6 +276,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
 	Function.addToObject(Array(prototype), "push", push, -1, flags);
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
+	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	
