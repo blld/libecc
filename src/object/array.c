@@ -43,6 +43,7 @@ static void valueAppendFromElement (struct Value value, struct Object *object, u
 
 static struct Chars * joinWithText (struct Object *object, struct Text text)
 {
+	struct Value value;
 	struct Chars *chars;
 	uint32_t length = 0, offset = 0;
 	uint32_t index, count = object->elementCount;
@@ -52,7 +53,8 @@ static struct Chars * joinWithText (struct Object *object, struct Text text)
 		if (index)
 			length += text.length;
 		
-		if (object->element[index].data.flags & Object(isValue))
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 			length += Value.toBufferLength(object->element[index].data.value);
 	}
 	
@@ -66,7 +68,8 @@ static struct Chars * joinWithText (struct Object *object, struct Text text)
 			offset += text.length;
 		}
 		
-		if (object->element[index].data.flags & Object(isValue))
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 			offset += Value.toBuffer(object->element[index].data.value, chars->chars + offset, length - offset + 1);
 	}
 	
