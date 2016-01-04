@@ -225,6 +225,51 @@ static struct Value shift (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
+static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object, *result;
+	struct Value start, end;
+	uint32_t from, to, length;
+	double binary;
+	
+	Op.assertParameterCount(ecc, 2);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	start = Op.argument(ecc, 0);
+	end = Op.argument(ecc, 1);
+	
+	start = Op.argument(ecc, 0);
+	binary = Value.toBinary(start).data.binary;
+	if (start.type == Value(undefinedType))
+		from = 0;
+	else if (binary > 0)
+		from = binary < object->elementCount? binary: object->elementCount;
+	else
+		from = binary + object->elementCount >= 0? object->elementCount + binary: 0;
+	
+	end = Op.argument(ecc, 1);
+	binary = Value.toBinary(end).data.binary;
+	if (end.type == Value(undefinedType))
+		to = object->elementCount;
+	else if (binary < 0)
+		to = binary + object->elementCount >= 0? object->elementCount + binary: 0;
+	else
+		to = binary < object->elementCount? binary: object->elementCount;
+	
+	if (to > from)
+	{
+		length = to - from;
+		result = Array.createSized(length);
+		memcpy(result->element, object->element + from, sizeof(*result->element) * length);
+	}
+	else
+		result = Array.createSized(0);
+	
+	ecc->result = Value.object(result);
+	
+	return Value(undefined);
+}
+
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -277,6 +322,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "push", push, -1, flags);
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
+	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	

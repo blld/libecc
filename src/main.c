@@ -539,6 +539,12 @@ static void testArray (void)
 	
 	test("var a = [1, 2], b = ''; b += a.shift(); b += a.shift(); b += a.shift()", "12undefined");
 	
+	test("var a = [1, 2, 'abc', null, 456]; a.slice().toString()", "1,2,abc,,456");
+	test("var a = [1, 2, 'abc', null, 456]; a.slice(2).toString()", "abc,,456");
+	test("var a = [1, 2, 'abc', null, 456]; a.slice(2,4).toString()", "abc,");
+	test("var a = [1, 2, 'abc', null, 456]; a.slice(-2).toString()", ",456");
+	test("var a = [1, 2, 'abc', null, 456]; a.slice(-4,-2).toString()", "2,abc");
+	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");
 }
