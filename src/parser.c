@@ -1427,13 +1427,16 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
 {
 	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL, *discardOps = NULL;
-	uint16_t discardCount = 0;
+	uint16_t discardCount = 0, functionDiscard = 0;
 	
 	++self->sourceDepth;
 	
 	while (previewToken(self) != endToken && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 		if (previewToken(self) == Lexer(functionToken))
-			init = OpList.join(init, OpList.unshift(Op.make(Op.discard, Value(undefined), self->lexer->text), function(self, 1, 0, 0)));
+		{
+			++functionDiscard;
+			init = OpList.join(init, function(self, 1, 0, 0));
+		}
 		else
 		{
 			statementOps = statement(self);
@@ -1466,6 +1469,9 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 			else
 				error(self, Error.syntaxError(self->lexer->text, "expected statement, got %s", Lexer.tokenChars(previewToken(self))));
 		}
+	
+	if (init)
+		init = OpList.joinDiscarded(NULL, functionDiscard, init);
 	
 	if (discardOps)
 		oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
