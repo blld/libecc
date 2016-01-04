@@ -182,6 +182,30 @@ static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
+static struct Value reverse (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	__typeof__(*object->element) temp;
+	uint32_t last, index, half;
+	
+	Op.assertParameterCount(ecc, 0);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	last = object->elementCount - 1;
+	half = object->elementCount / 2;
+	
+	for (index = 0; index < half; ++index)
+	{
+		temp = object->element[index];
+		object->element[index] = object->element[last - index];
+		object->element[last - index] = temp;
+	}
+	
+	ecc->result = Value.object(object);
+	
+	return Value(undefined);
+}
+
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -232,6 +256,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
 	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
 	Function.addToObject(Array(prototype), "push", push, -1, flags);
+	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	
