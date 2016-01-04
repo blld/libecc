@@ -56,6 +56,8 @@ static int printUsage (void)
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int index, count;
+	struct Value value;
+	
 	Op.assertVariableParameter(ecc);
 	
 	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
@@ -63,7 +65,11 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 		if (index)
 			putc(' ', stdout);
 		
-		Value.dumpTo(Value.toPrimitive(Op.variableArgument(ecc, index), ecc, &(*ops)->text, 1), stdout);
+		value = Op.variableArgument(ecc, index);
+		if (Value.isObject(value))
+			Value.dumpTo(Value.toPrimitive(value, ecc, &(*ops)->text, 1), stdout);
+		else
+			Value.dumpTo(value, stdout);
 	}
 	putc('\n', stdout);
 	
