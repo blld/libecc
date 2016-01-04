@@ -14,7 +14,7 @@
 
 // MARK: - Methods
 
-struct Chars * createVA (int16_t length, const char *format, va_list ap)
+struct Chars * createVA (uint16_t length, const char *format, va_list ap)
 {
 	struct Chars *self;
 	
@@ -26,7 +26,7 @@ struct Chars * createVA (int16_t length, const char *format, va_list ap)
 
 struct Chars * create (const char *format, ...)
 {
-	int16_t length;
+	uint16_t length;
 	va_list ap;
 	struct Chars *self;
 	
