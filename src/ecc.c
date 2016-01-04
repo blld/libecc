@@ -262,7 +262,7 @@ int evalInput (struct Ecc *self, struct Input *input)
 	self->context = &function->context;
 	self->result = Value(undefined);
 	
-//	fprintf(stderr, "source:\n%.*s\n", input->length, input->bytes);
+//	fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
 //	OpList.dumpTo(function->oplist, stderr);
 	
 	if (!self->envCount)

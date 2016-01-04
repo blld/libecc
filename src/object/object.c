@@ -167,7 +167,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	if (*entry.flags & Object(isValue))
 		ecc->result = Value.truth(*entry.flags & Object(enumerable));
 	else
-		ecc->result = Value(undefined);
+		ecc->result = Value(false);
 	
 	return Value(undefined);
 }

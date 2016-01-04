@@ -450,7 +450,7 @@ static void testObject (void)
 	test("var a = {}, b = {}; Object.getPrototypeOf(b).isPrototypeOf(a)", "true");
 	
 	test("var a = { a: 123 }; a.propertyIsEnumerable('a')", "true");
-	test("var a = {}; a.propertyIsEnumerable('toString')", "undefined");
+	test("var a = {}; a.propertyIsEnumerable('toString')", "false");
 	test("var a = {}; Object.getPrototypeOf(a).propertyIsEnumerable('toString')", "false");
 	
 	test("var a = {}, b = {}; Object.getPrototypeOf(a) === Object.getPrototypeOf(b)", "true");
