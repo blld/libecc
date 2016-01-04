@@ -67,6 +67,20 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 	return element;
 }
 
+static inline uint32_t nextPowerOfTwo(uint32_t v)
+{
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+
+//
+
 static struct Object *checkObject (const struct Op ** const ops, struct Ecc * const ecc, struct Value value)
 {
 	if (!Value.isObject(value))
@@ -872,13 +886,22 @@ void packValue (struct Object *self)
 
 void resizeElement (struct Object *self, uint32_t size)
 {
+	uint32_t capacity = size < 8? 8: nextPowerOfTwo(size);
+	
 	assert(self);
 	
-	self->element = realloc(self->element, sizeof(*self->element) * size);
-	if (size > self->elementCount)
-		memset(self->element + self->elementCount, 0, sizeof(*self->element) * (size - self->elementCount));
+	if (capacity != self->elementCapacity)
+	{
+		self->element = realloc(self->element, sizeof(*self->element) * capacity);
+		if (capacity > self->elementCapacity)
+			memset(self->element + self->elementCapacity, 0, sizeof(*self->element) * (capacity - self->elementCapacity));
+		
+		self->elementCapacity = capacity;
+	}
+	else if (size < self->elementCount)
+		memset(self->element + size, 0, sizeof(*self->element) * (self->elementCount - size));
 	
-	self->elementCount = self->elementCapacity = size;
+	self->elementCount = size;
 }
 
 void addElementAtIndex (struct Object *self, uint32_t index, struct Value value, enum Object(Flags) flags)
@@ -887,6 +910,8 @@ void addElementAtIndex (struct Object *self, uint32_t index, struct Value value,
 	
 	if (self->elementCapacity <= index)
 		resizeElement(self, index + 1);
+	else if (self->elementCount <= index)
+		self->elementCount = index + 1;
 	
 	self->element[index].data.value = value;
 	self->element[index].data.flags |= Object(isValue) | flags;

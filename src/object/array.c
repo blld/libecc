@@ -170,6 +170,8 @@ static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
 	length = object->elementCount + count;
 	if (length > object->elementCapacity)
 		Object.resizeElement(object, length);
+	else
+		object->elementCount = length;
 	
 	for (index = 0; index < count; ++index)
 	{
