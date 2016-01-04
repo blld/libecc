@@ -28,6 +28,8 @@ Interface(Array,
 	(struct Object *, create ,(void))
 	(struct Object *, createSized ,(uint32_t size))
 	(struct Object *, createArguments ,(uint32_t size))
+	
+	(struct Object *, populateWithCList ,(struct Object *, int count, const char * list[]))
 	,
 	{
 		struct Object object;

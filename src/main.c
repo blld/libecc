@@ -32,6 +32,11 @@ int main (int argc, const char * argv[])
 		result = runTest(-1);
 	else
 	{
+		if (argc > 2)
+		{
+			struct Object *arguments = Array.populateWithCList(Array.createArguments(argc - 2), argc - 2, &argv[2]);
+			Function.addValue(ecc->global, "arguments", Value.object(arguments), 0);
+		}
 		ecc->this = Value.object(&ecc->global->context);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
 	}

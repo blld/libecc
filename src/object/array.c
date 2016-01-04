@@ -206,3 +206,36 @@ struct Object *createArguments (uint32_t size)
 	
 	return self;
 }
+
+struct Object * populateWithCList (struct Object *self, int count, const char * list[])
+{
+	enum Object(Flags) flags = Object(writable) | Object(enumerable) | Object(configurable);
+	double binary;
+	char *end;
+	int index;
+	
+	if (count > self->elementCount)
+		Object.resizeElement(self, count);
+	
+	for (index = 0; index < count; ++index)
+	{
+		uint16_t length = (uint16_t)strlen(list[index]);
+		binary = strtod(list[index], &end);
+		
+		if (end == list[index] + length)
+		{
+			self->element[index].data.value = Value.binary(binary);
+			self->element[index].data.flags = Object(isValue) | flags;
+		}
+		else
+		{
+			struct Chars *chars = Chars.createSized(length);
+			memcpy(chars->chars, list[index], length);
+			
+			self->element[index].data.value = Value.chars(chars);
+			self->element[index].data.flags = Object(isValue) | flags;
+		}
+	}
+	
+	return self;
+}
