@@ -157,6 +157,31 @@ static struct Value pop (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
+static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	uint32_t length = 0, index, count, base;
+	Op.assertVariableParameter(ecc);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	count = Op.variableArgumentCount(ecc);
+	
+	base = object->elementCount;
+	length = object->elementCount + count;
+	if (length > object->elementCapacity)
+		Object.resizeElement(object, length);
+	
+	for (index = 0; index < count; ++index)
+	{
+		object->element[index + base].data.value = Op.variableArgument(ecc, index);
+		object->element[index + base].data.flags = Object(isValue) | Object(enumerable) | Object(writable) | Object(configurable);
+	}
+	
+	ecc->result = Value.binary(length);
+	
+	return Value(undefined);
+}
+
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -206,6 +231,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
 	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
+	Function.addToObject(Array(prototype), "push", push, -1, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	

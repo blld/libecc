@@ -530,6 +530,9 @@ static void testArray (void)
 	
 	test("var a = [1, 2], b = ''; b += a.pop(); b += a.pop(); b += a.pop()", "21undefined");
 	
+	test("var a = [1, 2]; a.push(); a.toString()", "1,2");
+	test("var a = [1, 2]; a.push('abc', 345); a.toString()", "1,2,abc,345");
+	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");
 }
