@@ -189,9 +189,20 @@ struct Object *create (void)
 struct Object *createSized (uint32_t size)
 {
 	struct Object *self = Object.create(Array(prototype));
-	assert(self);
+	
 	Object.resizeElement(self, size);
 	self->type = &Text(arrayType);
+	
+	return self;
+}
+
+struct Object *createArguments (uint32_t size)
+{
+	struct Object *self = Object.create(Object(prototype));
+	
+	Object.resizeElement(self, size);
+	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
+	self->type = &Text(argumentsType);
 	
 	return self;
 }

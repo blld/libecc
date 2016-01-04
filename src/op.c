@@ -313,28 +313,11 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 
 // MARK: call
 
-static struct Value getArgumentsLength (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	Op.assertParameterCount(ecc, 0);
-	ecc->result = Value.binary(ecc->this.data.object->elementCount);
-	return Value(undefined);
-}
-
-static struct Value setArgumentsLength (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	Op.assertParameterCount(ecc, 1);
-	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
-	return Value(undefined);
-}
-
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
 	uint32_t index = 0;
 	
-	struct Object *arguments = Object.create(Object(prototype));
-	Object.resizeElement(arguments, argumentCount);
-	Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-	arguments->type = &Text(argumentsType);
+	struct Object *arguments = Array.createArguments(argumentCount);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
@@ -500,14 +483,7 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		struct Object *context = Object.copy(&function->context);
 		
 		if (function->flags & Function(needArguments))
-		{
-			struct Object *arguments = Object.create(Object(prototype));
-			Object.resizeElement(arguments, argumentCount);
-			Object.add(arguments, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getArgumentsLength, setArgumentsLength)), Object(writable));
-			arguments->type = &Text(argumentsType);
-			
-			populateContextWithArguments(ops, ecc, context, arguments, function->parameterCount, argumentCount);
-		}
+			populateContextWithArguments(ops, ecc, context, Array.createArguments(argumentCount), function->parameterCount, argumentCount);
 		else
 			populateContext(ops, ecc, context, function->parameterCount, argumentCount);
 		
