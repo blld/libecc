@@ -145,6 +145,18 @@ static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
+static struct Value pop (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	
+	Op.assertParameterCount(ecc, 0);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	ecc->result = object->elementCount? object->element[--object->elementCount].data.value: Value(undefined);
+	
+	return Value(undefined);
+}
+
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
@@ -193,6 +205,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
+	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	
