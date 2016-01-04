@@ -389,6 +389,7 @@ static void testFunction (void)
 
 static void testLoop (void)
 {
+	test("var a, b = 2; b", "2");
 	test("var a = 0; for (;;) if (++a > 100) break; a", "101");
 	test("var a; for (a = 0;;) if (++a > 100) break; a", "101");
 	test("for (var a = 0;;) if (++a > 100) break; a", "101");
@@ -398,6 +399,7 @@ static void testLoop (void)
 	test("var a = 123; for (var i = 10; i >= 0; i--) --a; (a + a)", "224");
 	test("var a = 100, b = 0; while (a--) ++b;", "100");
 	test("var a = 100, b = 0; do ++b; while (a--)", "101");
+	test("var a = [1], r = ''; for (var i = 0; i < a[0]; ++i){ r += i; } r += 'a';", "0a");
 	
 	test("var a = { 'a': 123 }, b; for (b in a) a[b];", "123");
 	test("var a = { 'a': 123 }; for (var b in a) a[b];", "123");

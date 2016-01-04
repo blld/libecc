@@ -211,7 +211,7 @@ normal:
 		
 		skipOpCount = reverseCondition? condition->opCount - 1: 0;
 		body = OpList.appendNoop(OpList.join(condition, body));
-		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->opCount), text(step)), step);
+		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->opCount + (step? step->opCount: 0)), text(step)), step);
 		skipOpCount += step->opCount;
 		initial = OpList.append(initial, Op.make(Op.iterate, Value.integer(skipOpCount), text(initial)));
 		return OpList.join(OpList.join(initial, step), body);

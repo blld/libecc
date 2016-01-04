@@ -868,6 +868,9 @@ static struct OpList * statementList (struct Parser *self)
 	
 	while (( statementOps = statement(self) ))
 	{
+		while (statementOps->opCount > 1 && statementOps->ops[0].native == Op.next)
+			OpList.shift(statementOps);
+		
 		if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
 			OpList.destroy(statementOps), statementOps = NULL;
 		else
@@ -1436,7 +1439,10 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 			statementOps = statement(self);
 			if (statementOps)
 			{
-				if (statementOps->ops[0].native == Op.next)
+				while (statementOps->opCount > 1 && statementOps->ops[0].native == Op.next)
+					OpList.shift(statementOps);
+				
+				if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
 					OpList.destroy(statementOps), statementOps = NULL;
 				else
 				{
