@@ -85,6 +85,19 @@ static struct Value isArray (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
+static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	
+	Op.assertParameterCount(ecc, 0);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	
+	ecc->result = Value.chars(joinWithText(object, (struct Text){ ",", 1 }));
+	
+	return Value(undefined);
+}
+
 static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
@@ -109,14 +122,25 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Object *value;
+	struct Object *object;
+	struct Value separator;
+	struct Text text;
 	
-	Op.assertParameterCount(ecc, 0);
+	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	ecc->result = Value.chars(joinWithText(value, (struct Text){ ",", 1 }));
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	separator = Op.argument(ecc, 0);
+	if (separator.type == Value(undefinedType))
+		text = (struct Text){ ",", 1 };
+	else
+	{
+		separator = Value.toString(separator);
+		text = Text.make(Value.stringChars(separator), Value.stringLength(separator));
+	}
+	
+	ecc->result = Value.chars(joinWithText(object, text));
 	
 	return Value(undefined);
 }
@@ -168,6 +192,7 @@ void setup (void)
 	Array(prototype) = Object.create(Object(prototype));
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
+	Function.addToObject(Array(prototype), "join", join, 1, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Object(writable));
 	Array(prototype)->type = &Text(arrayType);
 	

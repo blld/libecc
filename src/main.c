@@ -525,6 +525,9 @@ static void testArray (void)
 	test("var a = [1, 2]; a.length = 5; a.length", "5");
 	test("var a = [1, 2]; a[5] = 5; a.length", "6");
 	
+	test("var a = [1, 2]; a.join()", "1,2");
+	test("var a = [1, 2]; a.join('abc')", "1abc2");
+	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");
 }
