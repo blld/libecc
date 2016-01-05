@@ -943,7 +943,8 @@ static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 	do
 	{
 		varOps = variableDeclaration(self, noIn);
-		if (oplist && varOps->opCount == 1 && varOps->ops[0].native == Op.next)
+		
+		if (oplist && varOps && varOps->opCount == 1 && varOps->ops[0].native == Op.next)
 			OpList.destroy(varOps), varOps = NULL;
 		else
 			oplist = OpList.join(oplist, varOps);
