@@ -235,7 +235,7 @@ static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value t
 	return *entry.value;
 }
 
-static struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value)
+static inline struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value, struct Value property, const struct Text *text)
 {
 	if (entry.value->type == Value(functionType) && entry.value->data.function->flags & Function(isAccessor))
 	{
@@ -243,6 +243,12 @@ static struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value t
 			return callFunctionVA(entry.value->data.function, ecc, this, 1, value);
 		else if (entry.value->data.function->pair)
 			return callFunctionVA(entry.value->data.function->pair, ecc, this, 1, value);
+	}
+	
+	if ((*entry.flags & Object(isValue)) && !(*entry.flags & Object(writable)))
+	{
+		property = Value.toString(property);
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot assign to read only property '%.*s' of %.*s", Value.stringLength(property), Value.stringChars(property), text->length, text->location)));
 	}
 	
 	*entry.value = value;
@@ -743,7 +749,7 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
-	struct Key key = opValue().data.key;
+	struct Value key = opValue();
 	struct Value object = nextOp();
 	struct Value value = nextOp();
 	struct Entry entry;
@@ -751,12 +757,12 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getMember(object.data.object, key);
+	entry = Object.getMember(object.data.object, key.data.key);
 	
 	if (entry.value)
-		return setEntry(entry, ecc, object, value);
+		return setEntry(entry, ecc, object, value, key, text);
 	else
-		Object.add(object.data.object, key, value, Object(writable) | Object(enumerable) | Object(configurable));
+		Object.add(object.data.object, key.data.key, value, Object(writable) | Object(enumerable) | Object(configurable));
 	
 	return value;
 }
@@ -825,7 +831,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	entry = Object.getProperty(object.data.object, property);
 	
 	if (entry.value)
-		return setEntry(entry, ecc, object, value);
+		return setEntry(entry, ecc, object, value, property, text);
 	else
 		Object.setProperty(object.data.object, property, value);
 	

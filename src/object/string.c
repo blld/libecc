@@ -433,6 +433,7 @@ struct String * create (struct Chars *chars)
 	*self = String.identity;
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, String(prototype));
+	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->chars, chars->length, chars->length)), 0);
 	
 	self->object.type = &Text(stringType);
 	self->value = chars;

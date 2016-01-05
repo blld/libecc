@@ -703,6 +703,9 @@ static void testString (void)
 	test("'aべcaべc'.lastIndexOf('c', 2)", "2");
 	test("'aべcaべc'.lastIndexOf('c', 3)", "2");
 	test("''.lastIndexOf.length", "1");
+	
+	test("'aべcaべc'.length", "6");
+	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: cannot assign to read only property 'length' of a");
 }
 
 static int runTest (int verbosity)
