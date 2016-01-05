@@ -48,6 +48,20 @@ struct Chars * createSized (uint16_t length)
 	*self = Chars.identity;
 	
 	self->length = length;
+	self->chars[length] = '\0';
+	
+	return self;
+}
+
+struct Chars * createWithBuffer (uint16_t length, const char *buffer)
+{
+	struct Chars *self = malloc(sizeof(*self) + length);
+	Pool.addChars(self);
+	*self = Chars.identity;
+	
+	self->length = length;
+	memcpy(self->chars, buffer, length);
+	self->chars[length] = '\0';
 	
 	return self;
 }

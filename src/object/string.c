@@ -351,7 +351,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 	
 	value = Value.toString(Op.argument(ecc, 0));
 	if (ecc->construct)
-		ecc->result = Value.string(String.create(Chars.create(Value.stringChars(value), Value.stringLength(value))));
+		ecc->result = Value.string(String.create(Chars.createWithBuffer(Value.stringLength(value), Value.stringChars(value))));
 	else
 		ecc->result = value;
 	
