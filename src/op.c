@@ -457,13 +457,11 @@ struct Value callFunctionVA (struct Function *function, struct Ecc * const ecc, 
 	}
 	else
 	{
-		struct Object stackContext;
+		struct Object stackContext = function->context;
 		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
 		va_list ap;
 		
 		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
-		
-		stackContext = function->context;
 		stackContext.hashmap = hashmap;
 		
 		va_start(ap, argumentCount);

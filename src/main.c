@@ -545,6 +545,13 @@ static void testArray (void)
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-2).toString()", ",456");
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-4,-2).toString()", "2,abc");
 	
+	test("var a = Array(); a.length", "0");
+	test("var a = Array(4); a.length", "4");
+	test("var a = Array(4.5); a.length", "RangeError: invalid array length");
+	test("var a = Array(-4); a.length", "RangeError: invalid array length");
+	test("var a = Array('abc'); a.length", "1");
+	test("var a = Array(123, 'abc'); a.length", "2");
+	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");
 }

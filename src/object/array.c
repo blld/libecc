@@ -291,12 +291,24 @@ static struct Value setLength (const struct Op ** const ops, struct Ecc * const 
 
 static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	int index, count;
+	uint32_t index, count, length;
 	struct Object *array;
 	Op.assertVariableParameter(ecc);
 	
-	count = Op.variableArgumentCount(ecc);
-	array = Array.createSized(count);
+	length = count = Op.variableArgumentCount(ecc);
+	if (count == 1 && Value.isNumber(Op.variableArgument(ecc, 0)))
+	{
+		double binary = Value.toBinary(Op.variableArgument(ecc, 0)).data.binary;
+		if (binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
+		{
+			length = binary;
+			count = 0;
+		}
+		else
+			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "invalid array length")));
+	}
+	
+	array = Array.createSized(length);
 	
 	for (index = 0; index < count; ++index)
 	{

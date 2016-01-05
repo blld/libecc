@@ -882,6 +882,9 @@ void packValue (struct Object *self)
 	
 	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * (self->hashmapCount + 1));
 	self->hashmapCapacity = self->hashmapCount + 1;
+	
+	if (self->elementCount)
+		self->elementCapacity = self->elementCount + 1;
 }
 
 void resizeElement (struct Object *self, uint32_t size)
