@@ -20,7 +20,7 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Function.addNative(ecc->global, "print", print, -1, 0);
+	Ecc.addNative(ecc, "print", print, -1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -35,7 +35,7 @@ int main (int argc, const char * argv[])
 		if (argc > 2)
 		{
 			struct Object *arguments = Array.populateWithCList(Array.createArguments(argc - 2), argc - 2, &argv[2]);
-			Function.addValue(ecc->global, "arguments", Value.object(arguments), 0);
+			Ecc.addValue(ecc, "arguments", Value.object(arguments), 0);
 		}
 		ecc->this = Value.object(&ecc->global->context);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
