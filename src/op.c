@@ -898,6 +898,18 @@ struct Value resultValue (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value.breaker(0);
 }
 
+struct Value pushContext (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	ecc->context = Object.create(ecc->context);
+	return opValue();
+}
+
+struct Value popContext (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	ecc->context = ecc->context->prototype;
+	return opValue();
+}
+
 struct Value exchange (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value = opValue();
@@ -1403,7 +1415,6 @@ struct Value bitOrAssignRef (const struct Op ** const ops, struct Ecc * const ec
 struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Op *end = *ops + opValue().data.integer;
-	struct Object *context = ecc->context;
 	struct Key key;
 	
 	const struct Op * volatile rethrowOps = NULL;
@@ -1426,7 +1437,6 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				ecc->context = Object.create(context);
 				Object.add(ecc->context, key, ecc->result, 0);
 				ecc->result = Value(undefined);
 				value = nextOp(); // execute until noop

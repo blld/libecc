@@ -54,6 +54,8 @@
 	\
 	_( result )\
 	_( resultValue )\
+	_( pushContext )\
+	_( popContext )\
 	_( exchange )\
 	_( typeOf )\
 	_( equal )\

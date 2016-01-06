@@ -220,7 +220,7 @@ normal:
 
 void optimizeWithContext (struct OpList *self, struct Object *context)
 {
-	uint32_t index, count, slotIndex, slotCount, haveLocal = 0;
+	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, contextLevel = 0;
 	
 	Object.packValue(context);
 	if (!self)
@@ -231,16 +231,16 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 		if (self->ops[index].native == Op.function)
 			optimizeWithContext(self->ops[index].value.data.function->oplist, &self->ops[index].value.data.function->context);
 		
-		if (self->ops[index].native == Op.try)
+		if (self->ops[index].native == Op.pushContext)
+			++contextLevel;
+		
+		if (self->ops[index].native == Op.popContext)
+			--contextLevel;
+		
+		if (self->ops[index].native == Op.getLocal || self->ops[index].native == Op.getLocalRef || self->ops[index].native == Op.setLocal)
 		{
-			// skip try/catch
-			index += self->ops[index].value.data.integer;
-			index += self->ops[index].value.data.integer;
-		}
-		else if (self->ops[index].native == Op.getLocal || self->ops[index].native == Op.getLocalRef || self->ops[index].native == Op.setLocal)
-		{
-			uint32_t parent = 0;
 			struct Object *searchContext = context;
+			uint32_t level = contextLevel;
 			
 			do
 			{
@@ -250,7 +250,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 					{
 						if (Key.isEqual(searchContext->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
 						{
-							if (!parent)
+							if (!level)
 							{
 								self->ops[index] = Op.make(
 									self->ops[index].native == Op.getLocal? Op.getLocalSlot:
@@ -258,13 +258,13 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 									self->ops[index].native == Op.setLocal? Op.setLocalSlot: NULL
 									, Value.integer(slotIndex), self->ops[index].text);
 							}
-							else if (slotIndex <= INT16_MAX && parent <= INT16_MAX)
+							else if (slotIndex <= INT16_MAX && level <= INT16_MAX)
 							{
 								self->ops[index] = Op.make(
 									self->ops[index].native == Op.getLocal? Op.getParentSlot:
 									self->ops[index].native == Op.getLocalRef? Op.getParentSlotRef:
 									self->ops[index].native == Op.setLocal? Op.setParentSlot: NULL
-									, Value.integer((parent << 16) | slotIndex), self->ops[index].text);
+									, Value.integer((level << 16) | slotIndex), self->ops[index].text);
 							}
 							else
 								goto notfound;
@@ -274,7 +274,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 					}
 				}
 				
-				++parent;
+				++level;
 			}
 			while (( searchContext = searchContext->prototype ));
 			
@@ -309,6 +309,8 @@ void dumpTo (struct OpList *self, FILE *file)
 			OpList.dumpTo(self->ops[i].value.data.function->oplist, stderr);
 			fprintf(file, "}\n");
 		}
+		else if (self->ops[i].native == Op.getParentSlot || self->ops[i].native == Op.getParentSlotRef || self->ops[i].native == Op.setParentSlot)
+			fprintf(file, "[-%d] %d", self->ops[i].value.data.integer >> 16, self->ops[i].value.data.integer & 0xffff);
 		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
 			Value.dumpTo(self->ops[i].value, file);
 		

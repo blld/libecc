@@ -208,6 +208,7 @@ static void testException (void)
 	test("try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "b");
 	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }", "c");
 	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f");
+	test("var a = 123; try { throw a + 'abc' } catch(b) { a + b }", "123123abc");
 	
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script");
 }

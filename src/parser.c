@@ -1271,7 +1271,8 @@ static struct OpList * statement (struct Parser *self)
 			catchOps = block(self);
 			if (catchOps)
 			{
-				catchOps = OpList.appendNoop(OpList.unshift(identiferOp, catchOps));
+				catchOps = OpList.unshift(Op.make(Op.pushContext, Value.key(identiferOp.value.data.key), text), catchOps);
+				catchOps = OpList.append(catchOps, Op.make(Op.popContext, Value(undefined), text));
 				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->opCount), text), catchOps);
 				oplist = OpList.join(oplist, catchOps);
 			}
