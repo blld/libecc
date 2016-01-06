@@ -128,7 +128,7 @@ Interface(Value,
 )
 
 
-// import object and redefine correct module (cyclic dependency)
+// import object (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
 #include "object/function.h"

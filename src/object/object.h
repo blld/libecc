@@ -59,6 +59,7 @@ Interface(Object,
 	(struct Value, delete ,(struct Object *, struct Key))
 	(struct Value, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))
+	(void, stripMap ,(struct Object *))
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
 	(void, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Object(Flags)))

@@ -887,6 +887,20 @@ void packValue (struct Object *self)
 		self->elementCapacity = self->elementCount + 1;
 }
 
+void stripMap (struct Object *self)
+{
+	uint32_t index = 2;
+	
+	assert(self);
+	
+	while (self->hashmap[index].data.flags & Object(isValue))
+		++index;
+	
+	self->hashmapCount = index;
+	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * (self->hashmapCount + 1));
+	self->hashmapCapacity = self->hashmapCount + 1;
+}
+
 void resizeElement (struct Object *self, uint32_t size)
 {
 	uint32_t capacity = size < 8? 8: nextPowerOfTwo(size);

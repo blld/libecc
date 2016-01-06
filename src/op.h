@@ -38,6 +38,10 @@
 	_( getLocalSlotRef )\
 	_( setLocalSlot )\
 	\
+	_( getParentSlot )\
+	_( getParentSlotRef )\
+	_( setParentSlot )\
+	\
 	_( getMember )\
 	_( getMemberRef )\
 	_( setMember )\

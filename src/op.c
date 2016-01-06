@@ -708,6 +708,40 @@ struct Value setLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 	return ecc->context->hashmap[slot].data.value = nextOp();
 }
 
+struct Value getParentSlot (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	int32_t slot = opValue().data.integer & 0xffff;
+	int32_t count = opValue().data.integer >> 16;
+	struct Object *object = ecc->context;
+	while (count--)
+		object = object->prototype;
+	
+	ecc->refObject = Value(undefined);
+	return object->hashmap[slot].data.value;
+}
+
+struct Value getParentSlotRef (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	int32_t slot = opValue().data.integer & 0xffff;
+	int32_t count = opValue().data.integer >> 16;
+	struct Object *object = ecc->context;
+	while (count--)
+		object = object->prototype;
+	
+	return Value.reference(&object->hashmap[slot].data.value);
+}
+
+struct Value setParentSlot (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	int32_t slot = opValue().data.integer & 0xffff;
+	int32_t count = opValue().data.integer >> 16;
+	struct Object *object = ecc->context;
+	while (count--)
+		object = object->prototype;
+	
+	return object->hashmap[slot].data.value = nextOp();
+}
+
 struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);

@@ -1377,7 +1377,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	}
 	
 	parentFunction = self->function;
-	function = Function.create(NULL);
+	function = Function.create(&self->function->context);
 	Object.add(&function->context, Key(arguments), Value(undefined), Object(writable));
 	
 	self->function = function;
@@ -1488,8 +1488,6 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
-	OpList.optimizeWithContext(oplist, &self->function->context);
-	
 	--self->sourceDepth;
 	
 	return oplist;
@@ -1531,6 +1529,8 @@ struct Function * parseWithContext (struct Parser * const self, struct Object *c
 	self->function = function;
 	oplist = sourceElements(self, Lexer(noToken));
 	self->function = NULL;
+	
+	OpList.optimizeWithContext(oplist, &function->context);
 	
 	if (self->error)
 	{
