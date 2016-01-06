@@ -464,6 +464,9 @@ struct Function * Object(constructor) = NULL;
 
 void setup ()
 {
+	assert(offsetof(__typeof__(Object(prototype)->hashmap->data), flags) == 63);
+	assert(sizeof(*Object(prototype)->hashmap) == 64);
+	
 	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
