@@ -222,7 +222,6 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 {
 	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, contextLevel = 0;
 	
-	Object.packValue(context);
 	if (!self)
 		return;
 	

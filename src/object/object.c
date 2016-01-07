@@ -464,10 +464,10 @@ struct Function * Object(constructor) = NULL;
 
 void setup ()
 {
+	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	
 	assert(offsetof(__typeof__(Object(prototype)->hashmap->data), flags) == 63);
 	assert(sizeof(*Object(prototype)->hashmap) == 64);
-	
-	const enum Object(Flags) flags = Object(writable) | Object(configurable);
 	
 	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
@@ -899,9 +899,11 @@ void stripMap (struct Object *self)
 	while (self->hashmap[index].data.flags & Object(isValue))
 		++index;
 	
+//	fprintf(stderr, "%d->%d\n", self->hashmapCount, index);
+	
 	self->hashmapCount = index;
-	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * (self->hashmapCount + 1));
 	self->hashmapCapacity = self->hashmapCount + 1;
+	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
 }
 
 void resizeElement (struct Object *self, uint32_t size)

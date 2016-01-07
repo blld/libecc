@@ -404,16 +404,19 @@ static struct OpList * leftHandSide (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
 	struct Text text = OpList.text(oplist);
+	struct Value value;
+	
 	while (1)
 	{
 		if (previewToken(self) == '.')
 		{
+			
 			if (!oplist)
 				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
 			
 			nextToken(self);
 			
-			struct Value value = self->lexer->value;
+			value = self->lexer->value;
 			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
@@ -1488,6 +1491,8 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
+	
+	Object.packValue(&self->function->context);
 	
 	--self->sourceDepth;
 	

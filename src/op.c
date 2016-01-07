@@ -12,7 +12,7 @@
 
 #define nextOp() (++*ops)->native(ops, ecc)
 #define opValue() (*ops)->value
-#define opText(O) &(*ops + (0 ## O))->text
+#define opText(O) &(*ops + O)->text
 
 //
 
@@ -350,9 +350,10 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 
 static inline void populateContextWithArguments (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Object *arguments, int parameterCount, int argumentCount)
 {
+	uint32_t index = 0;
+	
 	context->hashmap[2].data.value = Value.object(arguments);
 	
-	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 		{
@@ -592,7 +593,7 @@ struct Value valueConstRef (const struct Op ** const ops, struct Ecc * const ecc
 
 struct Value text (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	return Value.text(opText());
+	return Value.text(opText(0));
 }
 
 struct Value function (const struct Op ** const ops, struct Ecc * const ecc)
@@ -803,7 +804,7 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
 	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value result = Object.delete(object.data.object, key);
@@ -874,7 +875,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value property = nextOp();
 	struct Value result = Object.deleteProperty(object.data.object, property);
@@ -926,77 +927,77 @@ struct Value typeOf (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value equal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return equality(ecc, a, text, b, opText());
+	return equality(ecc, a, text, b, opText(0));
 }
 
 struct Value notEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.truth(!Value.isTrue(equality(ecc, a, text, b, opText())));
+	return Value.truth(!Value.isTrue(equality(ecc, a, text, b, opText(0))));
 }
 
 struct Value identical (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return identicality(ecc, a, text, b, opText());
+	return identicality(ecc, a, text, b, opText(0));
 }
 
 struct Value notIdentical (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.truth(!Value.isTrue(identicality(ecc, a, text, b, opText())));
+	return Value.truth(!Value.isTrue(identicality(ecc, a, text, b, opText(0))));
 }
 
 struct Value less (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
 	else
-		return valueLess(ecc, a, text, b, opText());
+		return valueLess(ecc, a, text, b, opText(0));
 }
 
 struct Value lessOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
 	else
-		return valueLessOrEqual(ecc, a, text, b, opText());
+		return valueLessOrEqual(ecc, a, text, b, opText(0));
 }
 
 struct Value more (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
 	else
-		return valueMore(ecc, a, text, b, opText());
+		return valueMore(ecc, a, text, b, opText(0));
 }
 
 struct Value moreOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
 	else
-		return valueMoreOrEqual(ecc, a, text, b, opText());
+		return valueMoreOrEqual(ecc, a, text, b, opText(0));
 }
 
 struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1009,7 +1010,7 @@ struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isObject(a))
 		return Value(false);
 	
-	text = opText();
+	text = opText(0);
 	b = nextOp();
 	if (!Value.isObject(b))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not an object", text->length, text->location)));
@@ -1075,7 +1076,7 @@ struct Value modulo (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 	{
@@ -1083,7 +1084,7 @@ struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 		return a;
 	}
 	else
-		return addition(ecc, a, text, b, opText());
+		return addition(ecc, a, text, b, opText(0));
 }
 
 struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1326,14 +1327,14 @@ struct Value moduloAssignRef (const struct Op ** const ops, struct Ecc * const e
 struct Value addAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value *ref = nextOp().data.reference;
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	if (ref->type == Value(binaryType) && b.type == Value(binaryType))
 	{
 		ref->data.binary += b.data.binary;
 		return *ref;
 	}
-	*ref = addition(ecc, *ref, text, b, opText());
+	*ref = addition(ecc, *ref, text, b, opText(0));
 	return *ref;
 }
 
@@ -1625,12 +1626,12 @@ struct Value switchOp (const struct Op ** const ops, struct Ecc * const ecc)
 	int32_t offset = opValue().data.integer;
 	const struct Op *nextOps = *ops + offset;
 	struct Value a = nextOp(), b;
-	const struct Text *text = opText();
+	const struct Text *text = opText(0);
 	
 	while (*ops < nextOps)
 	{
 		b = nextOp();
-		if (Value.isTrue(equality(ecc, a, text, b, opText())))
+		if (Value.isTrue(equality(ecc, a, text, b, opText(0))))
 		{
 			nextOps += nextOp().data.integer + 1;
 			*ops = nextOps;
@@ -1681,11 +1682,11 @@ static struct Value iterateIntegerRef (
 	__typeof__(addition) valueStep)
 {
 	const struct Op *endOps = (*ops) + opValue().data.integer;
-	const struct Text *stepText = opText();
+	const struct Text *stepText = opText(0);
 	struct Value stepValue = nextOp();
-	const struct Text *indexText = opText();
+	const struct Text *indexText = opText(0);
 	struct Value *indexRef = nextOp().data.reference;
-	const struct Text *countText = opText();
+	const struct Text *countText = opText(0);
 	struct Value *countRef = nextOp().data.reference;
 	const struct Op *nextOps = *ops;
 	struct Value value;

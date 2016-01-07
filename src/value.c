@@ -483,6 +483,7 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 struct Value binaryToString (double binary, int base)
 {
 	uint16_t length;
+	struct Chars *chars;
 	
 	if (binary == 0)
 		return Value.text(&Text(zero));
@@ -499,7 +500,7 @@ struct Value binaryToString (double binary, int base)
 	}
 	
 	length = binaryToBuffer(binary, base, NULL, 0);
-	struct Chars *chars = Chars.createSized(length);
+	chars = Chars.createSized(length);
 	binaryToBuffer(binary, base, chars->chars, chars->length + 1);
 	return Value.chars(chars);
 }
