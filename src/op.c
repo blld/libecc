@@ -245,11 +245,11 @@ static inline struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct 
 			return callFunctionVA(entry.value->data.function->pair, ecc, this, 1, value);
 	}
 	
-	if ((*entry.flags & Object(isValue)) && !(*entry.flags & Object(writable)))
-	{
-		property = Value.toString(property);
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot assign to read only property '%.*s' of %.*s", Value.stringLength(property), Value.stringChars(property), text->length, text->location)));
-	}
+//	if ((*entry.flags & Object(isValue)) && !(*entry.flags & Object(writable)))
+//	{
+//		property = Value.toString(property);
+//		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot assign to read only property '%.*s' of %.*s", Value.stringLength(property), Value.stringChars(property), text->length, text->location)));
+//	}
 	
 	*entry.value = value;
 	*entry.flags |= Object(isValue);
