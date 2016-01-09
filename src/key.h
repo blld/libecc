@@ -43,7 +43,7 @@ Interface(Key,
 	(struct Key, makeWithText ,(const struct Text text, int copyOnCreate))
 	
 	(int, isEqual, (struct Key, struct Key))
-	(struct Text *, textOf, (struct Key))
+	(const struct Text *, textOf, (struct Key))
 	
 	(void, dumpTo, (struct Key, FILE *))
 	,

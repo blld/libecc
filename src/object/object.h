@@ -21,16 +21,8 @@
 
 enum Object(Flags)
 {
-	/* object flags */
 	Object(mark) = 1 << 0,
 	Object(extensible) = 1 << 1,
-	
-	/* hashmap & element flags */
-	Object(writable) = 1 << 2,
-	Object(enumerable) = 1 << 3,
-	Object(configurable) = 1 << 4,
-	
-	Object(isValue) = 0x80,
 };
 
 extern struct Object * Object(prototype);
@@ -55,14 +47,14 @@ Interface(Object,
 	(struct Entry, getOwnProperty ,(struct Object *, struct Value))
 	(struct Entry, getProperty ,(struct Object *, struct Value))
 	(void, setProperty ,(struct Object *, struct Value, struct Value))
-	(struct Entry, add ,(struct Object *, struct Key, struct Value, enum Object(Flags)))
+	(struct Entry, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
 	(struct Value, delete ,(struct Object *, struct Key))
 	(struct Value, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
-	(void, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Object(Flags)))
+	(void, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Value(Flags)))
 	
 	(void, dumpTo ,(struct Object *, FILE *file))
 	,
@@ -74,24 +66,21 @@ Interface(Object,
 		struct {
 			struct {
 				struct Value value;
-				uint8_t flags;
 			} data;
 		} *element;
 		
 		union {
-			uint32_t slot[16];
+			uint16_t slot[16];
 			struct {
 				struct Value value;
 				struct Key key;
-				char unused[sizeof(uint32_t) * 16 - sizeof(struct Value) - sizeof(struct Key) - sizeof(uint8_t)];
-				uint8_t flags;
 			} data;
 		} *hashmap;
 		
 		uint32_t elementCount;
 		uint32_t elementCapacity;
-		uint32_t hashmapCount;
-		uint32_t hashmapCapacity;
+		uint16_t hashmapCount;
+		uint16_t hashmapCapacity;
 		
 		uint8_t flags;
 	}

@@ -25,8 +25,8 @@ Interface(Ecc,
 	(struct Ecc *, create ,(void))
 	(void, destroy, (struct Ecc *))
 	
-	(void, addNative ,(struct Ecc *, const char *name, const Native native, int argumentCount, enum Object(Flags)))
-	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Object(Flags)))
+	(void, addNative ,(struct Ecc *, const char *name, const Native native, int argumentCount, enum Value(Flags)))
+	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Value(Flags)))
 	(int, evalInput, (struct Ecc *, struct Input *))
 	
 	(jmp_buf *, pushEnv ,(struct Ecc *))

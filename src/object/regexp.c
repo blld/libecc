@@ -29,7 +29,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 void setup ()
 {
-	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
 	RegExp(prototype) = Object.create(Object(prototype));
 	

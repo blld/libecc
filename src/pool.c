@@ -41,11 +41,11 @@ static void unmarkObject (struct Object *object)
 			unmarkObject(object->prototype);
 		
 		for (index = 0, count = object->elementCount; index < count; ++index)
-			if (object->element[index].data.flags & Object(isValue))
+			if (object->element[index].data.value.check == 1)
 				unmarkValue(object->element[index].data.value);
 		
 		for (index = 2, count = object->hashmapCount; index < count; ++index)
-			if (object->hashmap[index].data.flags & Object(isValue))
+			if (object->hashmap[index].data.value.check == 1)
 				unmarkValue(object->hashmap[index].data.value);
 	}
 }

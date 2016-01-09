@@ -10,10 +10,12 @@
 
 // MARK: - Private
 
-const struct Value Value(undefined) = { { 0 }, Value(undefinedType) };
-const struct Value Value(true) = { { 0 }, Value(trueType) };
-const struct Value Value(false) = { { 0 }, Value(falseType) };
-const struct Value Value(null) = { { 0 }, Value(nullType) };
+#define valueMake(T) { { 0 }, Value(T), Value(defaults), 1 }
+
+const struct Value Value(undefined) = valueMake(undefinedType);
+const struct Value Value(true) = valueMake(trueType);
+const struct Value Value(false) = valueMake(falseType);
+const struct Value Value(null) = valueMake(nullType);
 
 static inline uint16_t textToBuffer (struct Text text, char *buffer, uint16_t length)
 {
@@ -80,6 +82,7 @@ struct Value truth (int truth)
 {
 	return (struct Value){
 		.type = truth? Value(trueType): Value(falseType),
+		.check = 1,
 	};
 }
 
@@ -88,6 +91,7 @@ struct Value integer (int32_t integer)
 	return (struct Value){
 		.data = { .integer = integer },
 		.type = Value(integerType),
+		.check = 1,
 	};
 }
 
@@ -96,6 +100,7 @@ struct Value binary (double binary)
 	return (struct Value){
 		.data = { .binary = binary },
 		.type = Value(binaryType),
+		.check = 1,
 	};
 }
 
@@ -104,6 +109,7 @@ struct Value key (struct Key key)
 	return (struct Value){
 		.data = { .key = key },
 		.type = Value(keyType),
+		.check = 1,
 	};
 }
 
@@ -112,6 +118,7 @@ struct Value text (const struct Text *text)
 	return (struct Value){
 		.data = { .text = text },
 		.type = Value(textType),
+		.check = 1,
 	};
 }
 
@@ -122,6 +129,7 @@ struct Value chars (struct Chars *chars)
 	return (struct Value){
 		.data = { .chars = chars },
 		.type = Value(charsType),
+		.check = 1,
 	};
 }
 
@@ -132,6 +140,7 @@ struct Value object (struct Object *object)
 	return (struct Value){
 		.data = { .object = object },
 		.type = Value(objectType),
+		.check = 1,
 	};
 }
 
@@ -142,6 +151,7 @@ struct Value error (struct Error *error)
 	return (struct Value){
 		.data = { .error = error },
 		.type = Value(errorType),
+		.check = 1,
 	};
 }
 
@@ -152,6 +162,7 @@ struct Value string (struct String *string)
 	return (struct Value){
 		.data = { .string = string },
 		.type = Value(stringType),
+		.check = 1,
 	};
 }
 
@@ -162,6 +173,7 @@ struct Value number (struct Number *number)
 	return (struct Value){
 		.data = { .number = number },
 		.type = Value(numberType),
+		.check = 1,
 	};
 }
 
@@ -172,6 +184,7 @@ struct Value boolean (struct Boolean *boolean)
 	return (struct Value){
 		.data = { .boolean = boolean },
 		.type = Value(booleanType),
+		.check = 1,
 	};
 }
 
@@ -182,6 +195,7 @@ struct Value date (struct Date *date)
 	return (struct Value){
 		.data = { .date = date },
 		.type = Value(dateType),
+		.check = 1,
 	};
 }
 
@@ -192,6 +206,7 @@ struct Value function (struct Function *function)
 	return (struct Value){
 		.data = { .function = function },
 		.type = Value(functionType),
+		.check = 1,
 	};
 }
 
@@ -200,6 +215,7 @@ struct Value breaker (int32_t integer)
 	return (struct Value){
 		.data = { .integer = integer },
 		.type = Value(breakerType),
+		.check = 1,
 	};
 }
 
@@ -210,6 +226,7 @@ struct Value reference (struct Value *reference)
 	return (struct Value){
 		.data = { .reference = reference },
 		.type = Value(referenceType),
+		.check = 1,
 	};
 }
 
@@ -281,7 +298,7 @@ int isTrue (struct Value value)
 
 struct Value toString (struct Value value)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(textType):
 		case Value(charsType):
@@ -343,7 +360,7 @@ struct Value toString (struct Value value)
 
 uint16_t toBufferLength (struct Value value)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(keyType):
 			return Key.textOf(value.data.key)->length;
@@ -414,7 +431,7 @@ uint16_t toBufferLength (struct Value value)
 
 uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(keyType):
 			return textToBuffer(*Key.textOf(value.data.key), buffer, length);
@@ -536,7 +553,7 @@ uint16_t stringLength (struct Value value)
 
 struct Value toBinary (struct Value value)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(binaryType):
 			return value;
@@ -613,7 +630,7 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 	if (value.type >= Value(objectType))
 		return value;
 	
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(binaryType):
 			return Value.number(Number.create(value.data.binary));
@@ -658,7 +675,7 @@ int isObject (struct Value value)
 
 struct Value toType (struct Value value)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(trueType):
 		case Value(falseType):
@@ -698,7 +715,7 @@ struct Value toType (struct Value value)
 
 void dumpTo (struct Value value, FILE *file)
 {
-	switch (value.type)
+	switch ((enum Value(Type))value.type)
 	{
 		case Value(nullType):
 			fputs("null", file);

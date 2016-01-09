@@ -124,17 +124,17 @@ int isEqual (struct Key self, struct Key to)
 	return self.data.integer == to.data.integer;
 }
 
-struct Text *textOf (struct Key key)
+const struct Text *textOf (struct Key key)
 {
 	uint16_t number = key.data.depth[0] << 12 | key.data.depth[1] << 8 | key.data.depth[2] << 4 | key.data.depth[3];
 	if (number)
 		return &keyPool[number - 1];
 	else
-		return NULL;
+		return &Text(empty);
 }
 
 void dumpTo (struct Key key, FILE *file)
 {
-	struct Text *text = textOf(key);
+	const struct Text *text = textOf(key);
 	fprintf(file, "%.*s", text->length, text->location);
 }

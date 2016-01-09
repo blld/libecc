@@ -187,8 +187,8 @@ struct Function * createSized (struct Object *prototype, uint32_t size)
 	self->object.type = &Text(functionType);
 	
 	proto = Object.create(Object(prototype));
-	Object.add(proto, Key(constructor), Value.function(self), Object(writable) | Object(configurable));
-	Object.add(&self->object, Key(prototype), Value.object(proto), Object(writable));
+	Object.add(proto, Key(constructor), Value.function(self), Value(writable) | Value(configurable));
+	Object.add(&self->object, Key(prototype), Value.object(proto), Value(writable));
 	
 	return self;
 }
@@ -201,31 +201,17 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 	{
 		self = createSized(prototype, 3);
 		self->flags |= Function(needArguments);
-		self->object.hashmap[2].data.flags = Object(writable) | Object(isValue);
 		self->object.hashmap[2].data.key = Key(arguments);
-//		self->parameterCount = -parameterCount;
 	}
-	else //if (parameterCount > 0)
+	else
 	{
-		uint16_t index;
-		
 		self = createSized(prototype, 3 + parameterCount);
 		self->parameterCount = parameterCount;
-		
-		for (index = 0; index < parameterCount; ++index)
-			self->object.hashmap[3 + index].data.flags = Object(writable) | Object(isValue);
 	}
-//	else
-//	{
-//		self = createSized(prototype, 0);
-//		self->parameterCount = 0;
-//	}
 	
 	self->context.hashmapCount = self->context.hashmapCapacity;
 	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
-	
-//	Object.dumpTo(&self->context, stderr);
 	
 	Object.add(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
 	
@@ -273,21 +259,21 @@ void destroy (struct Function *self)
 	free(self), self = NULL;
 }
 
-void addValue(struct Function *self, const char *name, struct Value value, enum Object(Flags) flags)
+void addValue(struct Function *self, const char *name, struct Value value, enum Value(Flags) flags)
 {
 	assert(self);
 	
 	Object.add(&self->context, Key.makeWithCString(name), value, flags);
 }
 
-struct Function * addNative(struct Function *self, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
+struct Function * addNative(struct Function *self, const char *name, const Native native, int parameterCount, enum Value(Flags) flags)
 {
 	assert(self);
 	
 	return addToObject(&self->context, name, native, parameterCount, flags);
 }
 
-struct Function * addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags) flags)
+struct Function * addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags) flags)
 {
 	struct Function *function;
 	

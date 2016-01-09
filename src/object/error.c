@@ -51,14 +51,14 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	self->text = text;
 	
 	if (message)
-		Object.add(&self->object, Key(message), Value.chars(message), Object(writable) | Object(configurable));
+		Object.add(&self->object, Key(message), Value.chars(message), Value(writable) | Value(configurable));
 	
 	return self;
 }
 
 static void initName(struct Object *object, const struct Text *text)
 {
-	Object.add(object, Key(name), Value.text(text), Object(writable) | Object(configurable));
+	Object.add(object, Key(name), Value.text(text), Value(writable) | Value(configurable));
 }
 
 static struct Object *createErrorType (const struct Text *text)

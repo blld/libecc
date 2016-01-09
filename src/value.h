@@ -54,6 +54,15 @@ enum Value(Type) {
 	Value(referenceType) = 0x4e,
 };
 
+enum Value(Flags)
+{
+	Value(writable) = 1 << 0,
+	Value(enumerable) = 1 << 1,
+	Value(configurable) = 1 << 2,
+	
+	Value(defaults) = Value(writable) | Value(enumerable) | Value(configurable),
+};
+
 extern const struct Value Value(undefined);
 extern const struct Value Value(true);
 extern const struct Value Value(false);
@@ -123,7 +132,9 @@ Interface(Value,
 			
 			struct Value *reference;
 		} data;
-		enum Value(Type) type;
+		int8_t type;
+		uint8_t flags;
+		uint16_t check;
 	}
 )
 

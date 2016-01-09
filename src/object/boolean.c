@@ -54,7 +54,7 @@ static struct Value constructorFunction (const struct Op ** const ops, struct Ec
 
 void setup ()
 {
-	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
 	Boolean(prototype) = Object.create(Object(prototype));
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);

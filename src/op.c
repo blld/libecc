@@ -252,7 +252,6 @@ static inline struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct 
 //	}
 	
 	*entry.value = value;
-	*entry.flags |= Object(isValue);
 	
 	return value;
 }
@@ -328,23 +327,14 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
-			arguments->element[index].data.flags = Object(isValue);
-		}
 	else
 	{
 		for (; index < parameterCount; ++index)
-		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
-			arguments->element[index].data.flags = Object(isValue);
-		}
 		
 		for (; index < argumentCount; ++index)
-		{
 			arguments->element[index].data.value = va_arg(ap, struct Value);
-			arguments->element[index].data.flags = Object(isValue);
-		}
 	}
 }
 
@@ -356,23 +346,14 @@ static inline void populateContextWithArguments (const struct Op ** const ops, s
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
-			arguments->element[index].data.flags = Object(isValue);
-		}
 	else
 	{
 		for (; index < parameterCount; ++index)
-		{
 			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
-			arguments->element[index].data.flags = Object(isValue);
-		}
 		
 		for (; index < argumentCount; ++index)
-		{
 			arguments->element[index].data.value = nextOp();
-			arguments->element[index].data.flags = Object(isValue);
-		}
 	}
 }
 
@@ -627,9 +608,9 @@ struct Value object (const struct Op ** const ops, struct Ecc * const ecc)
 		}
 		
 		if (value.type == Value(keyType))
-			Object.add(object, value.data.key, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
+			Object.add(object, value.data.key, nextOp(), Value(writable) | Value(enumerable) | Value(configurable));
 		else if (value.type == Value(integerType))
-			Object.addElementAtIndex(object, value.data.integer, nextOp(), Object(writable) | Object(enumerable) | Object(configurable));
+			Object.addElementAtIndex(object, value.data.integer, nextOp(), Value(writable) | Value(enumerable) | Value(configurable));
 	}
 	return Value.object(object);
 }
@@ -647,7 +628,7 @@ struct Value array (const struct Op ** const ops, struct Ecc * const ecc)
 		if (value.type != Value(breakerType))
 		{
 			object->element[index].data.value = value;
-			object->element[index].data.flags = Object(isValue) | Object(writable) | Object(enumerable) | Object(configurable);
+			object->element[index].data.value.flags = Value(writable) | Value(enumerable) | Value(configurable);
 		}
 	}
 	
@@ -773,7 +754,7 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	if (!entry.value)
 	{
-		entry = Object.add(object.data.object, key, Value(undefined), Object(writable) | Object(enumerable) | Object(configurable));
+		entry = Object.add(object.data.object, key, Value(undefined), Value(writable) | Value(enumerable) | Value(configurable));
 		if (!entry.value)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
@@ -797,7 +778,7 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 	if (entry.value)
 		return setEntry(entry, ecc, object, value, key, text);
 	else
-		Object.add(object.data.object, key.data.key, value, Object(writable) | Object(enumerable) | Object(configurable));
+		Object.add(object.data.object, key.data.key, value, Value(writable) | Value(enumerable) | Value(configurable));
 	
 	return value;
 }
@@ -1034,7 +1015,7 @@ struct Value in (const struct Op ** const ops, struct Ecc * const ecc)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
 	
 	entry = Object.getProperty(object.data.object, property);
-	return Value.truth(*entry.flags & Object(isValue));
+	return Value.truth(entry.value && entry.value->check == 1);
 }
 
 struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1762,7 +1743,7 @@ struct Value iterateInRef (const struct Op ** const ops, struct Ecc * const ecc)
 		
 		for (index = 0; index < object.data.object->elementCount; ++index)
 		{
-			if (!(object.data.object->element[index].data.flags & Object(isValue)))
+			if (!(object.data.object->element[index].data.value.check == 1))
 				continue;
 			
 			*ref = Value.chars(Chars.create("%d", index));
@@ -1770,9 +1751,9 @@ struct Value iterateInRef (const struct Op ** const ops, struct Ecc * const ecc)
 			stepIteration(value, startOps);
 		}
 		
-		for (index = 2; index <= object.data.object->hashmapCount; ++index)
+		for (index = 2; index < object.data.object->hashmapCount; ++index)
 		{
-			if (!(object.data.object->hashmap[index].data.flags & Object(isValue)))
+			if (!(object.data.object->hashmap[index].data.value.check == 1))
 				continue;
 			
 			*ref = Value.key(object.data.object->hashmap[index].data.key);

@@ -41,9 +41,9 @@ Interface(Function,
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
 	
-	(void, addValue ,(struct Function *, const char *name, struct Value value, enum Object(Flags)))
-	(struct Function *, addNative ,(struct Function *, const char *name, const Native native, int argumentCount, enum Object(Flags)))
-	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Object(Flags)))
+	(void, addValue ,(struct Function *, const char *name, struct Value value, enum Value(Flags)))
+	(struct Function *, addNative ,(struct Function *, const char *name, const Native native, int argumentCount, enum Value(Flags)))
+	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags)))
 	,
 	{
 		struct Object object;

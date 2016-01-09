@@ -926,7 +926,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	else if (Key.isEqual(value.data.key, Key(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
-	Object.add(&self->function->context, value.data.key, Value(undefined), Object(writable));
+	Object.add(&self->function->context, value.data.key, Value(undefined), Value(writable));
 	
 	if (acceptToken(self, '='))
 	{
@@ -1342,7 +1342,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
 					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
 				
-				Object.add(&self->function->context, op.value.data.key, Value(undefined), Object(writable) | Object(configurable));
+				Object.add(&self->function->context, op.value.data.key, Value(undefined), Value(writable) | Value(configurable));
 			}
 		} while (acceptToken(self, ','));
 	
@@ -1382,7 +1382,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	parentFunction = self->function;
 	function = Function.create(&self->function->context);
-	Object.add(&function->context, Key(arguments), Value(undefined), Object(writable));
+	Object.add(&function->context, Key(arguments), Value(undefined), Value(writable));
 	
 	self->function = function;
 	expectToken(self, '(');
@@ -1413,12 +1413,12 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->parameterCount = parameterCount;
 	parentFunction->flags |= Function(needHeap);
 	
-	Object.add(&function->object, Key(length), Value.integer(parameterCount), Object(configurable));
+	Object.add(&function->object, Key(length), Value.integer(parameterCount), Value(configurable));
 	
 	if (isDeclaration)
-		Object.add(&parentFunction->context, identifierOp.value.data.key, Value(undefined), Object(writable) | Object(configurable));
+		Object.add(&parentFunction->context, identifierOp.value.data.key, Value(undefined), Value(writable) | Value(configurable));
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
-		Object.add(&function->context, identifierOp.value.data.key, Value.function(function), Object(writable) | Object(configurable));
+		Object.add(&function->context, identifierOp.value.data.key, Value.function(function), Value(writable) | Value(configurable));
 	
 	if (isDeclaration)
 		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, Value.function(function), text));

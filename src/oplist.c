@@ -245,7 +245,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 			{
 				for (slotIndex = 0, slotCount = searchContext->hashmapCount; slotIndex < slotCount; ++slotIndex)
 				{
-					if (searchContext->hashmap[slotIndex].data.flags & Object(isValue))
+					if (searchContext->hashmap[slotIndex].data.value.check == 1)
 					{
 						if (Key.isEqual(searchContext->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
 						{

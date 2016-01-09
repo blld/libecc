@@ -18,6 +18,10 @@ int main (int argc, const char * argv[])
 {
 	int result = EXIT_SUCCESS;
 	
+	struct Value value;
+	struct Object object;
+	fprintf(stderr, "%ld %ld %ld\n", sizeof(value), sizeof(*object.element), sizeof(*object.hashmap));
+	
 	ecc = Ecc.create();
 	
 	Ecc.addNative(ecc, "print", print, -1, 0);

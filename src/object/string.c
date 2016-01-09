@@ -401,7 +401,7 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 
 void setup ()
 {
-	const enum Object(Flags) flags = Object(writable) | Object(configurable);
+	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
 	String(prototype) = Object.create(Object(prototype));
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
