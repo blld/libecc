@@ -219,30 +219,30 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
-static struct Value getEntry(struct Entry entry, struct Ecc *ecc, struct Value this)
+static struct Value getRefValue(struct Value *ref, struct Ecc *ecc, struct Value this)
 {
-	if (!entry.value)
+	if (!ref)
 		return Value(undefined);
 	
-	if (entry.value->type == Value(functionType) && entry.value->data.function->flags & Function(isAccessor))
+	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
-		if (entry.value->data.function->flags & Function(isGetter))
-			return callFunctionVA(entry.value->data.function, ecc, this, 0);
-		else if (entry.value->data.function->pair)
-			return callFunctionVA(entry.value->data.function->pair, ecc, this, 0);
+		if (ref->data.function->flags & Function(isGetter))
+			return callFunctionVA(ref->data.function, ecc, this, 0);
+		else if (ref->data.function->pair)
+			return callFunctionVA(ref->data.function->pair, ecc, this, 0);
 	}
 	
-	return *entry.value;
+	return *ref;
 }
 
-static inline struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct Value this, struct Value value, struct Value property, const struct Text *text)
+static inline struct Value setRefValue(struct Value *ref, struct Ecc *ecc, struct Value this, struct Value value, struct Value property, const struct Text *text)
 {
-	if (entry.value->type == Value(functionType) && entry.value->data.function->flags & Function(isAccessor))
+	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
-		if (entry.value->data.function->flags & Function(isSetter))
-			return callFunctionVA(entry.value->data.function, ecc, this, 1, value);
-		else if (entry.value->data.function->pair)
-			return callFunctionVA(entry.value->data.function->pair, ecc, this, 1, value);
+		if (ref->data.function->flags & Function(isSetter))
+			return callFunctionVA(ref->data.function, ecc, this, 1, value);
+		else if (ref->data.function->pair)
+			return callFunctionVA(ref->data.function->pair, ecc, this, 1, value);
 	}
 	
 //	if ((*entry.flags & Object(isValue)) && !(*entry.flags & Object(writable)))
@@ -251,7 +251,7 @@ static inline struct Value setEntry(struct Entry entry, struct Ecc *ecc, struct 
 //		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot assign to read only property '%.*s' of %.*s", Value.stringLength(property), Value.stringChars(property), text->length, text->location)));
 //	}
 	
-	*entry.value = value;
+	*ref = value;
 	
 	return value;
 }
@@ -643,32 +643,32 @@ struct Value this (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Entry entry = Object.getMember(ecc->context, key);
-	if (!entry.value)
+	struct Value *ref = Object.getMember(ecc->context, key);
+	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
 	ecc->refObject = Value(undefined);
-	return *entry.value;
+	return *ref;
 }
 
 struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Entry entry = Object.getMember(ecc->context, key);
-	if (!entry.value)
+	struct Value *ref = Object.getMember(ecc->context, key);
+	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return Value.reference(entry.value);
+	return Value.reference(ref);
 }
 
 struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Entry entry = Object.getMember(ecc->context, key);
-	if (!entry.value)
+	struct Value *ref = Object.getMember(ecc->context, key);
+	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
-	return *entry.value = nextOp();
+	return *ref = nextOp();
 }
 
 struct Value getLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
@@ -729,15 +729,15 @@ struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getMember(object.data.object, key);
+	ref = Object.getMember(object.data.object, key);
 	
 	ecc->refObject = object;
-	return getEntry(entry, ecc, object);
+	return getRefValue(ref, ecc, object);
 }
 
 struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
@@ -745,21 +745,21 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText(1);
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getMember(object.data.object, key);
+	ref = Object.getMember(object.data.object, key);
 	
-	if (!entry.value)
+	if (!ref)
 	{
-		entry = Object.add(object.data.object, key, Value(undefined), Value(writable) | Value(enumerable) | Value(configurable));
-		if (!entry.value)
+		ref = Object.add(object.data.object, key, Value(undefined), Value(writable) | Value(enumerable) | Value(configurable));
+		if (!ref)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
 	
-	return Value.reference(entry.value);
+	return Value.reference(ref);
 }
 
 struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
@@ -768,15 +768,15 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value key = opValue();
 	struct Value object = nextOp();
 	struct Value value = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getMember(object.data.object, key.data.key);
+	ref = Object.getMember(object.data.object, key.data.key);
 	
-	if (entry.value)
-		return setEntry(entry, ecc, object, value, key, text);
+	if (ref)
+		return setRefValue(ref, ecc, object, value, key, text);
 	else
 		Object.add(object.data.object, key.data.key, value, Value(writable) | Value(enumerable) | Value(configurable));
 	
@@ -800,14 +800,14 @@ struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText(1);
 	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getProperty(object.data.object, property);
+	ref = Object.getProperty(object.data.object, property);
 	ecc->refObject = object;
-	return getEntry(entry, ecc, object);
+	return getRefValue(ref, ecc, object);
 }
 
 struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ecc)
@@ -815,22 +815,22 @@ struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ec
 	const struct Text *text = opText(1);
 	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getProperty(object.data.object, property);
+	ref = Object.getProperty(object.data.object, property);
 	
-	if (!entry.value)
+	if (!ref)
 	{
 		Object.setProperty(object.data.object, property, Value(undefined));
-		entry = Object.getProperty(object.data.object, property);
-		if (!entry.value)
+		ref = Object.getProperty(object.data.object, property);
+		if (!ref)
 			Ecc.jmpEnv(ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
 	}
 	ecc->refObject = object;
-	return Value.reference(entry.value);
+	return Value.reference(ref);
 }
 
 struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
@@ -839,15 +839,15 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value object = nextOp();
 	struct Value property = nextOp();
 	struct Value value = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	entry = Object.getProperty(object.data.object, property);
+	ref = Object.getProperty(object.data.object, property);
 	
-	if (entry.value)
-		return setEntry(entry, ecc, object, value, property, text);
+	if (ref)
+		return setRefValue(ref, ecc, object, value, property, text);
 	else
 		Object.setProperty(object.data.object, property, value);
 	
@@ -1009,13 +1009,13 @@ struct Value in (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value property = nextOp();
 	struct Value object = nextOp();
-	struct Entry entry;
+	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "invalid 'in' operand %.*s", (*ops)->text.length, (*ops)->text.location)));
 	
-	entry = Object.getProperty(object.data.object, property);
-	return Value.truth(entry.value && entry.value->check == 1);
+	ref = Object.getProperty(object.data.object, property);
+	return Value.truth(ref != NULL);
 }
 
 struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)

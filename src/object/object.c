@@ -11,7 +11,6 @@
 // MARK: - Private
 
 static const int defaultSize = 8;
-static const uint8_t zeroFlag = 0;
 
 static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
 {
@@ -170,16 +169,16 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 {
 	struct Value property;
 	struct Object *object;
-	struct Entry entry;
+	struct Value *ref;
 	
 	Op.assertParameterCount(ecc, 1);
 	
 	property = Op.argument(ecc, 0);
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	entry = getOwnProperty(object, property);
+	ref = getOwnProperty(object, property);
 	
-	if (entry.value && entry.value->check == 1)
-		ecc->result = Value.truth(*entry.flags & Value(enumerable));
+	if (ref)
+		ecc->result = Value.truth(ref->flags & Value(enumerable));
 	else
 		ecc->result = Value(false);
 	
@@ -221,26 +220,26 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 {
 	struct Object *object;
 	struct Value property;
-	struct Entry entry;
+	struct Value *ref;
 	
 	Op.assertParameterCount(ecc, 2);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
 	property = Op.argument(ecc, 1);
-	entry = getOwnProperty(object, property);
+	ref = getOwnProperty(object, property);
 	
 	ecc->result = Value(undefined);
 	
-	if (entry.value->check == 1)
+	if (ref)
 	{
 		const enum Value(Flags) resultFlags = Value(writable) | Value(enumerable) | Value(configurable);
 		
 		struct Object *result = Object.create(Object(prototype));
 		
-		Object.add(result, Key(value), *entry.value, resultFlags);
-		Object.add(result, Key(writable), Value.truth(*entry.flags & Value(writable)), resultFlags);
-		Object.add(result, Key(enumerable), Value.truth(*entry.flags & Value(enumerable)), resultFlags);
-		Object.add(result, Key(configurable), Value.truth(*entry.flags & Value(configurable)), resultFlags);
+		Object.add(result, Key(value), *ref, resultFlags);
+		Object.add(result, Key(writable), Value.truth(ref->flags & Value(writable)), resultFlags);
+		Object.add(result, Key(enumerable), Value.truth(ref->flags & Value(enumerable)), resultFlags);
+		Object.add(result, Key(configurable), Value.truth(ref->flags & Value(configurable)), resultFlags);
 		
 		ecc->result = Value.object(result);
 	}
@@ -608,7 +607,7 @@ struct Value get (struct Object *self, struct Key key)
 		return Value(undefined);
 }
 
-struct Entry getMember (struct Object *self, struct Key key)
+struct Value * getMember (struct Object *self, struct Key key)
 {
 //	fprintf(stderr, "--- > ");
 //	Key.dumpTo(key, stderr);
@@ -624,20 +623,15 @@ struct Entry getMember (struct Object *self, struct Key key)
 //		fprintf(stderr, "%p --\n", object);
 		
 		if (( slot = getSlot(object, key) ))
-			return (struct Entry){
-				&object->hashmap[slot].data.value,
-				&object->hashmap[slot].data.value.flags,
-			};
+			return &object->hashmap[slot].data.value;
+		
 	}
 	while ((object = object->prototype));
 	
-	return (struct Entry){
-		NULL,
-		(uint8_t *)&zeroFlag,
-	};
+	return NULL;
 }
 
-struct Entry getOwnProperty (struct Object *self, struct Value property)
+struct Value * getOwnProperty (struct Object *self, struct Value property)
 {
 	struct Key key;
 	int32_t element = getElementOrKey(property, &key);
@@ -646,27 +640,14 @@ struct Entry getOwnProperty (struct Object *self, struct Value property)
 	assert(self);
 	
 	if (element >= 0 && element < self->elementCount && self->element[element].data.value.check == 1)
-	{
-		return (struct Entry){
-			&self->element[element].data.value,
-			&self->element[element].data.value.flags,
-		};
-	}
+		return &self->element[element].data.value;
 	else if (( slot = getSlot(self, key) ))
-	{
-		return (struct Entry){
-			&self->hashmap[slot].data.value,
-			&self->hashmap[slot].data.value.flags,
-		};
-	}
+		return &self->hashmap[slot].data.value;
 	
-	return (struct Entry){
-		NULL,
-		(uint8_t *)&zeroFlag,
-	};
+	return NULL;
 }
 
-struct Entry getProperty (struct Object *self, struct Value property)
+struct Value * getProperty (struct Object *self, struct Value property)
 {
 	struct Object *object = self;
 	
@@ -678,32 +659,23 @@ struct Entry getProperty (struct Object *self, struct Value property)
 	
 	if (element >= 0)
 		do
+		{
 			if (element < object->elementCount)
-			{
-				return (struct Entry){
-					&object->element[element].data.value,
-					&object->element[element].data.value.flags,
-				};
-			}
-		while ((object = object->prototype));
+				return &object->element[element].data.value;
+			
+		} while ((object = object->prototype));
 	else
 		do
+		{
 			if (( slot = getSlot(object, key) ))
-			{
-				return (struct Entry){
-					&object->hashmap[slot].data.value,
-					&object->hashmap[slot].data.value.flags,
-				};
-			}
-		while ((object = object->prototype));
+				return &object->hashmap[slot].data.value;
+			
+		} while ((object = object->prototype));
 	
-	return (struct Entry){
-		NULL,
-		(uint8_t *)&zeroFlag,
-	};
+	return NULL;
 }
 
-void setProperty (struct Object *self, struct Value property, struct Value value)
+struct Value * setProperty (struct Object *self, struct Value property, struct Value value)
 {
 	struct Object *object = self;
 	
@@ -721,12 +693,12 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 				if (self->element[element].data.value.flags | Value(writable))
 					object->element[element].data.value = value;
 				
-				return;
+				return &object->element[element].data.value;
 			}
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(extensible))
-			addElementAtIndex(self, element, value, 0);
+			return addElementAtIndex(self, element, value, 0);
 	}
 	else
 	{
@@ -736,16 +708,18 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 				if (self->hashmap[slot].data.value.flags | Value(writable))
 					object->hashmap[slot].data.value = value;
 				
-				return;
+				return &object->hashmap[slot].data.value;
 			}
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(extensible))
-			add(self, key, value, Value(writable) | Value(enumerable) | Value(configurable));
+			return add(self, key, value, Value(writable) | Value(enumerable) | Value(configurable));
 	}
+	
+	return NULL;
 }
 
-struct Entry add (struct Object *self, struct Key key, struct Value value, enum Value(Flags) flags)
+struct Value * add (struct Object *self, struct Key key, struct Value value, enum Value(Flags) flags)
 {
 	uint32_t slot = 1;
 	int depth = 0;
@@ -754,10 +728,7 @@ struct Entry add (struct Object *self, struct Key key, struct Value value, enum 
 	assert(key.data.integer);
 	
 	if (!(self->flags & Object(extensible)))
-		return (struct Entry){
-			NULL,
-			(uint8_t *)&zeroFlag,
-		};
+		return NULL;
 	
 	do
 	{
@@ -796,10 +767,7 @@ struct Entry add (struct Object *self, struct Key key, struct Value value, enum 
 	self->hashmap[slot].data.value = value;
 	self->hashmap[slot].data.value.flags = flags;
 	
-	return (struct Entry){
-		&self->hashmap[slot].data.value,
-		&self->hashmap[slot].data.value.flags,
-	};
+	return &self->hashmap[slot].data.value;
 }
 
 struct Value delete (struct Object *self, struct Key key)
@@ -928,7 +896,7 @@ void resizeElement (struct Object *self, uint32_t size)
 	self->elementCount = size;
 }
 
-void addElementAtIndex (struct Object *self, uint32_t index, struct Value value, enum Value(Flags) flags)
+struct Value * addElementAtIndex (struct Object *self, uint32_t index, struct Value value, enum Value(Flags) flags)
 {
 	assert(self);
 	
@@ -939,6 +907,8 @@ void addElementAtIndex (struct Object *self, uint32_t index, struct Value value,
 	
 	self->element[index].data.value = value;
 	self->element[index].data.value.flags = flags;
+	
+	return &self->element[index].data.value;
 }
 
 void dumpTo(struct Object *self, FILE *file)

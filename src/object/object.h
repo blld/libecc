@@ -14,7 +14,6 @@
 #include "value.h"
 #include "key.h"
 #include "pool.h"
-#include "entry.h"
 
 #include "interface.h"
 
@@ -43,18 +42,18 @@ Interface(Object,
 	(void, destroy ,(struct Object *))
 	
 	(struct Value, get ,(struct Object *, struct Key))
-	(struct Entry, getMember ,(struct Object *, struct Key))
-	(struct Entry, getOwnProperty ,(struct Object *, struct Value))
-	(struct Entry, getProperty ,(struct Object *, struct Value))
-	(void, setProperty ,(struct Object *, struct Value, struct Value))
-	(struct Entry, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
+	(struct Value *, getMember ,(struct Object *, struct Key))
+	(struct Value *, getOwnProperty ,(struct Object *, struct Value))
+	(struct Value *, getProperty ,(struct Object *, struct Value))
+	(struct Value *, setProperty ,(struct Object *, struct Value, struct Value))
+	(struct Value *, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
 	(struct Value, delete ,(struct Object *, struct Key))
 	(struct Value, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
-	(void, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Value(Flags)))
+	(struct Value *, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Value(Flags)))
 	
 	(void, dumpTo ,(struct Object *, FILE *file))
 	,
