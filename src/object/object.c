@@ -641,8 +641,11 @@ struct Value * getOwnProperty (struct Object *self, struct Value property)
 	
 	assert(self);
 	
-	if (element >= 0 && element < self->elementCount && self->element[element].data.value.check == 1)
-		return &self->element[element].data.value;
+	if (element >= 0)
+	{
+		if (element < self->elementCount)
+			return &self->element[element].data.value;
+	}
 	else if (( slot = getSlot(self, key) ))
 		return &self->hashmap[slot].data.value;
 	
