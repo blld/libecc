@@ -60,7 +60,7 @@ void setup ()
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
 	
-	Boolean(constructor) = Function.createPrototypeContructor(Boolean(prototype), booleanConstructor, 1);
+	Boolean(constructor) = Function.createWithNative(Boolean(prototype), booleanConstructor, 1);
 }
 
 void teardown (void)

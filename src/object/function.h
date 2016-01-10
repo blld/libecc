@@ -34,11 +34,10 @@ Interface(Function,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct Function *, create ,(struct Object *prototype))
-	(struct Function *, createSized ,(struct Object *prototype, uint32_t size))
+	(struct Function *, create ,(struct Object *context, struct Object *prototype))
+	(struct Function *, createSized ,(struct Object *context, struct Object *prototype, uint32_t size))
 	(struct Function *, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
-	(struct Function *, createWithNativeAccessor ,(struct Object *prototype, const Native getter, const Native setter))
-	(struct Function *, createPrototypeContructor ,(struct Object *prototype, const Native native, int parameterCount))
+	(struct Function *, createWithNativeAccessor ,(const Native getter, const Native setter))
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
 	

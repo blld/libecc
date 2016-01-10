@@ -156,7 +156,7 @@ struct Ecc *create (void)
 	self = malloc(sizeof(*self));
 	*self = Ecc.identity;
 	
-	self->global = Function.create(NULL);
+	self->global = Function.create(NULL, NULL);
 	
 	Function.addValue(self->global, "NaN", Value.binary(NAN), 0);
 	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);

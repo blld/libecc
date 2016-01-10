@@ -151,7 +151,7 @@ void setup ()
 	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
 	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
-	Number(constructor) = Function.createPrototypeContructor(Number(prototype), numberConstructor, 1);
+	Number(constructor) = Function.createWithNative(Number(prototype), numberConstructor, 1);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MIN_VALUE"), Value.binary(DBL_MIN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);

@@ -457,7 +457,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-//	assert(sizeof(*Object(prototype)->hashmap) == 32);
+	assert(sizeof(*Object(prototype)->hashmap) == 32);
 	
 	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
@@ -466,7 +466,7 @@ void setup ()
 	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
 	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	Object(constructor) = Function.createPrototypeContructor(Object(prototype), objectConstructor, 1);
+	Object(constructor) = Function.createWithNative(Object(prototype), objectConstructor, 1);
 	Function.addToObject(&Object(constructor)->object, "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);

@@ -414,7 +414,7 @@ void setup ()
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
-	String(constructor) = Function.createPrototypeContructor(String(prototype), stringConstructor, 1);
+	String(constructor) = Function.createWithNative(String(prototype), stringConstructor, 1);
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
 }
 

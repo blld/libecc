@@ -337,9 +337,9 @@ void setup (void)
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
-	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Value(writable));
+	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(writable));
 	
-	Array(constructor) = Function.createPrototypeContructor(Array(prototype), arrayConstructor, -1);
+	Array(constructor) = Function.createWithNative(Array(prototype), arrayConstructor, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
 }
 
@@ -368,7 +368,7 @@ struct Object *createArguments (uint32_t size)
 	struct Object *self = Object.createTyped(&Text(argumentsType));
 	
 	Object.resizeElement(self, size);
-	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Value(writable));
+	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(writable));
 	
 	return self;
 }

@@ -150,24 +150,24 @@ void setup (void)
 	initName(Error(prototype), &Text(errorName));
 	Function.addToObject(Error(prototype), "toString", toString, 1, flags);
 	
-	Error(constructor) = Function.createPrototypeContructor(Error(prototype), errorConstructor, 1);
+	Error(constructor) = Function.createWithNative(Error(prototype), errorConstructor, 1);
 	
 	//
 	
 	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
-	Error(rangeConstructor) = Function.createPrototypeContructor(Error(rangePrototype), rangeErrorConstructor, 1);
+	Error(rangeConstructor) = Function.createWithNative(Error(rangePrototype), rangeErrorConstructor, 1);
 	
 	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
-	Error(referenceConstructor) = Function.createPrototypeContructor(Error(referencePrototype), referenceErrorConstructor, 1);
+	Error(referenceConstructor) = Function.createWithNative(Error(referencePrototype), referenceErrorConstructor, 1);
 	
 	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
-	Error(syntaxConstructor) = Function.createPrototypeContructor(Error(syntaxPrototype), syntaxErrorConstructor, 1);
+	Error(syntaxConstructor) = Function.createWithNative(Error(syntaxPrototype), syntaxErrorConstructor, 1);
 	
 	Error(typePrototype) = createErrorType(&Text(typeErrorName));
-	Error(typeConstructor) = Function.createPrototypeContructor(Error(typePrototype), typeErrorConstructor, 1);
+	Error(typeConstructor) = Function.createWithNative(Error(typePrototype), typeErrorConstructor, 1);
 	
 	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
-	Error(uriConstructor) = Function.createPrototypeContructor(Error(uriPrototype), uriErrorConstructor, 1);
+	Error(uriConstructor) = Function.createWithNative(Error(uriPrototype), uriErrorConstructor, 1);
 }
 
 void teardown (void)

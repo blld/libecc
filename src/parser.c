@@ -1381,7 +1381,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	}
 	
 	parentFunction = self->function;
-	function = Function.create(&self->function->context);
+	function = Function.create(&self->function->context, Object.create(Object(prototype)));
 	Object.add(&function->context, Key(arguments), Value(undefined), Value(writable));
 	
 	self->function = function;
@@ -1529,7 +1529,7 @@ struct Function * parseWithContext (struct Parser * const self, struct Object *c
 	
 	assert(self);
 	
-	function = Function.create(context);
+	function = Function.create(context, NULL);
 	nextToken(self);
 	
 	self->function = function;
