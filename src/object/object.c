@@ -83,7 +83,7 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 static struct Object *checkObject (const struct Op ** const ops, struct Ecc * const ecc, struct Value value)
 {
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an object")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
 	
 	return value.data.object;
 }

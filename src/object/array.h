@@ -31,8 +31,8 @@ Interface(Array,
 	
 	(struct Object *, populateWithCList ,(struct Object *, int count, const char * list[]))
 	
-	(uint16_t, toBufferLength ,(struct Object *object, struct Text separator))
-	(uint16_t, toBuffer ,(struct Object *object, struct Text separator, char *buffer, uint16_t length))
+	(uint16_t, toBufferLength ,(struct Object *, struct Text separator))
+	(uint16_t, toBuffer ,(struct Object *, struct Text separator, char *buffer, uint16_t length))
 	,
 	{
 		struct Object object;

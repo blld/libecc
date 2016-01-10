@@ -174,7 +174,7 @@ void setup (void)
 	
 	Error(prototype) = Object.createTyped(&Text(errorType));
 	initName(Error(prototype), &Text(errorName));
-	Function.addToObject(Error(prototype), "toString", toString, 1, flags);
+	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
 	
 	Error(constructor) = Function.createWithNative(errorConstructor, 1);
 	Function.linkPrototype(Error(constructor), Error(prototype), 0);

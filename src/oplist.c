@@ -294,7 +294,7 @@ void dumpTo (struct OpList *self, FILE *file)
 	
 	assert(self);
 	
-	fprintf(file, "--\n");
+	fprintf(file, "\n");
 	if (!self)
 		return;
 	
@@ -304,7 +304,7 @@ void dumpTo (struct OpList *self, FILE *file)
 		
 		if (self->ops[i].native == Op.function)
 		{
-			fprintf(file, "{\n");
+			fprintf(file, "{");
 			OpList.dumpTo(self->ops[i].value.data.function->oplist, stderr);
 			fprintf(file, "}\n");
 		}
