@@ -127,13 +127,13 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 					chars[offset++] = ',';
 			}
 			chars[offset++] = '}', chars[offset++] = ')';
-			Ecc.evalInput(ecc, Input.createFromBytes(chars, length, "(Function)"));
+			Ecc.evalInput(ecc, Input.createFromBytes(chars, length, "(Function)"), 0);
 		}
 	}
 	else
 	{
 		static const char emptyFunction[] = "(function(){})";
-		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"));
+		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"), 0);
 	}
 	
 	return Value(undefined);

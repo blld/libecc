@@ -16,8 +16,6 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Input *input;
-	struct Object *context;
-	struct Value this;
 	
 	Op.assertParameterCount(ecc, 1);
 	
@@ -27,13 +25,8 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	value = Value.toString(Op.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
-	context = ecc->context;
-	this = ecc->this;
 	ecc->context = &ecc->global->context;
-	ecc->this = Value.object(&ecc->global->context);
-	evalInput(ecc, input);
-	ecc->context = context;
-	ecc->this = this;
+	evalInput(ecc, input, Ecc(globalThis));
 	
 	return Value(undefined);
 }
@@ -232,10 +225,9 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 	Function.addValue(self->global, name, value, flags);
 }
 
-int evalInput (struct Ecc *self, struct Input *input)
+int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
-	int result;
-	struct Object *parentContext;
+	int result, try = !self->envCount, catch = 0;
 	struct Lexer *lexer;
 	struct Parser *parser;
 	struct Function *function;
@@ -250,69 +242,74 @@ int evalInput (struct Ecc *self, struct Input *input)
 	
 	result = EXIT_SUCCESS;
 	
-	parentContext = self->context;
-	
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
-	function = Parser.parseWithContext(parser, parentContext);
+	function = Parser.parseWithContext(parser, self->context);
 	ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
-	self->context = &function->context;
-	self->result = Value(undefined);
-	
 //	fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
 //	OpList.dumpTo(function->oplist, stderr);
 	
-	if (!self->envCount)
+	if (try)
+		catch = setjmp(*pushEnv(self));
+	
+	if (catch)
 	{
-		if (!setjmp(*pushEnv(self)))
-			ops->native(&ops, self);
-		else
-		{
-			struct Value value;
-			struct Value name;
-			struct Value message;
-			struct Text text;
-			
-			result = EXIT_FAILURE;
-			
-			value = self->result;
-			name = Value(undefined);
-			
-			if (Value.isObject(value))
-			{
-				name = Value.toString(Object.get(value.data.object, Key(name)));
-				message = Value.toString(Object.get(value.data.object, Key(message)));
-			}
-			else
-				message = Value.toString(value);
-			
-			if (name.type == Value(undefinedType))
-				name = Value.text(&Text(errorName));
-			
-			Env.newline();
-			Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
-			
-			text = value.type == Value(errorType)? value.data.error->text: ops->text;
-			if (text.location == Text(nativeCode).location)
-			{
-				// show caller's ops for [native code] error
-				while (ops->native != Op.call && ops->native != Op.eval  && ops->native != Op.construct && ops > function->oplist->ops)
-					--ops;
-				
-				text = ops->text;
-			}
-			printTextInput(self, text);
-		}
+		struct Value value;
+		struct Value name;
+		struct Value message;
+		struct Text text;
 		
-		popEnv(self);
+		result = EXIT_FAILURE;
+		
+		value = self->result;
+		name = Value(undefined);
+		
+		if (Value.isObject(value))
+		{
+			name = Value.toString(Object.get(value.data.object, Key(name)));
+			message = Value.toString(Object.get(value.data.object, Key(message)));
+		}
+		else
+			message = Value.toString(value);
+		
+		if (name.type == Value(undefinedType))
+			name = Value.text(&Text(errorName));
+		
+		Env.newline();
+		Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
+		
+		text = value.type == Value(errorType)? value.data.error->text: ops->text;
+		if (text.location == Text(nativeCode).location)
+		{
+			// show caller's ops for [native code] error
+			while (ops->native != Op.call && ops->native != Op.eval  && ops->native != Op.construct && ops > function->oplist->ops)
+				--ops;
+			
+			text = ops->text;
+		}
+		printTextInput(self, text);
 	}
 	else
+	{
+		struct Object *context = self->context;
+		struct Value this = self->this;
+		
+		self->context = &function->context;
+		self->result = Value(undefined);
+		if (flags & Ecc(globalThis))
+			self->this = Value.object(&self->global->context);
+		
 		ops->native(&ops, self);
+		
+		self->context = context;
+		self->this = this;
+	}
 	
-	self->context = parentContext;
+	if (try)
+		popEnv(self);
 	
 	return result;
 }

@@ -549,7 +549,7 @@ struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 		nextOp();
 	
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
-	Ecc.evalInput(ecc, input);
+	Ecc.evalInput(ecc, input, 0);
 	
 	return ecc->result;
 }

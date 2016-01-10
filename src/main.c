@@ -18,10 +18,6 @@ int main (int argc, const char * argv[])
 {
 	int result = EXIT_SUCCESS;
 	
-	struct Value value;
-	struct Object object;
-	fprintf(stderr, "%ld %ld %ld\n", sizeof(value), sizeof(*object.element), sizeof(*object.hashmap));
-	
 	ecc = Ecc.create();
 	
 	Ecc.addNative(ecc, "print", print, -1, 0);
@@ -36,13 +32,9 @@ int main (int argc, const char * argv[])
 		result = runTest(-1);
 	else
 	{
-		if (argc > 2)
-		{
-			struct Object *arguments = Array.populateWithCList(Array.createArguments(argc - 2), argc - 2, &argv[2]);
-			Ecc.addValue(ecc, "arguments", Value.object(arguments), 0);
-		}
-		ecc->this = Value.object(&ecc->global->context);
-		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]));
+		struct Object *arguments = Array.populateWithCList(Array.createArguments(argc - 2), argc - 2, &argv[2]);
+		Ecc.addValue(ecc, "arguments", Value.object(arguments), 0);
+		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]), Ecc(globalThis));
 	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
@@ -95,7 +87,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 	uint16_t length;
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line));
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), 0);
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
@@ -188,6 +180,8 @@ static void testEval (void)
 	test("function a() { var n = 456; return eval('n') }; a()", "456");
 	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined");
 	test("var e = eval; function a() { var n = 456; return e('this.parseInt.length') }; a()", "2");
+	test("var a = { b: 'abc', c: function(){ return eval('this.b') } }; a.c()", "abc");
+	test("var e = eval, a = { b: 'abc', c: function(){ return eval('e.b') } }; a.c()", "undefined");
 	
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
@@ -353,11 +347,6 @@ static void testGlobal (void)
 	test("global.NaN", "NaN");
 	test("global.undefined", "undefined");
 	test("typeof global.eval", "function");
-	
-	// direct this === global mapping (avoid automatic closure)
-	ecc->this = Value.object(&ecc->global->context);
-	test("this.NaN", "NaN");
-	ecc->this = Value(undefined);
 }
 
 static void testFunction (void)
