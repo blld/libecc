@@ -100,7 +100,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 		++testErrorCount;
 		Env.printColor(Env(red), Env(bold), "[failure]");
 		Env.print(" %s:%d - ", func, line);
-		Env.printColor(0, Env(bold), "expect '%s' was '%.*s'", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.printColor(0, Env(bold), "expect \"%s\" was \"%.*s\"", expect, Value.stringLength(result), Value.stringChars(result));
 		Env.newline();
 	}
 	else if (testVerbosity >= 0)
@@ -304,6 +304,10 @@ static void testRelational (void)
 	test("var a = [ 'b', 'c' ]; 2 in a", "false");
 	test("var a = [ 'b', 'c' ]; '0' in a", "true");
 	test("var a = [ 'b', 'c' ]; '2' in a", "false");
+	
+	test("function F(){}; var o = new F(); o instanceof F", "true");
+	test("function F(){}; function G(){}; var o = new F(); o instanceof G", "false");
+	test("function F(){}; var o = new F(); o instanceof Object", "true");
 }
 
 static void testConditional (void)

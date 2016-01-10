@@ -991,14 +991,17 @@ struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isObject(a))
 		return Value(false);
 	
-	if (!Value.isObject(b))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not an object", text->length, text->location)));
+	if (b.type != Value(functionType))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
 	
-	object = b.data.object;
-	do
-		if (a.data.object->prototype == object)
+	b = Object.get(b.data.object, Key(prototype));
+	if (!Value.isObject(b))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s.prototype not an object", text->length, text->location)));
+	
+	object = a.data.object;
+	while (( object = object->prototype ))
+		if (object == b.data.object)
 			return Value(true);
-	while (( object = object->prototype ));
 	
 	return Value(false);
 }
