@@ -24,6 +24,14 @@ struct Function * Error(syntaxConstructor) = NULL;
 struct Function * Error(typeConstructor) = NULL;
 struct Function * Error(uriConstructor) = NULL;
 
+static struct Value messageValue (struct Value value)
+{
+	if (value.type == Value(undefinedType))
+		return value;
+	else
+		return Value.toString(value);
+}
+
 static struct Error * createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
@@ -47,10 +55,28 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	name = Value.toString(Object.get(object, Key(name)));
-	message = Value.toString(Object.get(object, Key(message)));
-	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+	if (!Value.isObject(ecc->this))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an object")));
+	
+	object = ecc->this.data.object;
+	
+	name = Object.get(object, Key(name));
+	if (name.type == Value(undefinedType))
+		name = Value.text(&Text(errorName));
+	else
+		name = Value.toString(name);
+	
+	message = Object.get(object, Key(message));
+	if (message.type == Value(undefinedType))
+		message = Value.text(&Text(empty));
+	else
+		message = Value.toString(message);
+	
+	if (Value.stringLength(name) && Value.stringLength(message))
+		ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+	else
+		ecc->result = Value.chars(Chars.create("%.*s%.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+	
 	return Value(undefined);
 }
 
@@ -60,8 +86,8 @@ static struct Value errorConstructor (const struct Op ** const ops, struct Ecc *
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(error((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(error((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -72,8 +98,8 @@ static struct Value rangeErrorConstructor (const struct Op ** const ops, struct 
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(rangeError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(rangeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -84,8 +110,8 @@ static struct Value referenceErrorConstructor (const struct Op ** const ops, str
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(referenceError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(referenceError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -96,8 +122,8 @@ static struct Value syntaxErrorConstructor (const struct Op ** const ops, struct
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(syntaxError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(syntaxError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -108,8 +134,8 @@ static struct Value typeErrorConstructor (const struct Op ** const ops, struct E
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(typeError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(typeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -120,8 +146,8 @@ static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ec
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	message = Value.toString(Op.argument(ecc, 0));
-	ecc->result = Value.error(uriError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	message = messageValue(Op.argument(ecc, 0));
+	ecc->result = Value.error(uriError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
@@ -178,112 +204,137 @@ void setup (void)
 
 void teardown (void)
 {
-//	Object.destroy(errorPrototype), errorPrototype = NULL;
-//	
-//	Object.destroy(rangeErrorPrototype), rangeErrorPrototype = NULL;
-//	Object.destroy(referenceErrorPrototype), referenceErrorPrototype = NULL;
-//	Object.destroy(syntaxErrorPrototype), syntaxErrorPrototype = NULL;
-//	Object.destroy(typeErrorPrototype), typeErrorPrototype = NULL;
-//	Object.destroy(uriErrorPrototype), uriErrorPrototype = NULL;
+	Error(prototype) = NULL;
+	Error(constructor) = NULL;
+	
+	Error(rangePrototype) = NULL;
+	Error(rangeConstructor) = NULL;
+	
+	Error(referencePrototype) = NULL;
+	Error(referenceConstructor) = NULL;
+	
+	Error(syntaxPrototype) = NULL;
+	Error(syntaxConstructor) = NULL;
+	
+	Error(typePrototype) = NULL;
+	Error(typeConstructor) = NULL;
+	
+	Error(uriPrototype) = NULL;
+	Error(uriConstructor) = NULL;
 }
 
 struct Error * error (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(prototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(prototype), text, chars);
 }
 
 struct Error * rangeError (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(rangePrototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(rangePrototype), text, chars);
 }
 
 struct Error * referenceError (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(referencePrototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(referencePrototype), text, chars);
 }
 
 struct Error * syntaxError (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(syntaxPrototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(syntaxPrototype), text, chars);
 }
 
 struct Error * typeError (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(typePrototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(typePrototype), text, chars);
 }
 
 struct Error * uriError (struct Text text, const char *format, ...)
 {
-	struct Error *self;
-	va_list ap;
-	int16_t length;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createVA(Error(uriPrototype), text, Chars.createVA(length, format, ap));
-	va_end(ap);
-	return self;
+	struct Chars *chars = NULL;
+	if (format)
+	{
+		va_list ap;
+		int16_t length;
+		
+		va_start(ap, format);
+		length = vsnprintf(NULL, 0, format, ap);
+		va_end(ap);
+		
+		va_start(ap, format);
+		chars = Chars.createVA(length, format, ap);
+		va_end(ap);
+	}
+	return createVA(Error(uriPrototype), text, chars);
 }
 
 void destroy (struct Error *self)
