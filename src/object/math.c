@@ -269,7 +269,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-	Math(object) = Object.create(Object(prototype));
+	Math(object) = Object.createTyped(&Text(mathType));
 	
 	Object.add(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
 	Object.add(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);
