@@ -983,16 +983,14 @@ struct Value moreOrEqual (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value instanceOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	const struct Text *text;
 	struct Value a = nextOp();
-	struct Value b;
+	const struct Text *text = opText(0);
+	struct Value b = nextOp();
 	struct Object *object;
 	
 	if (!Value.isObject(a))
 		return Value(false);
 	
-	text = opText(0);
-	b = nextOp();
 	if (!Value.isObject(b))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not an object", text->length, text->location)));
 	
