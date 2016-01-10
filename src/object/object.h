@@ -43,6 +43,7 @@ Interface(Object,
 	(void, destroy ,(struct Object *))
 	
 	(struct Value, get ,(struct Object *, struct Key))
+	(struct Value *, getOwnMember ,(struct Object *, struct Key))
 	(struct Value *, getMember ,(struct Object *, struct Key))
 	(struct Value *, getOwnProperty ,(struct Object *, struct Value))
 	(struct Value *, getProperty ,(struct Object *, struct Value))

@@ -604,21 +604,26 @@ struct Value get (struct Object *self, struct Key key)
 		return Value(undefined);
 }
 
+struct Value * getOwnMember (struct Object *self, struct Key key)
+{
+	struct Object *object = self;
+	uint32_t slot;
+	
+	assert(object);
+	if (( slot = getSlot(object, key) ))
+		return &object->hashmap[slot].data.value;
+	
+	return NULL;
+}
+
 struct Value * getMember (struct Object *self, struct Key key)
 {
-//	fprintf(stderr, "--- > ");
-//	Key.dumpTo(key, stderr);
-//	fprintf(stderr, " <\n");
-	
 	struct Object *object = self;
 	uint32_t slot;
 	
 	assert(object);
 	do
 	{
-//		dumpTo(object, stderr);
-//		fprintf(stderr, "%p --\n", object);
-		
 		if (( slot = getSlot(object, key) ))
 			return &object->hashmap[slot].data.value;
 		

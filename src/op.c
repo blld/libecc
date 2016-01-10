@@ -773,7 +773,7 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	ref = Object.getMember(object.data.object, key.data.key);
+	ref = Object.getOwnMember(object.data.object, key.data.key);
 	
 	if (ref)
 		return setRefValue(ref, ecc, object, value, key, text);
@@ -844,7 +844,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!Value.isObject(object))
 		object = Value.toObject(object, ecc, text);
 	
-	ref = Object.getProperty(object.data.object, property);
+	ref = Object.getOwnProperty(object.data.object, property);
 	
 	if (ref)
 		return setRefValue(ref, ecc, object, value, property, text);
