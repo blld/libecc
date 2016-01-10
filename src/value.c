@@ -338,10 +338,8 @@ struct Value toString (struct Value value)
 		case Value(objectType):
 		case Value(errorType):
 		case Value(dateType):
-			return Value.text(value.data.object->type);
-		
 		case Value(functionType):
-			return Value.text(&value.data.function->text);
+			return Value.text(value.data.object->type);
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -404,7 +402,7 @@ uint16_t toBufferLength (struct Value value)
 			return value.data.object->type->length;
 		
 		case Value(functionType):
-			return value.data.function->text.length;
+			return Function.toBufferLength(value.data.function);
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -465,7 +463,7 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 			return textToBuffer(*value.data.object->type, buffer, length);
 		
 		case Value(functionType):
-			return textToBuffer(value.data.function->text, buffer, length);
+			return Function.toBuffer(value.data.function, buffer, length);
 		
 		case Value(breakerType):
 		case Value(referenceType):

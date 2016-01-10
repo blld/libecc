@@ -46,6 +46,9 @@ Interface(Function,
 	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags)))
 	
 	(void, linkPrototype ,(struct Function *, struct Object *prototype, enum Value(Flags)))
+	
+	(uint16_t, toBufferLength ,(struct Function *))
+	(uint16_t, toBuffer ,(struct Function *, char *buffer, uint16_t length))
 	,
 	{
 		struct Object object;
@@ -53,6 +56,7 @@ Interface(Function,
 		struct OpList *oplist;
 		struct Function *pair;
 		struct Text text;
+		const char *name;
 		int parameterCount;
 		enum Function(Flags) flags;
 	}

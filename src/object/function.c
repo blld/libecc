@@ -20,7 +20,15 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
 	
-	ecc->result = Value.text(&ecc->this.data.function->text);
+	if (ecc->this.data.function->text.location == Text(nativeCode).location)
+	{
+		uint16_t length = toBufferLength(ecc->this.data.function);
+		struct Chars *chars = Chars.createSized(length);
+		toBuffer(ecc->this.data.function, chars->chars, length);
+		ecc->result = Value.chars(chars);
+	}
+	else
+		ecc->result = Value.text(&ecc->this.data.function->text);
 	
 	return Value(undefined);
 }
@@ -100,7 +108,7 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 		for (index = 0; index < argumentCount; ++index)
 		{
 			if (index == argumentCount - 1)
-				length++, length++;
+				length++, length++, length++;
 			
 			length += Value.toBufferLength(Op.variableArgument(ecc, index));
 			
@@ -119,7 +127,7 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 			for (index = 0; index < argumentCount; ++index)
 			{
 				if (index == argumentCount - 1)
-					chars[offset++] = ')', chars[offset++] = '{';
+					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
 				
 				offset += Value.toBuffer(Op.variableArgument(ecc, index), chars + offset, length - offset);
 				
@@ -132,7 +140,7 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 	}
 	else
 	{
-		static const char emptyFunction[] = "(function(){})";
+		static const char emptyFunction[] = "(function() {})";
 		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"), 0);
 	}
 	
@@ -267,6 +275,9 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 {
 	assert(self);
 	
+	if (value.type == Value(functionType))
+		value.data.function->name = name;
+	
 	Object.add(&self->context, Key.makeWithCString(name), value, flags);
 }
 
@@ -284,6 +295,7 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	assert(object);
 	
 	function = createWithNative(native, parameterCount);
+	function->name = name;
 	
 	Object.add(object, Key.makeWithCString(name), Value.function(function), flags);
 	
@@ -296,4 +308,28 @@ void linkPrototype (struct Function *self, struct Object *prototype, enum Value(
 	
 	Object.add(prototype, Key(constructor), Value.function(self), flags);
 	Object.add(&self->object, Key(prototype), Value.object(prototype), flags);
+}
+
+uint16_t toBufferLength (struct Function *self)
+{
+	assert(self);
+	
+	if (self->text.location == Text(nativeCode).location)
+		return sizeof("function () [native code]")-1 + (self->name? strlen(self->name): 0);
+	
+	return self->text.length;
+}
+
+uint16_t toBuffer (struct Function *self, char *buffer, uint16_t length)
+{
+	assert(self);
+	
+	if (self->text.location == Text(nativeCode).location)
+		return snprintf(buffer, length, "function %s() [native code]", self->name? self->name: "");
+	
+	if (length > self->text.length)
+		length = self->text.length;
+	
+	memcpy(buffer, self->text.location, length);
+	return length;
 }
