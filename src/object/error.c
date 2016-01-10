@@ -24,22 +24,6 @@ struct Function * Error(syntaxConstructor) = NULL;
 struct Function * Error(typeConstructor) = NULL;
 struct Function * Error(uriConstructor) = NULL;
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	struct Object *object;
-	struct Value name, message;
-	
-	Op.assertParameterCount(ecc, 0);
-	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	name = Value.toString(Object.get(object, Key(name)));
-	message = Value.toString(Object.get(object, Key(message)));
-	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
-	return Value(undefined);
-}
-
-// MARK: - Static Members
-
 static struct Error * createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
@@ -56,6 +40,92 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	return self;
 }
 
+static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Object *object;
+	struct Value name, message;
+	
+	Op.assertParameterCount(ecc, 0);
+	
+	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	name = Value.toString(Object.get(object, Key(name)));
+	message = Value.toString(Object.get(object, Key(message)));
+	ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+	return Value(undefined);
+}
+
+static struct Value errorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(error((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
+static struct Value rangeErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(rangeError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
+static struct Value referenceErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(referenceError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
+static struct Value syntaxErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(syntaxError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
+static struct Value typeErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(typeError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
+static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value message;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	message = Value.toString(Op.argument(ecc, 0));
+	ecc->result = Value.error(uriError((*ops)->text, "%.s*", Value.stringLength(message), Value.stringChars(message)));
+	
+	return Value(undefined);
+}
+
 static void initName(struct Object *object, const struct Text *text)
 {
 	Object.add(object, Key(name), Value.text(text), Value(writable) | Value(configurable));
@@ -68,19 +138,36 @@ static struct Object *createErrorType (const struct Text *text)
 	return object;
 }
 
+// MARK: - Static Members
+
 // MARK: - Methods
 
 void setup (void)
 {
-	Error(prototype) = Object.create(Object(prototype));
-	Error(prototype)->type = &Text(errorType);
+	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	
+	Error(prototype) = Object.createTyped(&Text(errorType));
 	initName(Error(prototype), &Text(errorName));
+	Function.addToObject(Error(prototype), "toString", toString, 1, flags);
+	
+	Error(constructor) = Function.createPrototypeContructor(Error(prototype), errorConstructor, 1);
+	
+	//
 	
 	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
+	Error(rangeConstructor) = Function.createPrototypeContructor(Error(rangePrototype), rangeErrorConstructor, 1);
+	
 	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
+	Error(referenceConstructor) = Function.createPrototypeContructor(Error(referencePrototype), referenceErrorConstructor, 1);
+	
 	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
+	Error(syntaxConstructor) = Function.createPrototypeContructor(Error(syntaxPrototype), syntaxErrorConstructor, 1);
+	
 	Error(typePrototype) = createErrorType(&Text(typeErrorName));
+	Error(typeConstructor) = Function.createPrototypeContructor(Error(typePrototype), typeErrorConstructor, 1);
+	
 	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
+	Error(uriConstructor) = Function.createPrototypeContructor(Error(uriPrototype), uriErrorConstructor, 1);
 }
 
 void teardown (void)

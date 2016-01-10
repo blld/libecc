@@ -788,11 +788,11 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
 	struct Value object = Value.toObject(nextOp(), ecc, text);
-	struct Value result = Object.delete(object.data.object, key);
-	if (!Value.isTrue(result))
+	int result = Object.delete(object.data.object, key);
+	if (!result)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
 	
-	return result;
+	return Value.truth(result);
 }
 
 struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
@@ -859,13 +859,13 @@ struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ec
 	const struct Text *text = opText(0);
 	struct Value object = Value.toObject(nextOp(), ecc, text);
 	struct Value property = nextOp();
-	struct Value result = Object.deleteProperty(object.data.object, property);
-	if (!Value.isTrue(result))
+	int result = Object.deleteProperty(object.data.object, property);
+	if (!result)
 	{
 		struct Value string = Value.toString(property);
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
 	}
-	return result;
+	return Value.truth(result);
 }
 
 struct Value result (const struct Op ** const ops, struct Ecc * const ecc)

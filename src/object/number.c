@@ -121,7 +121,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value numberConstructor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -144,22 +144,19 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-	Number(prototype) = Object.create(Object(prototype));
+	Number(prototype) = Object.createTyped(&Text(numberType));
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
 	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
 	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
-	Number(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
+	Number(constructor) = Function.createPrototypeContructor(Number(prototype), numberConstructor, 1);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MIN_VALUE"), Value.binary(DBL_MIN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NEGATIVE_INFINITY"), Value.binary(-INFINITY), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("POSITIVE_INFINITY"), Value.binary(INFINITY), flags);
-	
-	Object.add(Number(prototype), Key(constructor), Value.function(Number(constructor)), 0);
-	Object.add(&Number(constructor)->object, Key(prototype), Value.object(Number(prototype)), 0);
 }
 
 void teardown (void)
@@ -175,7 +172,6 @@ struct Number * create (double binary)
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, Number(prototype));
 	
-	self->object.type = &Text(numberType);
 	self->value = binary;
 	
 	return self;

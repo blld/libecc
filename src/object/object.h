@@ -35,6 +35,7 @@ Interface(Object,
 	
 	(struct Object *, create ,(struct Object * prototype))
 	(struct Object *, createSized ,(struct Object * prototype, uint32_t size))
+	(struct Object *, createTyped ,(const struct Text *type))
 	(struct Object *, initialize ,(struct Object * restrict, struct Object * restrict prototype))
 	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint32_t size))
 	(struct Object *, finalize ,(struct Object *))
@@ -47,8 +48,8 @@ Interface(Object,
 	(struct Value *, getProperty ,(struct Object *, struct Value))
 	(struct Value *, setProperty ,(struct Object *, struct Value, struct Value))
 	(struct Value *, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
-	(struct Value, delete ,(struct Object *, struct Key))
-	(struct Value, deleteProperty ,(struct Object *, struct Value))
+	(int, delete ,(struct Object *, struct Key))
+	(int, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
 	

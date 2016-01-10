@@ -139,7 +139,7 @@ struct Ecc *create (void)
 		Pool.setup();
 		Key.setup();
 		
-		Object(prototype) = Object.create(NULL);
+		Function(prototype) = Object(prototype) = Object.create(NULL);
 		
 		Function.setup();
 		Object.setup();
@@ -174,13 +174,13 @@ struct Ecc *create (void)
 	Function.addValue(self->global, "Boolean", Value.function(Boolean(constructor)), 0);
 	Function.addValue(self->global, "RegExp", Value.function(RegExp(constructor)), 0);
 	Function.addValue(self->global, "Math", Value.object(Math(object)), 0);
+	Function.addValue(self->global, "Error", Value.function(Error(constructor)), 0);
+	Function.addValue(self->global, "RangeError", Value.function(Error(rangeConstructor)), 0);
+	Function.addValue(self->global, "ReferenceError", Value.function(Error(referenceConstructor)), 0);
+	Function.addValue(self->global, "SyntaxError", Value.function(Error(syntaxConstructor)), 0);
+	Function.addValue(self->global, "TypeError", Value.function(Error(typeConstructor)), 0);
+	Function.addValue(self->global, "URIError", Value.function(Error(uriConstructor)), 0);
 	
-	Function.addValue(self->global, "Error", Value.object(Error(prototype)), 0);
-	Function.addValue(self->global, "RangeError", Value.object(Error(rangePrototype)), 0);
-	Function.addValue(self->global, "ReferenceError", Value.object(Error(referencePrototype)), 0);
-	Function.addValue(self->global, "SyntaxError", Value.object(Error(syntaxPrototype)), 0);
-	Function.addValue(self->global, "TypeError", Value.object(Error(typePrototype)), 0);
-	Function.addValue(self->global, "URIError", Value.object(Error(uriPrototype)), 0);
 	Function.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
 	
 	self->context = &self->global->context;

@@ -289,7 +289,7 @@ static struct Value setLength (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value arrayConstructor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	uint32_t index, count, length;
 	struct Object *array;
@@ -328,7 +328,7 @@ void setup (void)
 {
 	enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-	Array(prototype) = Object.create(Object(prototype));
+	Array(prototype) = Object.createTyped(&Text(arrayType));
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
@@ -338,13 +338,9 @@ void setup (void)
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Value(writable));
-	Array(prototype)->type = &Text(arrayType);
 	
-	Array(constructor) = Function.createWithNative(Array(prototype), constructorFunction, -1);
+	Array(constructor) = Function.createPrototypeContructor(Array(prototype), arrayConstructor, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
-	
-	Object.add(Array(prototype), Key(constructor), Value.function(Array(constructor)), 0);
-	Object.add(&Array(constructor)->object, Key(prototype), Value.object(Array(prototype)), 0);
 }
 
 void teardown (void)
@@ -363,18 +359,16 @@ struct Object *createSized (uint32_t size)
 	struct Object *self = Object.create(Array(prototype));
 	
 	Object.resizeElement(self, size);
-	self->type = &Text(arrayType);
 	
 	return self;
 }
 
 struct Object *createArguments (uint32_t size)
 {
-	struct Object *self = Object.create(Object(prototype));
+	struct Object *self = Object.createTyped(&Text(argumentsType));
 	
 	Object.resizeElement(self, size);
 	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(NULL, getLength, setLength)), Value(writable));
-	self->type = &Text(argumentsType);
 	
 	return self;
 }

@@ -35,7 +35,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 
 // MARK: - Static Members
 
-static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	char truth;
 	
@@ -56,14 +56,11 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-	Boolean(prototype) = Object.create(Object(prototype));
+	Boolean(prototype) = Object.createTyped(&Text(booleanType));
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
 	
-	Boolean(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
-	
-	Object.add(Boolean(prototype), Key(constructor), Value.function(Boolean(constructor)), 0);
-	Object.add(&Boolean(constructor)->object, Key(prototype), Value.object(Boolean(prototype)), 0);
+	Boolean(constructor) = Function.createPrototypeContructor(Boolean(prototype), booleanConstructor, 1);
 }
 
 void teardown (void)
@@ -79,7 +76,6 @@ struct Boolean * create (int truth)
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, Boolean(prototype));
 	
-	self->object.type = &Text(booleanType);
 	self->truth = truth;
 	
 	return self;

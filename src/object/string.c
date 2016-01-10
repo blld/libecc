@@ -343,7 +343,7 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value stringConstructor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -403,7 +403,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(writable) | Value(configurable);
 	
-	String(prototype) = Object.create(Object(prototype));
+	String(prototype) = Object.createTyped(&Text(stringType));
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
@@ -414,11 +414,8 @@ void setup ()
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
-	String(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
+	String(constructor) = Function.createPrototypeContructor(String(prototype), stringConstructor, 1);
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
-	
-	Object.add(String(prototype), Key(constructor), Value.function(String(constructor)), 0);
-	Object.add(&String(constructor)->object, Key(prototype), Value.object(String(prototype)), 0);
 }
 
 void teardown (void)
@@ -435,7 +432,6 @@ struct String * create (struct Chars *chars)
 	Object.initialize(&self->object, String(prototype));
 	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->chars, chars->length, chars->length)), 0);
 	
-	self->object.type = &Text(stringType);
 	self->value = chars;
 	
 	return self;

@@ -105,11 +105,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	else if (Value.isObject(ecc->this))
 		ecc->result = Value.text(ecc->this.data.object->type);
 	else
-	{
-		// null & undefined is already checked
-		ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
-		toString(ops, ecc);
-	}
+		assert(0);
 	
 	return Value(undefined);
 }
@@ -131,11 +127,7 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	
 	v = Value.toString(Op.argument(ecc, 0));
 	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
-	
-	if (v.type == Value(textType))
-		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(*v.data.text, 0)));
-	else if (v.type == Value(charsType))
-		ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText(Text.make(v.data.chars->chars, v.data.chars->length), 1)));
+	ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
 	return Value(undefined);
 }
@@ -185,7 +177,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	return Value(undefined);
 }
 
-static struct Value constructorFunction (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value objectConstructor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -474,7 +466,7 @@ void setup ()
 	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
 	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	Object(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
+	Object(constructor) = Function.createPrototypeContructor(Object(prototype), objectConstructor, 1);
 	Function.addToObject(&Object(constructor)->object, "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
@@ -488,9 +480,6 @@ void setup ()
 	Function.addToObject(&Object(constructor)->object, "isFrozen", isFrozen, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "isExtensible", isExtensible, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "keys", keys, 1, flags);
-	
-	Object.add(Object(prototype), Key(constructor), Value.function(Object(constructor)), 0);
-	Object.add(&Object(constructor)->object, Key(prototype), Value.object(Object(prototype)), 0);
 }
 
 void teardown (void)
@@ -512,6 +501,13 @@ struct Object * createSized (struct Object *prototype, uint32_t size)
 	return initializeSized(self, prototype, size);
 }
 
+struct Object * createTyped (const struct Text *type)
+{
+	struct Object *self = createSized(Object(prototype), defaultSize);
+	self->type = type;
+	return self;
+}
+
 struct Object * initialize (struct Object * restrict self, struct Object * restrict prototype)
 {
 	return initializeSized(self, prototype, defaultSize);
@@ -526,7 +522,7 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	
 	*self = Object.identity;
 	
-	self->type = &Text(objectType);
+	self->type = prototype? prototype->type: &Text(objectType);
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;
@@ -734,7 +730,7 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 	{
 		if (!self->hashmap[slot].slot[key.data.depth[depth]])
 		{
-			int need = 5 - depth - (self->hashmapCapacity - self->hashmapCount);
+			int need = 4 - depth - (self->hashmapCapacity - self->hashmapCount);
 			if (need > 0)
 			{
 				uint16_t capacity = self->hashmapCapacity;
@@ -770,7 +766,7 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 	return &self->hashmap[slot].data.value;
 }
 
-struct Value delete (struct Object *self, struct Key key)
+int delete (struct Object *self, struct Key key)
 {
 	struct Object *object = self;
 	uint32_t slot;
@@ -783,18 +779,18 @@ struct Value delete (struct Object *self, struct Key key)
 	while (!slot && (object = object->prototype));
 	
 	if (!object || !(object->hashmap[slot].data.value.check == 1))
-		return Value(true);
+		return 1;
 	
 	if (object->hashmap[slot].data.value.flags & Value(configurable))
 	{
 		memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
-		return Value(true);
+		return 1;
 	}
 	else
-		return Value(false);
+		return 0;
 }
 
-struct Value deleteProperty (struct Object *self, struct Value property)
+int deleteProperty (struct Object *self, struct Value property)
 {
 	struct Key key;
 	int32_t element = getElementOrKey(property, &key);
@@ -807,7 +803,7 @@ struct Value deleteProperty (struct Object *self, struct Value property)
 		if (element < self->elementCount)
 		{
 			if (!(self->element[element].data.value.flags & Value(configurable)))
-				return Value(false);
+				return 0;
 			
 			memset(&self->element[element], 0, sizeof(*self->element));
 		}
@@ -815,12 +811,12 @@ struct Value deleteProperty (struct Object *self, struct Value property)
 	else if (( slot = getSlot(self, key) ))
 	{
 		if (!(self->hashmap[slot].data.value.flags & Value(configurable)))
-			return Value(false);
+			return 0;
 		
 		memset(&self->hashmap[slot], 0, sizeof(*self->hashmap));
 	}
 	
-	return Value(true);
+	return 1;
 }
 
 void packValue (struct Object *self)

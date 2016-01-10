@@ -148,9 +148,9 @@ void setup ()
 {
 	struct Function *functionPrototypeFunction;
 	
-	Function(prototype) = Object(prototype);
 	functionPrototypeFunction = createWithNative(NULL, prototypeFunction, 0);
 	Function(prototype) = &functionPrototypeFunction->object;
+	Function(prototype)->type = &Text(functionType);
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
 	Function.addToObject(Function(prototype), "call", call, -1, 0);
@@ -184,8 +184,6 @@ struct Function * createSized (struct Object *prototype, uint32_t size)
 	Object.initialize(&self->object, Function(prototype));
 	Object.initializeSized(&self->context, prototype, size);
 	
-	self->object.type = &Text(functionType);
-	
 	proto = Object.create(Object(prototype));
 	Object.add(proto, Key(constructor), Value.function(self), Value(writable) | Value(configurable));
 	Object.add(&self->object, Key(prototype), Value.object(proto), Value(writable));
@@ -216,6 +214,16 @@ struct Function * createWithNative (struct Object *prototype, const Native nativ
 	Object.add(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
 	
 	return self;
+}
+
+struct Function * createPrototypeContructor (struct Object *prototype, const Native native, int parameterCount)
+{
+	struct Function *constructor = Function.createWithNative(NULL, native, parameterCount);
+	
+	Object.add(prototype, Key(constructor), Value.function(constructor), 0);
+	Object.add(&constructor->object, Key(prototype), Value.object(prototype), 0);
+	
+	return constructor;
 }
 
 struct Function * createWithNativeAccessor (struct Object *prototype, const Native getter, const Native setter)

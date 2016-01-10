@@ -75,10 +75,7 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 			putc(' ', stdout);
 		
 		value = Op.variableArgument(ecc, index);
-		if (Value.isObject(value))
-			Value.dumpTo(Value.toPrimitive(value, ecc, &(*ops)->text, 1), stdout);
-		else
-			Value.dumpTo(value, stdout);
+		Value.dumpTo(Value.toString(Value.toPrimitive(value, ecc, &(*ops)->text, 1)), stdout);
 	}
 	putc('\n', stdout);
 	
@@ -103,7 +100,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
 	
-	result = Value.toString(ecc->result);
+	result = Value.toString(Value.toPrimitive(ecc->result, ecc, &Text(empty), 1));
 	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
@@ -482,6 +479,12 @@ static void testObject (void)
 	test("Object.prototype.toString.call(123)", "[object Number]");
 }
 
+static void testError (void)
+{
+	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]");
+}
+
+
 static void testAccessor (void)
 {
 	test("var a = { get () {} }", "SyntaxError: expected identifier, got '('");
@@ -509,12 +512,12 @@ static void testArray (void)
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a[1]", "b");
 	test("var a = [ 'a', 'b', 'c' ]; a['1'] = 123; a[1]", "123");
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.a", "123");
-	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.toString()", "a,b,c");
+	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a", "a,b,c");
 	test("var a = [], o = ''; a[0] = 'abc'; a[4] = 123; a[2] = undefined; for (var b in a) o += b + a[b]; o", "0abc2undefined4123");
 	test("var a = [1, 2, 3], o = ''; delete a[1]; for (var b in a) o += b; o", "02");
 	test("var a = [1, , 3], o = ''; for (var b in a) o += b; o", "02");
 	test("var a = [1, , 3], o = ''; a[1] = undefined; for (var b in a) o += b; o", "012");
-	test("[1, , 3]", "[object Array]");
+	test("[1, , 3]", "1,,3");
 	test("[1, , 3] + ''", "1,,3");
 	test("[1, , 3].toString()", "1,,3");
 	test("typeof []", "object");
@@ -734,6 +737,7 @@ static int runTest (int verbosity)
 	testLoop();
 	testThis();
 	testObject();
+	testError();
 	testAccessor();
 	testArray();
 	testBoolean();
