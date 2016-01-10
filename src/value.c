@@ -336,20 +336,13 @@ struct Value toString (struct Value value)
 			return binaryToString(value.data.binary, 10);
 		
 		case Value(objectType):
+		case Value(errorType):
+		case Value(dateType):
 			return Value.text(value.data.object->type);
 		
 		case Value(functionType):
 			return Value.text(&value.data.function->text);
 		
-		case Value(errorType):
-		{
-			struct Object *object = value.data.object;
-			struct Value name = Value.toString(Object.get(object, Key(name)));
-			struct Value message = Value.toString(Object.get(object, Key(message)));
-			return Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
-		}
-		
-		case Value(dateType):
 		case Value(breakerType):
 		case Value(referenceType):
 			break;
@@ -402,24 +395,13 @@ uint16_t toBufferLength (struct Value value)
 			return binaryToBuffer(value.data.binary, 10, NULL, 0);
 		
 		case Value(objectType):
+		case Value(errorType):
+		case Value(dateType):
 			return value.data.object->type->length;
 		
 		case Value(functionType):
 			return value.data.function->text.length;
 		
-		case Value(errorType):
-		{
-			struct Object *object = value.data.object;
-			uint16_t length = 0;
-			
-			length += toBufferLength(Object.get(object, Key(name)));
-			length++;
-			length++;
-			length += toBufferLength(Object.get(object, Key(message)));
-			return length;
-		}
-		
-		case Value(dateType):
 		case Value(breakerType):
 		case Value(referenceType):
 			break;
@@ -470,24 +452,13 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 			return binaryToBuffer(value.data.binary, 10, buffer, length);
 		
 		case Value(objectType):
+		case Value(errorType):
+		case Value(dateType):
 			return textToBuffer(*value.data.object->type, buffer, length);
 		
 		case Value(functionType):
 			return textToBuffer(value.data.function->text, buffer, length);
 		
-		case Value(errorType):
-		{
-			struct Object *object = value.data.object;
-			uint16_t offset = 0;
-			
-			offset += toBuffer(Object.get(object, Key(name)), buffer, length);
-			buffer[offset++] = ':';
-			buffer[offset++] = ' ';
-			offset += toBuffer(Object.get(object, Key(message)), buffer + offset, length - offset);
-			return offset;
-		}
-		
-		case Value(dateType):
 		case Value(breakerType):
 		case Value(referenceType):
 			break;
@@ -755,7 +726,7 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(keyType):
 		{
-			struct Text *text = Key.textOf(value.data.key);
+			const struct Text *text = Key.textOf(value.data.key);
 			fwrite(text->location, sizeof(char), text->length, file);
 			return;
 		}
@@ -774,18 +745,9 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(objectType):
 		case Value(dateType):
+		case Value(errorType):
 			Object.dumpTo(value.data.object, file);
 			return;
-		
-		case Value(errorType):
-		{
-			struct Value name = toString(Object.get(&value.data.error->object, Key(name)));
-			struct Value message = toString(Object.get(&value.data.error->object, Key(message)));
-			fwrite(Value.stringChars(name), sizeof(char), Value.stringLength(name), file);
-			fputs(": ", file);
-			fwrite(Value.stringChars(message), sizeof(char), Value.stringLength(message), file);
-			return;
-		}
 		
 		case Value(functionType):
 			fwrite(value.data.function->text.location, sizeof(char), value.data.function->text.length, file);
