@@ -395,6 +395,10 @@ uint16_t toBufferLength (struct Value value)
 			return binaryToBuffer(value.data.binary, 10, NULL, 0);
 		
 		case Value(objectType):
+			if (value.data.object->type == &Text(arrayType))
+				return Array.toBufferLength(value.data.object, (struct Text){ ",", 1 });
+			/*vvv*/
+		
 		case Value(errorType):
 		case Value(dateType):
 			return value.data.object->type->length;
@@ -452,6 +456,10 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 			return binaryToBuffer(value.data.binary, 10, buffer, length);
 		
 		case Value(objectType):
+			if (value.data.object->type == &Text(arrayType))
+				return Array.toBuffer(value.data.object, (struct Text){ ",", 1 }, buffer, length);
+			/*vvv*/
+		
 		case Value(errorType):
 		case Value(dateType):
 			return textToBuffer(*value.data.object->type, buffer, length);

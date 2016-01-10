@@ -41,41 +41,6 @@ static void valueAppendFromElement (struct Value value, struct Object *object, u
 	}
 }
 
-static struct Chars * joinWithText (struct Object *object, struct Text text)
-{
-	struct Value value;
-	struct Chars *chars;
-	uint32_t length = 0, offset = 0;
-	uint32_t index, count = object->elementCount;
-	
-	for (index = 0; index < count; ++index)
-	{
-		if (index)
-			length += text.length;
-		
-		value = object->element[index].data.value;
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			length += Value.toBufferLength(object->element[index].data.value);
-	}
-	
-	chars = Chars.createSized(length);
-	
-	for (index = 0; index < count; ++index)
-	{
-		if (index)
-		{
-			memcpy(chars->chars + offset, text.location, text.length);
-			offset += text.length;
-		}
-		
-		value = object->element[index].data.value;
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toBuffer(object->element[index].data.value, chars->chars + offset, length - offset + 1);
-	}
-	
-	return chars;
-}
-
 static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
@@ -88,12 +53,17 @@ static struct Value isArray (const struct Op ** const ops, struct Ecc * const ec
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Object *object;
+	struct Chars *chars;
+	uint32_t length;
+	struct Text separator = (struct Text){ ",", 1 };
 	
 	Op.assertParameterCount(ecc, 0);
 	
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	
-	ecc->result = Value.chars(joinWithText(object, (struct Text){ ",", 1 }));
+	length = toBufferLength(object, separator);
+	chars = Chars.createSized(length);
+	toBuffer(object, separator, chars->chars, chars->length);
+	ecc->result = Value.chars(chars);
 	
 	return Value(undefined);
 }
@@ -125,22 +95,27 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Object *object;
-	struct Value separator;
-	struct Text text;
+	struct Value value;
+	struct Text separator;
+	struct Chars *chars;
+	uint32_t length;
 	
 	Op.assertParameterCount(ecc, 1);
 	
 	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
-	separator = Op.argument(ecc, 0);
-	if (separator.type == Value(undefinedType))
-		text = (struct Text){ ",", 1 };
+	value = Op.argument(ecc, 0);
+	if (value.type == Value(undefinedType))
+		separator = (struct Text){ ",", 1 };
 	else
 	{
-		separator = Value.toString(separator);
-		text = Text.make(Value.stringChars(separator), Value.stringLength(separator));
+		value = Value.toString(value);
+		separator = Text.make(Value.stringChars(value), Value.stringLength(value));
 	}
 	
-	ecc->result = Value.chars(joinWithText(object, text));
+	length = toBufferLength(object, separator);
+	chars = Chars.createSized(length);
+	toBuffer(object, separator, chars->chars, chars->length);
+	ecc->result = Value.chars(chars);
 	
 	return Value(undefined);
 }
@@ -404,4 +379,45 @@ struct Object * populateWithCList (struct Object *self, int count, const char * 
 	}
 	
 	return self;
+}
+
+uint16_t toBufferLength (struct Object *object, struct Text separator)
+{
+	struct Value value;
+	uint16_t offset = 0;
+	uint16_t index, count = object->elementCount;
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+			offset += separator.length;
+		
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
+			offset += Value.toBufferLength(object->element[index].data.value);
+	}
+	
+	return offset;
+}
+
+uint16_t toBuffer (struct Object *object, struct Text separator, char *buffer, uint16_t length)
+{
+	struct Value value;
+	uint16_t offset = 0;
+	uint16_t index, count = object->elementCount;
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+		{
+			memcpy(buffer + offset, separator.location, separator.length);
+			offset += separator.length;
+		}
+		
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
+			offset += Value.toBuffer(object->element[index].data.value, buffer + offset, length - offset + 1);
+	}
+	
+	return offset;
 }
