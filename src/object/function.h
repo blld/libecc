@@ -34,9 +34,9 @@ Interface(Function,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct Function *, create ,(struct Object *context, struct Object *prototype))
-	(struct Function *, createSized ,(struct Object *context, struct Object *prototype, uint32_t size))
-	(struct Function *, createWithNative ,(struct Object *prototype, const Native native, int parameterCount))
+	(struct Function *, create ,(struct Object *context))
+	(struct Function *, createSized ,(struct Object *context, uint32_t size))
+	(struct Function *, createWithNative ,(const Native native, int parameterCount))
 	(struct Function *, createWithNativeAccessor ,(const Native getter, const Native setter))
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
@@ -44,6 +44,8 @@ Interface(Function,
 	(void, addValue ,(struct Function *, const char *name, struct Value value, enum Value(Flags)))
 	(struct Function *, addNative ,(struct Function *, const char *name, const Native native, int argumentCount, enum Value(Flags)))
 	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags)))
+	
+	(void, linkPrototype ,(struct Function *, struct Object *prototype, enum Value(Flags)))
 	,
 	{
 		struct Object object;

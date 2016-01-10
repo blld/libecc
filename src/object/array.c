@@ -314,8 +314,9 @@ void setup (void)
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(writable));
 	
-	Array(constructor) = Function.createWithNative(Array(prototype), arrayConstructor, -1);
+	Array(constructor) = Function.createWithNative(arrayConstructor, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
+	Function.linkPrototype(Array(constructor), Array(prototype), 0);
 }
 
 void teardown (void)

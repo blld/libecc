@@ -150,24 +150,30 @@ void setup (void)
 	initName(Error(prototype), &Text(errorName));
 	Function.addToObject(Error(prototype), "toString", toString, 1, flags);
 	
-	Error(constructor) = Function.createWithNative(Error(prototype), errorConstructor, 1);
+	Error(constructor) = Function.createWithNative(errorConstructor, 1);
+	Function.linkPrototype(Error(constructor), Error(prototype), 0);
 	
 	//
 	
 	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
-	Error(rangeConstructor) = Function.createWithNative(Error(rangePrototype), rangeErrorConstructor, 1);
+	Error(rangeConstructor) = Function.createWithNative(rangeErrorConstructor, 1);
+	Function.linkPrototype(Error(rangeConstructor), Error(rangePrototype), 0);
 	
 	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
-	Error(referenceConstructor) = Function.createWithNative(Error(referencePrototype), referenceErrorConstructor, 1);
+	Error(referenceConstructor) = Function.createWithNative(referenceErrorConstructor, 1);
+	Function.linkPrototype(Error(referenceConstructor), Error(referencePrototype), 0);
 	
 	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
-	Error(syntaxConstructor) = Function.createWithNative(Error(syntaxPrototype), syntaxErrorConstructor, 1);
+	Error(syntaxConstructor) = Function.createWithNative(syntaxErrorConstructor, 1);
+	Function.linkPrototype(Error(syntaxConstructor), Error(syntaxPrototype), 0);
 	
 	Error(typePrototype) = createErrorType(&Text(typeErrorName));
-	Error(typeConstructor) = Function.createWithNative(Error(typePrototype), typeErrorConstructor, 1);
+	Error(typeConstructor) = Function.createWithNative(typeErrorConstructor, 1);
+	Function.linkPrototype(Error(typeConstructor), Error(typePrototype), 0);
 	
 	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
-	Error(uriConstructor) = Function.createWithNative(Error(uriPrototype), uriErrorConstructor, 1);
+	Error(uriConstructor) = Function.createWithNative(uriErrorConstructor, 1);
+	Function.linkPrototype(Error(uriConstructor), Error(uriPrototype), 0);
 }
 
 void teardown (void)

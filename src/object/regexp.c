@@ -33,7 +33,7 @@ void setup ()
 	
 	RegExp(prototype) = Object.create(Object(prototype));
 	
-	RegExp(constructor) = Function.createWithNative(NULL, constructorFunction, 1);
+	RegExp(constructor) = Function.createWithNative(constructorFunction, 1);
 //	Function.addToObject(&numberConstructor->object, "fromCharCode", fromCharCode, -1, flags);
 	
 	Object.add(RegExp(prototype), Key(constructor), Value.function(RegExp(constructor)), 0);

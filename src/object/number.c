@@ -151,12 +151,13 @@ void setup ()
 	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
 	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
-	Number(constructor) = Function.createWithNative(Number(prototype), numberConstructor, 1);
+	Number(constructor) = Function.createWithNative(numberConstructor, 1);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MIN_VALUE"), Value.binary(DBL_MIN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NEGATIVE_INFINITY"), Value.binary(-INFINITY), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("POSITIVE_INFINITY"), Value.binary(INFINITY), flags);
+	Function.linkPrototype(Number(constructor), Number(prototype), 0);
 }
 
 void teardown (void)

@@ -147,14 +147,15 @@ void setup ()
 {
 	struct Function *prototypeFunction;
 	
-	prototypeFunction = createWithNative(NULL, prototypeConstructor, 0);
+	prototypeFunction = createWithNative(prototypeConstructor, 0);
 	Function(prototype) = &prototypeFunction->object;
 	Function(prototype)->type = &Text(functionType);
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
 	Function.addToObject(Function(prototype), "call", call, -1, 0);
 	
-	Function(constructor) = Function.createWithNative(Function(prototype), functionConstructor, -1);
+	Function(constructor) = Function.createWithNative(functionConstructor, -1);
+	linkPrototype(Function(constructor), Function(prototype), 0);
 	Object.add(&Function(constructor)->object, Key(prototype), Value.function(prototypeFunction), 0);
 }
 
@@ -164,12 +165,12 @@ void teardown (void)
 	Function(constructor) = NULL;
 }
 
-struct Function * create (struct Object *context, struct Object *prototype)
+struct Function * create (struct Object *context)
 {
-	return createSized(context, prototype, 8);
+	return createSized(context, 8);
 }
 
-struct Function * createSized (struct Object *context, struct Object *prototype, uint32_t size)
+struct Function * createSized (struct Object *context, uint32_t size)
 {
 	struct Function *self = malloc(sizeof(*self));
 	assert(self);
@@ -180,28 +181,22 @@ struct Function * createSized (struct Object *context, struct Object *prototype,
 	Object.initialize(&self->object, Function(prototype));
 	Object.initializeSized(&self->context, context, size);
 	
-	if (prototype)
-	{
-		Object.add(prototype, Key(constructor), Value.function(self), Value(writable) | Value(configurable));
-		Object.add(&self->object, Key(prototype), Value.object(prototype), Value(writable));
-	}
-	
 	return self;
 }
 
-struct Function * createWithNative (struct Object *prototype, const Native native, int parameterCount)
+struct Function * createWithNative (const Native native, int parameterCount)
 {
 	struct Function *self = NULL;
 	
 	if (parameterCount < 0)
 	{
-		self = createSized(NULL, prototype, 3);
+		self = createSized(NULL, 3);
 		self->flags |= Function(needArguments);
 		self->object.hashmap[2].data.key = Key(arguments);
 	}
 	else
 	{
-		self = createSized(NULL, prototype, 3 + parameterCount);
+		self = createSized(NULL, 3 + parameterCount);
 		self->parameterCount = parameterCount;
 	}
 	
@@ -218,11 +213,11 @@ struct Function * createWithNativeAccessor (const Native getter, const Native se
 {
 	struct Function *self, *setterFunction = NULL;
 	if (setter)
-		setterFunction = createWithNative(NULL, setter, 1);
+		setterFunction = createWithNative(setter, 1);
 	
 	if (getter)
 	{
-		self = createWithNative(NULL, getter, 0);
+		self = createWithNative(getter, 0);
 		self->flags |= Function(isGetter);
 		if (setter)
 			self->pair = setterFunction;
@@ -288,9 +283,17 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	
 	assert(object);
 	
-	function = createWithNative(NULL, native, parameterCount);
+	function = createWithNative(native, parameterCount);
 	
 	Object.add(object, Key.makeWithCString(name), Value.function(function), flags);
 	
 	return function;
+}
+
+void linkPrototype (struct Function *self, struct Object *prototype, enum Value(Flags) flags)
+{
+	assert(self);
+	
+	Object.add(prototype, Key(constructor), Value.function(self), flags);
+	Object.add(&self->object, Key(prototype), Value.object(prototype), flags);
 }
