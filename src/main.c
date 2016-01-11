@@ -479,10 +479,18 @@ static void testObject (void)
 	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: a is not extensible");
 	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: a is not extensible");
 	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: a is not extensible");
+	
+	test("var a = { b:1 }; ++a.b", "2");
 	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: a.b is read-only property");
 	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: a.b is read-only property");
 	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: a.b is read-only property");
 	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: a['b'] is read-only property");
+	
+	test("var a = { v: 1, get b() { return this.v }, set b(v) { this.v = v } }; ++a.b", "2");
+	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: a.b is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: a.b is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: a.b is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: a['b'] is read-only accessor");
 }
 
 static void testError (void)
@@ -506,6 +514,11 @@ static void testAccessor (void)
 	test("var a = { _a: 'u', get a() { return this._a } }; a.a", "u");
 	test("var a = { _a: 'u', set a(v) { this._a = v } }; a.a = 123; a._a", "123");
 	test("var a = { _a: 'u', set a(v) { this._a = v }, get a() { return this._a } }; a.a = 123; a.a", "123");
+	test("var a = { _a: 'u', set a(v) { this._a = v }, get a() { return this._a } }; a.a += 123; a._a", "u123");
+	test("var a = { _a: 2, set a(v) { this._a = v }, get a() { return this._a } }; ++a.a", "3");
+	test("var a = { _a: 2, set a(v) { this._a = v }, get a() { return this._a } }; ++a.a; a._a", "3");
+	test("({ a: function(){ return 123 } }).a()", "123");
+	test("({ a: function(){ return this.b }, b: 456 }).a()", "456");
 	
 	test("var a = { get: 123 }; a.get", "123");
 	test("var a = { set: 123 }; a.set", "123");
