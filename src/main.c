@@ -505,6 +505,21 @@ static void testObject (void)
 
 static void testError (void)
 {
+	test("Error", "function Error() [native code]");
+	test("Object.prototype.toString.call(Error.prototype)", "[object Error]");
+	test("Error.prototype.constructor", "function Error() [native code]");
+	test("Error.prototype", "Error");
+	test("RangeError.prototype", "RangeError");
+	test("ReferenceError.prototype", "ReferenceError");
+	test("SyntaxError.prototype", "SyntaxError");
+	test("TypeError.prototype", "TypeError");
+	test("URIError.prototype", "URIError");
+	
+	test("Error.prototype.name", "Error");
+	test("RangeError.prototype.name", "RangeError");
+	test("RangeError('test')", "RangeError: test");
+	test("Object.prototype.toString.call(RangeError())", "[object Error]");
+	
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]");
 	
 	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number");
@@ -512,6 +527,8 @@ static void testError (void)
 	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision 100 out of range");
 	test("''.toString.call(123)", "TypeError: not a string");
 	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object");
+	
+	// (unknow input)
 	test("function a(){}; a.toString = function(){ return 'abc'; }; var b = 123; a + b", "abc123");
 	test("function a(){}; a.toString = function(){ return {}; }; var b = 123; a + b", "TypeError: cannot convert a to primitive");
 	test("function a(){}; a.toString = function(){ return {}; }; a", "TypeError: cannot convert to primitive");
@@ -606,7 +623,7 @@ static void testBoolean (void)
 {
 	test("Boolean", "function Boolean() [native code]");
 	test("Object.prototype.toString.call(Boolean.prototype)", "[object Boolean]");
-	test("Boolean.prototype.hasOwnProperty", "function hasOwnProperty() [native code]");
+	test("Boolean.prototype.constructor", "function Boolean() [native code]");
 	test("Boolean.prototype", "false");
 	
 	test("var b = new Boolean('a'); b.valueOf() === true", "true");
@@ -625,7 +642,7 @@ static void testNumber (void)
 {
 	test("Number", "function Number() [native code]");
 	test("Object.prototype.toString.call(Number.prototype)", "[object Number]");
-	test("Number.prototype.hasOwnProperty", "function hasOwnProperty() [native code]");
+	test("Number.prototype.constructor", "function Number() [native code]");
 	test("Number.prototype", "0");
 	
 	test("0xf", "15");
@@ -700,6 +717,11 @@ static void testNumber (void)
 
 static void testString (void)
 {
+	test("String", "function String() [native code]");
+	test("Object.prototype.toString.call(String.prototype)", "[object String]");
+	test("String.prototype.constructor", "function String() [native code]");
+	test("String.prototype", "");
+	
 	test("''.toString.call(123)", "TypeError: not a string");
 	test("''.valueOf.call(123)", "TypeError: not a string");
 	

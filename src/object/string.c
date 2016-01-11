@@ -402,8 +402,9 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
+	struct String *prototype = create(Chars.createSized(0));
 	
-	String(prototype) = Object.createTyped(&Text(stringType));
+	String(prototype) = Object.initializePrototype(&prototype->object, &Text(stringType));
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
@@ -414,9 +415,8 @@ void setup ()
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
-	String(constructor) = Function.createWithNative(stringConstructor, 1);
+	String(constructor) = Function.createConstructor(stringConstructor, 1, Value.string(prototype));
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
-	Function.linkPrototype(String(constructor), String(prototype));
 }
 
 void teardown (void)

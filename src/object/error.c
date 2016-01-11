@@ -141,16 +141,14 @@ static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ec
 	return Value(undefined);
 }
 
-static void initName(struct Object *object, const struct Text *text)
+static struct Error *createErrorType (const struct Text *text)
 {
-	Object.add(object, Key(name), Value.text(text), Value(hidden));
-}
-
-static struct Object *createErrorType (const struct Text *text)
-{
-	struct Object *object = Object.create(Error(prototype));
-	initName(object, text);
-	return object;
+	struct Error *prototype = error(*text, NULL);
+	if (!prototype->object.prototype)
+		Error(prototype) = Object.initializePrototype(&prototype->object, &Text(errorType));
+	
+	Object.add(&prototype->object, Key(name), Value.text(text), Value(hidden));
+	return prototype;
 }
 
 // MARK: - Static Members
@@ -160,35 +158,35 @@ static struct Object *createErrorType (const struct Text *text)
 void setup (void)
 {
 	const enum Value(Flags) flags = Value(hidden);
+	struct Error *prototype;
 	
-	Error(prototype) = Object.createTyped(&Text(errorType));
-	initName(Error(prototype), &Text(errorName));
+	prototype = createErrorType(&Text(errorName));
+	Error(prototype) = &prototype->object;
 	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
 	
-	Error(constructor) = Function.createWithNative(errorConstructor, 1);
-	Function.linkPrototype(Error(constructor), Error(prototype));
+	Error(constructor) = Function.createConstructor(errorConstructor, 1, Value.error(prototype));
 	
 	//
 	
-	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
-	Error(rangeConstructor) = Function.createWithNative(rangeErrorConstructor, 1);
-	Function.linkPrototype(Error(rangeConstructor), Error(rangePrototype));
+	prototype = createErrorType(&Text(rangeErrorName));
+	Error(rangePrototype) = &prototype->object;
+	Error(rangeConstructor) = Function.createConstructor(rangeErrorConstructor, 1, Value.error(prototype));
 	
-	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
-	Error(referenceConstructor) = Function.createWithNative(referenceErrorConstructor, 1);
-	Function.linkPrototype(Error(referenceConstructor), Error(referencePrototype));
+	prototype = createErrorType(&Text(referenceErrorName));
+	Error(referencePrototype) = &prototype->object;
+	Error(referenceConstructor) = Function.createConstructor(referenceErrorConstructor, 1, Value.error(prototype));
 	
-	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
-	Error(syntaxConstructor) = Function.createWithNative(syntaxErrorConstructor, 1);
-	Function.linkPrototype(Error(syntaxConstructor), Error(syntaxPrototype));
+	prototype = createErrorType(&Text(syntaxErrorName));
+	Error(syntaxPrototype) = &prototype->object;
+	Error(syntaxConstructor) = Function.createConstructor(syntaxErrorConstructor, 1, Value.error(prototype));
 	
-	Error(typePrototype) = createErrorType(&Text(typeErrorName));
-	Error(typeConstructor) = Function.createWithNative(typeErrorConstructor, 1);
-	Function.linkPrototype(Error(typeConstructor), Error(typePrototype));
+	prototype = createErrorType(&Text(typeErrorName));
+	Error(typePrototype) = &prototype->object;
+	Error(typeConstructor) = Function.createConstructor(typeErrorConstructor, 1, Value.error(prototype));
 	
-	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
-	Error(uriConstructor) = Function.createWithNative(uriErrorConstructor, 1);
-	Function.linkPrototype(Error(uriConstructor), Error(uriPrototype));
+	prototype = createErrorType(&Text(uriErrorName));
+	Error(uriPrototype) = &prototype->object;
+	Error(uriConstructor) = Function.createConstructor(uriErrorConstructor, 1, Value.error(prototype));
 }
 
 void teardown (void)
