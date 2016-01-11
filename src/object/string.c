@@ -54,7 +54,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	
@@ -66,7 +66,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 	Op.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	

@@ -15,21 +15,31 @@ struct Function * Boolean(constructor) = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
-	if (ecc->this.type != Value(booleanType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
+	int truth;
 	
-	ecc->result = Value.text(ecc->this.data.boolean->truth? &Text(true): &Text(false));
+	Op.assertParameterCount(ecc, 0);
+	
+	if (Value.isBoolean(ecc->this))
+		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
+	else
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a boolean")));
+	
+	ecc->result = Value.text(truth? &Text(true): &Text(false));
 	return Value(undefined);
 }
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
-	if (ecc->this.type != Value(booleanType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "is not an boolean")));
+	int truth;
 	
-	ecc->result = Value.truth(ecc->this.data.boolean->truth);
+	Op.assertParameterCount(ecc, 0);
+	
+	if (Value.isBoolean(ecc->this))
+		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
+	else
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a boolean")));
+	
+	ecc->result = Value.truth(truth);
 	return Value(undefined);
 }
 
@@ -55,13 +65,13 @@ static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc
 void setup ()
 {
 	enum Value(Flags) flags = Value(hidden);
+	struct Boolean *prototype = create(0);
 	
-	Boolean(prototype) = Object.createTyped(&Text(booleanType));
+	Boolean(prototype) = Object.initializePrototype(&prototype->object, &Text(booleanType));
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
 	
-	Boolean(constructor) = Function.createWithNative(booleanConstructor, 1);
-	Function.linkPrototype(Boolean(constructor), Boolean(prototype));
+	Boolean(constructor) = Function.createConstructor(booleanConstructor, 1, Value.boolean(prototype));
 }
 
 void teardown (void)

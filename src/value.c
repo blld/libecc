@@ -230,28 +230,27 @@ struct Value reference (struct Value *reference)
 	};
 }
 
-struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text *text, int hint)
+struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
 {
 	struct Object *object;
 	struct Key aKey;
 	struct Key bKey;
 	struct Value aFunction;
 	struct Value bFunction;
+	struct Value result;
 	
 	if (value.type < Value(objectType))
 		return value;
 	
 	object = value.data.object;
-	if (!hint)
-		hint = value.type == Value(dateType)? 1: -1;
-	
+	hint = hint? hint: value.type == Value(dateType)? 1: -1;
 	aKey = hint > 0? Key(toString): Key(valueOf);
 	bKey = hint > 0? Key(valueOf): Key(toString);
 	
 	aFunction = Object.get(object, aKey);
 	if (aFunction.type == Value(functionType))
 	{
-		struct Value result = Op.callFunctionVA(aFunction.data.function, ecc, value, 0);
+		struct Value result = Op.callFunctionVA(ops, ecc, aFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -259,12 +258,12 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 	bFunction = Object.get(object, bKey);
 	if (bFunction.type == Value(functionType))
 	{
-		struct Value result = Op.callFunctionVA(bFunction.data.function, ecc, value, 0);
+		result = Op.callFunctionVA(ops, ecc, bFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
 	
-	Ecc.jmpEnv(ecc, error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
+	Ecc.jmpEnv(ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->location: "", text? " ": "")));
 }
 
 int isPrimitive (struct Value value)
@@ -336,10 +335,17 @@ struct Value toString (struct Value value)
 			return binaryToString(value.data.binary, 10);
 		
 		case Value(objectType):
-		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
 			return text(value.data.object->type);
+		
+		case Value(errorType):
+		{
+			uint16_t length = Error.toBufferLength(&value.data.error->object);
+			struct Chars *chars = Chars.createSized(length);
+			Error.toBuffer(&value.data.error->object, chars->chars, length);
+			return Value.chars(chars);
+		}
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -606,7 +612,7 @@ int isNumber (struct Value value)
 	return value.type & 0x10;
 }
 
-struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *text)
+struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Value value, enum Op(TextSeek) argumentIndex)
 {
 	if (value.type >= Value(objectType))
 		return value;
@@ -629,10 +635,10 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(*text, "can't convert null to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Op.textSeek(ops, ecc, argumentIndex), "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(*text, "can't convert undefined to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Op.textSeek(ops, ecc, argumentIndex), "can't convert undefined to object")));
 		
 		case Value(breakerType):
 		case Value(referenceType):

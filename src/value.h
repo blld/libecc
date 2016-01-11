@@ -12,6 +12,7 @@
 #include "namespace_io_libecc.h"
 struct Function;
 struct Ecc;
+struct Op;
 
 #include "key.h"
 
@@ -63,6 +64,13 @@ enum Value(Flags)
 	Value(frozen) = Value(readonly) | Value(sealed),
 };
 
+enum Value(hintPrimitive)
+{
+	Value(hintAuto) = 0,
+	Value(hintString) = 1,
+	Value(hintNumber) = -1,
+};
+
 extern const struct Value Value(undefined);
 extern const struct Value Value(true);
 extern const struct Value Value(false);
@@ -87,7 +95,7 @@ Interface(Value,
 	(struct Value, breaker ,(int32_t integer))
 	(struct Value, reference ,(struct Value *))
 	
-	(struct Value, toPrimitive ,(struct Value, struct Ecc *ecc, const struct Text *text, int hint /* 0: auto, 1: String, -1: Number */))
+	(struct Value, toPrimitive ,(const struct Op ** const, struct Ecc *, struct Value, const struct Text *, enum Value(hintPrimitive)))
 	(int, isPrimitive ,(struct Value))
 	(int, isBoolean ,(struct Value))
 	(int, isDynamic ,(struct Value))
@@ -105,7 +113,7 @@ Interface(Value,
 	(struct Value, toInteger ,(struct Value))
 	(int, isNumber ,(struct Value))
 	
-	(struct Value, toObject ,(struct Value, struct Ecc *ecc, const struct Text *text))
+	(struct Value, toObject ,(const struct Op ** const, struct Ecc *, struct Value, int argumentIndex))
 	(int, isObject ,(struct Value))
 	
 	(struct Value, toType ,(struct Value))

@@ -20,7 +20,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "eval is not a constructor")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "eval is not a constructor")));
 	
 	value = Value.toString(Op.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
@@ -156,7 +156,7 @@ static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 	
 	error:
-	Ecc.jmpEnv(ecc, Value.error(Error.uriError((*ops)->text, "malformed URI")));
+	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Op.textSeek(ops, ecc, 0), "malformed URI")));
 }
 
 // MARK: - Static Members
@@ -291,11 +291,11 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
+	struct Op(Frame) frame = { NULL };
 	int result, try = !self->envCount, catch = 0;
 	struct Lexer *lexer;
 	struct Parser *parser;
 	struct Function *function;
-	const struct Op *ops;
 	
 	assert(self);
 	
@@ -309,7 +309,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
 	function = Parser.parseWithContext(parser, self->context);
-	ops = function->oplist->ops;
+	frame.ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
@@ -345,15 +345,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		Env.newline();
 		Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 		
-		text = value.type == Value(errorType)? value.data.error->text: ops->text;
-		if (text.location == Text(nativeCode).location)
-		{
-			// show caller's ops for [native code] error
-			while (ops->native != Op.call && ops->native != Op.eval  && ops->native != Op.construct && ops > function->oplist->ops)
-				--ops;
-			
-			text = ops->text;
-		}
+		text = value.type == Value(errorType)? value.data.error->text: frame.ops->text;
 		printTextInput(self, text);
 	}
 	else
@@ -366,10 +358,13 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		if (flags & Ecc(globalThis))
 			self->this = Value.object(&self->global->context);
 		
-		ops->native(&ops, self);
+		frame.ops->native(&frame.ops, self);
 		
 		self->context = context;
 		self->this = this;
+		
+		if (flags & Ecc(primitiveResult))
+			self->result = Value.toPrimitive(NULL, self, self->result, NULL, 0);
 	}
 	
 	if (try)
@@ -404,6 +399,7 @@ void popEnv(struct Ecc *self)
 void jmpEnv (struct Ecc *self, struct Value value)
 {
 	assert(self);
+	assert(self->envCount);
 	
 	self->result = value;
 	

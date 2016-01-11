@@ -38,6 +38,7 @@ Interface(Object,
 	(struct Object *, createTyped ,(const struct Text *type))
 	(struct Object *, initialize ,(struct Object * restrict, struct Object * restrict prototype))
 	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint32_t size))
+	(struct Object *, initializePrototype ,(struct Object *, const struct Text *type))
 	(struct Object *, finalize ,(struct Object *))
 	(struct Object *, copy ,(const struct Object * original))
 	(void, destroy ,(struct Object *))

@@ -38,6 +38,7 @@ Interface(Function,
 	(struct Function *, createSized ,(struct Object *context, uint32_t size))
 	(struct Function *, createWithNative ,(const Native native, int parameterCount))
 	(struct Function *, createWithNativeAccessor ,(const Native getter, const Native setter))
+	(struct Function *, createConstructor ,(const Native native, int parameterCount, struct Value prototype))
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
 	

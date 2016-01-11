@@ -83,7 +83,7 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 static struct Object *checkObject (const struct Op ** const ops, struct Ecc * const ecc, struct Value value)
 {
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
 	
 	return value.data.object;
 }
@@ -114,7 +114,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 {
 	Op.assertParameterCount(ecc, 0);
 	
-	ecc->result = Value.toObject(ecc->this, ecc, &(*ops)->text);
+	ecc->result = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
 	
 	return Value(undefined);
 }
@@ -126,7 +126,7 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 	Op.assertParameterCount(ecc, 1);
 	
 	v = Value.toString(Op.argument(ecc, 0));
-	ecc->this = Value.toObject(ecc->this, ecc, &(*ops)->text);
+	ecc->this = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
 	ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
 	return Value(undefined);
@@ -143,7 +143,7 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 	if (Value.isObject(arg0))
 	{
 		struct Object *v = arg0.data.object;
-		struct Object *o = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+		struct Object *o = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 		
 		while (( v = v->prototype ))
 			if (v == o)
@@ -166,7 +166,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	Op.assertParameterCount(ecc, 1);
 	
 	property = Op.argument(ecc, 0);
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
@@ -190,7 +190,7 @@ static struct Value objectConstructor (const struct Op ** const ops, struct Ecc 
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
-		ecc->result = Value.toObject(value, ecc, &(*ops)->text);
+		ecc->result = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
 	
 	return Value(undefined);
 }
@@ -536,6 +536,13 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	memset(self->hashmap, 0, byteSize);
 	
 	return self;
+}
+
+struct Object * initializePrototype (struct Object *prototype, const struct Text *type)
+{
+	prototype->prototype = Object(prototype);
+	prototype->type = type;
+	return prototype;
 }
 
 struct Object * finalize (struct Object *self)

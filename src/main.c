@@ -67,7 +67,7 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 			putc(' ', stdout);
 		
 		value = Op.variableArgument(ecc, index);
-		Value.dumpTo(Value.toString(Value.toPrimitive(value, ecc, &(*ops)->text, 1)), stdout);
+		Value.dumpTo(Value.toString(Value.toPrimitive(ops, ecc, value, &(*ops)->text, Value(hintString))), stdout);
 	}
 	putc('\n', stdout);
 	
@@ -87,12 +87,12 @@ static void test (const char *func, int line, const char *test, const char *expe
 	uint16_t length;
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), 0);
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(primitiveResult));
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
 	
-	result = Value.toString(Value.toPrimitive(ecc->result, ecc, &Text(empty), 1));
+	result = Value.toString(ecc->result);
 	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
@@ -506,8 +506,17 @@ static void testObject (void)
 static void testError (void)
 {
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]");
+	
+	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number");
+	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision 100 out of range");
+	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision 100 out of range");
+	test("''.toString.call(123)", "TypeError: not a string");
+	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object");
+	test("function a(){}; a.toString = function(){ return 'abc'; }; var b = 123; a + b", "abc123");
+	test("function a(){}; a.toString = function(){ return {}; }; var b = 123; a + b", "TypeError: cannot convert a to primitive");
+	test("function a(){}; a.toString = function(){ return {}; }; a", "TypeError: cannot convert to primitive");
+	test("function a(){}; a.toString = function(){ throw Error('test'); }; a", "Error: test");
 }
-
 
 static void testAccessor (void)
 {
@@ -595,14 +604,30 @@ static void testArray (void)
 
 static void testBoolean (void)
 {
+	test("Boolean", "function Boolean() [native code]");
+	test("Object.prototype.toString.call(Boolean.prototype)", "[object Boolean]");
+	test("Boolean.prototype.hasOwnProperty", "function hasOwnProperty() [native code]");
+	test("Boolean.prototype", "false");
+	
 	test("var b = new Boolean('a'); b.valueOf() === true", "true");
 	test("var b = Boolean('a'); b.valueOf() === true", "true");
 	test("var b = new Boolean(0); b.toString()", "false");
 	test("var b = Boolean(); b.toString()", "false");
+	test("if (new Boolean(false)) 1; else 2;", "1");
+	test("Boolean.prototype.toString.call(123)", "TypeError: not a boolean");
+	test("Boolean.prototype.toString.call(false)", "false");
+	test("Boolean.prototype.toString.call(new Boolean(0))", "false");
+	test("Boolean.prototype.toString.call(new Boolean(true))", "true");
+	test("Boolean.prototype.toString(true)", "false");
 }
 
 static void testNumber (void)
 {
+	test("Number", "function Number() [native code]");
+	test("Object.prototype.toString.call(Number.prototype)", "[object Number]");
+	test("Number.prototype.hasOwnProperty", "function hasOwnProperty() [native code]");
+	test("Number.prototype", "0");
+	
 	test("0xf", "15");
 	test("0xff", "255");
 	test("0xffff", "65535");

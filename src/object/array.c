@@ -59,7 +59,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	Op.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	length = toBufferLength(object, separator);
 	chars = Chars.createSized(length);
 	toBuffer(object, separator, chars->chars, chars->length);
@@ -75,7 +75,7 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	struct Object *array = NULL;
 	Op.assertVariableParameter(ecc);
 	
-	value = Value.toObject(ecc->this, ecc, &(*ops)->text);
+	value = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
 	count = Op.variableArgumentCount(ecc);
 	
 	length += valueArrayLength(value);
@@ -102,7 +102,7 @@ static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	value = Op.argument(ecc, 0);
 	if (value.type == Value(undefinedType))
 		separator = (struct Text){ ",", 1 };
@@ -126,7 +126,7 @@ static struct Value pop (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	ecc->result = object->elementCount? object->element[--object->elementCount].data.value: Value(undefined);
 	
 	return Value(undefined);
@@ -138,7 +138,7 @@ static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
 	uint32_t length = 0, index, count, base;
 	Op.assertVariableParameter(ecc);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	count = Op.variableArgumentCount(ecc);
 	
 	base = object->elementCount;
@@ -167,7 +167,7 @@ static struct Value reverse (const struct Op ** const ops, struct Ecc * const ec
 	
 	Op.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	last = object->elementCount - 1;
 	half = object->elementCount / 2;
 	
@@ -189,7 +189,7 @@ static struct Value shift (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	
 	if (object->elementCount)
 	{
@@ -211,7 +211,7 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 2);
 	
-	object = Value.toObject(ecc->this, ecc, &(*ops)->text).data.object;
+	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
 	start = Op.argument(ecc, 0);
 	end = Op.argument(ecc, 1);
 	
@@ -277,7 +277,7 @@ static struct Value arrayConstructor (const struct Op ** const ops, struct Ecc *
 			count = 0;
 		}
 		else
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError((*ops)->text, "invalid array length")));
+			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Op.textSeek(ops, ecc, 0), "invalid array length")));
 	}
 	
 	array = Array.createSized(length);

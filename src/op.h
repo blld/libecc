@@ -145,6 +145,18 @@
 	_( iterateMoreOrEqualRef )\
 	_( iterateInRef )\
 
+struct Op(Frame) {
+	const struct Op * ops;
+	const struct Op ** parent;
+	int argumentsShift;
+};
+
+enum Op(TextSeek) {
+	Op(textNoSeek) = -3,
+	Op(textSeekCall) = -2,
+	Op(textSeekThis) = -1,
+};
+
 
 #define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
 Interface(Op,
@@ -160,8 +172,10 @@ Interface(Op,
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
 	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
-	(struct Value, callFunctionArguments ,(struct Function *function, struct Ecc * const ecc, struct Value this, struct Object *arguments))
-	(struct Value, callFunctionVA ,(struct Function *function, struct Ecc * const ecc, struct Value this, int argumentCount, ... ))
+	(struct Text, textSeek ,(const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex))
+	
+	(struct Value, callFunctionArguments ,(const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, struct Object *arguments))
+	(struct Value, callFunctionVA ,(const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

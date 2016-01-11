@@ -21,6 +21,7 @@
 
 enum Ecc(EvalFlags) {
 	Ecc(globalThis) = 1 << 0,
+	Ecc(primitiveResult) = 1 << 1,
 };
 
 

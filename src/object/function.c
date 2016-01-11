@@ -18,7 +18,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Op.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
 	if (ecc->this.data.function->text.location == Text(nativeCode).location)
 	{
@@ -40,19 +40,21 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 2);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
 	
+	++((struct Op(Frame) *)ops)->argumentsShift;
+	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		Op.callFunctionVA(ecc->this.data.function, ecc, this, 0);
+		Op.callFunctionVA(ops, ecc, ecc->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "arguments is not an object")));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, 1), "arguments is not an object")));
 		
-		Op.callFunctionArguments(ecc->this.data.function, ecc, this, Object.copy(arguments.data.object));
+		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, Object.copy(arguments.data.object));
 	}
 	
 	return Value(undefined);
@@ -65,9 +67,11 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertVariableParameter(ecc);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
 	arguments = ecc->context->hashmap[2].data.value.data.object;
+	
+	++((struct Op(Frame) *)ops)->argumentsShift;
 	
 	if (arguments->elementCount)
 	{
@@ -75,12 +79,12 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 		
 		--arguments->elementCount;
 		++arguments->element;
-		Op.callFunctionArguments(ecc->this.data.function, ecc, this, arguments);
+		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, arguments);
 		--arguments->element;
 		++arguments->elementCount;
 	}
 	else
-		Op.callFunctionVA(ecc->this.data.function, ecc, Value(undefined), 0);
+		Op.callFunctionVA(ops, ecc, ecc->this.data.function, Value(undefined), 0);
 	
 	return Value(undefined);
 }
@@ -240,6 +244,16 @@ struct Function * createWithNativeAccessor (const Native getter, const Native se
 	return self;
 }
 
+struct Function * createConstructor (const Native native, int parameterCount, struct Value prototype)
+{
+	struct Function *self = createWithNative(native, parameterCount);
+	
+	Object.add(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
+	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
+	
+	return self;
+}
+
 struct Function * copy (struct Function *original)
 {
 	struct Function *self = malloc(sizeof(*self));
@@ -325,7 +339,7 @@ uint16_t toBuffer (struct Function *self, char *buffer, uint16_t length)
 	assert(self);
 	
 	if (self->text.location == Text(nativeCode).location)
-		return snprintf(buffer, length, "function %s() [native code]", self->name? self->name: "");
+		return snprintf(buffer, length + 1, "function %s() [native code]", self->name? self->name: "");
 	
 	if (length > self->text.length)
 		length = self->text.length;
