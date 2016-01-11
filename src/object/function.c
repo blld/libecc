@@ -306,8 +306,8 @@ void linkPrototype (struct Function *self, struct Object *prototype)
 {
 	assert(self);
 	
-	Object.add(prototype, Key(constructor), Value.function(self), Value(readonly) | Value(hidden) | Value(sealed));
-	Object.add(&self->object, Key(prototype), Value.object(prototype), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.add(prototype, Key(constructor), Value.function(self), Value(hidden));
+	Object.add(&self->object, Key(prototype), Value.object(prototype), Value(hidden) | Value(frozen));
 }
 
 uint16_t toBufferLength (struct Function *self)

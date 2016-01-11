@@ -59,6 +59,8 @@ enum Value(Flags)
 	Value(readonly) = 1 << 0,
 	Value(hidden) = 1 << 1,
 	Value(sealed) = 1 << 2,
+	
+	Value(frozen) = Value(readonly) | Value(sealed),
 };
 
 extern const struct Value Value(undefined);

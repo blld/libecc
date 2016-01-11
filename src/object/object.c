@@ -336,11 +336,11 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1)
-			object->element[index].data.value.flags |= Value(readonly) | Value(sealed);
+			object->element[index].data.value.flags |= Value(frozen);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].data.value.check == 1)
-			object->hashmap[index].data.value.flags |= Value(readonly) | Value(sealed);
+			object->hashmap[index].data.value.flags |= Value(frozen);
 	
 	ecc->result = Value.object(object);
 	return Value(undefined);
