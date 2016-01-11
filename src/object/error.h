@@ -44,8 +44,10 @@ Interface(Error,
 	(struct Error *, syntaxError ,(struct Text, const char *format, ...))
 	(struct Error *, typeError ,(struct Text, const char *format, ...))
 	(struct Error *, uriError ,(struct Text, const char *format, ...))
-	
 	(void, destroy ,(struct Error *))
+	
+	(uint16_t, toBufferLength ,(struct Object *))
+	(uint16_t, toBuffer ,(struct Object *, char *buffer, uint16_t length))
 	,
 	{
 		struct Object object;

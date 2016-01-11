@@ -41,6 +41,7 @@ const struct Text Text(dateType) = textMake("[object Date]");
 const struct Text Text(functionType) = textMake("[object Function]");
 const struct Text Text(argumentsType) = textMake("[object Arguments]");
 const struct Text Text(mathType) = textMake("[object Math]");
+const struct Text Text(globalType) = textMake("[object Global]");
 
 const struct Text Text(errorName) = textMake("Error");
 const struct Text Text(rangeErrorName) = textMake("RangeError");

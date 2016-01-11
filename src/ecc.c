@@ -125,6 +125,7 @@ static void addInput(struct Ecc *self, struct Input *input)
 struct Ecc *create (void)
 {
 	struct Ecc *self;
+	enum Value(Flags) flags = Value(hidden);
 	
 	if (!instanceCount++)
 	{
@@ -149,34 +150,41 @@ struct Ecc *create (void)
 	self = malloc(sizeof(*self));
 	*self = Ecc.identity;
 	
-	self->global = Function.create(NULL, NULL);
+	self->global = Function.create(NULL);
 	
-	Function.addValue(self->global, "NaN", Value.binary(NAN), 0);
-	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), 0);
-	Function.addValue(self->global, "undefined", Value(undefined), 0);
-	Function.addNative(self->global, "eval", eval, 1, 0);
-	Function.addNative(self->global, "parseInt", parseInt, 2, 0);
-	Function.addNative(self->global, "parseFloat", parseFloat, 1, 0);
-	Function.addNative(self->global, "isNaN", isNaN, 1, 0);
-	Function.addNative(self->global, "isFinite", isFinite, 1, 0);
+	Function.addValue(self->global, "NaN", Value.binary(NAN), Value(readonly) | Value(hidden) | Value(sealed));
+	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), Value(readonly) | Value(hidden) | Value(sealed));
+	Function.addValue(self->global, "undefined", Value(undefined), Value(readonly) | Value(hidden) | Value(sealed));
+	Function.addNative(self->global, "eval", eval, 1, flags);
+	Function.addNative(self->global, "parseInt", parseInt, 2, flags);
+	Function.addNative(self->global, "parseFloat", parseFloat, 1, flags);
+	Function.addNative(self->global, "isNaN", isNaN, 1, flags);
+	Function.addNative(self->global, "isFinite", isFinite, 1, flags);
+	#warning decodeURI
+	#warning decodeURIComponent
+	#warning encodeURI
+	#warning encodeURIComponent
 	Function.addValue(self->global, "Object", Value.function(Object(constructor)), 0);
-	Function.addValue(self->global, "Array", Value.function(Array(constructor)), 0);
 	Function.addValue(self->global, "Function", Value.function(Function(constructor)), 0);
+	Function.addValue(self->global, "Array", Value.function(Array(constructor)), 0);
 	Function.addValue(self->global, "String", Value.function(String(constructor)), 0);
-	Function.addValue(self->global, "Number", Value.function(Number(constructor)), 0);
 	Function.addValue(self->global, "Boolean", Value.function(Boolean(constructor)), 0);
+	Function.addValue(self->global, "Number", Value.function(Number(constructor)), 0);
+	#warning Date
 	Function.addValue(self->global, "RegExp", Value.function(RegExp(constructor)), 0);
-	Function.addValue(self->global, "Math", Value.object(Math(object)), 0);
 	Function.addValue(self->global, "Error", Value.function(Error(constructor)), 0);
 	Function.addValue(self->global, "RangeError", Value.function(Error(rangeConstructor)), 0);
 	Function.addValue(self->global, "ReferenceError", Value.function(Error(referenceConstructor)), 0);
 	Function.addValue(self->global, "SyntaxError", Value.function(Error(syntaxConstructor)), 0);
 	Function.addValue(self->global, "TypeError", Value.function(Error(typeConstructor)), 0);
 	Function.addValue(self->global, "URIError", Value.function(Error(uriConstructor)), 0);
+	Function.addValue(self->global, "Math", Value.object(Math(object)), 0);
+	#warning JSON
 	
 	Function.addValue(self->global, "Date", Value.object(Date.prototype()), 0);
 	
 	self->context = &self->global->context;
+	self->context->type = &Text(globalType);
 	
 	return self;
 }

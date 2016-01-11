@@ -170,7 +170,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
-		ecc->result = Value.truth(ref->flags & Value(enumerable));
+		ecc->result = Value.truth(!(ref->flags & Value(hidden)));
 	else
 		ecc->result = Value(false);
 	
@@ -224,14 +224,12 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	
 	if (ref)
 	{
-		const enum Value(Flags) resultFlags = Value(writable) | Value(enumerable) | Value(configurable);
-		
 		struct Object *result = Object.create(Object(prototype));
 		
-		Object.add(result, Key(value), *ref, resultFlags);
-		Object.add(result, Key(writable), Value.truth(ref->flags & Value(writable)), resultFlags);
-		Object.add(result, Key(enumerable), Value.truth(ref->flags & Value(enumerable)), resultFlags);
-		Object.add(result, Key(configurable), Value.truth(ref->flags & Value(configurable)), resultFlags);
+		Object.add(result, Key(value), *ref, 0);
+		Object.add(result, Key(writable), Value.truth(!(ref->flags & Value(readonly))), 0);
+		Object.add(result, Key(enumerable), Value.truth(!(ref->flags & Value(hidden))), 0);
+		Object.add(result, Key(configurable), Value.truth(!(ref->flags & Value(sealed))), 0);
 		
 		ecc->result = Value.object(result);
 	}
@@ -253,11 +251,11 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1)
-			Object.addElementAtIndex(result, length++, Value.chars(Chars.create("%d", index)), Value(writable) | Value(enumerable) | Value(configurable));
+			Object.addElementAtIndex(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].data.value.check == 1)
-			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), Value(writable) | Value(enumerable) | Value(configurable));
+			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), 0);
 	
 	ecc->result = Value.object(result);
 	
@@ -267,7 +265,7 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 static struct Value objectCreate (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
-	// TODO
+	#warning TODO
 	return Value(undefined);
 }
 
@@ -283,16 +281,16 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	value = Object.get(property, Key(value));
 	flags = 0;
 	
-	if (Value.isTrue(Object.get(property, Key(enumerable))))
-		flags |= Value(enumerable);
+	if (!Value.isTrue(Object.get(property, Key(enumerable))))
+		flags |= Value(hidden);
 	
-	if (Value.isTrue(Object.get(property, Key(configurable))))
-		flags |= Value(configurable);
+	if (!Value.isTrue(Object.get(property, Key(configurable))))
+		flags |= Value(sealed);
 	
-	if (Value.isTrue(Object.get(property, Key(writable))))
-		flags |= Value(writable);
+	if (!Value.isTrue(Object.get(property, Key(writable))))
+		flags |= Value(readonly);
 	
-	#define TODO
+	#warning TODO
 	
 	return Value(undefined);
 }
@@ -300,7 +298,7 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 static struct Value defineProperties (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
-	// TODO
+	#warning TODO
 	return Value(undefined);
 }
 
@@ -312,15 +310,15 @@ static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 1);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	object->flags &= ~Object(extensible);
+	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1)
-			object->element[index].data.value.flags &= ~Value(configurable);
+			object->element[index].data.value.flags |= Value(sealed);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && object->hashmap[index].data.value.flags & Value(configurable))
-			object->hashmap[index].data.value.flags &= ~Value(configurable);
+		if (object->hashmap[index].data.value.check == 1)
+			object->hashmap[index].data.value.flags |= Value(sealed);
 	
 	ecc->result = Value.object(object);
 	return Value(undefined);
@@ -334,15 +332,15 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 	Op.assertParameterCount(ecc, 1);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	object->flags &= ~Object(extensible);
+	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1)
-			object->element[index].data.value.flags &= ~(Value(writable) | Value(configurable));
+			object->element[index].data.value.flags |= Value(readonly) | Value(sealed);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && object->hashmap[index].data.value.flags & Value(configurable))
-			object->hashmap[index].data.value.flags &= ~(Value(writable) | Value(configurable));
+		if (object->hashmap[index].data.value.check == 1)
+			object->hashmap[index].data.value.flags |= Value(readonly) | Value(sealed);
 	
 	ecc->result = Value.object(object);
 	return Value(undefined);
@@ -355,7 +353,7 @@ static struct Value preventExtensions (const struct Op ** const ops, struct Ecc 
 	Op.assertParameterCount(ecc, 1);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	object->flags &= ~Object(extensible);
+	object->flags |= Object(sealed);
 	
 	ecc->result = Value.object(object);
 	return Value(undefined);
@@ -371,15 +369,15 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 	ecc->result = Value(true);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	if (object->flags & Object(extensible))
+	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && object->element[index].data.value.flags & Value(configurable))
+		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(sealed)))
 			ecc->result = Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && object->hashmap[index].data.value.flags & Value(configurable))
+		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(sealed)))
 			ecc->result = Value(false);
 	
 	return Value(undefined);
@@ -395,15 +393,15 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 	ecc->result = Value(true);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	if (object->flags & Object(extensible))
+	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 		
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && (object->element[index].data.value.flags & Value(writable) || object->element[index].data.value.flags & Value(configurable)))
+		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(readonly) && object->element[index].data.value.flags & Value(sealed)))
 			ecc->result = Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && (object->hashmap[index].data.value.flags & Value(writable) || object->hashmap[index].data.value.flags & Value(configurable)))
+		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(readonly) && object->hashmap[index].data.value.flags & Value(sealed)))
 			ecc->result = Value(false);
 	
 	return Value(undefined);
@@ -416,7 +414,7 @@ static struct Value isExtensible (const struct Op ** const ops, struct Ecc * con
 	Op.assertParameterCount(ecc, 1);
 	
 	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	ecc->result = Value.truth(object->flags & Object(extensible));
+	ecc->result = Value.truth(!(object->flags & Object(sealed)));
 	
 	return Value(undefined);
 }
@@ -434,12 +432,12 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 	length = 0;
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && object->element[index].data.value.flags & Value(enumerable))
-			Object.addElementAtIndex(result, length++, Value.chars(Chars.create("%d", index)), Value(writable) | Value(enumerable) | Value(configurable));
+		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(hidden)))
+			Object.addElementAtIndex(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && object->hashmap[index].data.value.flags & Value(enumerable))
-			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), Value(writable) | Value(enumerable) | Value(configurable));
+		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(hidden)))
+			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), 0);
 	
 	ecc->result = Value.object(result);
 	
@@ -455,7 +453,7 @@ struct Function * Object(constructor) = NULL;
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	const enum Value(Flags) flags = Value(hidden);
 	
 	assert(sizeof(*Object(prototype)->hashmap) == 32);
 	
@@ -480,7 +478,7 @@ void setup ()
 	Function.addToObject(&Object(constructor)->object, "isFrozen", isFrozen, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "isExtensible", isExtensible, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "keys", keys, 1, flags);
-	Function.linkPrototype(Object(constructor), Object(prototype), 0);
+	Function.linkPrototype(Object(constructor), Object(prototype));
 }
 
 void teardown (void)
@@ -528,7 +526,6 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	self->prototype = prototype;
 	self->hashmapCount = 2;
 	self->hashmapCapacity = size;
-	self->flags = Object(extensible);
 	
 	// hashmap is always 2 slots minimum
 	// slot 0 is self referencing undefined value (all zeroes)
@@ -695,14 +692,14 @@ struct Value * setProperty (struct Object *self, struct Value property, struct V
 		do
 			if (element < object->elementCount)
 			{
-				if (self->element[element].data.value.flags | Value(writable))
+				if (!(self->element[element].data.value.flags & Value(readonly)))
 					object->element[element].data.value = value;
 				
 				return &object->element[element].data.value;
 			}
 		while ((object = object->prototype));
 		
-		if (self->flags & Object(extensible))
+		if (!(self->flags & Object(sealed)))
 			return addElementAtIndex(self, element, value, 0);
 	}
 	else
@@ -710,15 +707,15 @@ struct Value * setProperty (struct Object *self, struct Value property, struct V
 		do
 			if (( slot = getSlot(object, key) ))
 			{
-				if (self->hashmap[slot].data.value.flags | Value(writable))
+				if (!(self->hashmap[slot].data.value.flags & Value(readonly)))
 					object->hashmap[slot].data.value = value;
 				
 				return &object->hashmap[slot].data.value;
 			}
 		while ((object = object->prototype));
 		
-		if (self->flags & Object(extensible))
-			return add(self, key, value, Value(writable) | Value(enumerable) | Value(configurable));
+		if (!(self->flags & Object(sealed)))
+			return add(self, key, value, 0);
 	}
 	
 	return NULL;
@@ -732,7 +729,7 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 	assert(self);
 	assert(key.data.integer);
 	
-	if (!(self->flags & Object(extensible)))
+	if (self->flags & Object(sealed))
 		return NULL;
 	
 	do
@@ -790,13 +787,11 @@ int delete (struct Object *self, struct Key key)
 	if (!object || !(object->hashmap[slot].data.value.check == 1))
 		return 1;
 	
-	if (object->hashmap[slot].data.value.flags & Value(configurable))
-	{
-		memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
-		return 1;
-	}
-	else
+	if (object->hashmap[slot].data.value.flags & Value(sealed))
 		return 0;
+	
+	memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
+	return 1;
 }
 
 int deleteProperty (struct Object *self, struct Value property)
@@ -811,7 +806,7 @@ int deleteProperty (struct Object *self, struct Value property)
 	{
 		if (element < self->elementCount)
 		{
-			if (!(self->element[element].data.value.flags & Value(configurable)))
+			if (self->element[element].data.value.flags & Value(sealed))
 				return 0;
 			
 			memset(&self->element[element], 0, sizeof(*self->element));
@@ -819,7 +814,7 @@ int deleteProperty (struct Object *self, struct Value property)
 	}
 	else if (( slot = getSlot(self, key) ))
 	{
-		if (!(self->hashmap[slot].data.value.flags & Value(configurable)))
+		if (self->hashmap[slot].data.value.flags & Value(sealed))
 			return 0;
 		
 		memset(&self->hashmap[slot], 0, sizeof(*self->hashmap));

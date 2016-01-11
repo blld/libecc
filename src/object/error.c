@@ -43,7 +43,7 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	self->text = text;
 	
 	if (message)
-		Object.add(&self->object, Key(message), Value.chars(message), Value(writable) | Value(configurable));
+		Object.add(&self->object, Key(message), Value.chars(message), Value(hidden));
 	
 	return self;
 }
@@ -51,7 +51,8 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Object *object;
-	struct Value name, message;
+	struct Chars *chars;
+	uint16_t length;
 	
 	Op.assertParameterCount(ecc, 0);
 	
@@ -59,23 +60,11 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an object")));
 	
 	object = ecc->this.data.object;
+	length = toBufferLength(object);
+	chars = Chars.createSized(length);
+	toBuffer(object, chars->chars, length);
 	
-	name = Object.get(object, Key(name));
-	if (name.type == Value(undefinedType))
-		name = Value.text(&Text(errorName));
-	else
-		name = Value.toString(name);
-	
-	message = Object.get(object, Key(message));
-	if (message.type == Value(undefinedType))
-		message = Value.text(&Text(empty));
-	else
-		message = Value.toString(message);
-	
-	if (Value.stringLength(name) && Value.stringLength(message))
-		ecc->result = Value.chars(Chars.create("%.*s: %.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
-	else
-		ecc->result = Value.chars(Chars.create("%.*s%.*s", Value.stringLength(name), Value.stringChars(name), Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.chars(chars);
 	
 	return Value(undefined);
 }
@@ -154,7 +143,7 @@ static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ec
 
 static void initName(struct Object *object, const struct Text *text)
 {
-	Object.add(object, Key(name), Value.text(text), Value(writable) | Value(configurable));
+	Object.add(object, Key(name), Value.text(text), Value(hidden));
 }
 
 static struct Object *createErrorType (const struct Text *text)
@@ -170,36 +159,36 @@ static struct Object *createErrorType (const struct Text *text)
 
 void setup (void)
 {
-	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	const enum Value(Flags) flags = Value(hidden);
 	
 	Error(prototype) = Object.createTyped(&Text(errorType));
 	initName(Error(prototype), &Text(errorName));
 	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
 	
 	Error(constructor) = Function.createWithNative(errorConstructor, 1);
-	Function.linkPrototype(Error(constructor), Error(prototype), 0);
+	Function.linkPrototype(Error(constructor), Error(prototype));
 	
 	//
 	
 	Error(rangePrototype) = createErrorType(&Text(rangeErrorName));
 	Error(rangeConstructor) = Function.createWithNative(rangeErrorConstructor, 1);
-	Function.linkPrototype(Error(rangeConstructor), Error(rangePrototype), 0);
+	Function.linkPrototype(Error(rangeConstructor), Error(rangePrototype));
 	
 	Error(referencePrototype) = createErrorType(&Text(referenceErrorName));
 	Error(referenceConstructor) = Function.createWithNative(referenceErrorConstructor, 1);
-	Function.linkPrototype(Error(referenceConstructor), Error(referencePrototype), 0);
+	Function.linkPrototype(Error(referenceConstructor), Error(referencePrototype));
 	
 	Error(syntaxPrototype) = createErrorType(&Text(syntaxErrorName));
 	Error(syntaxConstructor) = Function.createWithNative(syntaxErrorConstructor, 1);
-	Function.linkPrototype(Error(syntaxConstructor), Error(syntaxPrototype), 0);
+	Function.linkPrototype(Error(syntaxConstructor), Error(syntaxPrototype));
 	
 	Error(typePrototype) = createErrorType(&Text(typeErrorName));
 	Error(typeConstructor) = Function.createWithNative(typeErrorConstructor, 1);
-	Function.linkPrototype(Error(typeConstructor), Error(typePrototype), 0);
+	Function.linkPrototype(Error(typeConstructor), Error(typePrototype));
 	
 	Error(uriPrototype) = createErrorType(&Text(uriErrorName));
 	Error(uriConstructor) = Function.createWithNative(uriErrorConstructor, 1);
-	Function.linkPrototype(Error(uriConstructor), Error(uriPrototype), 0);
+	Function.linkPrototype(Error(uriConstructor), Error(uriPrototype));
 }
 
 void teardown (void)
@@ -346,4 +335,59 @@ void destroy (struct Error *self)
 	Object.finalize(&self->object);
 	
 	free(self), self = NULL;
+}
+
+uint16_t toBufferLength (struct Object *self)
+{
+	struct Value name, message;
+	
+	name = Object.get(self, Key(name));
+	if (name.type == Value(undefinedType))
+		name = Value.text(&Text(errorName));
+	else
+		name = Value.toString(name);
+	
+	message = Object.get(self, Key(message));
+	if (message.type == Value(undefinedType))
+		message = Value.text(&Text(empty));
+	else
+		message = Value.toString(message);
+	
+	if (Value.stringLength(name) && Value.stringLength(message))
+		return sizeof(": ")-1 + Value.stringLength(name) + Value.stringLength(message);
+	else
+		return Value.stringLength(name) + Value.stringLength(message);
+}
+
+uint16_t toBuffer (struct Object *self, char *buffer, uint16_t length)
+{
+	struct Value name, message;
+	uint16_t offset = 0;
+	
+	name = Object.get(self, Key(name));
+	if (name.type == Value(undefinedType))
+		name = Value.text(&Text(errorName));
+	else
+		name = Value.toString(name);
+	
+	message = Object.get(self, Key(message));
+	if (message.type == Value(undefinedType))
+		message = Value.text(&Text(empty));
+	else
+		message = Value.toString(message);
+	
+	memcpy(buffer, Value.stringChars(name), Value.stringLength(name));
+	offset += Value.stringLength(name);
+	
+	if (Value.stringLength(name) && Value.stringLength(message))
+	{
+		const char separator[] = ": ";
+		memcpy(buffer + offset, separator, sizeof(separator)-1);
+		offset += sizeof(separator)-1;
+	}
+	
+	memcpy(buffer + offset, Value.stringChars(message), Value.stringLength(message));
+	offset += Value.stringLength(message);
+	
+	return offset;
 }

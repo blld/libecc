@@ -21,7 +21,7 @@
 enum Object(Flags)
 {
 	Object(mark) = 1 << 0,
-	Object(extensible) = 1 << 1,
+	Object(sealed) = 1 << 1,
 };
 
 extern struct Object * Object(prototype);

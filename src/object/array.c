@@ -37,7 +37,7 @@ static void valueAppendFromElement (struct Value value, struct Object *object, u
 	else
 	{
 		object->element[*element].data.value = value;
-		object->element[(*element)++].data.value.flags = Value(enumerable) | Value(writable) | Value(configurable);
+		object->element[(*element)++].data.value.flags = 0;
 	}
 }
 
@@ -151,7 +151,7 @@ static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
 	for (index = 0; index < count; ++index)
 	{
 		object->element[index + base].data.value = Op.variableArgument(ecc, index);
-		object->element[index + base].data.value.flags = Value(enumerable) | Value(writable) | Value(configurable);
+		object->element[index + base].data.value.flags = 0;
 	}
 	
 	ecc->result = Value.binary(length);
@@ -250,16 +250,13 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 0);
-	
 	ecc->result = Value.binary(ecc->this.data.object->elementCount);
-	
 	return Value(undefined);
 }
 
 static struct Value setLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	Op.assertParameterCount(ecc, 1);
-	#warning TODO: check if object?
 	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
 	return Value(undefined);
 }
@@ -301,7 +298,7 @@ static struct Value arrayConstructor (const struct Op ** const ops, struct Ecc *
 
 void setup (void)
 {
-	enum Value(Flags) flags = Value(writable) | Value(configurable);
+	enum Value(Flags) flags = Value(hidden);
 	
 	Array(prototype) = Object.createTyped(&Text(arrayType));
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
@@ -312,11 +309,11 @@ void setup (void)
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
-	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(writable));
+	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 	
 	Array(constructor) = Function.createWithNative(arrayConstructor, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
-	Function.linkPrototype(Array(constructor), Array(prototype), 0);
+	Function.linkPrototype(Array(constructor), Array(prototype));
 }
 
 void teardown (void)
@@ -344,14 +341,13 @@ struct Object *createArguments (uint32_t size)
 	struct Object *self = Object.createTyped(&Text(argumentsType));
 	
 	Object.resizeElement(self, size);
-	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(writable));
+	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 	
 	return self;
 }
 
 struct Object * populateWithCList (struct Object *self, int count, const char * list[])
 {
-	enum Value(Flags) flags = Value(writable) | Value(enumerable) | Value(configurable);
 	double binary;
 	char *end;
 	int index;
@@ -367,7 +363,7 @@ struct Object * populateWithCList (struct Object *self, int count, const char * 
 		if (end == list[index] + length)
 		{
 			self->element[index].data.value = Value.binary(binary);
-			self->element[index].data.value.flags = flags;
+			self->element[index].data.value.flags = 0;
 		}
 		else
 		{
@@ -375,7 +371,7 @@ struct Object * populateWithCList (struct Object *self, int count, const char * 
 			memcpy(chars->chars, list[index], length);
 			
 			self->element[index].data.value = Value.chars(chars);
-			self->element[index].data.value.flags = flags;
+			self->element[index].data.value.flags = 0;
 		}
 	}
 	

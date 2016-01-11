@@ -267,7 +267,7 @@ struct Object * Math(object) = NULL;
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	const enum Value(Flags) flags = Value(hidden);
 	
 	Math(object) = Object.createTyped(&Text(mathType));
 	

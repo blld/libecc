@@ -43,6 +43,7 @@ extern const struct Text Text(dateType);
 extern const struct Text Text(functionType);
 extern const struct Text Text(argumentsType);
 extern const struct Text Text(mathType);
+extern const struct Text Text(globalType);
 
 extern const struct Text Text(errorName);
 extern const struct Text Text(rangeErrorName);

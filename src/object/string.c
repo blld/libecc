@@ -401,7 +401,7 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	const enum Value(Flags) flags = Value(hidden);
 	
 	String(prototype) = Object.createTyped(&Text(stringType));
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
@@ -416,7 +416,7 @@ void setup ()
 	
 	String(constructor) = Function.createWithNative(stringConstructor, 1);
 	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
-	Function.linkPrototype(String(constructor), String(prototype), 0);
+	Function.linkPrototype(String(constructor), String(prototype));
 }
 
 void teardown (void)
@@ -431,7 +431,7 @@ struct String * create (struct Chars *chars)
 	*self = String.identity;
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, String(prototype));
-	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->chars, chars->length, chars->length)), 0);
+	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->chars, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
 	

@@ -470,6 +470,19 @@ static void testObject (void)
 	test("Object.prototype.toString.call(true)", "[object Boolean]");
 	test("Object.prototype.toString.call('abc')", "[object String]");
 	test("Object.prototype.toString.call(123)", "[object Number]");
+	
+	test("var a = { b:1 }; ++a.b", "2");
+	test("var a = { b:1 }; ++a['b']", "2");
+	
+	test("var a = {}; ++a.b", "NaN");
+	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: a is not extensible");
+	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: a is not extensible");
+	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: a is not extensible");
+	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: a is not extensible");
+	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: a.b is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: a.b is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: a.b is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: a['b'] is read-only property");
 }
 
 static void testError (void)
@@ -706,7 +719,7 @@ static void testString (void)
 	test("''.lastIndexOf.length", "1");
 	
 	test("'aべcaべc'.length", "6");
-	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: cannot assign to read only property 'length' of a");
+	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: a.length is read-only property");
 }
 
 static int runTest (int verbosity)

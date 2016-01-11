@@ -163,8 +163,8 @@ void setup ()
 	Function.addToObject(Function(prototype), "call", call, -1, 0);
 	
 	Function(constructor) = Function.createWithNative(functionConstructor, -1);
-	linkPrototype(Function(constructor), Function(prototype), 0);
-	Object.add(&Function(constructor)->object, Key(prototype), Value.function(prototypeFunction), 0);
+	Object.add(Function(prototype), Key(constructor), Value.function(Function(constructor)), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.add(&Function(constructor)->object, Key(prototype), Value.function(prototypeFunction), Value(readonly) | Value(hidden) | Value(sealed));
 }
 
 void teardown (void)
@@ -302,12 +302,12 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	return function;
 }
 
-void linkPrototype (struct Function *self, struct Object *prototype, enum Value(Flags) flags)
+void linkPrototype (struct Function *self, struct Object *prototype)
 {
 	assert(self);
 	
-	Object.add(prototype, Key(constructor), Value.function(self), flags);
-	Object.add(&self->object, Key(prototype), Value.object(prototype), flags);
+	Object.add(prototype, Key(constructor), Value.function(self), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.add(&self->object, Key(prototype), Value.object(prototype), Value(readonly) | Value(hidden) | Value(sealed));
 }
 
 uint16_t toBufferLength (struct Function *self)

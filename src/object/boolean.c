@@ -54,14 +54,14 @@ static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc
 
 void setup ()
 {
-	enum Value(Flags) flags = Value(writable) | Value(configurable);
+	enum Value(Flags) flags = Value(hidden);
 	
 	Boolean(prototype) = Object.createTyped(&Text(booleanType));
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
 	
 	Boolean(constructor) = Function.createWithNative(booleanConstructor, 1);
-	Function.linkPrototype(Boolean(constructor), Boolean(prototype), 0);
+	Function.linkPrototype(Boolean(constructor), Boolean(prototype));
 }
 
 void teardown (void)

@@ -142,7 +142,7 @@ static struct Value numberConstructor (const struct Op ** const ops, struct Ecc 
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(writable) | Value(configurable);
+	const enum Value(Flags) flags = Value(hidden);
 	
 	Number(prototype) = Object.createTyped(&Text(numberType));
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
@@ -157,7 +157,7 @@ void setup ()
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NEGATIVE_INFINITY"), Value.binary(-INFINITY), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("POSITIVE_INFINITY"), Value.binary(INFINITY), flags);
-	Function.linkPrototype(Number(constructor), Number(prototype), 0);
+	Function.linkPrototype(Number(constructor), Number(prototype));
 }
 
 void teardown (void)

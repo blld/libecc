@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-#define valueMake(T) { { 0 }, Value(T), Value(defaults), 1 }
+#define valueMake(T) { { 0 }, Value(T), 0, 1 }
 
 const struct Value Value(undefined) = valueMake(undefinedType);
 const struct Value Value(true) = valueMake(trueType);
@@ -264,7 +264,7 @@ struct Value toPrimitive (struct Value value, struct Ecc *ecc, const struct Text
 			return result;
 	}
 	
-	Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
+	Ecc.jmpEnv(ecc, error(Error.typeError(*text, "cannot convert %.*s to primitive", text->length, text->location)));
 }
 
 int isPrimitive (struct Value value)
@@ -305,25 +305,25 @@ struct Value toString (struct Value value)
 			return value;
 		
 		case Value(keyType):
-			return Value.text(Key.textOf(value.data.key));
+			return text(Key.textOf(value.data.key));
 		
 		case Value(stringType):
-			return Value.chars(value.data.string->value);
+			return chars(value.data.string->value);
 		
 		case Value(nullType):
-			return Value.text(&Text(null));
+			return text(&Text(null));
 		
 		case Value(undefinedType):
-			return Value.text(&Text(undefined));
+			return text(&Text(undefined));
 		
 		case Value(falseType):
-			return Value.text(&Text(false));
+			return text(&Text(false));
 		
 		case Value(trueType):
-			return Value.text(&Text(true));
+			return text(&Text(true));
 		
 		case Value(booleanType):
-			return value.data.boolean->truth? Value.text(&Text(true)): Value.text(&Text(false));
+			return value.data.boolean->truth? text(&Text(true)): text(&Text(false));
 		
 		case Value(integerType):
 			return binaryToString(value.data.integer, 10);
@@ -339,7 +339,7 @@ struct Value toString (struct Value value)
 		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
-			return Value.text(value.data.object->type);
+			return text(value.data.object->type);
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -397,9 +397,11 @@ uint16_t toBufferLength (struct Value value)
 				return Array.toBufferLength(value.data.object, (struct Text){ ",", 1 });
 			/*vvv*/
 		
-		case Value(errorType):
 		case Value(dateType):
 			return value.data.object->type->length;
+		
+		case Value(errorType):
+			return Error.toBufferLength(&value.data.error->object);
 		
 		case Value(functionType):
 			return Function.toBufferLength(value.data.function);
@@ -458,9 +460,11 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 				return Array.toBuffer(value.data.object, (struct Text){ ",", 1 }, buffer, length);
 			/*vvv*/
 		
-		case Value(errorType):
 		case Value(dateType):
 			return textToBuffer(*value.data.object->type, buffer, length);
+		
+		case Value(errorType):
+			return Error.toBuffer(&value.data.error->object, buffer, length);
 		
 		case Value(functionType):
 			return Function.toBuffer(value.data.function, buffer, length);
@@ -480,17 +484,17 @@ struct Value binaryToString (double binary, int base)
 	struct Chars *chars;
 	
 	if (binary == 0)
-		return Value.text(&Text(zero));
+		return text(&Text(zero));
 	else if (binary == 1)
-		return Value.text(&Text(one));
+		return text(&Text(one));
 	else if (isnan(binary))
-		return Value.text(&Text(nan));
+		return text(&Text(nan));
 	else if (isinf(binary))
 	{
 		if (signbit(binary))
-			return Value.text(&Text(negativeInfinity));
+			return text(&Text(negativeInfinity));
 		else
-			return Value.text(&Text(infinity));
+			return text(&Text(infinity));
 	}
 	
 	length = binaryToBuffer(binary, base, NULL, 0);
@@ -536,48 +540,48 @@ struct Value toBinary (struct Value value)
 			return value;
 		
 		case Value(integerType):
-			return Value.binary(value.data.integer);
+			return binary(value.data.integer);
 		
 		case Value(numberType):
-			return Value.binary(value.data.number->value);
+			return binary(value.data.number->value);
 		
 		case Value(nullType):
 		case Value(falseType):
-			return Value.binary(0);
+			return binary(0);
 		
 		case Value(trueType):
-			return Value.binary(1);
+			return binary(1);
 		
 		case Value(booleanType):
-			return Value.binary(value.data.boolean->truth? 1: 0);
+			return binary(value.data.boolean->truth? 1: 0);
 		
 		case Value(undefinedType):
-			return Value.binary(NAN);
+			return binary(NAN);
 		
 		case Value(textType):
 			if (value.data.text == &Text(zero))
-				return Value.binary(0);
+				return binary(0);
 			else if (value.data.text == &Text(one))
-				return Value.binary(1);
+				return binary(1);
 			else if (value.data.text == &Text(nan))
-				return Value.binary(NAN);
+				return binary(NAN);
 			else if (value.data.text == &Text(infinity))
-				return Value.binary(INFINITY);
+				return binary(INFINITY);
 			else if (value.data.text == &Text(negativeInfinity))
-				return Value.binary(-INFINITY);
+				return binary(-INFINITY);
 			
 			/*vvv*/
 			
 		case Value(keyType):
 		case Value(charsType):
 		case Value(stringType):
-			return Lexer.parseBinary(Text.make(Value.stringChars(value), Value.stringLength(value)));
+			return Lexer.parseBinary(Text.make(stringChars(value), stringLength(value)));
 		
 		case Value(objectType):
 		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
-			return Value.binary(NAN);
+			return binary(NAN);
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -592,9 +596,9 @@ struct Value toInteger (struct Value value)
 	double binary = toBinary(value).data.binary;
 	
 	if (isnan(binary) || isinf(binary))
-		return Value.integer(0);
+		return integer(0);
 	else
-		return Value.integer((uint32_t)binary);
+		return integer((uint32_t)binary);
 }
 
 int isNumber (struct Value value)
@@ -610,25 +614,25 @@ struct Value toObject (struct Value value, struct Ecc *ecc, const struct Text *t
 	switch ((enum Value(Type))value.type)
 	{
 		case Value(binaryType):
-			return Value.number(Number.create(value.data.binary));
+			return number(Number.create(value.data.binary));
 		
 		case Value(integerType):
-			return Value.number(Number.create(value.data.integer));
+			return number(Number.create(value.data.integer));
 		
 		case Value(keyType):
 		case Value(textType):
 		case Value(charsType):
-			return Value.string(String.create(Chars.create("%.*s", stringLength(value), stringChars(value))));
+			return string(String.create(Chars.create("%.*s", stringLength(value), stringChars(value))));
 		
 		case Value(falseType):
 		case Value(trueType):
-			return Value.boolean(Boolean.create(value.type == Value(trueType)));
+			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert null to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(*text, "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "can't convert undefined to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(*text, "can't convert undefined to object")));
 		
 		case Value(breakerType):
 		case Value(referenceType):
@@ -656,19 +660,19 @@ struct Value toType (struct Value value)
 	{
 		case Value(trueType):
 		case Value(falseType):
-			return Value.text(&Text(boolean));
+			return text(&Text(boolean));
 		
 		case Value(undefinedType):
-			return Value.text(&Text(undefined));
+			return text(&Text(undefined));
 		
 		case Value(integerType):
 		case Value(binaryType):
-			return Value.text(&Text(number));
+			return text(&Text(number));
 		
 		case Value(keyType):
 		case Value(textType):
 		case Value(charsType):
-			return Value.text(&Text(string));
+			return text(&Text(string));
 		
 		case Value(nullType):
 		case Value(objectType):
@@ -677,10 +681,10 @@ struct Value toType (struct Value value)
 		case Value(booleanType):
 		case Value(errorType):
 		case Value(dateType):
-			return Value.text(&Text(object));
+			return text(&Text(object));
 		
 		case Value(functionType):
-			return Value.text(&Text(function));
+			return text(&Text(function));
 		
 		case Value(breakerType):
 		case Value(referenceType):

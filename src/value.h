@@ -56,11 +56,9 @@ enum Value(Type) {
 
 enum Value(Flags)
 {
-	Value(writable) = 1 << 0,
-	Value(enumerable) = 1 << 1,
-	Value(configurable) = 1 << 2,
-	
-	Value(defaults) = Value(writable) | Value(enumerable) | Value(configurable),
+	Value(readonly) = 1 << 0,
+	Value(hidden) = 1 << 1,
+	Value(sealed) = 1 << 2,
 };
 
 extern const struct Value Value(undefined);
