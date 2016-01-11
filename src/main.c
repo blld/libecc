@@ -351,6 +351,16 @@ static void testGlobal (void)
 	test("global.NaN", "NaN");
 	test("global.undefined", "undefined");
 	test("typeof global.eval", "function");
+	
+	test("decodeURI('abc/def')", "abc/def");
+	test("decodeURI('abc%2fdef')", "abc%2fdef");
+	test("decodeURI('abc%2edef')", "abc.def");
+	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83')", "URIError: malformed URI");
+	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%')", "URIError: malformed URI");
+	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%B')", "URIError: malformed URI");
+	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%BC')", "ハロー");
+	test("decodeURI('%F0%A9%B8%BD')", "𩸽");
+	test("decodeURI('%C3%A7')", "ç");
 }
 
 static void testFunction (void)

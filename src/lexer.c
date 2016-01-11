@@ -10,26 +10,6 @@
 
 // MARK: - Private
 
-static inline int8_t hexhigit(int c)
-{
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	else if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	else
-		return c - '0';
-}
-
-static inline uint8_t uint8Hex(char a, char b)
-{
-	return hexhigit(a) << 4 | hexhigit(b);
-}
-
-static inline uint16_t uint16Hex(char a, char b, char c, char d)
-{
-	return hexhigit(a) << 12 | hexhigit(b) << 8 | hexhigit(c) << 4 | hexhigit(d);
-}
-
 // MARK: - Static Members
 
 static inline void addLine(struct Lexer *self, uint32_t offset)
@@ -618,6 +598,38 @@ struct Value parseBinary (struct Text text)
 	return Value.binary(binary);
 }
 
+static double strtolHexFallback (struct Text text)
+{
+	double binary = 0;
+	int sign = 1;
+	int offset = 0;
+	int c;
+	
+	if (text.location[offset] == '-')
+		sign = -1, ++offset;
+	
+	if (text.length - offset > 1 && text.location[offset] == '0' && tolower(text.location[offset + 1]) == 'x')
+	{
+		offset += 2;
+		
+		while (text.length - offset >= 1)
+		{
+			c = text.location[offset++];
+			
+			binary *= 16;
+			
+			if (isdigit(c))
+				binary += c - '0';
+			else if (isxdigit(c))
+				binary += tolower(c) - ('a' - 10);
+			else
+				return NAN;
+		}
+	}
+	
+	return binary * sign;
+}
+
 struct Value parseInteger (struct Text text, int base)
 {
 	long integer;
@@ -639,36 +651,7 @@ struct Value parseInteger (struct Text text, int base)
 			double binary = strtod(buffer, NULL);
 			
 			if (!binary && !base)
-			{
-				/* strtod: hex fallback */
-				int sign = 1;
-				int offset = 0;
-				int c;
-				
-				if (text.location[offset] == '-')
-					sign = -1, ++offset;
-				
-				if (text.length - offset > 1 && text.location[offset] == '0' && tolower(text.location[offset + 1]) == 'x')
-				{
-					offset += 2;
-					
-					while (text.length - offset >= 1)
-					{
-						c = text.location[offset++];
-						
-						binary *= 16;
-						
-						if (isdigit(c))
-							binary += c - '0';
-						else if (isxdigit(c))
-							binary += tolower(c) - ('a' - 10);
-						else
-							return Value.binary(NAN);
-					}
-				}
-				
-				binary *= sign;
-			}
+				binary = strtolHexFallback(text);
 			
 			return Value.binary(binary);
 		}
@@ -705,4 +688,24 @@ int32_t parseElement (struct Text text)
 		return -1;
 	
 	return value.data.integer;
+}
+
+static inline int8_t hexhigit(int c)
+{
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	else
+		return c - '0';
+}
+
+uint8_t uint8Hex(char a, char b)
+{
+	return hexhigit(a) << 4 | hexhigit(b);
+}
+
+uint16_t uint16Hex(char a, char b, char c, char d)
+{
+	return hexhigit(a) << 12 | hexhigit(b) << 8 | hexhigit(c) << 4 | hexhigit(d);
 }

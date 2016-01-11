@@ -101,6 +101,64 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
+static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value value;
+	const char *bytes;
+	uint16_t index = 0, offset = 0, count;
+	struct Chars *chars;
+	int c;
+	
+	Op.assertParameterCount(ecc, 1);
+	
+	value = Value.toString(Op.argument(ecc, 0));
+	bytes = Value.stringChars(value);
+	count = Value.stringLength(value);
+	chars = Chars.createSized(count);
+	
+	while (index < count)
+	{
+		c = bytes[index++];
+		if (c != '%')
+			chars->chars[offset++] = c;
+		else if (index + 2 > count || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
+			goto error;
+		else
+		{
+			c = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
+			index += 2;
+			
+			if (c >= 0x80)
+			{
+				int continuation = (c & 0xf8) == 0xf0? 3: (c & 0xf0) == 0xe0? 2: (c & 0xe0) == 0xc0? 1: 0;
+				if (!continuation || index + continuation * 3 > count)
+					goto error;
+				
+				chars->chars[offset++] = c;
+				while (continuation--)
+				{
+					if (bytes[index++] != '%' || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
+						goto error;
+					
+					chars->chars[offset++] = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
+					index += 2;
+				}
+			}
+			else if (strchr(";/?:@&=+$,#", c))
+				chars->chars[offset++] = '%', chars->chars[offset++] = bytes[index - 2], chars->chars[offset++] = bytes[index - 1];
+			else
+				chars->chars[offset++] = c;
+		}
+	}
+	
+	chars->length = offset;
+	ecc->result = Value.chars(chars);
+	return Value(undefined);
+	
+	error:
+	Ecc.jmpEnv(ecc, Value.error(Error.uriError((*ops)->text, "malformed URI")));
+}
+
 // MARK: - Static Members
 
 static struct Input * findInput (struct Ecc *self, struct Text text)
@@ -160,7 +218,7 @@ struct Ecc *create (void)
 	Function.addNative(self->global, "parseFloat", parseFloat, 1, flags);
 	Function.addNative(self->global, "isNaN", isNaN, 1, flags);
 	Function.addNative(self->global, "isFinite", isFinite, 1, flags);
-	#warning decodeURI
+	Function.addNative(self->global, "decodeURI", decodeURI, 1, flags);
 	#warning decodeURIComponent
 	#warning encodeURI
 	#warning encodeURIComponent
