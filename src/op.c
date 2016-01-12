@@ -343,12 +343,12 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 		while (frame->ops->native != Op.call && frame->ops->native != Op.eval && frame->ops->native != Op.construct)
 			--frame->ops;
 		
-		if (argumentIndex-- >= Op(textSeekFunc))
+		if (argumentIndex-- > Op(textSeekCall))
 			++frame->ops;
 		
 		argumentIndex += argumentsShift;
 		
-		if (argumentIndex-- >= Op(textSeekThis))
+		if (argumentIndex-- > Op(textSeekCall) && (frame->ops + 1)->text.location <= frame->ops->text.location)
 			++frame->ops;
 		
 		while (argumentIndex-- > Op(textSeekCall))
@@ -580,7 +580,7 @@ struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
 	if (value.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a function", text->length, text->location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
 	
 	return callFunction(ops, ecc, value.data.function, argumentCount, 0);
 }

@@ -39,8 +39,11 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertParameterCount(ecc, 2);
 	
+	if (ecc->construct)
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "apply is not a constructor")));
+	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
@@ -71,8 +74,11 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Op.assertVariableParameter(ecc);
 	
+	if (ecc->construct)
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "call is not a constructor")));
+	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
 	arguments = ecc->context->hashmap[2].data.value.data.object;
 	

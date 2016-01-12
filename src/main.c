@@ -186,6 +186,9 @@ static void testEval (void)
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
 	test("new eval('123')", "TypeError: eval is not a constructor");
+	test("new eval.call('123')", "TypeError: call is not a constructor");
+	test("new eval.apply('123')", "TypeError: apply is not a constructor");
+	test("eval.call('123', 'this+456')", "[object Global]456");
 }
 
 static void testException (void)
@@ -654,6 +657,10 @@ static void testNumber (void)
 	test("Object.prototype.toString.call(Number.prototype)", "[object Number]");
 	test("Number.prototype.constructor", "function Number() [native code]");
 	test("Number.prototype", "0");
+	
+	test("Number.toString", "function toString() [native code]");
+	test("Number.toString()", "function Number() [native code]");
+	test("Number.toString.call(null)", "TypeError: not a function");
 	
 	test("0xf", "15");
 	test("0xff", "255");
