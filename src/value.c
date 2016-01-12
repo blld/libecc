@@ -343,7 +343,7 @@ struct Value toString (struct Value value)
 		{
 			uint16_t length = Error.toBufferLength(&value.data.error->object);
 			struct Chars *chars = Chars.createSized(length);
-			Error.toBuffer(&value.data.error->object, chars->chars, length);
+			Error.toBuffer(&value.data.error->object, chars->chars, length + 1);
 			return Value.chars(chars);
 		}
 		

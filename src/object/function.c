@@ -24,7 +24,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	{
 		uint16_t length = toBufferLength(ecc->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
-		toBuffer(ecc->this.data.function, chars->chars, length);
+		toBuffer(ecc->this.data.function, chars->chars, length + 1);
 		ecc->result = Value.chars(chars);
 	}
 	else
@@ -339,7 +339,7 @@ uint16_t toBuffer (struct Function *self, char *buffer, uint16_t length)
 	assert(self);
 	
 	if (self->text.location == Text(nativeCode).location)
-		return snprintf(buffer, length + 1, "function %s() [native code]", self->name? self->name: "");
+		return snprintf(buffer, length, "function %s() [native code]", self->name? self->name: "");
 	
 	if (length > self->text.length)
 		length = self->text.length;
