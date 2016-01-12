@@ -1382,7 +1382,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	parentFunction = self->function;
 	function = Function.create(&self->function->context);
-	Function.linkPrototype(function, Object.create(Object(prototype)));
+	Function.linkPrototype(function, Value.object(Object.create(Object(prototype))));
 	
 	Object.add(&function->context, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
 	

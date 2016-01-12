@@ -65,13 +65,11 @@ static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc
 void setup ()
 {
 	enum Value(Flags) flags = Value(hidden);
-	struct Boolean *prototype = create(0);
 	
-	Boolean(prototype) = Object.initializePrototype(&prototype->object, &Text(booleanType));
+	Function.setupBuiltinObject(&Boolean(constructor), booleanConstructor, 1, &Boolean(prototype), Value.boolean(create(0)), &Text(booleanType));
+	
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
-	
-	Boolean(constructor) = Function.createConstructor(booleanConstructor, 1, Value.boolean(prototype));
 }
 
 void teardown (void)

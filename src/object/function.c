@@ -161,18 +161,11 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 
 void setup ()
 {
-	struct Function *prototypeFunction;
+	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &Text(functionType));
 	
-	prototypeFunction = createWithNative(prototypeConstructor, 0);
-	Function(prototype) = &prototypeFunction->object;
-	Function(prototype)->type = &Text(functionType);
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
 	Function.addToObject(Function(prototype), "call", call, -1, 0);
-	
-	Function(constructor) = Function.createWithNative(functionConstructor, -1);
-	Object.add(Function(prototype), Key(constructor), Value.function(Function(constructor)), Value(readonly) | Value(hidden) | Value(sealed));
-	Object.add(&Function(constructor)->object, Key(prototype), Value.function(prototypeFunction), Value(readonly) | Value(hidden) | Value(sealed));
 }
 
 void teardown (void)
@@ -320,12 +313,31 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	return function;
 }
 
-void linkPrototype (struct Function *self, struct Object *prototype)
+void linkPrototype (struct Function *self, struct Value prototype)
 {
 	assert(self);
 	
-	Object.add(prototype, Key(constructor), Value.function(self), Value(hidden));
-	Object.add(&self->object, Key(prototype), Value.object(prototype), Value(hidden) | Value(frozen));
+	Object.add(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
+	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
+}
+
+void setupBuiltinObject (struct Function **constructor, const Native native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Text *type)
+{
+	struct Function *function = createWithNative(native, parameterCount);
+	
+	if (prototype)
+	{
+		struct Object *object = prototypeValue.data.object;
+		object->type = type;
+		
+		if (!object->prototype)
+			object->prototype = Object(prototype);
+		
+		*prototype = object;
+	}
+	
+	linkPrototype(function, prototypeValue);
+	*constructor = function;
 }
 
 uint16_t toBufferLength (struct Function *self)

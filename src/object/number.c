@@ -154,16 +154,15 @@ static struct Value numberConstructor (const struct Op ** const ops, struct Ecc 
 void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
-	struct Number *prototype = create(0);
 	
-	Number(prototype) = Object.initializePrototype(&prototype->object, &Text(numberType));
+	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &Text(numberType));
+	
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
 	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
 	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
-	Number(constructor) = Function.createConstructor(numberConstructor, 1, Value.number(prototype));
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("MIN_VALUE"), Value.binary(DBL_MIN), flags);
 	Object.add(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);

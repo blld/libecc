@@ -300,7 +300,8 @@ void setup (void)
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Array(prototype) = Object.createTyped(&Text(arrayType));
+	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &Text(arrayType));
+	
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
@@ -311,9 +312,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 	
-	Array(constructor) = Function.createWithNative(arrayConstructor, -1);
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
-	Function.linkPrototype(Array(constructor), Array(prototype));
 }
 
 void teardown (void)

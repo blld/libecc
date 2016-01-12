@@ -141,14 +141,10 @@ static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ec
 	return Value(undefined);
 }
 
-static struct Error *createErrorType (const struct Text *text)
+static void setupBuiltinObject (struct Function **constructor, const Native native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
-	struct Error *prototype = error(*text, NULL);
-	if (!prototype->object.prototype)
-		Error(prototype) = Object.initializePrototype(&prototype->object, &Text(errorType));
-	
-	Object.add(&prototype->object, Key(name), Value.text(text), Value(hidden));
-	return prototype;
+	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Text(errorType));
+	Object.add(*prototype, Key(name), Value.text(name), Value(hidden));
 }
 
 // MARK: - Static Members
@@ -158,35 +154,15 @@ static struct Error *createErrorType (const struct Text *text)
 void setup (void)
 {
 	const enum Value(Flags) flags = Value(hidden);
-	struct Error *prototype;
 	
-	prototype = createErrorType(&Text(errorName));
-	Error(prototype) = &prototype->object;
+	setupBuiltinObject(&Error(constructor), errorConstructor, 1, &Error(prototype), &Text(errorName));
+	setupBuiltinObject(&Error(rangeConstructor), rangeErrorConstructor, 1, &Error(rangePrototype), &Text(rangeErrorName));
+	setupBuiltinObject(&Error(referenceConstructor), referenceErrorConstructor, 1, &Error(referencePrototype), &Text(referenceErrorName));
+	setupBuiltinObject(&Error(syntaxConstructor), syntaxErrorConstructor, 1, &Error(syntaxPrototype), &Text(syntaxErrorName));
+	setupBuiltinObject(&Error(typeConstructor), typeErrorConstructor, 1, &Error(typePrototype), &Text(typeErrorName));
+	setupBuiltinObject(&Error(uriConstructor), uriErrorConstructor, 1, &Error(uriPrototype), &Text(uriErrorName));
+	
 	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
-	
-	Error(constructor) = Function.createConstructor(errorConstructor, 1, Value.error(prototype));
-	
-	//
-	
-	prototype = createErrorType(&Text(rangeErrorName));
-	Error(rangePrototype) = &prototype->object;
-	Error(rangeConstructor) = Function.createConstructor(rangeErrorConstructor, 1, Value.error(prototype));
-	
-	prototype = createErrorType(&Text(referenceErrorName));
-	Error(referencePrototype) = &prototype->object;
-	Error(referenceConstructor) = Function.createConstructor(referenceErrorConstructor, 1, Value.error(prototype));
-	
-	prototype = createErrorType(&Text(syntaxErrorName));
-	Error(syntaxPrototype) = &prototype->object;
-	Error(syntaxConstructor) = Function.createConstructor(syntaxErrorConstructor, 1, Value.error(prototype));
-	
-	prototype = createErrorType(&Text(typeErrorName));
-	Error(typePrototype) = &prototype->object;
-	Error(typeConstructor) = Function.createConstructor(typeErrorConstructor, 1, Value.error(prototype));
-	
-	prototype = createErrorType(&Text(uriErrorName));
-	Error(uriPrototype) = &prototype->object;
-	Error(uriConstructor) = Function.createConstructor(uriErrorConstructor, 1, Value.error(prototype));
 }
 
 void teardown (void)

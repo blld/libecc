@@ -433,6 +433,11 @@ static void testThis (void)
 
 static void testObject (void)
 {
+	test("Object", "function Object() [native code]");
+	test("Object.prototype.toString.call(Object.prototype)", "[object Object]");
+	test("Object.prototype.constructor", "function Object() [native code]");
+	test("Object.prototype", "[object Object]");
+	
 	test("var a = { a: 1, 'b': 2, '1': 3 }; a.a", "1");
 	test("var a = { a: 1, 'b': 2, '1': 3 }; a['a']", "1");
 	test("var a = { a: 1, 'b': 2, '1': 3 }; a['b']", "2");
@@ -564,6 +569,11 @@ static void testAccessor (void)
 
 static void testArray (void)
 {
+	test("Array", "function Array() [native code]");
+	test("Object.prototype.toString.call(Array.prototype)", "[object Array]");
+	test("Array.prototype.constructor", "function Array() [native code]");
+	test("Array.prototype", "");
+	
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a[1]", "b");
 	test("var a = [ 'a', 'b', 'c' ]; a['1'] = 123; a[1]", "123");
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.a", "123");

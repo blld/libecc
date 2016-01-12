@@ -457,6 +457,8 @@ void setup ()
 	
 	assert(sizeof(*Object(prototype)->hashmap) == 32);
 	
+	Function.setupBuiltinObject(&Object(constructor), objectConstructor, 1, NULL, Value.object(Object(prototype)), NULL);
+	
 	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
 	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, flags);
@@ -464,7 +466,6 @@ void setup ()
 	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
 	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	Object(constructor) = Function.createWithNative(objectConstructor, 1);
 	Function.addToObject(&Object(constructor)->object, "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
@@ -478,7 +479,6 @@ void setup ()
 	Function.addToObject(&Object(constructor)->object, "isFrozen", isFrozen, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "isExtensible", isExtensible, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "keys", keys, 1, flags);
-	Function.linkPrototype(Object(constructor), Object(prototype));
 }
 
 void teardown (void)
