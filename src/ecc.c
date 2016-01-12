@@ -208,7 +208,9 @@ struct Ecc *create (void)
 	self = malloc(sizeof(*self));
 	*self = Ecc.identity;
 	
-	self->global = Function.create(NULL);
+	self->global = Function.create(Object(prototype));
+	self->context = &self->global->context;
+	self->context->type = &Text(globalType);
 	
 	Function.addValue(self->global, "NaN", Value.binary(NAN), flags | Value(frozen));
 	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), flags | Value(frozen));
@@ -238,9 +240,6 @@ struct Ecc *create (void)
 	Function.addValue(self->global, "URIError", Value.function(Error(uriConstructor)), flags);
 	Function.addValue(self->global, "Math", Value.object(Math(object)), flags);
 	#warning JSON
-	
-	self->context = &self->global->context;
-	self->context->type = &Text(globalType);
 	
 	return self;
 }
