@@ -45,7 +45,7 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
 	
-	++((struct Op(Frame) *)ops)->argumentsShift;
+	((struct Op(Frame) *)ops)->argumentsShift = 1;
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
 		Op.callFunctionVA(ops, ecc, ecc->this.data.function, this, 0);
@@ -56,6 +56,8 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 		
 		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, Object.copy(arguments.data.object));
 	}
+	
+	((struct Op(Frame) *)ops)->argumentsShift = 0;
 	
 	return Value(undefined);
 }
@@ -71,7 +73,7 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	arguments = ecc->context->hashmap[2].data.value.data.object;
 	
-	++((struct Op(Frame) *)ops)->argumentsShift;
+	((struct Op(Frame) *)ops)->argumentsShift = 1;
 	
 	if (arguments->elementCount)
 	{
@@ -85,6 +87,8 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	}
 	else
 		Op.callFunctionVA(ops, ecc, ecc->this.data.function, Value(undefined), 0);
+	
+	((struct Op(Frame) *)ops)->argumentsShift = 0;
 	
 	return Value(undefined);
 }

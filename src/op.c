@@ -327,6 +327,7 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex)
 {
 	const char *location;
+	int argumentsShift = 0;
 	struct Op(Frame) *frame = (struct Op(Frame) *)ops;
 	
 	while (frame->ops->text.location == Text(nativeCode).location)
@@ -334,14 +335,16 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 		if (!frame->parent)
 			return frame->ops->text;
 		
+		argumentsShift = frame->argumentsShift;
 		frame = (struct Op(Frame) *)frame->parent;
-		argumentIndex += frame->argumentsShift;
 	}
 	
 	if (frame && argumentIndex > Op(textNoSeek))
 	{
 		while (frame->ops->native != Op.call && frame->ops->native != Op.eval && frame->ops->native != Op.construct)
 			--frame->ops;
+		
+		argumentIndex += argumentsShift;
 		
 		if (argumentIndex-- == Op(textSeekThis))
 			++frame->ops;
