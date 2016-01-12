@@ -60,6 +60,7 @@ Interface(Ecc,
 		
 		int construct;
 		struct Function *global;
+		struct Text text;
 		
 		struct Input **inputs;
 		uint16_t inputCount;

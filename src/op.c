@@ -1584,6 +1584,7 @@ dead struct Value throw (const struct Op ** const ops, struct Ecc * const ecc)
 	const struct Op *throwOps = *ops;
 	struct Value value = nextOp();
 	*ops = throwOps + 1;
+	ecc->text = *opText(0);
 	Ecc.jmpEnv(ecc, value);
 }
 

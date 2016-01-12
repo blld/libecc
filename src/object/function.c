@@ -45,18 +45,21 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
 	
-	((struct Op(Frame) *)ops)->argumentsShift = 1;
-	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
+	{
+		((struct Op(Frame) *)ops)->argumentsShift = 1;
+		
 		Op.callFunctionVA(ops, ecc, ecc->this.data.function, this, 0);
+	}
 	else
 	{
 		if (!Value.isObject(arguments))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, 1), "arguments is not an object")));
 		
+		((struct Op(Frame) *)ops)->argumentsShift = 1;
+		
 		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, Object.copy(arguments.data.object));
 	}
-	
 	((struct Op(Frame) *)ops)->argumentsShift = 0;
 	
 	return Value(undefined);

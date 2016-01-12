@@ -323,7 +323,6 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		struct Value value;
 		struct Value name;
 		struct Value message;
-		struct Text text;
 		
 		result = EXIT_FAILURE;
 		
@@ -344,8 +343,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		Env.newline();
 		Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
 		
-		text = value.type == Value(errorType)? value.data.error->text: frame.ops->text;
-		printTextInput(self, text);
+		printTextInput(self, self->text);
 	}
 	else
 	{
@@ -363,7 +361,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		self->this = this;
 		
 		if (flags & Ecc(primitiveResult))
-			self->result = Value.toPrimitive(NULL, self, self->result, NULL, 0);
+			self->result = Value.toPrimitive(NULL, self, self->result, NULL, Value(hintAuto));
 	}
 	
 	if (try)
@@ -401,6 +399,9 @@ void jmpEnv (struct Ecc *self, struct Value value)
 	assert(self->envCount);
 	
 	self->result = value;
+	
+	if (value.type == Value(errorType))
+		self->text = value.data.error->text;
 	
 	longjmp(self->envList[self->envCount - 1].buf, 1);
 }
