@@ -40,7 +40,7 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 2);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "not a function")));
 	
 	this = Op.argument(ecc, 0);
 	arguments = Op.argument(ecc, 1);
@@ -69,7 +69,7 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertVariableParameter(ecc);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "not a function")));
 	
 	arguments = ecc->context->hashmap[2].data.value.data.object;
 	
@@ -238,16 +238,6 @@ struct Function * createWithNativeAccessor (const Native getter, const Native se
 		self = setterFunction;
 		self->flags |= Function(isSetter);
 	}
-	return self;
-}
-
-struct Function * createConstructor (const Native native, int parameterCount, struct Value prototype)
-{
-	struct Function *self = createWithNative(native, parameterCount);
-	
-	Object.add(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
-	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
-	
 	return self;
 }
 

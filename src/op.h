@@ -152,8 +152,9 @@ struct Op(Frame) {
 };
 
 enum Op(TextSeek) {
-	Op(textNoSeek) = -3,
-	Op(textSeekCall) = -2,
+	Op(textNoSeek) = -4,
+	Op(textSeekCall) = -3,
+	Op(textSeekFunc) = -2,
 	Op(textSeekThis) = -1,
 };
 

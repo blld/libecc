@@ -38,6 +38,8 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	assert(self);
 	Pool.addObject(&self->object);
 	
+	*self = Error.identity;
+	
 	Object.initialize(&self->object, errorPrototype);
 	
 	self->text = text;

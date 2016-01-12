@@ -235,7 +235,6 @@ static inline struct Value getRefValue(const struct Op ** const ops, struct Ecc 
 	return *ref;
 }
 
-#warning remove text?
 static inline struct Value setRefValue(const struct Op ** const ops, struct Ecc * const ecc, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
 {
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
@@ -344,15 +343,18 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 		while (frame->ops->native != Op.call && frame->ops->native != Op.eval && frame->ops->native != Op.construct)
 			--frame->ops;
 		
+		if (argumentIndex-- >= Op(textSeekFunc))
+			++frame->ops;
+		
 		argumentIndex += argumentsShift;
 		
-		if (argumentIndex-- == Op(textSeekThis))
+		if (argumentIndex-- >= Op(textSeekThis))
 			++frame->ops;
 		
 		while (argumentIndex-- > Op(textSeekCall))
 		{
-			location = frame->ops->text.location;
-			while (location == frame->ops->text.location && frame->ops->text.location)
+			location = frame->ops->text.location + frame->ops->text.length;
+			while (location > frame->ops->text.location && frame->ops->text.location)
 				++frame->ops;
 		}
 	}
