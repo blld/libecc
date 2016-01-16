@@ -138,7 +138,12 @@ static struct Value numberConstructor (const struct Op ** const ops, struct Ecc 
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toBinary(Op.argument(ecc, 0));
+	value = Op.argument(ecc, 0);
+	if (value.type == Value(undefinedType))
+		value = Value.binary(0);
+	else
+		value = Value.toBinary(value);
+	
 	if (ecc->construct)
 		ecc->result = Value.number(Number.create(value.data.binary));
 	else

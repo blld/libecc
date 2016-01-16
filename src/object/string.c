@@ -349,7 +349,12 @@ static struct Value stringConstructor (const struct Op ** const ops, struct Ecc 
 	
 	Op.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Op.argument(ecc, 0);
+	if (value.type == Value(undefinedType))
+		value = Value.text(&Text(empty));
+	else
+		value = Value.toString(value);
+	
 	if (ecc->construct)
 		ecc->result = Value.string(String.create(Chars.createWithBuffer(Value.stringLength(value), Value.stringChars(value))));
 	else
