@@ -325,6 +325,9 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 
 struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex)
 {
+	assert(ops);
+	assert(ecc);
+	
 	const char *location;
 	int argumentsShift = 0;
 	struct Op(Frame) *frame = (struct Op(Frame) *)ops;
@@ -1075,6 +1078,13 @@ struct Value multiply (const struct Op ** const ops, struct Ecc * const ecc)
 		return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
 }
 
+struct Value multiplyBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary *= nextOp().data.binary;
+	return a;
+}
+
 struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
@@ -1088,6 +1098,13 @@ struct Value divide (const struct Op ** const ops, struct Ecc * const ecc)
 		return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
 }
 
+struct Value divideBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary /= nextOp().data.binary;
+	return a;
+}
+
 struct Value modulo (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
@@ -1096,6 +1113,13 @@ struct Value modulo (const struct Op ** const ops, struct Ecc * const ecc)
 		return Value.binary(fmod(a.data.binary, b.data.binary));
 	else
 		return Value.binary(fmod(Value.toBinary(a).data.binary, Value.toBinary(b).data.binary));
+}
+
+struct Value moduloBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary = fmod(a.data.binary, nextOp().data.binary);
+	return a;
 }
 
 struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1112,6 +1136,13 @@ struct Value add (const struct Op ** const ops, struct Ecc * const ecc)
 		return addition(ecc, a, text, b, opText(0));
 }
 
+struct Value addBinary (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.binary += nextOp().data.binary;
+	return a;
+}
+
 struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
@@ -1123,34 +1154,6 @@ struct Value minus (const struct Op ** const ops, struct Ecc * const ecc)
 	}
 	else
 		return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
-}
-
-struct Value multiplyBinary (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	struct Value a = nextOp();
-	a.data.binary *= nextOp().data.binary;
-	return a;
-}
-
-struct Value divideBinary (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	struct Value a = nextOp();
-	a.data.binary /= nextOp().data.binary;
-	return a;
-}
-
-struct Value moduloBinary (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	struct Value a = nextOp();
-	a.data.binary = fmod(a.data.binary, nextOp().data.binary);
-	return a;
-}
-
-struct Value addBinary (const struct Op ** const ops, struct Ecc * const ecc)
-{
-	struct Value a = nextOp();
-	a.data.binary += nextOp().data.binary;
-	return a;
 }
 
 struct Value minusBinary (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1167,11 +1170,25 @@ struct Value leftShift (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value.integer(Value.toInteger(a).data.integer << (uint32_t)Value.toInteger(b).data.integer);
 }
 
+struct Value leftShiftInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.integer <<= (uint32_t)nextOp().data.integer;
+	return a;
+}
+
 struct Value rightShift (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
+}
+
+struct Value rightShiftInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.integer >>= (uint32_t)nextOp().data.integer;
+	return a;
 }
 
 struct Value unsignedRightShift (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1181,11 +1198,25 @@ struct Value unsignedRightShift (const struct Op ** const ops, struct Ecc * cons
 	return Value.integer((uint32_t)Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
 }
 
+struct Value unsignedRightShiftInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	struct Value b = nextOp();
+	return Value.integer((uint32_t)a.data.integer >> (uint32_t)b.data.integer);
+}
+
 struct Value bitwiseAnd (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer & Value.toInteger(b).data.integer);
+}
+
+struct Value bitwiseAndInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.integer &= nextOp().data.integer;
+	return a;
 }
 
 struct Value bitwiseXor (const struct Op ** const ops, struct Ecc * const ecc)
@@ -1195,11 +1226,25 @@ struct Value bitwiseXor (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value.integer(Value.toInteger(a).data.integer ^ Value.toInteger(b).data.integer);
 }
 
+struct Value bitwiseXorInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.integer ^= nextOp().data.integer;
+	return a;
+}
+
 struct Value bitwiseOr (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	return Value.integer(Value.toInteger(a).data.integer | Value.toInteger(b).data.integer);
+}
+
+struct Value bitwiseOrInteger (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	struct Value a = nextOp();
+	a.data.integer |= nextOp().data.integer;
+	return a;
 }
 
 struct Value logicalAnd (const struct Op ** const ops, struct Ecc * const ecc)

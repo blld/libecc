@@ -68,22 +68,17 @@
 	_( moreOrEqual )\
 	_( instanceOf )\
 	_( in )\
-	_( multiply )\
-	_( divide )\
-	_( modulo )\
-	_( add )\
-	_( minus )\
-	_( multiplyBinary )\
-	_( divideBinary )\
-	_( moduloBinary )\
-	_( addBinary )\
-	_( minusBinary )\
-	_( leftShift )\
-	_( rightShift )\
-	_( unsignedRightShift )\
-	_( bitwiseAnd )\
-	_( bitwiseXor )\
-	_( bitwiseOr )\
+	_( multiply )           _( multiplyBinary )\
+	_( divide )             _( divideBinary )\
+	_( modulo )             _( moduloBinary )\
+	_( add )                _( addBinary )\
+	_( minus )              _( minusBinary )\
+	_( leftShift )          _( leftShiftInteger )\
+	_( rightShift )         _( rightShiftInteger )\
+	_( unsignedRightShift ) _( unsignedRightShiftInteger )\
+	_( bitwiseAnd )         _( bitwiseAndInteger )\
+	_( bitwiseXor )         _( bitwiseXorInteger )\
+	_( bitwiseOr )          _( bitwiseOrInteger )\
 	_( logicalAnd )\
 	_( logicalOr )\
 	_( positive )\

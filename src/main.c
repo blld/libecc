@@ -231,6 +231,8 @@ static void testOperator (void)
 	test("& 1", "SyntaxError: expected expression, got '&'");
 	test("^ 1", "SyntaxError: expected expression, got '^'");
 	test("| 1", "SyntaxError: expected expression, got '|'");
+	
+	test("1 *", "SyntaxError: expected expression, got end of script");
 }
 
 static void testEquality (void)
