@@ -206,6 +206,10 @@ static struct OpList * array (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
+	struct Text text = self->lexer->text;
+	
+	nextToken(self);
+	
 	do
 	{
 		while (previewToken(self) == ',')
@@ -222,7 +226,11 @@ static struct OpList * array (struct Parser *self)
 		oplist = OpList.join(oplist, assignment(self, 0));
 	}
 	while (acceptToken(self, ','));
-	return OpList.unshift(Op.make(Op.array, Value.integer(count), OpList.text(oplist)), oplist);
+	
+	text = Text.join(text, self->lexer->text);
+	expectToken(self, ']');
+	
+	return OpList.unshift(Op.make(Op.array, Value.integer(count), text), oplist);
 }
 
 static struct OpList * propertyAssignment (struct Parser *self)
@@ -303,6 +311,10 @@ static struct OpList * object (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
+	struct Text text = self->lexer->text;
+	
+	nextToken(self);
+	
 	do
 	{
 		if (previewToken(self) == '}')
@@ -312,7 +324,11 @@ static struct OpList * object (struct Parser *self)
 		oplist = OpList.join(oplist, propertyAssignment(self));
 	}
 	while (acceptToken(self, ','));
-	return OpList.unshift(Op.make(Op.object, Value.integer(count), OpList.text(oplist)), oplist);
+	
+	text = Text.join(text, self->lexer->text);
+	expectToken(self, '}');
+	
+	return OpList.unshift(Op.make(Op.object, Value.integer(count), text), oplist);
 }
 
 static struct OpList * primary (struct Parser *self)
@@ -341,18 +357,10 @@ static struct OpList * primary (struct Parser *self)
 		oplist = OpList.create(Op.value, Value.truth(1), self->lexer->text);
 	else if (previewToken(self) == Lexer(falseToken))
 		oplist = OpList.create(Op.value, Value.truth(0), self->lexer->text);
-	else if (acceptToken(self, '{'))
-	{
-		oplist = object(self);
-		expectToken(self, '}');
-		return oplist;
-	}
-	else if (acceptToken(self, '['))
-	{
-		oplist = array(self);
-		expectToken(self, ']');
-		return oplist;
-	}
+	else if (previewToken(self) == '{')
+		return object(self);
+	else if (previewToken(self) == '[')
+		return array(self);
 	else if (acceptToken(self, '('))
 	{
 		oplist = expression(self, 0);
@@ -489,7 +497,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 				oplist = OpList.unshift(Op.make(Op.call, Value.integer(count), text), oplist);
 			
 			if (!expectToken(self, ')'))
-				return oplist;
+				break;
 		}
 		else
 			break;
