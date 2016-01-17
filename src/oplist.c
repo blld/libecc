@@ -314,18 +314,21 @@ void dumpTo (struct OpList *self, FILE *file)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)
-			fprintf(file, "'%.*s'\n", self->ops[i].text.length, self->ops[i].text.location);
-		else
-			fprintf(file, "\n");
+			fprintf(file, "'%.*s'", self->ops[i].text.length, self->ops[i].text.location);
+		
+		fprintf(file, "  `%.*s`\n", self->ops[i].text.length, self->ops[i].text.location);
 	}
 }
 
 struct Text text (struct OpList *oplist)
 {
+	uint16_t length;
 	if (!oplist)
 		return Text.make(NULL, 0);
 	
+	length = oplist->ops[oplist->opCount - 1].text.location + oplist->ops[oplist->opCount - 1].text.length - oplist->ops[0].text.location;
+	
 	return Text.make(
 		oplist->ops[0].text.location,
-		oplist->ops[oplist->opCount - 1].text.location - oplist->ops[0].text.location + oplist->ops[oplist->opCount - 1].text.length);
+		oplist->ops[0].text.length > length? oplist->ops[0].text.length: length);
 }
