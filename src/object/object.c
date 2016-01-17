@@ -492,7 +492,7 @@ struct Object * create (struct Object *prototype)
 	return createSized(prototype, defaultSize);
 }
 
-struct Object * createSized (struct Object *prototype, uint32_t size)
+struct Object * createSized (struct Object *prototype, uint16_t size)
 {
 	struct Object *self = malloc(sizeof(*self));
 	assert(self);
@@ -512,12 +512,11 @@ struct Object * initialize (struct Object * restrict self, struct Object * restr
 	return initializeSized(self, prototype, defaultSize);
 }
 
-struct Object * initializeSized (struct Object * restrict self, struct Object * restrict prototype, uint32_t size)
+struct Object * initializeSized (struct Object * restrict self, struct Object * restrict prototype, uint16_t size)
 {
 	size_t byteSize;
 	
 	assert(self);
-	assert(size >= 2);
 	
 	*self = Object.identity;
 	
@@ -525,15 +524,22 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;
-	self->hashmapCapacity = size;
 	
 	// hashmap is always 2 slots minimum
 	// slot 0 is self referencing undefined value (all zeroes)
 	// slot 1 is entry point, referencing undefined (slot 0) by default (all zeroes)
 	
-	byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
-	self->hashmap = malloc(byteSize);
-	memset(self->hashmap, 0, byteSize);
+	if (size > 0)
+	{
+		self->hashmapCapacity = size;
+		
+		byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
+		self->hashmap = malloc(byteSize);
+		memset(self->hashmap, 0, byteSize);
+	}
+	else
+		// size is < zero = to be initialized later by caller
+		self->hashmapCapacity = 2;
 	
 	return self;
 }
@@ -916,6 +922,36 @@ struct Value * addElementAtIndex (struct Object *self, uint32_t index, struct Va
 	self->element[index].data.value.flags = flags;
 	
 	return &self->element[index].data.value;
+}
+
+void populateElementWithCList (struct Object *self, int count, const char * list[])
+{
+	double binary;
+	char *end;
+	int index;
+	
+	if (count > self->elementCount)
+		Object.resizeElement(self, count);
+	
+	for (index = 0; index < count; ++index)
+	{
+		uint16_t length = (uint16_t)strlen(list[index]);
+		binary = strtod(list[index], &end);
+		
+		if (end == list[index] + length)
+		{
+			self->element[index].data.value = Value.binary(binary);
+			self->element[index].data.value.flags = 0;
+		}
+		else
+		{
+			struct Chars *chars = Chars.createSized(length);
+			memcpy(chars->chars, list[index], length);
+			
+			self->element[index].data.value = Value.chars(chars);
+			self->element[index].data.value.flags = 0;
+		}
+	}
 }
 
 void dumpTo(struct Object *self, FILE *file)

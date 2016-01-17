@@ -34,10 +34,10 @@ Interface(Object,
 	(void, teardown ,(void))
 	
 	(struct Object *, create ,(struct Object * prototype))
-	(struct Object *, createSized ,(struct Object * prototype, uint32_t size))
+	(struct Object *, createSized ,(struct Object * prototype, uint16_t size))
 	(struct Object *, createTyped ,(const struct Text *type))
 	(struct Object *, initialize ,(struct Object * restrict, struct Object * restrict prototype))
-	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint32_t size))
+	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint16_t size))
 	(struct Object *, initializePrototype ,(struct Object *, const struct Text *type))
 	(struct Object *, finalize ,(struct Object *))
 	(struct Object *, copy ,(const struct Object * original))
@@ -57,6 +57,7 @@ Interface(Object,
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
 	(struct Value *, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Value(Flags)))
+	(void, populateElementWithCList ,(struct Object *, int count, const char * list[]))
 	
 	(void, dumpTo ,(struct Object *, FILE *file))
 	,
@@ -72,11 +73,11 @@ Interface(Object,
 		} *element;
 		
 		union {
-			uint16_t slot[16];
 			struct {
 				struct Value value;
 				struct Key key;
 			} data;
+			uint16_t slot[16];
 		} *hashmap;
 		
 		uint32_t elementCount;
