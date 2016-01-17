@@ -156,6 +156,7 @@ Interface(Value,
 #include "object/boolean.h"
 #include "object/number.h"
 #include "object/array.h"
+#include "object/arguments.h"
 #include "object/date.h"
 #include "object/error.h"
 #include "ecc.h"

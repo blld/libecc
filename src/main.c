@@ -32,7 +32,7 @@ int main (int argc, const char * argv[])
 		result = runTest(-1);
 	else
 	{
-		struct Object *arguments = Array.populateWithCList(Array.createArguments(argc - 2), argc - 2, &argv[2]);
+		struct Object *arguments = Arguments.createWithCList(argc - 2, &argv[2]);
 		Ecc.addValue(ecc, "arguments", Value.object(arguments), 0);
 		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]), Ecc(globalThis));
 	}

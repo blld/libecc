@@ -203,6 +203,7 @@ struct Ecc *create (void)
 		Number.setup();
 		Boolean.setup();
 		RegExp.setup();
+		Arguments.setup();
 	}
 	
 	self = malloc(sizeof(*self));
@@ -267,6 +268,7 @@ void destroy (struct Ecc *self)
 		Number.teardown();
 		Boolean.teardown();
 		RegExp.teardown();
+		Arguments.teardown();
 		
 		Key.teardown();
 		Pool.teardown();
@@ -427,6 +429,7 @@ void printTextInput (struct Ecc *self, struct Text text)
 void garbageCollect(struct Ecc *self)
 {
 	Pool.markAll();
+	Pool.unmarkValue(Value.object(Arguments(prototype)));
 	Pool.unmarkValue(Value.function(self->global));
 	Pool.unmarkValue(self->this);
 	Pool.collectMarked();
