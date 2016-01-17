@@ -109,7 +109,7 @@ struct Value key (struct Key key)
 	return (struct Value){
 		.data = { .key = key },
 		.type = Value(keyType),
-		.check = 1,
+		.check = 0,
 	};
 }
 
@@ -215,7 +215,7 @@ struct Value breaker (int32_t integer)
 	return (struct Value){
 		.data = { .integer = integer },
 		.type = Value(breakerType),
-		.check = 1,
+		.check = 0,
 	};
 }
 
@@ -226,7 +226,7 @@ struct Value reference (struct Value *reference)
 	return (struct Value){
 		.data = { .reference = reference },
 		.type = Value(referenceType),
-		.check = 1,
+		.check = 0,
 	};
 }
 
