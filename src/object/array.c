@@ -335,48 +335,6 @@ struct Object *createSized (uint32_t size)
 	return self;
 }
 
-struct Object *createArguments (uint32_t size)
-{
-	struct Object *self = Object.createTyped(&Text(argumentsType));
-	
-	Object.resizeElement(self, size);
-	Object.add(self, Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
-	
-	return self;
-}
-
-struct Object * populateWithCList (struct Object *self, int count, const char * list[])
-{
-	double binary;
-	char *end;
-	int index;
-	
-	if (count > self->elementCount)
-		Object.resizeElement(self, count);
-	
-	for (index = 0; index < count; ++index)
-	{
-		uint16_t length = (uint16_t)strlen(list[index]);
-		binary = strtod(list[index], &end);
-		
-		if (end == list[index] + length)
-		{
-			self->element[index].data.value = Value.binary(binary);
-			self->element[index].data.value.flags = 0;
-		}
-		else
-		{
-			struct Chars *chars = Chars.createSized(length);
-			memcpy(chars->chars, list[index], length);
-			
-			self->element[index].data.value = Value.chars(chars);
-			self->element[index].data.value.flags = 0;
-		}
-	}
-	
-	return self;
-}
-
 uint16_t toBufferLength (struct Object *object, struct Text separator)
 {
 	struct Value value;

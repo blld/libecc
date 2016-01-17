@@ -143,7 +143,7 @@
 struct Op(Frame) {
 	const struct Op * ops;
 	const struct Op ** parent;
-	int argumentsShift;
+	int argumentOffset;
 };
 
 enum Op(TextSeek) {
@@ -170,8 +170,8 @@ Interface(Op,
 	
 	(struct Text, textSeek ,(const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex))
 	
-	(struct Value, callFunctionArguments ,(const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, struct Object *arguments))
-	(struct Value, callFunctionVA ,(const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, int argumentCount, ... ))
+	(struct Value, callFunctionArguments ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
+	(struct Value, callFunctionVA ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

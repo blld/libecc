@@ -391,9 +391,9 @@ static void testFunction (void)
 	test("function a(a, b){ return a + b } a.apply(null, 1, 2)", "TypeError: arguments is not an object");
 	test("function a(a, b){ return this + a + b } a.apply(10, [1, 2])", "13");
 	test("function a(a, b){ return this + a + b } a.call(10, 1, 2)", "13");
-	test("function a(){ return arguments }; a().toString()", "[object Arguments]");
-	test("function a(){ return arguments }; a.call().toString()", "[object Arguments]");
-	test("function a(){ return arguments }; a.apply().toString()", "[object Arguments]");
+	test("function a(){ return arguments }; a()", "[object Arguments]");
+	test("function a(){ return arguments }; a.call()", "[object Arguments]");
+	test("function a(){ return arguments }; a.apply()", "[object Arguments]");
 	
 	test("typeof Function", "function");
 	test("Function.length", "1");
@@ -406,6 +406,17 @@ static void testFunction (void)
 	test("new Function('a', 'b', 'c', 'return a+b+c')(1, 2, 3)", "6");
 	test("new Function('a, b, c', 'return a+b+c')(1, 2, 3)", "6");
 	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6");
+	
+	test("123 .toFixed.call.apply([ 123 ], [ 'abc', 100 ])", "TypeError: not a function");
+	test("123 .toFixed.call.call([ 123 ], 'abc', 100)", "TypeError: not a function");
+	test("123 .toFixed.call.apply(123 .toFixed, [ 'abc', 100 ])", "TypeError: not a number");
+	test("123 .toFixed.apply.call(123 .toFixed, 'abc', [ 100 ])", "TypeError: not a number");
+	test("123 .toFixed.call.apply(123 .toFixed, [ 456, 100 ])", "RangeError: precision 100 out of range");
+	test("123 .toFixed.apply.call(123 .toFixed, 456, [ 100 ])", "RangeError: precision 100 out of range");
+	
+	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, 100 ])", "TypeError: arguments is not an object");
+	test("123 .toFixed.apply.apply(123 .toFixed, [ 'abc', [ 100 ] ])", "TypeError: not a number");
+	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range");
 }
 
 static void testLoop (void)
@@ -629,6 +640,9 @@ static void testArray (void)
 	test("var a = Array(-4); a.length", "RangeError: invalid array length");
 	test("var a = Array('abc'); a.length", "1");
 	test("var a = Array(123, 'abc'); a.length", "2");
+	
+	test("var a = [ 123 ]; function b(){ arguments[0] = 456; }; b.apply(null, a); a;", "123");
+	test("function b(){ return arguments; }; var a = b.call(null, 123); a;", "[object Arguments]");
 	
 	test("typeof Array", "function");
 	test("typeof Array.prototype", "object");

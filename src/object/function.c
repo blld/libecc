@@ -49,28 +49,21 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 	arguments = Op.argument(ecc, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-	{
-		((struct Op(Frame) *)ops)->argumentsShift = 1;
-		
-		Op.callFunctionVA(ops, ecc, ecc->this.data.function, this, 0);
-	}
+		Op.callFunctionVA(ops, ecc, 2, ecc->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, 1), "arguments is not an object")));
 		
-		((struct Op(Frame) *)ops)->argumentsShift = 1;
-		
-		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, Object.copy(arguments.data.object));
+		Op.callFunctionArguments(ops, ecc, 2, ecc->this.data.function, this, arguments.data.object);
 	}
-	((struct Op(Frame) *)ops)->argumentsShift = 0;
 	
 	return Value(undefined);
 }
 
 static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	struct Object *arguments;
+	struct Object *object;
 	
 	Op.assertVariableParameter(ecc);
 	
@@ -80,24 +73,26 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
 	
-	arguments = ecc->context->hashmap[2].data.value.data.object;
+	object = ecc->context->hashmap[2].data.value.data.object;
 	
-	((struct Op(Frame) *)ops)->argumentsShift = 1;
-	
-	if (arguments->elementCount)
+	if (object->elementCount)
 	{
-		struct Value this = arguments->element[0].data.value;
+		struct Value this = object->element[0].data.value;
+		struct Object arguments = *object;
 		
-		--arguments->elementCount;
-		++arguments->element;
-		Op.callFunctionArguments(ops, ecc, ecc->this.data.function, this, arguments);
-		--arguments->element;
-		++arguments->elementCount;
+		--arguments.elementCapacity;
+		--arguments.elementCount;
+		++arguments.element;
+		if (!arguments.elementCount)
+		{
+			arguments.element = NULL;
+			arguments.elementCapacity = 0;
+		}
+		
+		Op.callFunctionArguments(ops, ecc, 1, ecc->this.data.function, this, &arguments);
 	}
 	else
-		Op.callFunctionVA(ops, ecc, ecc->this.data.function, Value(undefined), 0);
-	
-	((struct Op(Frame) *)ops)->argumentsShift = 0;
+		Op.callFunctionVA(ops, ecc, 1, ecc->this.data.function, Value(undefined), 0);
 	
 	return Value(undefined);
 }

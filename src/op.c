@@ -227,9 +227,9 @@ static inline struct Value getRefValue(const struct Op ** const ops, struct Ecc 
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
 		if (ref->data.function->flags & Function(isGetter))
-			return callFunctionVA(ops, ecc, ref->data.function, this, 0);
+			return callFunctionVA(ops, ecc, 0, ref->data.function, this, 0);
 		else if (ref->data.function->pair)
-			return callFunctionVA(ops, ecc, ref->data.function->pair, this, 0);
+			return callFunctionVA(ops, ecc, 0, ref->data.function->pair, this, 0);
 	}
 	
 	return *ref;
@@ -240,9 +240,9 @@ static inline struct Value setRefValue(const struct Op ** const ops, struct Ecc 
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
 		if (ref->data.function->flags & Function(isSetter))
-			callFunctionVA(ops, ecc, ref->data.function, this, 1, value);
+			callFunctionVA(ops, ecc, 0, ref->data.function, this, 1, value);
 		else if (ref->data.function->pair)
-			callFunctionVA(ops, ecc, ref->data.function->pair, this, 1, value);
+			callFunctionVA(ops, ecc, 0, ref->data.function->pair, this, 1, value);
 		else
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is read-only accessor", text->length, text->location)));
 		
@@ -329,15 +329,22 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 	assert(ecc);
 	
 	const char *location;
-	int argumentsShift = 0;
 	struct Op(Frame) *frame = (struct Op(Frame) *)ops;
+	uint32_t breakArray = 0;
 	
 	while (frame->ops->text.location == Text(nativeCode).location)
 	{
 		if (!frame->parent)
 			return frame->ops->text;
 		
-		argumentsShift = frame->argumentsShift;
+		if (frame->argumentOffset && argumentIndex >= Op(textSeekThis))
+		{
+			++argumentIndex;
+			breakArray <<= 1;
+			
+			if (frame->argumentOffset == 2)
+				breakArray |= 2;
+		}
 		frame = (struct Op(Frame) *)frame->parent;
 	}
 	
@@ -346,19 +353,25 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 		while (frame->ops->native != Op.call && frame->ops->native != Op.eval && frame->ops->native != Op.construct)
 			--frame->ops;
 		
+		// func
 		if (argumentIndex-- > Op(textSeekCall))
 			++frame->ops;
 		
-		argumentIndex += argumentsShift;
-		
+		// this
 		if (argumentIndex-- > Op(textSeekCall) && (frame->ops + 1)->text.location <= frame->ops->text.location)
 			++frame->ops;
 		
+		// arguments
 		while (argumentIndex-- > Op(textSeekCall))
 		{
 			location = frame->ops->text.location + frame->ops->text.length;
 			while (location > frame->ops->text.location && frame->ops->text.location)
 				++frame->ops;
+			
+			if (breakArray & 0x1 && frame->ops->native == Op.array)
+				++frame->ops;
+			
+			breakArray >>= 1;
 		}
 	}
 	
@@ -368,11 +381,28 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(Te
 
 // MARK: call
 
+static inline void populateContextWithArguments (struct Object *context, struct Object *arguments, int parameterCount)
+{
+	uint32_t index = 0;
+	int argumentCount = arguments->elementCount;
+	
+	context->hashmap[2].data.value = Value.object(arguments);
+	
+	if (argumentCount <= parameterCount)
+		for (; index < argumentCount; ++index)
+			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+	else
+	{
+		for (; index < parameterCount; ++index)
+			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+	}
+}
+
 static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
 {
 	uint32_t index = 0;
 	
-	struct Object *arguments = Array.createArguments(argumentCount);
+	struct Object *arguments = Arguments.createSized(argumentCount);
 	context->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
@@ -388,7 +418,7 @@ static inline void populateContextWithArgumentsVA (struct Object *context, int p
 	}
 }
 
-static inline void populateContextWithArguments (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Object *arguments, int parameterCount, int argumentCount)
+static inline void populateContextWithArgumentsOps (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Object *arguments, int parameterCount, int argumentCount)
 {
 	uint32_t index = 0;
 	
@@ -456,29 +486,42 @@ static inline struct Value callOps (const struct Op ** const ops, struct Ecc * c
 	return ecc->result;
 }
 
-struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, struct Object *arguments)
+struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Op(Frame) frame = { function->oplist->ops, ops };
-	struct Object *context = Object.copy(&function->context);
-	int parameterCount = function->parameterCount;
-	int argumentCount = arguments->elementCount;
-	uint32_t index = 0;
+	struct Op(Frame) frame = { function->oplist->ops, ops, argumentOffset };
 	
-	context->hashmap[2].data.value = Value.object(arguments);
-	
-	if (argumentCount <= parameterCount)
-		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+	if (function->flags & Function(needHeap))
+	{
+		struct Object *context = Object.copy(&function->context);
+		
+		if (function->flags & Function(needArguments))
+		{
+			struct Object *copy = Arguments.createSized(arguments->elementCount);
+			memcpy(copy->element, arguments->element, sizeof(*copy->element) * copy->elementCount);
+			arguments = copy;
+		}
+		
+		populateContextWithArguments(context, arguments, function->parameterCount);
+		
+		return callOps(&frame.ops, ecc, context, this, 0);
+	}
 	else
-		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
-	
-	return callOps(&frame.ops, ecc, context, this, 0);
+	{
+		struct Object context = function->context;
+		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		
+		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
+		context.hashmap = hashmap;
+		
+		populateContextWithArguments(&context, arguments, function->parameterCount);
+		
+		return callOps(&frame.ops, ecc, &context, this, 0);
+	}
 }
 
-struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, struct Function *function, struct Value this, int argumentCount, ... )
+struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Op(Frame) frame = { function->oplist->ops, ops };
+	struct Op(Frame) frame = { function->oplist->ops, ops, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -486,6 +529,7 @@ struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, str
 		va_list ap;
 		
 		va_start(ap, argumentCount);
+		
 		if (function->flags & Function(needArguments))
 			populateContextWithArgumentsVA(context, function->parameterCount, argumentCount, ap);
 		else
@@ -522,7 +566,7 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		struct Object *context = Object.copy(&function->context);
 		
 		if (function->flags & Function(needArguments))
-			populateContextWithArguments(ops, ecc, context, Array.createArguments(argumentCount), function->parameterCount, argumentCount);
+			populateContextWithArgumentsOps(ops, ecc, context, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
 		else
 			populateContext(ops, ecc, context, function->parameterCount, argumentCount);
 		
@@ -539,7 +583,8 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		context.hashmap = contextHashmap;
 		arguments.element = argumentsElement;
 		arguments.elementCount = argumentCount;
-		populateContextWithArguments(ops, ecc, &context, &arguments, function->parameterCount, argumentCount);
+		
+		populateContextWithArgumentsOps(ops, ecc, &context, &arguments, function->parameterCount, argumentCount);
 		
 		return callOps(&frame.ops, ecc, &context, this, construct);
 	}
@@ -547,9 +592,6 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 	{
 		struct Object context = function->context;
 		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
-		
-//		Object.dumpTo(&context, stderr);
-//		fprintf(stderr, "\n%ld\n", sizeof(contextHashmap));
 		
 		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
 		context.hashmap = contextHashmap;

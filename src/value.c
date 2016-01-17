@@ -250,7 +250,7 @@ struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct 
 	aFunction = Object.get(object, aKey);
 	if (aFunction.type == Value(functionType))
 	{
-		struct Value result = Op.callFunctionVA(ops, ecc, aFunction.data.function, value, 0);
+		struct Value result = Op.callFunctionVA(ops, ecc, 0, aFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -258,7 +258,7 @@ struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct 
 	bFunction = Object.get(object, bKey);
 	if (bFunction.type == Value(functionType))
 	{
-		result = Op.callFunctionVA(ops, ecc, bFunction.data.function, value, 0);
+		result = Op.callFunctionVA(ops, ecc, 0, bFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
