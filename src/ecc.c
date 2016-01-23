@@ -293,7 +293,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	struct Op(Frame) frame = { NULL };
-	int result, try = !self->envCount, catch = 0;
+	volatile int result, try = !self->envCount, catch = 0;
 	struct Lexer *lexer;
 	struct Parser *parser;
 	struct Function *function;
