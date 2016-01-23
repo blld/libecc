@@ -835,9 +835,10 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	if (!ref)
 	{
-		ref = Object.add(object.data.object, key, Value(undefined), 0);
-		if (!ref)
+		if (object.data.object->flags & Object(sealed))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->location)));
+		
+		ref = Object.add(object.data.object, key, Value(undefined), 0);
 	}
 	
 	return Value.reference(ref);

@@ -48,8 +48,9 @@ Interface(Object,
 	(struct Value *, getMember ,(struct Object *, struct Key))
 	(struct Value *, getOwnProperty ,(struct Object *, struct Value))
 	(struct Value *, getProperty ,(struct Object *, struct Value))
-	(struct Value *, setProperty ,(struct Object *, struct Value, struct Value))
+	(void, setProperty ,(struct Object *, struct Value, struct Value))
 	(struct Value *, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
+	
 	(int, delete ,(struct Object *, struct Key))
 	(int, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))

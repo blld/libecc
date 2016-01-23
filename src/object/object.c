@@ -690,7 +690,7 @@ struct Value * getProperty (struct Object *self, struct Value property)
 	return NULL;
 }
 
-struct Value * setProperty (struct Object *self, struct Value property, struct Value value)
+void setProperty (struct Object *self, struct Value property, struct Value value)
 {
 	struct Object *object = self;
 	
@@ -705,33 +705,35 @@ struct Value * setProperty (struct Object *self, struct Value property, struct V
 		do
 			if (element < object->elementCount)
 			{
-				if (!(self->element[element].data.value.flags & Value(readonly)))
-					object->element[element].data.value = value;
+				if (self->element[element].data.value.flags & Value(readonly))
+					return;
 				
-				return &object->element[element].data.value;
+				object->element[element].data.value = value;
 			}
 		while ((object = object->prototype));
 		
-		if (!(self->flags & Object(sealed)))
-			return addElementAtIndex(self, element, value, 0);
+		if (self->flags & Object(sealed))
+			return;
+		
+		addElementAtIndex(self, element, value, 0);
 	}
 	else
 	{
 		do
 			if (( slot = getSlot(object, key) ))
 			{
-				if (!(self->hashmap[slot].data.value.flags & Value(readonly)))
-					object->hashmap[slot].data.value = value;
+				if (self->hashmap[slot].data.value.flags & Value(readonly))
+					return;
 				
-				return &object->hashmap[slot].data.value;
+				object->hashmap[slot].data.value = value;
 			}
 		while ((object = object->prototype));
 		
-		if (!(self->flags & Object(sealed)))
-			return add(self, key, value, 0);
+		if (self->flags & Object(sealed))
+			return;
+		
+		add(self, key, value, 0);
 	}
-	
-	return NULL;
 }
 
 struct Value * add (struct Object *self, struct Key key, struct Value value, enum Value(Flags) flags)
@@ -741,9 +743,6 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 	
 	assert(self);
 	assert(key.data.integer);
-	
-	if (self->flags & Object(sealed))
-		return NULL;
 	
 	do
 	{
