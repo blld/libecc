@@ -137,28 +137,28 @@ void printText (struct Input *self, struct Text text)
 		Env.print("%.*s", length, location);
 		Env.newline();
 		
+		if (length >= text.location - location)
 		{
-			char mark[length + 1];
-			int b;
-			long index;
+			char mark[length + 2];
+			long index = 0;
 			
-			for (b = 0; b <= length; ++b)
-				if (b >= length || isgraph(location[b]))
-					mark[b] = ' ';
+			for (; index < text.location - location; ++index)
+				if (isgraph(location[index]))
+					mark[index] = ' ';
 				else
-					mark[b] = location[b];
+					mark[index] = location[index];
 			
-			index = text.location - location;
-			while (++index <= length)
+			mark[index] = '^';
+			
+			while (++index < text.location - location + text.length && index <= length)
 				mark[index] = '~';
 			
-			mark[text.location - location] = '^';
-			mark[length + 1] = '\0';
+			mark[index] = '\0';
 			
 			if ((text.location - location) > 0)
 				Env.printColor(0, Env(invisible), "%.*s", (text.location - location), mark);
 			
-			Env.printColor(Env(green), Env(bold), "%.*s", text.length? text.length: 1, mark + (text.location - location));
+			Env.printColor(Env(green), Env(bold), "%s", mark + (text.location - location));
 		}
 	}
 	
