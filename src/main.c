@@ -232,7 +232,21 @@ static void testOperator (void)
 	test("^ 1", "SyntaxError: expected expression, got '^'");
 	test("| 1", "SyntaxError: expected expression, got '|'");
 	
+	test("+", "SyntaxError: expected expression, got end of script");
+	test("-", "SyntaxError: expected expression, got end of script");
+	test("~", "SyntaxError: expected expression, got end of script");
+	test("!", "SyntaxError: expected expression, got end of script");
 	test("1 *", "SyntaxError: expected expression, got end of script");
+	test("1 /", "SyntaxError: expected expression, got end of script");
+	test("1 %", "SyntaxError: expected expression, got end of script");
+	test("1 +", "SyntaxError: expected expression, got end of script");
+	test("1 -", "SyntaxError: expected expression, got end of script");
+	test("1 &", "SyntaxError: expected expression, got end of script");
+	test("1 ^", "SyntaxError: expected expression, got end of script");
+	test("1 |", "SyntaxError: expected expression, got end of script");
+	
+	test("++", "SyntaxError: expected expression, got end of script");
+	test("--", "SyntaxError: expected expression, got end of script");
 }
 
 static void testEquality (void)
@@ -290,6 +304,14 @@ static void testEquality (void)
 	test("NaN === NaN", "false");
 	
 	test("== 1", "SyntaxError: expected expression, got '=='");
+	test("!= 1", "SyntaxError: expected expression, got '!='");
+	test("=== 1", "SyntaxError: expected expression, got '==='");
+	test("!== 1", "SyntaxError: expected expression, got '!=='");
+	
+	test("1 ==", "SyntaxError: expected expression, got end of script");
+	test("1 !=", "SyntaxError: expected expression, got end of script");
+	test("1 ===", "SyntaxError: expected expression, got end of script");
+	test("1 !==", "SyntaxError: expected expression, got end of script");
 }
 
 static void testRelational (void)
@@ -313,6 +335,16 @@ static void testRelational (void)
 	test("function F(){}; var o = new F(); o instanceof F", "true");
 	test("function F(){}; function G(){}; var o = new F(); o instanceof G", "false");
 	test("function F(){}; var o = new F(); o instanceof Object", "true");
+	
+	test("> 1", "SyntaxError: expected expression, got '>'");
+	test(">= 1", "SyntaxError: expected expression, got '>='");
+	test("< 1", "SyntaxError: expected expression, got '<'");
+	test("<= 1", "SyntaxError: expected expression, got '<='");
+	
+	test("1 >", "SyntaxError: expected expression, got end of script");
+	test("1 >=", "SyntaxError: expected expression, got end of script");
+	test("1 <", "SyntaxError: expected expression, got end of script");
+	test("1 <=", "SyntaxError: expected expression, got end of script");
 }
 
 static void testConditional (void)

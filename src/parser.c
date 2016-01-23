@@ -104,50 +104,6 @@ static void popDepth (struct Parser *self)
 
 // MARK: Expression
 
-static int returnsBinary (struct Parser *self, struct OpList *oplist)
-{
-	if (oplist->ops->native == Op.value && oplist->ops->value.type == Value(integerType))
-		oplist->ops->value = Value.toBinary(oplist->ops->value);
-	
-	return oplist && oplist->opCount
-		&&(oplist->ops->native == Op.multiply
-		|| oplist->ops->native == Op.multiplyBinary
-		|| oplist->ops->native == Op.divide
-		|| oplist->ops->native == Op.divideBinary
-		|| oplist->ops->native == Op.modulo
-		|| oplist->ops->native == Op.moduloBinary
-		|| oplist->ops->native == Op.add
-		|| oplist->ops->native == Op.addBinary
-		|| oplist->ops->native == Op.minus
-		|| oplist->ops->native == Op.minusBinary
-		|| oplist->ops->native == Op.positive
-		|| oplist->ops->native == Op.negative
-		|| (oplist->ops->native == Op.value && oplist->ops->value.type == Value(binaryType))
-		);
-}
-
-static int returnsInteger (struct Parser *self, struct OpList *oplist)
-{
-	if (oplist->ops->native == Op.value && oplist->ops->value.type == Value(binaryType))
-		oplist->ops->value = Value.toInteger(oplist->ops->value);
-	
-	return oplist && oplist->opCount
-		&&(oplist->ops->native == Op.leftShift
-		|| oplist->ops->native == Op.leftShiftInteger
-		|| oplist->ops->native == Op.rightShift
-		|| oplist->ops->native == Op.rightShiftInteger
-		|| oplist->ops->native == Op.unsignedRightShift
-		|| oplist->ops->native == Op.unsignedRightShiftInteger
-		|| oplist->ops->native == Op.bitwiseAnd
-		|| oplist->ops->native == Op.bitwiseAndInteger
-		|| oplist->ops->native == Op.bitwiseXor
-		|| oplist->ops->native == Op.bitwiseXorInteger
-		|| oplist->ops->native == Op.bitwiseOr
-		|| oplist->ops->native == Op.bitwiseOrInteger
-		|| (oplist->ops->native == Op.value && oplist->ops->value.type == Value(integerType))
-		);
-}
-
 static struct OpList * foldConstant (struct OpList * ops)
 {
 	struct Op(Frame) frame = { ops->ops, NULL };
@@ -157,6 +113,9 @@ static struct OpList * foldConstant (struct OpList * ops)
 
 static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
 {
+	if (!oplist)
+		return NULL;
+	
 	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 	{
 		if (oplist->ops[0].value.type == Value(keyType))
@@ -519,8 +478,9 @@ static struct OpList * postfix (struct Parser *self)
 
 static struct OpList * unary (struct Parser *self)
 {
-	struct OpList *oplist;
+	struct OpList *oplist, *alt;
 	struct Text text = self->lexer->text;
+	Native native;
 	
 	if (acceptToken(self, Lexer(deleteToken)))
 	{
@@ -540,29 +500,30 @@ static struct OpList * unary (struct Parser *self)
 		return oplist;
 	}
 	else if (acceptToken(self, Lexer(voidToken)))
-		return OpList.unshift(Op.make(Op.exchange, Value(undefined), self->lexer->text), unary(self));
+		native = Op.exchange, alt = unary(self);
 	else if (acceptToken(self, Lexer(typeofToken)))
-		return OpList.unshift(Op.make(Op.typeOf, Value(undefined), self->lexer->text), unary(self));
+		native = Op.typeOf, alt = unary(self);
 	else if (acceptToken(self, Lexer(incrementToken)))
-		return OpList.unshift(Op.make(Op.incrementRef, Value(undefined), self->lexer->text), expressionRef(self, unary(self), "invalid increment operand"));
+		native = Op.incrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
 	else if (acceptToken(self, Lexer(decrementToken)))
-		return OpList.unshift(Op.make(Op.decrementRef, Value(undefined), self->lexer->text), expressionRef(self, unary(self), "invalid decrement operand"));
+		native = Op.decrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
 	else if (acceptToken(self, '+'))
-		oplist = OpList.unshift(Op.make(Op.positive, Value(undefined), text), unary(self));
-		/*vvv*/
+		native = Op.positive, alt = unary(self);
 	else if (acceptToken(self, '-'))
-		oplist = OpList.unshift(Op.make(Op.negative, Value(undefined), text), unary(self));
-		/*vvv*/
+		native = Op.negative, alt = unary(self);
 	else if (acceptToken(self, '~'))
-		oplist = OpList.unshift(Op.make(Op.invert, Value(undefined), self->lexer->text), unary(self));
-		/*vvv*/
+		native = Op.invert, alt = unary(self);
 	else if (acceptToken(self, '!'))
-		oplist = OpList.unshift(Op.make(Op.not, Value(undefined), self->lexer->text), unary(self));
-		/*vvv*/
+		native = Op.not, alt = unary(self);
 	else
 		return postfix(self);
 	
-	if (oplist && oplist->ops[1].native == Op.value)
+	if (!alt)
+		return expectationError(self, "expression");
+	
+	oplist = OpList.unshift(Op.make(native, Value(undefined), text), alt);
+	
+	if (oplist->ops[1].native == Op.value)
 		return foldConstant(oplist);
 	else
 		return oplist;
@@ -589,15 +550,6 @@ static struct OpList * multiplicative (struct Parser *self)
 			nextToken(self);
 			if ((alt = unary(self)))
 			{
-				if (returnsBinary(self, oplist) && returnsBinary(self, alt))
-				{
-					if (native == Op.multiply)
-						native = Op.multiplyBinary;
-					else if (native == Op.divide)
-						native = Op.divideBinary;
-					else if (native == Op.modulo)
-						native = Op.moduloBinary;
-				}
 				oplist = OpList.join(oplist, alt);
 				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
 				
@@ -631,13 +583,6 @@ static struct OpList * additive (struct Parser *self)
 			nextToken(self);
 			if ((alt = multiplicative(self)))
 			{
-				if (returnsBinary(self, oplist) && returnsBinary(self, alt))
-				{
-					if (native == Op.add)
-						native = Op.addBinary;
-					else if (native == Op.minus)
-						native = Op.minusBinary;
-				}
 				oplist = OpList.join(oplist, alt);
 				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
 				
@@ -673,15 +618,6 @@ static struct OpList * shift (struct Parser *self)
 			nextToken(self);
 			if ((alt = additive(self)))
 			{
-				if (returnsInteger(self, oplist) && returnsInteger(self, alt))
-				{
-					if (native == Op.leftShift)
-						native = Op.leftShiftInteger;
-					else if (native == Op.rightShift)
-						native = Op.rightShiftInteger;
-					else if (native == Op.unsignedRightShift)
-						native = Op.unsignedRightShiftInteger;
-				}
 				oplist = OpList.join(oplist, alt);
 				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
 				
@@ -771,57 +707,63 @@ static struct OpList * equality (struct Parser *self, int noIn)
 static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = equality(self, noIn), *alt;
-	struct Text text = self->lexer->text;
-	while (acceptToken(self, '&'))
+	while (previewToken(self) == '&')
+	{
 		if (oplist)
 		{
-			alt = equality(self, noIn);
-			if (returnsInteger(self, oplist) && returnsInteger(self, alt))
-				oplist = OpList.unshift(Op.make(Op.bitwiseAndInteger, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
-			else
+			nextToken(self);
+			if ((alt = equality(self, noIn)))
+			{
 				oplist = OpList.unshift(Op.make(Op.bitwiseAnd, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
+				
+				continue;
+			}
+			OpList.destroy(oplist);
 		}
-		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
-	
+		return expectationError(self, "expression");
+	}
 	return oplist;
 }
 
 static struct OpList * bitwiseXor (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseAnd(self, noIn), *alt;
-	struct Text text = self->lexer->text;
-	while (acceptToken(self, '^'))
+	while (previewToken(self) == '^')
+	{
 		if (oplist)
 		{
-			alt = bitwiseAnd(self, noIn);
-			if (returnsInteger(self, oplist) && returnsInteger(self, alt))
-				oplist = OpList.unshift(Op.make(Op.bitwiseXorInteger, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
-			else
+			nextToken(self);
+			if ((alt = bitwiseAnd(self, noIn)))
+			{
 				oplist = OpList.unshift(Op.make(Op.bitwiseXor, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
+				
+				continue;
+			}
+			OpList.destroy(oplist);
 		}
-		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
-	
+		return expectationError(self, "expression");
+	}
 	return oplist;
 }
 
 static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseXor(self, noIn), *alt;
-	struct Text text = self->lexer->text;
-	while (acceptToken(self, '|'))
+	while (previewToken(self) == '|')
+	{
 		if (oplist)
 		{
-			alt = bitwiseXor(self, noIn);
-			if (returnsInteger(self, oplist) && returnsInteger(self, alt))
-				oplist = OpList.unshift(Op.make(Op.bitwiseOrInteger, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
-			else
+			nextToken(self);
+			if ((alt = bitwiseXor(self, noIn)))
+			{
 				oplist = OpList.unshift(Op.make(Op.bitwiseOr, Value(undefined), OpList.text(oplist)), OpList.join(oplist, alt));
+				
+				continue;
+			}
+			OpList.destroy(oplist);
 		}
-		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
-	
+		return expectationError(self, "expression");
+	}
 	return oplist;
 }
 
