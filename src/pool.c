@@ -10,50 +10,52 @@
 
 // MARK: - Private
 
-static void unmarkValue (struct Value value);
-static void unmarkObject (struct Object *object);
+static void markValue (struct Value value);
+static void markObject (struct Object *object);
 
 static struct Pool *self = NULL;
 
 // MARK: - Static Members
 
-static void unmarkFunction (struct Function *function)
+static void markFunction (struct Function *function)
 {
 	if (function->object.flags & Object(mark))
-	{
-		unmarkObject(&function->object);
-		unmarkObject(&function->context);
-		
-		if (function->pair)
-			unmarkFunction(function->pair);
-	}
+		return;
+	
+	markObject(&function->object);
+	markObject(&function->context);
+	
+	if (function->pair)
+		markFunction(function->pair);
 }
 
-static void unmarkObject (struct Object *object)
+static void markObject (struct Object *object)
 {
 	if (object->flags & Object(mark))
-	{
-		uint32_t index, count;
-		
-		object->flags &= ~Object(mark);
-		
-		if (object->prototype)
-			unmarkObject(object->prototype);
-		
-		for (index = 0, count = object->elementCount; index < count; ++index)
-			if (object->element[index].data.value.check == 1)
-				unmarkValue(object->element[index].data.value);
-		
-		for (index = 2, count = object->hashmapCount; index < count; ++index)
-			if (object->hashmap[index].data.value.check == 1)
-				unmarkValue(object->hashmap[index].data.value);
-	}
+		return;
+	
+	uint32_t index, count;
+	
+	object->flags |= Object(mark);
+	
+	if (object->prototype)
+		markObject(object->prototype);
+	
+	for (index = 0, count = object->elementCount; index < count; ++index)
+		if (object->element[index].data.value.check == 1)
+			markValue(object->element[index].data.value);
+	
+	for (index = 2, count = object->hashmapCount; index < count; ++index)
+		if (object->hashmap[index].data.value.check == 1)
+			markValue(object->hashmap[index].data.value);
 }
 
-static void unmarkChars (struct Chars *chars)
+static void markChars (struct Chars *chars)
 {
 	if (chars->flags & Chars(mark))
-		chars->flags &= ~Chars(mark);
+		return;
+	
+	chars->flags |= Chars(mark);
 }
 
 // MARK: - Methods
@@ -72,8 +74,8 @@ void teardown (void)
 {
 	assert (self);
 	
-	markAll();
-	collectMarked();
+	unmarkAll();
+	collectUnmarked();
 	
 	free(self->functionList), self->functionList = NULL;
 	free(self->objectList), self->objectList = NULL;
@@ -127,45 +129,45 @@ void addChars (struct Chars *chars)
 	self->charsList[self->charsCount++] = chars;
 }
 
-void markAll (void)
+void unmarkAll (void)
 {
 	uint32_t index, count;
 	
 	for (index = 0, count = self->functionCount; index < count; ++index)
 	{
-		self->functionList[index]->object.flags |= Object(mark);
-		self->functionList[index]->context.flags |= Object(mark);
+		self->functionList[index]->object.flags &= ~Object(mark);
+		self->functionList[index]->context.flags &= ~Object(mark);
 	}
 	
 	for (index = 0, count = self->objectCount; index < count; ++index)
-		self->objectList[index]->flags |= Object(mark);
+		self->objectList[index]->flags &= ~Object(mark);
 	
 	for (index = 0, count = self->charsCount; index < count; ++index)
-		self->charsList[index]->flags |= Chars(mark);
+		self->charsList[index]->flags &= ~Chars(mark);
 }
 
-void unmarkValue (struct Value value)
+void markValue (struct Value value)
 {
 	if (value.type == Value(functionType))
-		unmarkFunction(value.data.function);
+		markFunction(value.data.function);
 	else if (value.type >= Value(objectType))
 	{
-		unmarkObject(value.data.object);
+		markObject(value.data.object);
 		
 		if (value.type == Value(stringType))
-			unmarkChars(value.data.string->value);
+			markChars(value.data.string->value);
 	}
 	else if (value.type == Value(charsType))
-		unmarkChars(value.data.chars);
+		markChars(value.data.chars);
 }
 
-void collectMarked (void)
+void collectUnmarked (void)
 {
 	uint32_t index;
 	
 	index = self->functionCount;
 	while (index--)
-		if (self->functionList[index]->object.flags & Object(mark))
+		if (!(self->functionList[index]->object.flags & Object(mark)))
 		{
 			Function.destroy(self->functionList[index]);
 			self->functionList[index] = self->functionList[--self->functionCount];
@@ -173,7 +175,7 @@ void collectMarked (void)
 	
 	index = self->objectCount;
 	while (index--)
-		if (self->objectList[index]->flags & Object(mark))
+		if (!(self->objectList[index]->flags & Object(mark)))
 		{
 			Object.destroy(self->objectList[index]);
 			self->objectList[index] = self->objectList[--self->objectCount];
@@ -181,7 +183,7 @@ void collectMarked (void)
 	
 	index = self->charsCount;
 	while (index--)
-		if (self->charsList[index]->flags & Chars(mark))
+		if (!(self->charsList[index]->flags & Chars(mark)))
 		{
 			Chars.destroy(self->charsList[index]);
 			self->charsList[index] = self->charsList[--self->charsCount];

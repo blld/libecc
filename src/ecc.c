@@ -20,7 +20,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	Op.assertParameterCount(ecc, 1);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "eval is not a constructor")));
+		jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "eval is not a constructor")));
 	
 	value = Value.toString(Op.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
@@ -428,9 +428,9 @@ void printTextInput (struct Ecc *self, struct Text text)
 
 void garbageCollect(struct Ecc *self)
 {
-	Pool.markAll();
-	Pool.unmarkValue(Value.object(Arguments(prototype)));
-	Pool.unmarkValue(Value.function(self->global));
-	Pool.unmarkValue(self->this);
-	Pool.collectMarked();
+	Pool.unmarkAll();
+	Pool.markValue(Value.object(Arguments(prototype)));
+	Pool.markValue(Value.function(self->global));
+	Pool.markValue(self->this);
+	Pool.collectUnmarked();
 }

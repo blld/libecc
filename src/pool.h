@@ -28,9 +28,9 @@ Interface(Pool,
 	(void, addObject ,(struct Object *object))
 	(void, addChars ,(struct Chars *chars))
 	
-	(void, markAll ,(void))
-	(void, unmarkValue ,(struct Value value))
-	(void, collectMarked ,(void))
+	(void, unmarkAll ,(void))
+	(void, markValue ,(struct Value value))
+	(void, collectUnmarked ,(void))
 	,
 	{
 		struct Function **functionList;
