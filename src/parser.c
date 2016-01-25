@@ -10,11 +10,6 @@
 
 // MARK: - Private
 
-static void changeNative (struct Op *op, const Native native)
-{
-	*op = Op.make(native, op->value, op->text);
-}
-
 
 // MARK: - Static Members
 
@@ -489,9 +484,9 @@ static struct OpList * unary (struct Parser *self)
 		if (oplist && oplist->ops[0].native == Op.getLocal)
 			error(self, Error.syntaxError(OpList.text(oplist), "delete of an unqualified identifier in strict mode"));
 		else if (oplist && oplist->ops[0].native == Op.getMember)
-			changeNative(oplist->ops, Op.deleteMember);
+			oplist->ops->native = Op.deleteMember;
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
-			changeNative(oplist->ops, Op.deleteProperty);
+			oplist->ops->native = Op.deleteProperty;
 		else if (oplist)
 			error(self, Error.referenceError(OpList.text(oplist), "invalid delete operand"));
 		else
@@ -849,12 +844,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
 				error(self, Error.syntaxError(text, "can't assign to arguments"));
 			
-			changeNative(oplist->ops, Op.setLocal);
+			oplist->ops->native = Op.setLocal;
 		}
 		else if (oplist->ops[0].native == Op.getMember)
-			changeNative(oplist->ops, Op.setMember);
+			oplist->ops->native = Op.setMember;
 		else if (oplist->ops[0].native == Op.getProperty)
-			changeNative(oplist->ops, Op.setProperty);
+			oplist->ops->native = Op.setProperty;
 		else
 			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
 		
@@ -1079,12 +1074,12 @@ static struct OpList * forStatement (struct Parser *self)
 	{
 		if (oplist && oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
-			changeNative(oplist->ops, Op.iterateInRef);
-			changeNative(&oplist->ops[1], Op.getLocalRef);
+			oplist->ops[0].native = Op.iterateInRef;
+			oplist->ops[1].native = Op.getLocalRef;
 		}
 		else if (oplist->opCount == 1 && oplist->ops[0].native == Op.next)
 		{
-			changeNative(oplist->ops, Op.getLocalRef);
+			oplist->ops->native = Op.getLocalRef;
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value(undefined), self->lexer->text), oplist);
 		}
 		else
