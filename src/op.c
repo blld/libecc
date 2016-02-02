@@ -736,7 +736,8 @@ struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 
 struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	const struct Text *text = opText(1);
+	const struct Text *text = opText(0);
+	const struct Text *textObject = opText(1);
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
 	struct Value *ref;
@@ -750,7 +751,7 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->location)));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->location)));
 		
 		ref = Object.add(object.data.object, key, Value(undefined), 0);
 	}
