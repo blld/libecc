@@ -56,7 +56,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	struct Chars *chars;
 	uint16_t length;
 	
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (!Value.isObject(ecc->this))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an object")));
@@ -75,9 +75,9 @@ static struct Value errorConstructor (const struct Op ** const ops, struct Ecc *
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(error((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -87,9 +87,9 @@ static struct Value rangeErrorConstructor (const struct Op ** const ops, struct 
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(rangeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -99,9 +99,9 @@ static struct Value referenceErrorConstructor (const struct Op ** const ops, str
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(referenceError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -111,9 +111,9 @@ static struct Value syntaxErrorConstructor (const struct Op ** const ops, struct
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(syntaxError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -123,9 +123,9 @@ static struct Value typeErrorConstructor (const struct Op ** const ops, struct E
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(typeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -135,15 +135,15 @@ static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ec
 {
 	struct Value message;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	message = messageValue(Op.argument(ecc, 0));
+	message = messageValue(Native.argument(ecc, 0));
 	ecc->result = Value.error(uriError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static void setupBuiltinObject (struct Function **constructor, const Native native, int parameterCount, struct Object **prototype, const struct Text *name)
+static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
 	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Text(errorType));
 	Object.add(*prototype, Key(name), Value.text(name), Value(hidden));

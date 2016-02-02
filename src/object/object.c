@@ -83,14 +83,14 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 static struct Object *checkObject (const struct Op ** const ops, struct Ecc * const ecc, struct Value value)
 {
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
 	
 	return value.data.object;
 }
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type == Value(nullType))
 		ecc->result = Value.text(&Text(nullType));
@@ -112,9 +112,9 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
-	ecc->result = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
+	ecc->result = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
 	
 	return Value(undefined);
 }
@@ -123,10 +123,10 @@ static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * c
 {
 	struct Value v;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	v = Value.toString(Op.argument(ecc, 0));
-	ecc->this = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
+	v = Value.toString(Native.argument(ecc, 0));
+	ecc->this = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
 	ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
 	return Value(undefined);
@@ -136,14 +136,14 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 {
 	struct Value arg0;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	arg0 = Op.argument(ecc, 0);
+	arg0 = Native.argument(ecc, 0);
 	
 	if (Value.isObject(arg0))
 	{
 		struct Object *v = arg0.data.object;
-		struct Object *o = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
+		struct Object *o = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
 		
 		while (( v = v->prototype ))
 			if (v == o)
@@ -163,10 +163,10 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	struct Object *object;
 	struct Value *ref;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	property = Op.argument(ecc, 0);
-	object = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis)).data.object;
+	property = Native.argument(ecc, 0);
+	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
@@ -181,16 +181,16 @@ static struct Value objectConstructor (const struct Op ** const ops, struct Ecc 
 {
 	struct Value value;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	
 	if (value.type == Value(nullType) || value.type == Value(undefinedType))
 		ecc->result = Value.object(Object.create(Object(prototype)));
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
-		ecc->result = Value.toObject(ops, ecc, ecc->this, Op(textSeekThis));
+		ecc->result = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
 	
 	return Value(undefined);
 }
@@ -199,9 +199,9 @@ static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * c
 {
 	struct Object *object;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	
 	ecc->result = object->prototype? Value.object(object->prototype): Value(undefined);
 	
@@ -214,10 +214,10 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	struct Value property;
 	struct Value *ref;
 	
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
-	property = Op.argument(ecc, 1);
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	property = Native.argument(ecc, 1);
 	ref = getOwnProperty(object, property);
 	
 	ecc->result = Value(undefined);
@@ -243,9 +243,9 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	struct Object *result;
 	uint32_t index, length;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	result = Array.create();
 	length = 0;
 	
@@ -264,7 +264,7 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 
 static struct Value objectCreate (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	#warning TODO
 	return Value(undefined);
 }
@@ -275,9 +275,9 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	struct Value value;
 	enum Object(Flags) flags;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	property = checkObject(ops, ecc, Op.argument(ecc, 1));
+	property = checkObject(ops, ecc, Native.argument(ecc, 1));
 	value = Object.get(property, Key(value));
 	flags = 0;
 	
@@ -297,7 +297,7 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 
 static struct Value defineProperties (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	#warning TODO
 	return Value(undefined);
 }
@@ -307,9 +307,9 @@ static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Object *object;
 	uint32_t index;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -329,9 +329,9 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 	struct Object *object;
 	uint32_t index;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -350,9 +350,9 @@ static struct Value preventExtensions (const struct Op ** const ops, struct Ecc 
 {
 	struct Object *object;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	ecc->result = Value.object(object);
@@ -364,11 +364,11 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 	struct Object *object;
 	uint32_t index;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 	
@@ -388,11 +388,11 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 	struct Object *object;
 	uint32_t index;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 		
@@ -411,9 +411,9 @@ static struct Value isExtensible (const struct Op ** const ops, struct Ecc * con
 {
 	struct Object *object;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	ecc->result = Value.truth(!(object->flags & Object(sealed)));
 	
 	return Value(undefined);
@@ -425,9 +425,9 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Object *result;
 	uint32_t index, length;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Op.argument(ecc, 0));
+	object = checkObject(ops, ecc, Native.argument(ecc, 0));
 	result = Array.create();
 	length = 0;
 	

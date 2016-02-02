@@ -17,12 +17,12 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 {
 	int truth;
 	
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (Value.isBoolean(ecc->this))
 		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a boolean")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a boolean")));
 	
 	ecc->result = Value.text(truth? &Text(true): &Text(false));
 	return Value(undefined);
@@ -32,12 +32,12 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 {
 	int truth;
 	
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (Value.isBoolean(ecc->this))
 		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a boolean")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a boolean")));
 	
 	ecc->result = Value.truth(truth);
 	return Value(undefined);
@@ -49,9 +49,9 @@ static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc
 {
 	char truth;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	truth = Value.isTrue(Op.argument(ecc, 0));
+	truth = Value.isTrue(Native.argument(ecc, 0));
 	if (ecc->construct)
 		ecc->result = Value.boolean(Boolean.create(truth));
 	else

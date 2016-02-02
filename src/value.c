@@ -612,7 +612,7 @@ int isNumber (struct Value value)
 	return value.type & 0x10;
 }
 
-struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Value value, enum Op(TextSeek) argumentIndex)
+struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Value value, enum Native(Index) argumentIndex)
 {
 	if (value.type >= Value(objectType))
 		return value;
@@ -635,10 +635,10 @@ struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Val
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Op.textSeek(ops, ecc, argumentIndex), "can't convert null to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(ops, ecc, argumentIndex), "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Op.textSeek(ops, ecc, argumentIndex), "can't convert undefined to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(ops, ecc, argumentIndex), "can't convert undefined to object")));
 		
 		case Value(breakerType):
 		case Value(referenceType):

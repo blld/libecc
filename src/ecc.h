@@ -30,7 +30,7 @@ Interface(Ecc,
 	(struct Ecc *, create ,(void))
 	(void, destroy, (struct Ecc *))
 	
-	(void, addNative ,(struct Ecc *, const char *name, const Native native, int argumentCount, enum Value(Flags)))
+	(void, addNative ,(struct Ecc *, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags)))
 	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Value(Flags)))
 	(int, evalInput, (struct Ecc *, struct Input *, enum Ecc(EvalFlags)))
 	

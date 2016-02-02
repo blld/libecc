@@ -17,12 +17,12 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value value;
 	struct Input *input;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
 	if (ecc->construct)
-		jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "eval is not a constructor")));
+		jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "eval is not a constructor")));
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Native.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
 	ecc->context = &ecc->global->context;
@@ -37,10 +37,10 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 	struct Text text;
 	int32_t base;
 	
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
-	value = Value.toString(Op.argument(ecc, 0));
-	base = Value.toInteger(Op.argument(ecc, 1)).data.integer;
+	value = Value.toString(Native.argument(ecc, 0));
+	base = Value.toInteger(Native.argument(ecc, 1)).data.integer;
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	
@@ -67,9 +67,9 @@ static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const
 	struct Value value;
 	struct Text text;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Native.argument(ecc, 0));
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseBinary(text);
@@ -81,9 +81,9 @@ static struct Value isFinite (const struct Op ** const ops, struct Ecc * const e
 {
 	struct Value value;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Value.toBinary(Op.argument(ecc, 0));
+	value = Value.toBinary(Native.argument(ecc, 0));
 	ecc->result = Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 	
 	return Value(undefined);
@@ -93,9 +93,9 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Value.toBinary(Op.argument(ecc, 0));
+	value = Value.toBinary(Native.argument(ecc, 0));
 	ecc->result = Value.truth(isnan(value.data.binary));
 	
 	return Value(undefined);
@@ -109,9 +109,9 @@ static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const 
 	struct Chars *chars;
 	int c;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Value.toString(Op.argument(ecc, 0));
+	value = Value.toString(Native.argument(ecc, 0));
 	bytes = Value.stringChars(value);
 	count = Value.stringLength(value);
 	chars = Chars.createSized(count);
@@ -156,7 +156,7 @@ static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 	
 	error:
-	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Op.textSeek(ops, ecc, 0), "malformed URI")));
+	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Native.textSeek(ops, ecc, 0), "malformed URI")));
 }
 
 // MARK: - Static Members
@@ -276,7 +276,7 @@ void destroy (struct Ecc *self)
 	}
 }
 
-void addNative (struct Ecc *self, const char *name, const Native native, int argumentCount, enum Value(Flags) flags)
+void addNative (struct Ecc *self, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags) flags)
 {
 	assert(self);
 	

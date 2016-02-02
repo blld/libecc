@@ -14,7 +14,7 @@
 
 // MARK: - Methods
 
-struct OpList * create (const Native native, struct Value value, struct Text text)
+struct OpList * create (const Native(Function) native, struct Value value, struct Text text)
 {
 	struct OpList *self = malloc(sizeof(*self) + sizeof(*self->ops) * 1);
 	assert(self);

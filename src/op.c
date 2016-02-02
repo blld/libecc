@@ -268,17 +268,17 @@ static inline struct Value setRefValue(const struct Op ** const ops, struct Ecc 
 
 // MARK: - Methods
 
-struct Op make (const Native native, struct Value value, struct Text text)
+struct Op make (const Native(Function) native, struct Value value, struct Text text)
 {
 	return (struct Op){ native, value, text };
 }
 
-const char * toChars (const Native native)
+const char * toChars (const Native(Function) native)
 {
 	#define _(X) { #X, X, },
 	struct {
 		const char *name;
-		const Native native;
+		const Native(Function) native;
 	} static const functionList[] = {
 		io_libecc_op_List
 	};
@@ -292,92 +292,6 @@ const char * toChars (const Native native)
 	assert(0);
 	return "unknow";
 }
-
-void assertParameterCount (struct Ecc * const ecc, int parameterCount)
-{
-	assert(ecc->context->hashmapCount == parameterCount + 3);
-}
-
-int argumentCount (struct Ecc * const ecc)
-{
-	return ecc->context->hashmapCount - 3;
-}
-
-struct Value argument (struct Ecc * const ecc, int argumentIndex)
-{
-	return ecc->context->hashmap[argumentIndex + 3].data.value;
-}
-
-void assertVariableParameter (struct Ecc * const ecc)
-{
-	assert(ecc->context->hashmap[2].data.value.type == Value(objectType));
-}
-
-int variableArgumentCount (struct Ecc * const ecc)
-{
-	return ecc->context->hashmap[2].data.value.data.object->elementCount;
-}
-
-struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
-{
-	return ecc->context->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
-}
-
-struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex)
-{
-	assert(ops);
-	assert(ecc);
-	
-	const char *location;
-	struct Op(Frame) *frame = (struct Op(Frame) *)ops;
-	uint32_t breakArray = 0;
-	
-	while (frame->ops->text.location == Text(nativeCode).location)
-	{
-		if (!frame->parent)
-			return frame->ops->text;
-		
-		if (frame->argumentOffset && argumentIndex >= Op(textSeekThis))
-		{
-			++argumentIndex;
-			breakArray <<= 1;
-			
-			if (frame->argumentOffset == 2)
-				breakArray |= 2;
-		}
-		frame = (struct Op(Frame) *)frame->parent;
-	}
-	
-	if (frame && argumentIndex > Op(textNoSeek))
-	{
-		while (frame->ops->native != Op.call && frame->ops->native != Op.eval && frame->ops->native != Op.construct)
-			--frame->ops;
-		
-		// func
-		if (argumentIndex-- > Op(textSeekCall))
-			++frame->ops;
-		
-		// this
-		if (argumentIndex-- > Op(textSeekCall) && (frame->ops + 1)->text.location <= frame->ops->text.location)
-			++frame->ops;
-		
-		// arguments
-		while (argumentIndex-- > Op(textSeekCall))
-		{
-			location = frame->ops->text.location + frame->ops->text.length;
-			while (location > frame->ops->text.location && frame->ops->text.location)
-				++frame->ops;
-			
-			if (breakArray & 0x1 && frame->ops->native == Op.array)
-				++frame->ops;
-			
-			breakArray >>= 1;
-		}
-	}
-	
-	return frame->ops->text;
-}
-
 
 // MARK: call
 
@@ -812,7 +726,7 @@ struct Value getMember (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ecc->refObject = object;
 	ref = Object.getMember(object.data.object, key);
@@ -828,7 +742,7 @@ struct Value getMemberRef (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ecc->refObject = object;
 	ref = Object.getMember(object.data.object, key);
@@ -854,7 +768,7 @@ struct Value setMember (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ref = Object.getOwnMember(object.data.object, key.data.key);
 	
@@ -872,7 +786,7 @@ struct Value deleteMember (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(ops, ecc, nextOp(), Op(textNoSeek));
+	struct Value object = Value.toObject(ops, ecc, nextOp(), Native(noIndex));
 	int result = Object.delete(object.data.object, key);
 	if (!result)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
@@ -887,7 +801,7 @@ struct Value getProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ecc->refObject = object;
 	ref = Object.getProperty(object.data.object, property);
@@ -903,7 +817,7 @@ struct Value getPropertyRef (const struct Op ** const ops, struct Ecc * const ec
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ecc->refObject = object;
 	ref = Object.getProperty(object.data.object, property);
@@ -929,7 +843,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		object = Value.toObject(ops, ecc, object, Op(textNoSeek));
+		object = Value.toObject(ops, ecc, object, Native(noIndex));
 	
 	ref = Object.getOwnProperty(object.data.object, property);
 	
@@ -946,7 +860,7 @@ struct Value setProperty (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value deleteProperty (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(0);
-	struct Value object = Value.toObject(ops, ecc, nextOp(), Op(textNoSeek));
+	struct Value object = Value.toObject(ops, ecc, nextOp(), Native(noIndex));
 	struct Value property = nextOp();
 	int result = Object.deleteProperty(object.data.object, property);
 	if (!result)

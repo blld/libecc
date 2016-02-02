@@ -146,29 +146,12 @@ struct Op(Frame) {
 	int argumentOffset;
 };
 
-enum Op(TextSeek) {
-	Op(textNoSeek) = -4,
-	Op(textSeekCall) = -3,
-	Op(textSeekFunc) = -2,
-	Op(textSeekThis) = -1,
-};
-
 
 #define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
 Interface(Op,
 	
-	(struct Op, make ,(const Native native, struct Value value, struct Text text))
-	(const char *, toChars ,(const Native native))
-	
-	(void , assertParameterCount ,(struct Ecc * const ecc, int parameterCount))
-	(int , argumentCount ,(struct Ecc * const ecc))
-	(struct Value, argument ,(struct Ecc * const ecc, int argumentIndex))
-	
-	(void , assertVariableParameter ,(struct Ecc * const ecc))
-	(int , variableArgumentCount ,(struct Ecc * const ecc))
-	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
-	
-	(struct Text, textSeek ,(const struct Op ** ops, struct Ecc * const ecc, enum Op(TextSeek) argumentIndex))
+	(struct Op, make ,(const Native(Function) native, struct Value value, struct Text text))
+	(const char *, toChars ,(const Native(Function) native))
 	
 	(struct Value, callFunctionArguments ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
 	(struct Value, callFunctionVA ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... ))
@@ -176,7 +159,7 @@ Interface(Op,
 	io_libecc_op_List
 	,
 	{
-		Native native;
+		Native(Function) native;
 		struct Value value;
 		struct Text text;
 	}

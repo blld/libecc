@@ -475,7 +475,7 @@ static struct OpList * unary (struct Parser *self)
 {
 	struct OpList *oplist, *alt;
 	struct Text text = self->lexer->text;
-	Native native;
+	Native(Function) native;
 	
 	if (acceptToken(self, Lexer(deleteToken)))
 	{
@@ -529,7 +529,7 @@ static struct OpList * multiplicative (struct Parser *self)
 	struct OpList *oplist = unary(self), *alt;
 	while (1)
 	{
-		Native native;
+		Native(Function) native;
 		
 		if (previewToken(self) == '*')
 			native = Op.multiply;
@@ -564,7 +564,7 @@ static struct OpList * additive (struct Parser *self)
 	struct OpList *oplist = multiplicative(self), *alt;
 	while (1)
 	{
-		Native native;
+		Native(Function) native;
 		
 		if (previewToken(self) == '+')
 			native = Op.add;
@@ -597,7 +597,7 @@ static struct OpList * shift (struct Parser *self)
 	struct OpList *oplist = additive(self), *alt;
 	while (1)
 	{
-		Native native;
+		Native(Function) native;
 		
 		if (previewToken(self) == Lexer(leftShiftToken))
 			native = Op.leftShift;
@@ -632,7 +632,7 @@ static struct OpList * relational (struct Parser *self, int noIn)
 	struct OpList *oplist = shift(self), *alt;
 	while (1)
 	{
-		Native native;
+		Native(Function) native;
 		
 		if (previewToken(self) == '<')
 			native = Op.less;
@@ -670,7 +670,7 @@ static struct OpList * equality (struct Parser *self, int noIn)
 	struct OpList *oplist = relational(self, noIn), *alt;
 	while (1)
 	{
-		Native native;
+		Native(Function) native;
 		
 		if (previewToken(self) == Lexer(equalToken))
 			native = Op.equal;
@@ -831,7 +831,7 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = conditional(self, noIn), *opassign = NULL;
 	struct Text text = self->lexer->text;
-	Native native = NULL;
+	Native(Function) native = NULL;
 	
 	if (acceptToken(self, '='))
 	{

@@ -15,10 +15,10 @@ struct Function * Function(constructor) = NULL;
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
 	
 	if (ecc->this.data.function->text.location == Text(nativeCode).location)
 	{
@@ -37,23 +37,23 @@ static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value this, arguments;
 	
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "apply is not a constructor")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(funcIndex)), "apply is not a constructor")));
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
 	
-	this = Op.argument(ecc, 0);
-	arguments = Op.argument(ecc, 1);
+	this = Native.argument(ecc, 0);
+	arguments = Native.argument(ecc, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
 		Op.callFunctionVA(ops, ecc, 2, ecc->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, 1), "arguments is not an object")));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, 1), "arguments is not an object")));
 		
 		Op.callFunctionArguments(ops, ecc, 2, ecc->this.data.function, this, arguments.data.object);
 	}
@@ -65,13 +65,13 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekFunc)), "call is not a constructor")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(funcIndex)), "call is not a constructor")));
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
 	
 	object = ecc->context->hashmap[2].data.value.data.object;
 	
@@ -107,9 +107,9 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 {
 	int argumentCount;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	argumentCount = Op.variableArgumentCount(ecc);
+	argumentCount = Native.variableArgumentCount(ecc);
 	
 	if (argumentCount)
 	{
@@ -122,7 +122,7 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 			if (index == argumentCount - 1)
 				length++, length++, length++;
 			
-			length += Value.toBufferLength(Op.variableArgument(ecc, index));
+			length += Value.toBufferLength(Native.variableArgument(ecc, index));
 			
 			if (index < argumentCount - 2)
 				length++;
@@ -141,7 +141,7 @@ static struct Value functionConstructor (const struct Op ** const ops, struct Ec
 				if (index == argumentCount - 1)
 					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
 				
-				offset += Value.toBuffer(Op.variableArgument(ecc, index), chars + offset, length - offset);
+				offset += Value.toBuffer(Native.variableArgument(ecc, index), chars + offset, length - offset);
 				
 				if (index < argumentCount - 2)
 					chars[offset++] = ',';
@@ -197,7 +197,7 @@ struct Function * createSized (struct Object *context, uint32_t size)
 	return self;
 }
 
-struct Function * createWithNative (const Native native, int parameterCount)
+struct Function * createWithNative (const Native(Function) native, int parameterCount)
 {
 	struct Function *self = NULL;
 	
@@ -222,7 +222,7 @@ struct Function * createWithNative (const Native native, int parameterCount)
 	return self;
 }
 
-struct Function * createWithNativeAccessor (const Native getter, const Native setter)
+struct Function * createWithNativeAccessor (const Native(Function) getter, const Native(Function) setter)
 {
 	struct Function *self, *setterFunction = NULL;
 	if (setter)
@@ -286,14 +286,14 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 	Object.add(&self->context, Key.makeWithCString(name), value, flags);
 }
 
-struct Function * addNative(struct Function *self, const char *name, const Native native, int parameterCount, enum Value(Flags) flags)
+struct Function * addNative(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
 {
 	assert(self);
 	
 	return addToObject(&self->context, name, native, parameterCount, flags);
 }
 
-struct Function * addToObject(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags) flags)
+struct Function * addToObject(struct Object *object, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
 {
 	struct Function *function;
 	
@@ -315,7 +315,7 @@ void linkPrototype (struct Function *self, struct Value prototype)
 	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
 }
 
-void setupBuiltinObject (struct Function **constructor, const Native native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Text *type)
+void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Text *type)
 {
 	struct Function *function = createWithNative(native, parameterCount);
 	

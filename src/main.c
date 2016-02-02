@@ -59,14 +59,14 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 	int index, count;
 	struct Value value;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
 		if (index)
 			putc(' ', stdout);
 		
-		value = Op.variableArgument(ecc, index);
+		value = Native.variableArgument(ecc, index);
 		Value.dumpTo(Value.toString(Value.toPrimitive(ops, ecc, value, &(*ops)->text, Value(hintString))), stdout);
 	}
 	putc('\n', stdout);

@@ -15,6 +15,7 @@ struct Ecc;
 struct Op;
 
 #include "key.h"
+#include "native.h"
 
 #include "interface.h"
 
@@ -113,7 +114,7 @@ Interface(Value,
 	(struct Value, toInteger ,(struct Value))
 	(int, isNumber ,(struct Value))
 	
-	(struct Value, toObject ,(const struct Op ** const, struct Ecc *, struct Value, int argumentIndex))
+	(struct Value, toObject ,(const struct Op ** const, struct Ecc *, struct Value, enum Native(Index) argumentIndex))
 	(int, isObject ,(struct Value))
 	
 	(struct Value, toType ,(struct Value))

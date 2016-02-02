@@ -14,15 +14,15 @@ struct Object * Arguments(prototype);
 
 static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary(ecc->this.data.object->elementCount);
 	return Value(undefined);
 }
 
 static struct Value setLength (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 1);
-	Object.resizeElement(ecc->this.data.object, Value.toBinary(Op.argument(ecc, 0)).data.binary);
+	Native.assertParameterCount(ecc, 1);
+	Object.resizeElement(ecc->this.data.object, Value.toBinary(Native.argument(ecc, 0)).data.binary);
 	return Value(undefined);
 }
 

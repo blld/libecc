@@ -51,10 +51,10 @@ static inline int32_t indexPosition (const char *chars, int32_t length, int32_t 
 
 static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	
@@ -63,10 +63,10 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 
 static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Op.textSeek(ops, ecc, Op(textSeekThis)), "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	
@@ -78,7 +78,7 @@ static struct Value charAt (const struct Op ** const ops, struct Ecc * const ecc
 	int32_t position, index, length;
 	const char *chars;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
 	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
@@ -86,7 +86,7 @@ static struct Value charAt (const struct Op ** const ops, struct Ecc * const ecc
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	position = Value.toInteger(Op.argument(ecc, 0)).data.integer;
+	position = Value.toInteger(Native.argument(ecc, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
@@ -107,7 +107,7 @@ static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const
 	int32_t position, index, length;
 	const char *chars;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
 	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
@@ -115,7 +115,7 @@ static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	position = Value.toInteger(Op.argument(ecc, 0)).data.integer;
+	position = Value.toInteger(Native.argument(ecc, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
@@ -135,19 +135,19 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	struct Chars *result;
 	int32_t length = 0, offset = 0, index, count;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	count = Op.variableArgumentCount(ecc);
+	count = Native.variableArgumentCount(ecc);
 	
 	length += Value.toBufferLength(ecc->this);
 	for (index = 0; index < count; ++index)
-		length += Value.toBufferLength(Op.variableArgument(ecc, index));
+		length += Value.toBufferLength(Native.variableArgument(ecc, index));
 	
 	result = Chars.createSized(length);
 	
 	offset += Value.toBuffer(ecc->this, result->chars + offset, length - offset + 1);
 	for (index = 0; index < count; ++index)
-		offset += Value.toBuffer(Op.variableArgument(ecc, index), result->chars + offset, length - offset + 1);
+		offset += Value.toBuffer(Native.variableArgument(ecc, index), result->chars + offset, length - offset + 1);
 	
 	ecc->result = Value.chars(result);
 	
@@ -160,20 +160,20 @@ static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ec
 	int32_t position, index, offset, length, searchLength, argumentCount;
 	const char *chars, *searchChars;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	argumentCount = Op.variableArgumentCount(ecc);
+	argumentCount = Native.variableArgumentCount(ecc);
 	
 	ecc->this = Value.toString(ecc->this);
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	search = argumentCount >= 1? Value.toString(Op.variableArgument(ecc, 0)): Value.text(&Text(undefined));
+	search = argumentCount >= 1? Value.toString(Native.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
 	searchLength = Value.stringLength(search);
 	
 	length -= searchLength;
-	position = argumentCount >= 2? Value.toInteger(Op.variableArgument(ecc, 1)).data.integer: 0;
+	position = argumentCount >= 2? Value.toInteger(Native.variableArgument(ecc, 1)).data.integer: 0;
 	index = positionIndex(chars, length, position, 0);
 	
 	for (; index <= length; ++index)
@@ -209,22 +209,22 @@ static struct Value lastIndexOf (const struct Op ** const ops, struct Ecc * cons
 	int32_t position, index, offset, length, searchLength, argumentCount;
 	const char *chars, *searchChars;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	argumentCount = Op.variableArgumentCount(ecc);
+	argumentCount = Native.variableArgumentCount(ecc);
 	
 	ecc->this = Value.toString(ecc->this);
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	search = argumentCount >= 1? Value.toString(Op.variableArgument(ecc, 0)): Value.text(&Text(undefined));
+	search = argumentCount >= 1? Value.toString(Native.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
 	searchLength = Value.stringLength(search) - 1;
 	
-	if (argumentCount < 2 || Op.variableArgument(ecc, 1).type == Value(undefinedType))
+	if (argumentCount < 2 || Native.variableArgument(ecc, 1).type == Value(undefinedType))
 		position = indexPosition(chars, length, length);
 	else
-		position = Value.toInteger(Op.variableArgument(ecc, 1)).data.integer;
+		position = Value.toInteger(Native.variableArgument(ecc, 1)).data.integer;
 	
 	position -= indexPosition(searchChars, searchLength, searchLength);
 	index = positionIndex(chars, length, position, 0);
@@ -262,7 +262,7 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	int32_t start, end, length;
 	const char *chars;
 	
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
 	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
@@ -270,13 +270,13 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	from = Op.argument(ecc, 0);
+	from = Native.argument(ecc, 0);
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
 		start = positionIndex(chars, length, Value.toInteger(from).data.integer, 1);
 	
-	to = Op.argument(ecc, 1);
+	to = Native.argument(ecc, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
@@ -302,7 +302,7 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 	int32_t start, end, length;
 	const char *chars;
 	
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
 	if (!Value.isString(ecc->this))
 		ecc->this = Value.toString(ecc->this);
@@ -310,13 +310,13 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 	chars = Value.stringChars(ecc->this);
 	length = Value.stringLength(ecc->this);
 	
-	from = Op.argument(ecc, 0);
+	from = Native.argument(ecc, 0);
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
 		start = positionIndex(chars, length, Value.toInteger(from).data.integer, 0);
 	
-	to = Op.argument(ecc, 1);
+	to = Native.argument(ecc, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
@@ -347,9 +347,9 @@ static struct Value stringConstructor (const struct Op ** const ops, struct Ecc 
 {
 	struct Value value;
 	
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type == Value(undefinedType))
 		value = Value.text(&Text(empty));
 	else
@@ -369,11 +369,11 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 	struct Chars *chars;
 	char *b;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
-		c = Value.toInteger(Op.variableArgument(ecc, index)).data.integer;
+		c = Value.toInteger(Native.variableArgument(ecc, index)).data.integer;
 		if (c < 0x80) length += 1;
 		else if (c < 0x800) length += 2;
 		else if (c <= 0xffff) length += 3;
@@ -383,9 +383,9 @@ static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * con
 	chars = Chars.createSized(length);
 	b = chars->chars;
 	
-	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
-		c = Value.toInteger(Op.variableArgument(ecc, index)).data.integer;
+		c = Value.toInteger(Native.variableArgument(ecc, index)).data.integer;
 		if (c < 0x80) *b++ = c;
 		else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
 		else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;

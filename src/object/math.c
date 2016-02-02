@@ -15,9 +15,9 @@
 static struct Value mathAbs (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -28,9 +28,9 @@ static struct Value mathAbs (const struct Op ** const ops, struct Ecc * const ec
 static struct Value mathACos (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -41,9 +41,9 @@ static struct Value mathACos (const struct Op ** const ops, struct Ecc * const e
 static struct Value mathASin (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -54,9 +54,9 @@ static struct Value mathASin (const struct Op ** const ops, struct Ecc * const e
 static struct Value mathATan (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -67,13 +67,13 @@ static struct Value mathATan (const struct Op ** const ops, struct Ecc * const e
 static struct Value mathATan2 (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value x, y;
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
-	x = Op.argument(ecc, 0);
+	x = Native.argument(ecc, 0);
 	if (x.type != Value(binaryType))
 		x = Value.toBinary(x);
 	
-	y = Op.argument(ecc, 0);
+	y = Native.argument(ecc, 0);
 	if (y.type != Value(binaryType))
 		y = Value.toBinary(y);
 	
@@ -84,9 +84,9 @@ static struct Value mathATan2 (const struct Op ** const ops, struct Ecc * const 
 static struct Value mathCeil (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -97,9 +97,9 @@ static struct Value mathCeil (const struct Op ** const ops, struct Ecc * const e
 static struct Value mathCos (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -110,9 +110,9 @@ static struct Value mathCos (const struct Op ** const ops, struct Ecc * const ec
 static struct Value mathExp (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -123,9 +123,9 @@ static struct Value mathExp (const struct Op ** const ops, struct Ecc * const ec
 static struct Value mathFloor (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -136,9 +136,9 @@ static struct Value mathFloor (const struct Op ** const ops, struct Ecc * const 
 static struct Value mathLog (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -151,11 +151,11 @@ static struct Value mathMax (const struct Op ** const ops, struct Ecc * const ec
 	double result = -INFINITY, value;
 	int index, count;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
-		value = Value.toBinary(Op.variableArgument(ecc, index)).data.binary;
+		value = Value.toBinary(Native.variableArgument(ecc, index)).data.binary;
 		if (result < value)
 			result = value;
 	}
@@ -170,11 +170,11 @@ static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ec
 	double result = INFINITY, value;
 	int index, count;
 	
-	Op.assertVariableParameter(ecc);
+	Native.assertVariableParameter(ecc);
 	
-	for (index = 0, count = Op.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
-		value = Value.toBinary(Op.variableArgument(ecc, index)).data.binary;
+		value = Value.toBinary(Native.variableArgument(ecc, index)).data.binary;
 		if (result > value)
 			result = value;
 	}
@@ -187,13 +187,13 @@ static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ec
 static struct Value mathPow (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value x, y;
-	Op.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(ecc, 2);
 	
-	x = Op.argument(ecc, 0);
+	x = Native.argument(ecc, 0);
 	if (x.type != Value(binaryType))
 		x = Value.toBinary(x);
 	
-	y = Op.argument(ecc, 0);
+	y = Native.argument(ecc, 0);
 	if (y.type != Value(binaryType))
 		y = Value.toBinary(y);
 	
@@ -203,7 +203,7 @@ static struct Value mathPow (const struct Op ** const ops, struct Ecc * const ec
 
 static struct Value mathRandom (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	Op.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary((double)rand() / (double)RAND_MAX);
 	return Value(undefined);
 }
@@ -211,9 +211,9 @@ static struct Value mathRandom (const struct Op ** const ops, struct Ecc * const
 static struct Value mathRound (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -225,9 +225,9 @@ static struct Value mathRound (const struct Op ** const ops, struct Ecc * const 
 static struct Value mathSin (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -238,9 +238,9 @@ static struct Value mathSin (const struct Op ** const ops, struct Ecc * const ec
 static struct Value mathSqrt (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
@@ -251,9 +251,9 @@ static struct Value mathSqrt (const struct Op ** const ops, struct Ecc * const e
 static struct Value mathTan (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Value value;
-	Op.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(ecc, 1);
 	
-	value = Op.argument(ecc, 0);
+	value = Native.argument(ecc, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	

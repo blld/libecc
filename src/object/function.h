@@ -36,17 +36,17 @@ Interface(Function,
 	
 	(struct Function *, create ,(struct Object *context))
 	(struct Function *, createSized ,(struct Object *context, uint32_t size))
-	(struct Function *, createWithNative ,(const Native native, int parameterCount))
-	(struct Function *, createWithNativeAccessor ,(const Native getter, const Native setter))
+	(struct Function *, createWithNative ,(const Native(Function) native, int parameterCount))
+	(struct Function *, createWithNativeAccessor ,(const Native(Function) getter, const Native(Function) setter))
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
 	
 	(void, addValue ,(struct Function *, const char *name, struct Value value, enum Value(Flags)))
-	(struct Function *, addNative ,(struct Function *, const char *name, const Native native, int argumentCount, enum Value(Flags)))
-	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native native, int parameterCount, enum Value(Flags)))
+	(struct Function *, addNative ,(struct Function *, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags)))
+	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags)))
 	
 	(void, linkPrototype ,(struct Function *, struct Value prototype))
-	(void, setupBuiltinObject ,(struct Function **, const Native, int parameterCount, struct Object **, struct Value prototype, const struct Text *type))
+	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Text *type))
 	
 	(uint16_t, toBufferLength ,(struct Function *))
 	(uint16_t, toBuffer ,(struct Function *, char *buffer, uint16_t length))

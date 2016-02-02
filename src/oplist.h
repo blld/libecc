@@ -18,7 +18,7 @@
 
 Interface(OpList,
 	
-	(struct OpList *, create ,(const Native native, struct Value value, struct Text text))
+	(struct OpList *, create ,(const Native(Function) native, struct Value value, struct Text text))
 	(void, destroy ,(struct OpList *))
 	
 	(struct OpList *, join ,(struct OpList *, struct OpList *))
