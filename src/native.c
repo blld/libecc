@@ -50,7 +50,7 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Nativ
 	assert(ecc);
 	
 	const char *location;
-	struct Op(Frame) *frame = (struct Op(Frame) *)ops;
+	struct Native(Frame) *frame = (struct Native(Frame) *)ops;
 	uint32_t breakArray = 0;
 	
 	while (frame->ops->text.location == Text(nativeCode).location)
@@ -66,7 +66,7 @@ struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Nativ
 			if (frame->argumentOffset == 2)
 				breakArray |= 2;
 		}
-		frame = (struct Op(Frame) *)frame->parent;
+		frame = (struct Native(Frame) *)frame->parent;
 	}
 	
 	if (frame && argumentIndex > Native(noIndex))

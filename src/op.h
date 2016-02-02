@@ -140,12 +140,6 @@
 	_( iterateMoreOrEqualRef )\
 	_( iterateInRef )\
 
-struct Op(Frame) {
-	const struct Op * ops;
-	const struct Op ** parent;
-	int argumentOffset;
-};
-
 
 #define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
 Interface(Op,

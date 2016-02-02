@@ -18,14 +18,20 @@ struct Value;
 #include "interface.h"
 
 
-typedef __typeof__(struct Value) (* Native(Function)) (const struct Op ** const ops, struct Ecc * const ecc);
-
 enum Native(Index) {
 	Native(noIndex) = -4,
 	Native(callIndex) = -3,
 	Native(funcIndex) = -2,
 	Native(thisIndex) = -1,
 };
+
+struct Native(Frame) {
+	const struct Op * ops;
+	const struct Op ** parent;
+	int argumentOffset;
+};
+
+typedef __typeof__(struct Value) (* Native(Function)) (const struct Op ** const ops, struct Ecc * const ecc);
 
 
 Interface(Native,

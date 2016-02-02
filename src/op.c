@@ -402,7 +402,7 @@ static inline struct Value callOps (const struct Op ** const ops, struct Ecc * c
 
 struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Op(Frame) frame = { function->oplist->ops, ops, argumentOffset };
+	struct Native(Frame) frame = { function->oplist->ops, ops, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -435,7 +435,7 @@ struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const e
 
 struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Op(Frame) frame = { function->oplist->ops, ops, argumentOffset };
+	struct Native(Frame) frame = { function->oplist->ops, ops, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -472,7 +472,7 @@ struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int
 
 static inline struct Value callFunction (const struct Op ** const ops, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
-	struct Op(Frame) frame = { function->oplist->ops, ops };
+	struct Native(Frame) frame = { function->oplist->ops, ops };
 	struct Value this = ecc->refObject;
 	
 	if (function->flags & Function(needHeap))
