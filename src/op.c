@@ -89,8 +89,8 @@ static struct Value equality (struct Ecc * const ecc, struct Value a, const stru
 	else if (Value.isBoolean(b))
 		return equality(ecc, a, aText, Value.toBinary(b), bText);
 	else if (((Value.isString(a) || Value.isNumber(a)) && Value.isObject(b))
-		|| (Value.isObject(a) && (Value.isString(b) || Value.isNumber(b)))
-		)
+		   || (Value.isObject(a) && (Value.isString(b) || Value.isNumber(b)))
+		   )
 	{
 		a = Value.toPrimitive(NULL, ecc, a, aText, Value(hintAuto));
 		b = Value.toPrimitive(NULL, ecc, b, bText, Value(hintAuto));
@@ -251,7 +251,7 @@ static inline struct Value setRefValue(const struct Op ** const ops, struct Ecc 
 	
 	if (ref->check == 1)
 	{
-		if (ref->flags & Value(readonly) || ref->flags)
+		if (ref->flags & Value(readonly))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is read-only property", text->length, text->location)));
 		
 		value.flags = ref->flags;
@@ -1306,11 +1306,9 @@ struct Value postIncrementRef (const struct Op ** const ops, struct Ecc * const 
 	{
 		struct Value newValue = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		++newValue.data.binary;
-		setRefValue(ops, ecc, ref, ecc->refObject, newValue, text);
+		return setRefValue(ops, ecc, ref, ecc->refObject, newValue, text);
 	}
-	else
-		++ref->data.binary;
-	
+	++ref->data.binary;
 	return value;
 }
 
@@ -1323,11 +1321,9 @@ struct Value postDecrementRef (const struct Op ** const ops, struct Ecc * const 
 	{
 		struct Value newValue = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		--newValue.data.binary;
-		setRefValue(ops, ecc, ref, ecc->refObject, newValue, text);
+		return setRefValue(ops, ecc, ref, ecc->refObject, newValue, text);
 	}
-	else
-		--ref->data.binary;
-	
+	--ref->data.binary;
 	return value;
 }
 
@@ -1343,8 +1339,7 @@ struct Value multiplyAssignRef (const struct Op ** const ops, struct Ecc * const
 	{
 		struct Value value = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.binary *= b.data.binary;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.binary *= b.data.binary;
 	return *ref;
@@ -1362,8 +1357,7 @@ struct Value divideAssignRef (const struct Op ** const ops, struct Ecc * const e
 	{
 		struct Value value = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.binary /= b.data.binary;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.binary /= b.data.binary;
 	return *ref;
@@ -1381,8 +1375,7 @@ struct Value moduloAssignRef (const struct Op ** const ops, struct Ecc * const e
 	{
 		struct Value value = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.binary = fmod(ref->data.binary, b.data.binary);
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.binary = fmod(ref->data.binary, b.data.binary);
 	return *ref;
@@ -1396,8 +1389,7 @@ struct Value addAssignRef (const struct Op ** const ops, struct Ecc * const ecc)
 	if (ref->type != Value(binaryType) || b.type != Value(binaryType))
 	{
 		struct Value value = addition(ecc, getRefValue(ops, ecc, ref, ecc->refObject), text, b, opText(0));
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.binary += b.data.binary;
 	return *ref;
@@ -1415,8 +1407,7 @@ struct Value minusAssignRef (const struct Op ** const ops, struct Ecc * const ec
 	{
 		struct Value value = Value.toBinary(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.binary -= b.data.binary;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.binary -= b.data.binary;
 	return *ref;
@@ -1434,8 +1425,7 @@ struct Value leftShiftAssignRef (const struct Op ** const ops, struct Ecc * cons
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer <<= (uint32_t)b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer <<= (uint32_t)b.data.integer;
 	return *ref;
@@ -1453,8 +1443,7 @@ struct Value rightShiftAssignRef (const struct Op ** const ops, struct Ecc * con
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer >>= (uint32_t)b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer >>= (uint32_t)b.data.integer;
 	return *ref;
@@ -1472,8 +1461,7 @@ struct Value unsignedRightShiftAssignRef (const struct Op ** const ops, struct E
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
 	return *ref;
@@ -1491,8 +1479,7 @@ struct Value bitAndAssignRef (const struct Op ** const ops, struct Ecc * const e
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer &= b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer &= b.data.integer;
 	return *ref;
@@ -1510,8 +1497,7 @@ struct Value bitXorAssignRef (const struct Op ** const ops, struct Ecc * const e
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer ^= b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer ^= b.data.integer;
 	return *ref;
@@ -1529,8 +1515,7 @@ struct Value bitOrAssignRef (const struct Op ** const ops, struct Ecc * const ec
 	{
 		struct Value value = Value.toInteger(getRefValue(ops, ecc, ref, ecc->refObject));
 		value.data.integer |= b.data.integer;
-		setRefValue(ops, ecc, ref, ecc->refObject, value, text);
-		return value;
+		return setRefValue(ops, ecc, ref, ecc->refObject, value, text);
 	}
 	ref->data.integer |= b.data.integer;
 	return *ref;
