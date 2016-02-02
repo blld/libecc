@@ -11,16 +11,18 @@
 static int printUsage (void);
 static int runTest (int verbosity);
 static struct Value print (const struct Op ** const ops, struct Ecc * const ecc);
+static struct Value alert (const struct Op ** const ops, struct Ecc * const ecc);
 
 static struct Ecc *ecc = NULL;
 
 int main (int argc, const char * argv[])
 {
-	int result = EXIT_SUCCESS;
+	int result;
 	
 	ecc = Ecc.create();
 	
 	Ecc.addNative(ecc, "print", print, -1, 0);
+	Ecc.addNative(ecc, "alert", alert, -1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();
@@ -54,7 +56,7 @@ static int printUsage (void)
 
 //
 
-static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value dumpTo (const struct Op ** const ops, struct Ecc * const ecc, FILE *file)
 {
 	int index, count;
 	struct Value value;
@@ -64,16 +66,26 @@ static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
 	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
 	{
 		if (index)
-			putc(' ', stdout);
+			putc(' ', file);
 		
 		value = Native.variableArgument(ecc, index);
-		Value.dumpTo(Value.toString(Value.toPrimitive(ops, ecc, value, &(*ops)->text, Value(hintString))), stdout);
+		value = Value.toPrimitive(ops, ecc, value, &(*ops)->text, Value(hintString));
+		Value.dumpTo(Value.toString(value), file);
 	}
-	putc('\n', stdout);
+	putc('\n', file);
 	
 	ecc->result = Value(undefined);
-	
 	return Value(undefined);
+}
+
+static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	return dumpTo(ops, ecc, stdout);
+}
+
+static struct Value alert (const struct Op ** const ops, struct Ecc * const ecc)
+{
+	return dumpTo(ops, ecc, stderr);
 }
 
 //
