@@ -29,7 +29,7 @@ Interface(OpList,
 	(struct OpList *, appendNoop ,(struct OpList *))
 	(struct OpList *, createLoop ,(struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition))
 	
-	(void, optimizeWithContext, (struct OpList *, struct Object *context))
+	(void, optimizeWithEnvironment, (struct OpList *, struct Object *environment))
 	
 	(void, dumpTo ,(struct OpList *, FILE *file))
 	(struct Text, text ,(struct OpList *oplist))

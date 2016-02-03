@@ -970,7 +970,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	else if (Key.isEqual(value.data.key, Key(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
-	Object.add(&self->function->context, value.data.key, Value(undefined), Value(hidden) | Value(sealed));
+	Object.add(&self->function->environment, value.data.key, Value(undefined), Value(hidden) | Value(sealed));
 	
 	if (acceptToken(self, '='))
 	{
@@ -1318,8 +1318,8 @@ static struct OpList * statement (struct Parser *self)
 			catchOps = block(self);
 			if (catchOps)
 			{
-				catchOps = OpList.unshift(Op.make(Op.pushContext, Value.key(identiferOp.value.data.key), text), catchOps);
-				catchOps = OpList.append(catchOps, Op.make(Op.popContext, Value(undefined), text));
+				catchOps = OpList.unshift(Op.make(Op.pushEnvironment, Value.key(identiferOp.value.data.key), text), catchOps);
+				catchOps = OpList.append(catchOps, Op.make(Op.popEnvironment, Value(undefined), text));
 				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->opCount), text), catchOps);
 				oplist = OpList.join(oplist, catchOps);
 			}
@@ -1386,7 +1386,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
 					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
 				
-				Object.add(&self->function->context, op.value.data.key, Value(undefined), Value(hidden));
+				Object.add(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
 			}
 		} while (acceptToken(self, ','));
 	
@@ -1425,10 +1425,10 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	}
 	
 	parentFunction = self->function;
-	function = Function.create(&self->function->context);
+	function = Function.create(&self->function->environment);
 	Function.linkPrototype(function, Value.object(Object.create(Object(prototype))));
 	
-	Object.add(&function->context, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
+	Object.add(&function->environment, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
 	
 	self->function = function;
 	expectToken(self, '(');
@@ -1462,9 +1462,9 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	Object.add(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
 	
 	if (isDeclaration)
-		Object.add(&parentFunction->context, identifierOp.value.data.key, Value(undefined), Value(hidden));
+		Object.add(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
-		Object.add(&function->context, identifierOp.value.data.key, Value.function(function), Value(hidden));
+		Object.add(&function->environment, identifierOp.value.data.key, Value.function(function), Value(hidden));
 	
 	if (isDeclaration)
 		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, Value.function(function), text));
@@ -1538,7 +1538,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
-	Object.packValue(&self->function->context);
+	Object.packValue(&self->function->environment);
 	
 	--self->sourceDepth;
 	
@@ -1568,21 +1568,21 @@ void destroy (struct Parser *self)
 	free(self), self = NULL;
 }
 
-struct Function * parseWithContext (struct Parser * const self, struct Object *context)
+struct Function * parseWithEnvironment (struct Parser * const self, struct Object *environment)
 {
 	struct Function *function;
 	struct OpList *oplist;
 	
 	assert(self);
 	
-	function = Function.create(context);
+	function = Function.create(environment);
 	nextToken(self);
 	
 	self->function = function;
 	oplist = sourceElements(self, Lexer(noToken));
 	self->function = NULL;
 	
-	OpList.optimizeWithContext(oplist, &function->context);
+	OpList.optimizeWithEnvironment(oplist, &function->environment);
 	
 	if (self->error)
 	{

@@ -73,7 +73,7 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 	if (ecc->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
 	
-	object = ecc->context->hashmap[2].data.value.data.object;
+	object = ecc->environment->hashmap[2].data.value.data.object;
 	
 	if (object->elementCount)
 	{
@@ -178,12 +178,12 @@ void teardown (void)
 	Function(constructor) = NULL;
 }
 
-struct Function * create (struct Object *context)
+struct Function * create (struct Object *environment)
 {
-	return createSized(context, 8);
+	return createSized(environment, 8);
 }
 
-struct Function * createSized (struct Object *context, uint32_t size)
+struct Function * createSized (struct Object *environment, uint32_t size)
 {
 	struct Function *self = malloc(sizeof(*self));
 	assert(self);
@@ -192,7 +192,7 @@ struct Function * createSized (struct Object *context, uint32_t size)
 	*self = Function.identity;
 	
 	Object.initialize(&self->object, Function(prototype));
-	Object.initializeSized(&self->context, context, size);
+	Object.initializeSized(&self->environment, environment, size);
 	
 	return self;
 }
@@ -213,7 +213,7 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 		self->parameterCount = parameterCount;
 	}
 	
-	self->context.hashmapCount = self->context.hashmapCapacity;
+	self->environment.hashmapCount = self->environment.hashmapCapacity;
 	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
@@ -268,7 +268,7 @@ void destroy (struct Function *self)
 	assert(self);
 	
 	Object.finalize(&self->object);
-	Object.finalize(&self->context);
+	Object.finalize(&self->environment);
 	
 	if (self->oplist)
 		OpList.destroy(self->oplist), self->oplist = NULL;
@@ -283,14 +283,14 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 	if (value.type == Value(functionType))
 		value.data.function->name = name;
 	
-	Object.add(&self->context, Key.makeWithCString(name), value, flags);
+	Object.add(&self->environment, Key.makeWithCString(name), value, flags);
 }
 
 struct Function * addNative(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
 {
 	assert(self);
 	
-	return addToObject(&self->context, name, native, parameterCount, flags);
+	return addToObject(&self->environment, name, native, parameterCount, flags);
 }
 
 struct Function * addToObject(struct Object *object, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)

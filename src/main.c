@@ -871,7 +871,7 @@ static void testString (void)
 
 static int runTest (int verbosity)
 {
-	Function.addValue(ecc->global, "global", Value.object(&ecc->global->context), 0);
+	Function.addValue(ecc->global, "global", Value.object(&ecc->global->environment), 0);
 	
 	testVerbosity = verbosity;
 	

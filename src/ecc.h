@@ -43,11 +43,11 @@ Interface(Ecc,
 	(void, garbageCollect ,(struct Ecc *))
 	,
 	{
-		struct Object *context;
+		struct Object *environment;
 		struct Value this;
 		
 		struct {
-			struct Object *context;
+			struct Object *environment;
 			struct Value this;
 			
 			jmp_buf buf;

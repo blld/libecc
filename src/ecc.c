@@ -25,7 +25,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	value = Value.toString(Native.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
-	ecc->context = &ecc->global->context;
+	ecc->environment = &ecc->global->environment;
 	evalInput(ecc, input, Ecc(globalThis));
 	
 	return Value(undefined);
@@ -210,8 +210,8 @@ struct Ecc *create (void)
 	*self = Ecc.identity;
 	
 	self->global = Function.create(Object(prototype));
-	self->context = &self->global->context;
-	self->context->type = &Text(globalType);
+	self->environment = &self->global->environment;
+	self->environment->type = &Text(globalType);
 	
 	Function.addValue(self->global, "NaN", Value.binary(NAN), flags | Value(frozen));
 	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), flags | Value(frozen));
@@ -309,7 +309,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
-	function = Parser.parseWithContext(parser, self->context);
+	function = Parser.parseWithEnvironment(parser, self->environment);
 	frame.ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
@@ -349,17 +349,17 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	else
 	{
-		struct Object *context = self->context;
+		struct Object *environment = self->environment;
 		struct Value this = self->this;
 		
-		self->context = &function->context;
+		self->environment = &function->environment;
 		self->result = Value(undefined);
 		if (flags & Ecc(globalThis))
-			self->this = Value.object(&self->global->context);
+			self->this = Value.object(&self->global->environment);
 		
 		frame.ops->native(&frame.ops, self);
 		
-		self->context = context;
+		self->environment = environment;
 		self->this = this;
 		
 		if (flags & Ecc(primitiveResult))
@@ -380,7 +380,7 @@ jmp_buf * pushEnv(struct Ecc *self)
 		self->envList = realloc(self->envList, sizeof(*self->envList) * self->envCapacity);
 	}
 	
-	self->envList[self->envCount].context = self->context;
+	self->envList[self->envCount].environment = self->environment;
 	self->envList[self->envCount].this = self->this;
 	
 	return &self->envList[self->envCount++].buf;
@@ -391,7 +391,7 @@ void popEnv(struct Ecc *self)
 	assert(self->envCount);
 	
 	--self->envCount;
-	self->context = self->envList[self->envCount].context;
+	self->environment = self->envList[self->envCount].environment;
 	self->this = self->envList[self->envCount].this;
 }
 

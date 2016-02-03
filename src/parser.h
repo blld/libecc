@@ -23,7 +23,7 @@ Interface(Parser,
 	(struct Parser *, createWithLexer ,(struct Lexer *))
 	(void, destroy, (struct Parser *))
 	
-	(struct Function *, parseWithContext ,(struct Parser * const, struct Object *context))
+	(struct Function *, parseWithEnvironment ,(struct Parser * const, struct Object *environment))
 	,
 	{
 		struct Lexer *lexer;

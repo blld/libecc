@@ -295,107 +295,107 @@ const char * toChars (const Native(Function) native)
 
 // MARK: call
 
-static inline void populateContextWithArguments (struct Object *context, struct Object *arguments, int parameterCount)
+static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int parameterCount)
 {
 	uint32_t index = 0;
 	int argumentCount = arguments->elementCount;
 	
-	context->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value;
 	else
 	{
 		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value;
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value;
 	}
 }
 
-static inline void populateContextWithArgumentsVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
+static inline void populateEnvironmentWithArgumentsVA (struct Object *environment, int parameterCount, int argumentCount, va_list ap)
 {
 	uint32_t index = 0;
 	
 	struct Object *arguments = Arguments.createSized(argumentCount);
-	context->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
 	else
 	{
 		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
 		
 		for (; index < argumentCount; ++index)
 			arguments->element[index].data.value = va_arg(ap, struct Value);
 	}
 }
 
-static inline void populateContextWithArgumentsOps (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Object *arguments, int parameterCount, int argumentCount)
+static inline void populateEnvironmentWithArgumentsOps (const struct Op ** const ops, struct Ecc * const ecc, struct Object *environment, struct Object *arguments, int parameterCount, int argumentCount)
 {
 	uint32_t index = 0;
 	
-	context->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
 	else
 	{
 		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
 		
 		for (; index < argumentCount; ++index)
 			arguments->element[index].data.value = nextOp();
 	}
 }
 
-static inline void populateContextVA (struct Object *context, int parameterCount, int argumentCount, va_list ap)
+static inline void populateEnvironmentVA (struct Object *environment, int parameterCount, int argumentCount, va_list ap)
 {
 	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = va_arg(ap, struct Value);
 	else
 	{
 		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = va_arg(ap, struct Value);
 		
 		for (; index < argumentCount; ++index)
 			va_arg(ap, struct Value);
 	}
 }
 
-static inline void populateContext (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, int parameterCount, int argumentCount)
+static inline void populateEnvironment (const struct Op ** const ops, struct Ecc * const ecc, struct Object *environment, int parameterCount, int argumentCount)
 {
 	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			context->hashmap[index + 3].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = nextOp();
 	else
 	{
 		for (; index < parameterCount; ++index)
-			context->hashmap[index + 3].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = nextOp();
 		
 		for (; index < argumentCount; ++index)
 			nextOp();
 	}
 }
 
-static inline struct Value callOps (const struct Op ** const ops, struct Ecc * const ecc, struct Object *context, struct Value this, int construct)
+static inline struct Value callOps (const struct Op ** const ops, struct Ecc * const ecc, struct Object *environment, struct Value this, int construct)
 {
 	struct Value callerThis = ecc->this;
-	struct Object *callerContext = ecc->context;
+	struct Object *callerEnvironement = ecc->environment;
 	
 	ecc->this = this;
-	ecc->context = context;
+	ecc->environment = environment;
 	ecc->construct = construct;
 	
 	(*ops)->native(ops, ecc);
 	
 	ecc->this = callerThis;
-	ecc->context = callerContext;
+	ecc->environment = callerEnvironement;
 	
 	return ecc->result;
 }
@@ -406,7 +406,7 @@ struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const e
 	
 	if (function->flags & Function(needHeap))
 	{
-		struct Object *context = Object.copy(&function->context);
+		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
 		{
@@ -415,21 +415,21 @@ struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const e
 			arguments = copy;
 		}
 		
-		populateContextWithArguments(context, arguments, function->parameterCount);
+		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
 		
-		return callOps(&frame.ops, ecc, context, this, 0);
+		return callOps(&frame.ops, ecc, environment, this, 0);
 	}
 	else
 	{
-		struct Object context = function->context;
-		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		struct Object environment = function->environment;
+		__typeof__(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		
-		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
-		context.hashmap = hashmap;
+		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
+		environment.hashmap = hashmap;
 		
-		populateContextWithArguments(&context, arguments, function->parameterCount);
+		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
 		
-		return callOps(&frame.ops, ecc, &context, this, 0);
+		return callOps(&frame.ops, ecc, &environment, this, 0);
 	}
 }
 
@@ -439,34 +439,34 @@ struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int
 	
 	if (function->flags & Function(needHeap))
 	{
-		struct Object *context = Object.copy(&function->context);
+		struct Object *environment = Object.copy(&function->environment);
 		va_list ap;
 		
 		va_start(ap, argumentCount);
 		
 		if (function->flags & Function(needArguments))
-			populateContextWithArgumentsVA(context, function->parameterCount, argumentCount, ap);
+			populateEnvironmentWithArgumentsVA(environment, function->parameterCount, argumentCount, ap);
 		else
-			populateContextVA(context, function->parameterCount, argumentCount, ap);
+			populateEnvironmentVA(environment, function->parameterCount, argumentCount, ap);
 		
 		va_end(ap);
 		
-		return callOps(&frame.ops, ecc, context, this, 0);
+		return callOps(&frame.ops, ecc, environment, this, 0);
 	}
 	else
 	{
-		struct Object stackContext = function->context;
-		__typeof__(*function->context.hashmap) hashmap[function->context.hashmapCapacity];
+		struct Object environment = function->environment;
+		__typeof__(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		va_list ap;
 		
-		memcpy(hashmap, function->context.hashmap, sizeof(hashmap));
-		stackContext.hashmap = hashmap;
+		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
+		environment.hashmap = hashmap;
 		
 		va_start(ap, argumentCount);
-		populateContextVA(&stackContext, function->parameterCount, argumentCount, ap);
+		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(&frame.ops, ecc, &stackContext, this, 0);
+		return callOps(&frame.ops, ecc, &environment, this, 0);
 	}
 }
 
@@ -477,41 +477,41 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 	
 	if (function->flags & Function(needHeap))
 	{
-		struct Object *context = Object.copy(&function->context);
+		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
-			populateContextWithArgumentsOps(ops, ecc, context, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
+			populateEnvironmentWithArgumentsOps(ops, ecc, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
 		else
-			populateContext(ops, ecc, context, function->parameterCount, argumentCount);
+			populateEnvironment(ops, ecc, environment, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, context, this, construct);
+		return callOps(&frame.ops, ecc, environment, this, construct);
 	}
 	else if (function->flags & Function(needArguments))
 	{
-		struct Object context = function->context;
+		struct Object environment = function->environment;
 		struct Object arguments = Object.identity;
-		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
-		__typeof__(*arguments.element) argumentsElement[argumentCount];
+		__typeof__(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		__typeof__(*arguments.element) element[argumentCount];
 		
-		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
-		context.hashmap = contextHashmap;
-		arguments.element = argumentsElement;
+		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
+		environment.hashmap = hashmap;
+		arguments.element = element;
 		arguments.elementCount = argumentCount;
 		
-		populateContextWithArgumentsOps(ops, ecc, &context, &arguments, function->parameterCount, argumentCount);
+		populateEnvironmentWithArgumentsOps(ops, ecc, &environment, &arguments, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, &context, this, construct);
+		return callOps(&frame.ops, ecc, &environment, this, construct);
 	}
 	else
 	{
-		struct Object context = function->context;
-		__typeof__(*context.hashmap) contextHashmap[function->context.hashmapCapacity];
+		struct Object environment = function->environment;
+		__typeof__(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		
-		memcpy(contextHashmap, function->context.hashmap, sizeof(contextHashmap));
-		context.hashmap = contextHashmap;
-		populateContext(ops, ecc, &context, function->parameterCount, argumentCount);
+		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
+		environment.hashmap = hashmap;
+		populateEnvironment(ops, ecc, &environment, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, &context, this, construct);
+		return callOps(&frame.ops, ecc, &environment, this, construct);
 	}
 }
 
@@ -589,7 +589,7 @@ struct Value text (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value function (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Function *function = Function.copy(opValue().data.function);
-	function->context.prototype = ecc->context;
+	function->environment.prototype = ecc->environment;
 	return Value.function(function);
 }
 
@@ -638,7 +638,7 @@ struct Value this (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->context, key);
+	struct Value *ref = Object.getMember(ecc->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -649,7 +649,7 @@ struct Value getLocal (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->context, key);
+	struct Value *ref = Object.getMember(ecc->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -659,7 +659,7 @@ struct Value getLocalRef (const struct Op ** const ops, struct Ecc * const ecc)
 struct Value setLocal (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->context, key);
+	struct Value *ref = Object.getMember(ecc->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError((*ops)->text, "%.*s is not defined", (*ops)->text.length, (*ops)->text.location)));
 	
@@ -670,26 +670,26 @@ struct Value getLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
 	ecc->refObject = Value(undefined);
-	return ecc->context->hashmap[slot].data.value;
+	return ecc->environment->hashmap[slot].data.value;
 }
 
 struct Value getLocalSlotRef (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	return Value.reference(&ecc->context->hashmap[slot].data.value);
+	return Value.reference(&ecc->environment->hashmap[slot].data.value);
 }
 
 struct Value setLocalSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	return ecc->context->hashmap[slot].data.value = nextOp();
+	return ecc->environment->hashmap[slot].data.value = nextOp();
 }
 
 struct Value getParentSlot (const struct Op ** const ops, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->context;
+	struct Object *object = ecc->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -701,7 +701,7 @@ struct Value getParentSlotRef (const struct Op ** const ops, struct Ecc * const 
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->context;
+	struct Object *object = ecc->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -712,7 +712,7 @@ struct Value setParentSlot (const struct Op ** const ops, struct Ecc * const ecc
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->context;
+	struct Object *object = ecc->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -884,15 +884,15 @@ struct Value resultValue (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value.breaker(0);
 }
 
-struct Value pushContext (const struct Op ** const ops, struct Ecc * const ecc)
+struct Value pushEnvironment (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	ecc->context = Object.create(ecc->context);
+	ecc->environment = Object.create(ecc->environment);
 	return opValue();
 }
 
-struct Value popContext (const struct Op ** const ops, struct Ecc * const ecc)
+struct Value popEnvironment (const struct Op ** const ops, struct Ecc * const ecc)
 {
-	ecc->context = ecc->context->prototype;
+	ecc->environment = ecc->environment->prototype;
 	return opValue();
 }
 
@@ -1464,7 +1464,7 @@ struct Value try (const struct Op ** const ops, struct Ecc * const ecc)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(ecc->context, key, ecc->result, 0);
+				Object.add(ecc->environment, key, ecc->result, 0);
 				ecc->result = Value(undefined);
 				value = nextOp(); // execute until noop
 				rethrow = 0;

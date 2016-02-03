@@ -218,9 +218,9 @@ normal:
 	}
 }
 
-void optimizeWithContext (struct OpList *self, struct Object *context)
+void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
 {
-	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, contextLevel = 0;
+	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, environmentLevel = 0;
 	
 	if (!self)
 		return;
@@ -228,26 +228,26 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 	for (index = 0, count = self->opCount; index < count; ++index)
 	{
 		if (self->ops[index].native == Op.function)
-			optimizeWithContext(self->ops[index].value.data.function->oplist, &self->ops[index].value.data.function->context);
+			optimizeWithEnvironment(self->ops[index].value.data.function->oplist, &self->ops[index].value.data.function->environment);
 		
-		if (self->ops[index].native == Op.pushContext)
-			++contextLevel;
+		if (self->ops[index].native == Op.pushEnvironment)
+			++environmentLevel;
 		
-		if (self->ops[index].native == Op.popContext)
-			--contextLevel;
+		if (self->ops[index].native == Op.popEnvironment)
+			--environmentLevel;
 		
 		if (self->ops[index].native == Op.getLocal || self->ops[index].native == Op.getLocalRef || self->ops[index].native == Op.setLocal)
 		{
-			struct Object *searchContext = context;
-			uint32_t level = contextLevel;
+			struct Object *searchEnvironment = environment;
+			uint32_t level = environmentLevel;
 			
 			do
 			{
-				for (slotIndex = 0, slotCount = searchContext->hashmapCount; slotIndex < slotCount; ++slotIndex)
+				for (slotIndex = 0, slotCount = searchEnvironment->hashmapCount; slotIndex < slotCount; ++slotIndex)
 				{
-					if (searchContext->hashmap[slotIndex].data.value.check == 1)
+					if (searchEnvironment->hashmap[slotIndex].data.value.check == 1)
 					{
-						if (Key.isEqual(searchContext->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
+						if (Key.isEqual(searchEnvironment->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
 						{
 							if (!level)
 							{
@@ -275,7 +275,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 				
 				++level;
 			}
-			while (( searchContext = searchContext->prototype ));
+			while (( searchEnvironment = searchEnvironment->prototype ));
 			
 		notfound:
 			haveLocal = 1;
@@ -285,7 +285,7 @@ void optimizeWithContext (struct OpList *self, struct Object *context)
 	}
 	
 	if (!haveLocal)
-		Object.stripMap(context);
+		Object.stripMap(environment);
 }
 
 void dumpTo (struct OpList *self, FILE *file)

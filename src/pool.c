@@ -23,7 +23,7 @@ static void markFunction (struct Function *function)
 		return;
 	
 	markObject(&function->object);
-	markObject(&function->context);
+	markObject(&function->environment);
 	
 	if (function->pair)
 		markFunction(function->pair);
@@ -136,7 +136,7 @@ void unmarkAll (void)
 	for (index = 0, count = self->functionCount; index < count; ++index)
 	{
 		self->functionList[index]->object.flags &= ~Object(mark);
-		self->functionList[index]->context.flags &= ~Object(mark);
+		self->functionList[index]->environment.flags &= ~Object(mark);
 	}
 	
 	for (index = 0, count = self->objectCount; index < count; ++index)

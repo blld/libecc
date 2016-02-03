@@ -34,8 +34,8 @@ Interface(Function,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct Function *, create ,(struct Object *context))
-	(struct Function *, createSized ,(struct Object *context, uint32_t size))
+	(struct Function *, create ,(struct Object *environment))
+	(struct Function *, createSized ,(struct Object *environment, uint32_t size))
 	(struct Function *, createWithNative ,(const Native(Function) native, int parameterCount))
 	(struct Function *, createWithNativeAccessor ,(const Native(Function) getter, const Native(Function) setter))
 	(struct Function *, copy ,(struct Function * original))
@@ -53,7 +53,7 @@ Interface(Function,
 	,
 	{
 		struct Object object;
-		struct Object context;
+		struct Object environment;
 		struct OpList *oplist;
 		struct Function *pair;
 		struct Text text;

@@ -16,32 +16,32 @@
 
 void assertParameterCount (struct Ecc * const ecc, int parameterCount)
 {
-	assert(ecc->context->hashmapCount == parameterCount + 3);
+	assert(ecc->environment->hashmapCount == parameterCount + 3);
 }
 
 int argumentCount (struct Ecc * const ecc)
 {
-	return ecc->context->hashmapCount - 3;
+	return ecc->environment->hashmapCount - 3;
 }
 
 struct Value argument (struct Ecc * const ecc, int argumentIndex)
 {
-	return ecc->context->hashmap[argumentIndex + 3].data.value;
+	return ecc->environment->hashmap[argumentIndex + 3].data.value;
 }
 
 void assertVariableParameter (struct Ecc * const ecc)
 {
-	assert(ecc->context->hashmap[2].data.value.type == Value(objectType));
+	assert(ecc->environment->hashmap[2].data.value.type == Value(objectType));
 }
 
 int variableArgumentCount (struct Ecc * const ecc)
 {
-	return ecc->context->hashmap[2].data.value.data.object->elementCount;
+	return ecc->environment->hashmap[2].data.value.data.object->elementCount;
 }
 
 struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 {
-	return ecc->context->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
+	return ecc->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
 }
 
 struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Native(Index) argumentIndex)
