@@ -25,7 +25,7 @@ enum Native(Index) {
 	Native(thisIndex) = -1,
 };
 
-struct Native(Frame) {
+struct Native(Context) {
 	const struct Op * ops;
 	const struct Op ** parent;
 	int argumentOffset;

@@ -402,7 +402,7 @@ static inline struct Value callOps (const struct Op ** const ops, struct Ecc * c
 
 struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Native(Frame) frame = { function->oplist->ops, ops, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, ops, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -417,7 +417,7 @@ struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const e
 		
 		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
 		
-		return callOps(&frame.ops, ecc, environment, this, 0);
+		return callOps(&context.ops, ecc, environment, this, 0);
 	}
 	else
 	{
@@ -429,13 +429,13 @@ struct Value callFunctionArguments (const struct Op ** ops, struct Ecc * const e
 		
 		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
 		
-		return callOps(&frame.ops, ecc, &environment, this, 0);
+		return callOps(&context.ops, ecc, &environment, this, 0);
 	}
 }
 
 struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Native(Frame) frame = { function->oplist->ops, ops, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, ops, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -451,7 +451,7 @@ struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int
 		
 		va_end(ap);
 		
-		return callOps(&frame.ops, ecc, environment, this, 0);
+		return callOps(&context.ops, ecc, environment, this, 0);
 	}
 	else
 	{
@@ -466,13 +466,13 @@ struct Value callFunctionVA (const struct Op ** ops, struct Ecc * const ecc, int
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(&frame.ops, ecc, &environment, this, 0);
+		return callOps(&context.ops, ecc, &environment, this, 0);
 	}
 }
 
 static inline struct Value callFunction (const struct Op ** const ops, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
-	struct Native(Frame) frame = { function->oplist->ops, ops };
+	struct Native(Context) context = { function->oplist->ops, ops };
 	struct Value this = ecc->refObject;
 	
 	if (function->flags & Function(needHeap))
@@ -484,7 +484,7 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		else
 			populateEnvironment(ops, ecc, environment, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, environment, this, construct);
+		return callOps(&context.ops, ecc, environment, this, construct);
 	}
 	else if (function->flags & Function(needArguments))
 	{
@@ -500,7 +500,7 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		
 		populateEnvironmentWithArgumentsOps(ops, ecc, &environment, &arguments, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, &environment, this, construct);
+		return callOps(&context.ops, ecc, &environment, this, construct);
 	}
 	else
 	{
@@ -511,7 +511,7 @@ static inline struct Value callFunction (const struct Op ** const ops, struct Ec
 		environment.hashmap = hashmap;
 		populateEnvironment(ops, ecc, &environment, function->parameterCount, argumentCount);
 		
-		return callOps(&frame.ops, ecc, &environment, this, construct);
+		return callOps(&context.ops, ecc, &environment, this, construct);
 	}
 }
 

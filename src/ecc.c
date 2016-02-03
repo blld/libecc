@@ -292,7 +292,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
-	struct Native(Frame) frame = { NULL };
+	struct Native(Context) context = { NULL };
 	volatile int result, try = !self->envCount, catch = 0;
 	struct Lexer *lexer;
 	struct Parser *parser;
@@ -310,7 +310,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
 	function = Parser.parseWithEnvironment(parser, self->environment);
-	frame.ops = function->oplist->ops;
+	context.ops = function->oplist->ops;
 	
 	Parser.destroy(parser), parser = NULL;
 	
@@ -357,7 +357,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		if (flags & Ecc(globalThis))
 			self->this = Value.object(&self->global->environment);
 		
-		frame.ops->native(&frame.ops, self);
+		context.ops->native(&context.ops, self);
 		
 		self->environment = environment;
 		self->this = this;

@@ -101,8 +101,8 @@ static void popDepth (struct Parser *self)
 
 static struct OpList * foldConstant (struct OpList * ops)
 {
-	struct Native(Frame) frame = { ops->ops, NULL };
-	struct Value value = frame.ops->native(&frame.ops, NULL);
+	struct Native(Context) context = { ops->ops, NULL };
+	struct Value value = context.ops->native(&context.ops, NULL);
 	return OpList.create(Op.value, value, OpList.text(ops));
 }
 
