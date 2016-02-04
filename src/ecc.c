@@ -292,30 +292,11 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
+	volatile int result = EXIT_SUCCESS, try = !self->envCount, catch = 0;
 	struct Native(Context) context = { NULL };
-	volatile int result, try = !self->envCount, catch = 0;
-	struct Lexer *lexer;
-	struct Parser *parser;
-	struct Function *function;
-	
-	assert(self);
 	
 	if (!input)
 		return EXIT_FAILURE;
-	
-	addInput(self, input);
-	
-	result = EXIT_SUCCESS;
-	
-	lexer = Lexer.createWithInput(input);
-	parser = Parser.createWithLexer(lexer);
-	function = Parser.parseWithEnvironment(parser, self->environment);
-	context.ops = function->oplist->ops;
-	
-	Parser.destroy(parser), parser = NULL;
-	
-//	fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
-//	OpList.dumpTo(function->oplist, stderr);
 	
 	if (try)
 		catch = setjmp(*pushEnv(self));
@@ -349,18 +330,10 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	else
 	{
-		struct Object *environment = self->environment;
-		struct Value this = self->this;
-		
-		self->environment = &function->environment;
-		self->result = Value(undefined);
 		if (flags & Ecc(globalThis))
-			self->this = Value.object(&self->global->environment);
+			context.this = Value.object(&self->global->environment);
 		
-		context.ops->native(&context, self);
-		
-		self->environment = environment;
-		self->this = this;
+		evalInputWithContext(self, input, &context);
 		
 		if (flags & Ecc(primitiveResult))
 			self->result = Value.toPrimitive(NULL, self, self->result, NULL, Value(hintAuto));
@@ -372,6 +345,36 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	return result;
 }
 
+void evalInputWithContext (struct Ecc *self, struct Input *input, struct Native(Context) *context)
+{
+	struct Lexer *lexer;
+	struct Parser *parser;
+	struct Function *function;
+	struct Object *environment = self->environment;
+	
+	assert(self);
+	assert(self->envCount);
+	
+	addInput(self, input);
+	
+	lexer = Lexer.createWithInput(input);
+	parser = Parser.createWithLexer(lexer);
+	function = Parser.parseWithEnvironment(parser, self->environment);
+	context->ops = function->oplist->ops;
+	
+	Parser.destroy(parser), parser = NULL;
+	
+//	fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
+//	OpList.dumpTo(function->oplist, stderr);
+	
+	self->environment = &function->environment;
+	self->result = Value(undefined);
+	
+	context->ops->native(context, self);
+	
+	self->environment = environment;
+}
+
 jmp_buf * pushEnv(struct Ecc *self)
 {
 	if (self->envCount >= self->envCapacity)
@@ -381,7 +384,6 @@ jmp_buf * pushEnv(struct Ecc *self)
 	}
 	
 	self->envList[self->envCount].environment = self->environment;
-	self->envList[self->envCount].this = self->this;
 	
 	return &self->envList[self->envCount++].buf;
 }
@@ -392,7 +394,6 @@ void popEnv(struct Ecc *self)
 	
 	--self->envCount;
 	self->environment = self->envList[self->envCount].environment;
-	self->this = self->envList[self->envCount].this;
 }
 
 void jmpEnv (struct Ecc *self, struct Value value)
@@ -431,6 +432,5 @@ void garbageCollect(struct Ecc *self)
 	Pool.unmarkAll();
 	Pool.markValue(Value.object(Arguments(prototype)));
 	Pool.markValue(Value.function(self->global));
-	Pool.markValue(self->this);
 	Pool.collectUnmarked();
 }

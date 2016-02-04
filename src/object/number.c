@@ -19,8 +19,8 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (Value.isNumber(ecc->this))
-		ecc->this = Value.toBinary(ecc->this);
+	if (Value.isNumber(context->this))
+		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
@@ -31,10 +31,10 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*e", precision, ecc->this.data.binary));
+		ecc->result = Value.chars(Chars.create("%.*e", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.chars(Chars.create("%e", ecc->this.data.binary));
+		ecc->result = Value.chars(Chars.create("%e", context->this.data.binary));
 	
 	return Value(undefined);
 }
@@ -45,8 +45,8 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (Value.isNumber(ecc->this))
-		ecc->this = Value.toBinary(ecc->this);
+	if (Value.isNumber(context->this))
+		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
@@ -57,10 +57,10 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*f", precision, ecc->this.data.binary));
+		ecc->result = Value.chars(Chars.create("%.*f", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.chars(Chars.create("%f", ecc->this.data.binary));
+		ecc->result = Value.chars(Chars.create("%f", context->this.data.binary));
 	
 	return Value(undefined);
 }
@@ -71,8 +71,8 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (Value.isNumber(ecc->this))
-		ecc->this = Value.toBinary(ecc->this);
+	if (Value.isNumber(context->this))
+		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
@@ -83,10 +83,10 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 		if (precision < 0 || precision > 100)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*g", precision, ecc->this.data.binary));
+		ecc->result = Value.chars(Chars.create("%.*g", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.binaryToString(ecc->this.data.binary, 10);
+		ecc->result = Value.binaryToString(context->this.data.binary, 10);
 	
 	return Value(undefined);
 }
@@ -98,8 +98,8 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (Value.isNumber(ecc->this))
-		ecc->this = Value.toBinary(ecc->this);
+	if (Value.isNumber(context->this))
+		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
@@ -110,11 +110,11 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 		if (radix < 2 || radix > 36)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "radix must be an integer at least 2 and no greater than 36")));
 		
-		if (radix != 10 && (ecc->this.data.binary < LONG_MIN || ecc->this.data.binary > LONG_MAX))
-			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", ecc->this.data.binary, radix);
+		if (radix != 10 && (context->this.data.binary < LONG_MIN || context->this.data.binary > LONG_MAX))
+			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", context->this.data.binary, radix);
 	}
 	
-	ecc->result = Value.binaryToString(ecc->this.data.binary, radix);
+	ecc->result = Value.binaryToString(context->this.data.binary, radix);
 	
 	return Value(undefined);
 }
@@ -123,12 +123,12 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	if (Value.isNumber(ecc->this))
-		ecc->this = Value.toBinary(ecc->this);
+	if (Value.isNumber(context->this))
+		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	ecc->result = ecc->this;
+	ecc->result = context->this;
 	return Value(undefined);
 }
 

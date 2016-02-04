@@ -58,10 +58,10 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	if (!Value.isObject(ecc->this))
+	if (!Value.isObject(context->this))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not an object")));
 	
-	object = ecc->this.data.object;
+	object = context->this.data.object;
 	length = toBufferLength(object);
 	chars = Chars.createSized(length);
 	toBuffer(object, chars->chars, length);

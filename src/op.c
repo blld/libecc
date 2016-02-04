@@ -383,18 +383,15 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 	}
 }
 
-static inline struct Value callOps (struct Native(Context) * const context, struct Ecc * const ecc, struct Object *environment, struct Value this, int construct)
+static inline struct Value callOps (struct Native(Context) * const context, struct Ecc * const ecc, struct Object *environment, int construct)
 {
-	struct Value callerThis = ecc->this;
 	struct Object *callerEnvironement = ecc->environment;
 	
-	ecc->this = this;
 	ecc->environment = environment;
 	ecc->construct = construct;
 	
 	context->ops->native(context, ecc);
 	
-	ecc->this = callerThis;
 	ecc->environment = callerEnvironement;
 	
 	return ecc->result;
@@ -402,7 +399,7 @@ static inline struct Value callOps (struct Native(Context) * const context, stru
 
 struct Value callFunctionArguments (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Native(Context) context = { function->oplist->ops, parent, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, parent, this, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -417,7 +414,7 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, struc
 		
 		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
 		
-		return callOps(&context, ecc, environment, this, 0);
+		return callOps(&context, ecc, environment, 0);
 	}
 	else
 	{
@@ -429,13 +426,13 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, struc
 		
 		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
 		
-		return callOps(&context, ecc, &environment, this, 0);
+		return callOps(&context, ecc, &environment, 0);
 	}
 }
 
 struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Native(Context) context = { function->oplist->ops, parent, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, parent, this, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -451,7 +448,7 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 		
 		va_end(ap);
 		
-		return callOps(&context, ecc, environment, this, 0);
+		return callOps(&context, ecc, environment, 0);
 	}
 	else
 	{
@@ -466,14 +463,13 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(&context, ecc, &environment, this, 0);
+		return callOps(&context, ecc, &environment, 0);
 	}
 }
 
 static inline struct Value callFunction (struct Native(Context) * const parent, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
-	struct Native(Context) context = { function->oplist->ops, parent };
-	struct Value this = ecc->refObject;
+	struct Native(Context) context = { function->oplist->ops, parent, ecc->refObject };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -484,7 +480,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		else
 			populateEnvironment(parent, ecc, environment, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, environment, this, construct);
+		return callOps(&context, ecc, environment, construct);
 	}
 	else if (function->flags & Function(needArguments))
 	{
@@ -500,7 +496,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		
 		populateEnvironmentWithArgumentsOps(parent, ecc, &environment, &arguments, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, &environment, this, construct);
+		return callOps(&context, ecc, &environment, construct);
 	}
 	else
 	{
@@ -511,7 +507,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		environment.hashmap = hashmap;
 		populateEnvironment(parent, ecc, &environment, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, &environment, this, construct);
+		return callOps(&context, ecc, &environment, construct);
 	}
 }
 
@@ -549,6 +545,7 @@ struct Value eval (struct Native(Context) * const context, struct Ecc * const ec
 	struct Value value;
 	struct Input *input;
 	int32_t argumentCount = opValue().data.integer;
+	struct Native(Context) subContext = { NULL, context, context->this };
 	
 	if (!argumentCount)
 		return nextOp();
@@ -558,7 +555,7 @@ struct Value eval (struct Native(Context) * const context, struct Ecc * const ec
 		nextOp();
 	
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
-	Ecc.evalInput(ecc, input, 0);
+	Ecc.evalInputWithContext(ecc, input, &subContext);
 	
 	return ecc->result;
 }
@@ -632,7 +629,7 @@ struct Value array (struct Native(Context) * const context, struct Ecc * const e
 
 struct Value this (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	return ecc->this;
+	return context->this;
 }
 
 struct Value getLocal (struct Native(Context) * const context, struct Ecc * const ecc)

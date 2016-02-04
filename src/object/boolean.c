@@ -19,8 +19,8 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	if (Value.isBoolean(ecc->this))
-		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
+	if (Value.isBoolean(context->this))
+		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	
@@ -34,8 +34,8 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	if (Value.isBoolean(ecc->this))
-		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
+	if (Value.isBoolean(context->this))
+		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	

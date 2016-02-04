@@ -32,8 +32,8 @@ enum Native(Index) {
 struct Native(Context) {
 	const struct Op * ops;
 	struct Native(Context) * parent;
-	int argumentOffset;
 	struct Value this;
+	int argumentOffset;
 };
 
 

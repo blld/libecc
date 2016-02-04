@@ -53,10 +53,10 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type != Value(stringType))
+	if (context->this.type != Value(stringType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
-	ecc->result = Value.chars(ecc->this.data.string->value);
+	ecc->result = Value.chars(context->this.data.string->value);
 	
 	return Value(undefined);
 }
@@ -65,10 +65,10 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type != Value(stringType))
+	if (context->this.type != Value(stringType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
-	ecc->result = Value.chars(ecc->this.data.string->value);
+	ecc->result = Value.chars(context->this.data.string->value);
 	
 	return Value(undefined);
 }
@@ -80,11 +80,11 @@ static struct Value charAt (struct Native(Context) * const context, struct Ecc *
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (!Value.isString(ecc->this))
-		ecc->this = Value.toString(ecc->this);
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(Native.argument(ecc, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
@@ -109,11 +109,11 @@ static struct Value charCodeAt (struct Native(Context) * const context, struct E
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	if (!Value.isString(ecc->this))
-		ecc->this = Value.toString(ecc->this);
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(Native.argument(ecc, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
@@ -139,13 +139,13 @@ static struct Value concat (struct Native(Context) * const context, struct Ecc *
 	
 	count = Native.variableArgumentCount(ecc);
 	
-	length += Value.toBufferLength(ecc->this);
+	length += Value.toBufferLength(context->this);
 	for (index = 0; index < count; ++index)
 		length += Value.toBufferLength(Native.variableArgument(ecc, index));
 	
 	result = Chars.createSized(length);
 	
-	offset += Value.toBuffer(ecc->this, result->chars + offset, length - offset + 1);
+	offset += Value.toBuffer(context->this, result->chars + offset, length - offset + 1);
 	for (index = 0; index < count; ++index)
 		offset += Value.toBuffer(Native.variableArgument(ecc, index), result->chars + offset, length - offset + 1);
 	
@@ -164,9 +164,9 @@ static struct Value indexOf (struct Native(Context) * const context, struct Ecc 
 	
 	argumentCount = Native.variableArgumentCount(ecc);
 	
-	ecc->this = Value.toString(ecc->this);
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	context->this = Value.toString(context->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	search = argumentCount >= 1? Value.toString(Native.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
@@ -213,9 +213,9 @@ static struct Value lastIndexOf (struct Native(Context) * const context, struct 
 	
 	argumentCount = Native.variableArgumentCount(ecc);
 	
-	ecc->this = Value.toString(ecc->this);
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	context->this = Value.toString(context->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	search = argumentCount >= 1? Value.toString(Native.variableArgument(ecc, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringChars(search);
@@ -264,11 +264,11 @@ static struct Value slice (struct Native(Context) * const context, struct Ecc * 
 	
 	Native.assertParameterCount(ecc, 2);
 	
-	if (!Value.isString(ecc->this))
-		ecc->this = Value.toString(ecc->this);
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	from = Native.argument(ecc, 0);
 	if (from.type == Value(undefinedType))
@@ -304,11 +304,11 @@ static struct Value substring (struct Native(Context) * const context, struct Ec
 	
 	Native.assertParameterCount(ecc, 2);
 	
-	if (!Value.isString(ecc->this))
-		ecc->this = Value.toString(ecc->this);
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(ecc->this);
-	length = Value.stringLength(ecc->this);
+	chars = Value.stringChars(context->this);
+	length = Value.stringLength(context->this);
 	
 	from = Native.argument(ecc, 0);
 	if (from.type == Value(undefinedType))

@@ -92,18 +92,18 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type == Value(nullType))
+	if (context->this.type == Value(nullType))
 		ecc->result = Value.text(&Text(nullType));
-	else if (ecc->this.type == Value(undefinedType))
+	else if (context->this.type == Value(undefinedType))
 		ecc->result = Value.text(&Text(undefinedType));
-	else if (Value.isString(ecc->this))
+	else if (Value.isString(context->this))
 		ecc->result = Value.text(&Text(stringType));
-	else if (Value.isNumber(ecc->this))
+	else if (Value.isNumber(context->this))
 		ecc->result = Value.text(&Text(numberType));
-	else if (Value.isBoolean(ecc->this))
+	else if (Value.isBoolean(context->this))
 		ecc->result = Value.text(&Text(booleanType));
-	else if (Value.isObject(ecc->this))
-		ecc->result = Value.text(ecc->this.data.object->type);
+	else if (Value.isObject(context->this))
+		ecc->result = Value.text(context->this.data.object->type);
 	else
 		assert(0);
 	
@@ -114,7 +114,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	ecc->result = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
+	ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
 	
 	return Value(undefined);
 }
@@ -126,8 +126,8 @@ static struct Value hasOwnProperty (struct Native(Context) * const context, stru
 	Native.assertParameterCount(ecc, 1);
 	
 	v = Value.toString(Native.argument(ecc, 0));
-	ecc->this = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
-	ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
+	context->this = Value.toObject(context, ecc, context->this, Native(thisIndex));
+	ecc->result = Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
 	return Value(undefined);
 }
@@ -143,7 +143,7 @@ static struct Value isPrototypeOf (struct Native(Context) * const context, struc
 	if (Value.isObject(arg0))
 	{
 		struct Object *v = arg0.data.object;
-		struct Object *o = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
+		struct Object *o = Value.toObject(context, ecc, context->this, Native(thisIndex)).data.object;
 		
 		while (( v = v->prototype ))
 			if (v == o)
@@ -166,7 +166,7 @@ static struct Value propertyIsEnumerable (struct Native(Context) * const context
 	Native.assertParameterCount(ecc, 1);
 	
 	property = Native.argument(ecc, 0);
-	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, context->this, Native(thisIndex)).data.object;
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
@@ -190,7 +190,7 @@ static struct Value objectConstructor (struct Native(Context) * const context, s
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
-		ecc->result = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
+		ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
 	
 	return Value(undefined);
 }

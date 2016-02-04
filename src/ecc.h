@@ -32,7 +32,9 @@ Interface(Ecc,
 	
 	(void, addNative ,(struct Ecc *, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags)))
 	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Value(Flags)))
+	
 	(int, evalInput, (struct Ecc *, struct Input *, enum Ecc(EvalFlags)))
+	(void, evalInputWithContext, (struct Ecc *, struct Input *, struct Native(Context) *context))
 	
 	(jmp_buf *, pushEnv ,(struct Ecc *))
 	(void, popEnv ,(struct Ecc *))
@@ -44,11 +46,9 @@ Interface(Ecc,
 	,
 	{
 		struct Object *environment;
-		struct Value this;
 		
 		struct {
 			struct Object *environment;
-			struct Value this;
 			
 			jmp_buf buf;
 		} *envList;

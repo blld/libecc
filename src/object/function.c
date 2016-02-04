@@ -17,18 +17,18 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	if (ecc->this.type != Value(functionType))
+	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
-	if (ecc->this.data.function->text.location == Text(nativeCode).location)
+	if (context->this.data.function->text.location == Text(nativeCode).location)
 	{
-		uint16_t length = toBufferLength(ecc->this.data.function);
+		uint16_t length = toBufferLength(context->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
-		toBuffer(ecc->this.data.function, chars->chars, length + 1);
+		toBuffer(context->this.data.function, chars->chars, length + 1);
 		ecc->result = Value.chars(chars);
 	}
 	else
-		ecc->result = Value.text(&ecc->this.data.function->text);
+		ecc->result = Value.text(&context->this.data.function->text);
 	
 	return Value(undefined);
 }
@@ -42,20 +42,20 @@ static struct Value apply (struct Native(Context) * const context, struct Ecc * 
 	if (ecc->construct)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "apply is not a constructor")));
 	
-	if (ecc->this.type != Value(functionType))
+	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
 	this = Native.argument(ecc, 0);
 	arguments = Native.argument(ecc, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		Op.callFunctionVA(context, ecc, 2, ecc->this.data.function, this, 0);
+		Op.callFunctionVA(context, ecc, 2, context->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, 1), "arguments is not an object")));
 		
-		Op.callFunctionArguments(context, ecc, 2, ecc->this.data.function, this, arguments.data.object);
+		Op.callFunctionArguments(context, ecc, 2, context->this.data.function, this, arguments.data.object);
 	}
 	
 	return Value(undefined);
@@ -70,7 +70,7 @@ static struct Value call (struct Native(Context) * const context, struct Ecc * c
 	if (ecc->construct)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "call is not a constructor")));
 	
-	if (ecc->this.type != Value(functionType))
+	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
 	object = ecc->environment->hashmap[2].data.value.data.object;
@@ -89,10 +89,10 @@ static struct Value call (struct Native(Context) * const context, struct Ecc * c
 			arguments.elementCapacity = 0;
 		}
 		
-		Op.callFunctionArguments(context, ecc, 1, ecc->this.data.function, this, &arguments);
+		Op.callFunctionArguments(context, ecc, 1, context->this.data.function, this, &arguments);
 	}
 	else
-		Op.callFunctionVA(context, ecc, 1, ecc->this.data.function, Value(undefined), 0);
+		Op.callFunctionVA(context, ecc, 1, context->this.data.function, Value(undefined), 0);
 	
 	return Value(undefined);
 }
