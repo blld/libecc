@@ -17,14 +17,14 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
@@ -43,14 +43,14 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
@@ -69,14 +69,14 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
@@ -96,14 +96,14 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	struct Value value;
 	int32_t radix = 10;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		radix = Value.toInteger(value).data.integer;
@@ -121,7 +121,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 
 static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
@@ -136,15 +136,15 @@ static struct Value numberConstructor (struct Native(Context) * const context, s
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		value = Value.binary(0);
 	else
 		value = Value.toBinary(value);
 	
-	if (ecc->construct)
+	if (context->construct)
 		ecc->result = Value.number(Number.create(value.data.binary));
 	else
 		ecc->result = value;

@@ -90,7 +90,7 @@ static struct Object *checkObject (struct Native(Context) * const context, struc
 
 static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (context->this.type == Value(nullType))
 		ecc->result = Value.text(&Text(nullType));
@@ -112,7 +112,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 
 static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
 	
@@ -123,9 +123,9 @@ static struct Value hasOwnProperty (struct Native(Context) * const context, stru
 {
 	struct Value v;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	v = Value.toString(Native.argument(ecc, 0));
+	v = Value.toString(Native.argument(context, 0));
 	context->this = Value.toObject(context, ecc, context->this, Native(thisIndex));
 	ecc->result = Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
@@ -136,9 +136,9 @@ static struct Value isPrototypeOf (struct Native(Context) * const context, struc
 {
 	struct Value arg0;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	arg0 = Native.argument(ecc, 0);
+	arg0 = Native.argument(context, 0);
 	
 	if (Value.isObject(arg0))
 	{
@@ -163,9 +163,9 @@ static struct Value propertyIsEnumerable (struct Native(Context) * const context
 	struct Object *object;
 	struct Value *ref;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	property = Native.argument(ecc, 0);
+	property = Native.argument(context, 0);
 	object = Value.toObject(context, ecc, context->this, Native(thisIndex)).data.object;
 	ref = getOwnProperty(object, property);
 	
@@ -181,13 +181,13 @@ static struct Value objectConstructor (struct Native(Context) * const context, s
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Native.argument(ecc, 0);
+	value = Native.argument(context, 0);
 	
 	if (value.type == Value(nullType) || value.type == Value(undefinedType))
 		ecc->result = Value.object(Object.create(Object(prototype)));
-	else if (ecc->construct && Value.isObject(value))
+	else if (context->construct && Value.isObject(value))
 		ecc->result = value;
 	else
 		ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
@@ -199,9 +199,9 @@ static struct Value getPrototypeOf (struct Native(Context) * const context, stru
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	
 	ecc->result = object->prototype? Value.object(object->prototype): Value(undefined);
 	
@@ -214,10 +214,10 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	struct Value property;
 	struct Value *ref;
 	
-	Native.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(context, 2);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
-	property = Native.argument(ecc, 1);
+	object = checkObject(context, ecc, Native.argument(context, 0));
+	property = Native.argument(context, 1);
 	ref = getOwnProperty(object, property);
 	
 	ecc->result = Value(undefined);
@@ -243,9 +243,9 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context,
 	struct Object *result;
 	uint32_t index, length;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	result = Array.create();
 	length = 0;
 	
@@ -264,7 +264,7 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context,
 
 static struct Value objectCreate (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	#warning TODO
 	return Value(undefined);
 }
@@ -275,9 +275,9 @@ static struct Value defineProperty (struct Native(Context) * const context, stru
 	struct Value value;
 	enum Object(Flags) flags;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	property = checkObject(context, ecc, Native.argument(ecc, 1));
+	property = checkObject(context, ecc, Native.argument(context, 1));
 	value = Object.get(property, Key(value));
 	flags = 0;
 	
@@ -297,7 +297,7 @@ static struct Value defineProperty (struct Native(Context) * const context, stru
 
 static struct Value defineProperties (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	#warning TODO
 	return Value(undefined);
 }
@@ -307,9 +307,9 @@ static struct Value seal (struct Native(Context) * const context, struct Ecc * c
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -329,9 +329,9 @@ static struct Value freeze (struct Native(Context) * const context, struct Ecc *
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -350,9 +350,9 @@ static struct Value preventExtensions (struct Native(Context) * const context, s
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	object->flags |= Object(sealed);
 	
 	ecc->result = Value.object(object);
@@ -364,11 +364,11 @@ static struct Value isSealed (struct Native(Context) * const context, struct Ecc
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 	
@@ -388,11 +388,11 @@ static struct Value isFrozen (struct Native(Context) * const context, struct Ecc
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 		
@@ -411,9 +411,9 @@ static struct Value isExtensible (struct Native(Context) * const context, struct
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	ecc->result = Value.truth(!(object->flags & Object(sealed)));
 	
 	return Value(undefined);
@@ -425,9 +425,9 @@ static struct Value keys (struct Native(Context) * const context, struct Ecc * c
 	struct Object *result;
 	uint32_t index, length;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(context, 0));
 	result = Array.create();
 	length = 0;
 	

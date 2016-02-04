@@ -16,17 +16,17 @@ static struct Value eval (struct Native(Context) * const context, struct Ecc * c
 {
 	struct Value value;
 	struct Input *input;
+	struct Native(Context) subContext = { NULL, context, Value.object(&ecc->global->environment), &ecc->global->environment };
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	if (ecc->construct)
+	if (context->construct)
 		jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "eval is not a constructor")));
 	
-	value = Value.toString(Native.argument(ecc, 0));
+	value = Value.toString(Native.argument(context, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
-	ecc->environment = &ecc->global->environment;
-	evalInput(ecc, input, Ecc(globalThis));
+	evalInputWithContext(ecc, input, &subContext);
 	
 	return Value(undefined);
 }
@@ -37,10 +37,10 @@ static struct Value parseInt (struct Native(Context) * const context, struct Ecc
 	struct Text text;
 	int32_t base;
 	
-	Native.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(context, 2);
 	
-	value = Value.toString(Native.argument(ecc, 0));
-	base = Value.toInteger(Native.argument(ecc, 1)).data.integer;
+	value = Value.toString(Native.argument(context, 0));
+	base = Value.toInteger(Native.argument(context, 1)).data.integer;
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	
@@ -67,9 +67,9 @@ static struct Value parseFloat (struct Native(Context) * const context, struct E
 	struct Value value;
 	struct Text text;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Value.toString(Native.argument(ecc, 0));
+	value = Value.toString(Native.argument(context, 0));
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
 	ecc->result = Lexer.parseBinary(text);
@@ -81,9 +81,9 @@ static struct Value isFinite (struct Native(Context) * const context, struct Ecc
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Native.argument(ecc, 0));
+	value = Value.toBinary(Native.argument(context, 0));
 	ecc->result = Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 	
 	return Value(undefined);
@@ -93,9 +93,9 @@ static struct Value isNaN (struct Native(Context) * const context, struct Ecc * 
 {
 	struct Value value;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Native.argument(ecc, 0));
+	value = Value.toBinary(Native.argument(context, 0));
 	ecc->result = Value.truth(isnan(value.data.binary));
 	
 	return Value(undefined);
@@ -109,9 +109,9 @@ static struct Value decodeURI (struct Native(Context) * const context, struct Ec
 	struct Chars *chars;
 	int c;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	value = Value.toString(Native.argument(ecc, 0));
+	value = Value.toString(Native.argument(context, 0));
 	bytes = Value.stringChars(value);
 	count = Value.stringLength(value);
 	chars = Chars.createSized(count);
@@ -210,8 +210,7 @@ struct Ecc *create (void)
 	*self = Ecc.identity;
 	
 	self->global = Function.create(Object(prototype));
-	self->environment = &self->global->environment;
-	self->environment->type = &Text(globalType);
+	self->global->environment.type = &Text(globalType);
 	
 	Function.addValue(self->global, "NaN", Value.binary(NAN), flags | Value(frozen));
 	Function.addValue(self->global, "Infinity", Value.binary(INFINITY), flags | Value(frozen));
@@ -293,7 +292,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	volatile int result = EXIT_SUCCESS, try = !self->envCount, catch = 0;
-	struct Native(Context) context = { NULL };
+	struct Native(Context) context = { NULL, NULL, Value(undefined), &self->global->environment };
 	
 	if (!input)
 		return EXIT_FAILURE;
@@ -350,7 +349,6 @@ void evalInputWithContext (struct Ecc *self, struct Input *input, struct Native(
 	struct Lexer *lexer;
 	struct Parser *parser;
 	struct Function *function;
-	struct Object *environment = self->environment;
 	
 	assert(self);
 	assert(self->envCount);
@@ -359,20 +357,18 @@ void evalInputWithContext (struct Ecc *self, struct Input *input, struct Native(
 	
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
-	function = Parser.parseWithEnvironment(parser, self->environment);
+	function = Parser.parseWithEnvironment(parser, context->environment);
 	context->ops = function->oplist->ops;
+	context->environment = &function->environment;
 	
 	Parser.destroy(parser), parser = NULL;
 	
 //	fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
 //	OpList.dumpTo(function->oplist, stderr);
 	
-	self->environment = &function->environment;
 	self->result = Value(undefined);
 	
 	context->ops->native(context, self);
-	
-	self->environment = environment;
 }
 
 jmp_buf * pushEnv(struct Ecc *self)
@@ -383,8 +379,6 @@ jmp_buf * pushEnv(struct Ecc *self)
 		self->envList = realloc(self->envList, sizeof(*self->envList) * self->envCapacity);
 	}
 	
-	self->envList[self->envCount].environment = self->environment;
-	
 	return &self->envList[self->envCount++].buf;
 }
 
@@ -393,7 +387,6 @@ void popEnv(struct Ecc *self)
 	assert(self->envCount);
 	
 	--self->envCount;
-	self->environment = self->envList[self->envCount].environment;
 }
 
 void jmpEnv (struct Ecc *self, struct Value value)

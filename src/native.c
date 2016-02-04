@@ -14,88 +14,88 @@
 
 // MARK: - Methods
 
-void assertParameterCount (struct Ecc * const ecc, int parameterCount)
+void assertParameterCount (struct Native(Context) * const context, int parameterCount)
 {
-	assert(ecc->environment->hashmapCount == parameterCount + 3);
+	assert(context->environment->hashmapCount == parameterCount + 3);
 }
 
-int argumentCount (struct Ecc * const ecc)
+int argumentCount (struct Native(Context) * const context)
 {
-	return ecc->environment->hashmapCount - 3;
+	return context->environment->hashmapCount - 3;
 }
 
-struct Value argument (struct Ecc * const ecc, int argumentIndex)
+struct Value argument (struct Native(Context) * const context, int argumentIndex)
 {
-	return ecc->environment->hashmap[argumentIndex + 3].data.value;
+	return context->environment->hashmap[argumentIndex + 3].data.value;
 }
 
-void assertVariableParameter (struct Ecc * const ecc)
+void assertVariableParameter (struct Native(Context) * const context)
 {
-	assert(ecc->environment->hashmap[2].data.value.type == Value(objectType));
+	assert(context->environment->hashmap[2].data.value.type == Value(objectType));
 }
 
-int variableArgumentCount (struct Ecc * const ecc)
+int variableArgumentCount (struct Native(Context) * const context)
 {
-	return ecc->environment->hashmap[2].data.value.data.object->elementCount;
+	return context->environment->hashmap[2].data.value.data.object->elementCount;
 }
 
-struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
+struct Value variableArgument (struct Native(Context) * const context, int argumentIndex)
 {
-	return ecc->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
+	return context->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
 }
 
-struct Text textSeek (struct Native(Context) * const sourceContext, struct Ecc * const ecc, enum Native(Index) argumentIndex)
+struct Text textSeek (struct Native(Context) * const context, struct Ecc * const ecc, enum Native(Index) argumentIndex)
 {
-	assert(sourceContext);
+	assert(context);
 	assert(ecc);
 	
 	const char *location;
-	struct Native(Context) context = *sourceContext;
+	struct Native(Context) seek = *context;
 	uint32_t breakArray = 0;
 	
-	while (context.ops->text.location == Text(nativeCode).location)
+	while (seek.ops->text.location == Text(nativeCode).location)
 	{
-		if (!context.parent)
-			return context.ops->text;
+		if (!seek.parent)
+			return seek.ops->text;
 		
-		if (context.argumentOffset && argumentIndex >= Native(thisIndex))
+		if (seek.argumentOffset && argumentIndex >= Native(thisIndex))
 		{
 			++argumentIndex;
 			breakArray <<= 1;
 			
-			if (context.argumentOffset == 2)
+			if (seek.argumentOffset == 2)
 				breakArray |= 2;
 		}
-		context = *context.parent;
+		seek = *seek.parent;
 	}
 	
 	if (argumentIndex > Native(noIndex))
 	{
-		while (context.ops->native != Op.call && context.ops->native != Op.eval && context.ops->native != Op.construct)
-			--context.ops;
+		while (seek.ops->native != Op.call && seek.ops->native != Op.eval && seek.ops->native != Op.construct)
+			--seek.ops;
 		
 		// func
 		if (argumentIndex-- > Native(callIndex))
-			++context.ops;
+			++seek.ops;
 		
 		// this
-		if (argumentIndex-- > Native(callIndex) && (context.ops + 1)->text.location <= context.ops->text.location)
-			++context.ops;
+		if (argumentIndex-- > Native(callIndex) && (seek.ops + 1)->text.location <= seek.ops->text.location)
+			++seek.ops;
 		
 		// arguments
 		while (argumentIndex-- > Native(callIndex))
 		{
-			location = context.ops->text.location + context.ops->text.length;
-			while (location > context.ops->text.location && context.ops->text.location)
-				++context.ops;
+			location = seek.ops->text.location + seek.ops->text.length;
+			while (location > seek.ops->text.location && seek.ops->text.location)
+				++seek.ops;
 			
-			if (breakArray & 0x1 && context.ops->native == Op.array)
-				++context.ops;
+			if (breakArray & 0x1 && seek.ops->native == Op.array)
+				++seek.ops;
 			
 			breakArray >>= 1;
 		}
 	}
 	
-	return context.ops->text;
+	return seek.ops->text;
 }
 

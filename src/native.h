@@ -33,19 +33,21 @@ struct Native(Context) {
 	const struct Op * ops;
 	struct Native(Context) * parent;
 	struct Value this;
+	struct Object *environment;
 	int argumentOffset;
+	int construct;
 };
 
 
 Interface(Native,
 	
-	(void , assertParameterCount ,(struct Ecc * const ecc, int parameterCount))
-	(int , argumentCount ,(struct Ecc * const ecc))
-	(struct Value, argument ,(struct Ecc * const ecc, int argumentIndex))
+	(void , assertParameterCount ,(struct Native(Context) * const, int parameterCount))
+	(int , argumentCount ,(struct Native(Context) * const))
+	(struct Value, argument ,(struct Native(Context) * const, int argumentIndex))
 	
-	(void , assertVariableParameter ,(struct Ecc * const ecc))
-	(int , variableArgumentCount ,(struct Ecc * const ecc))
-	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
+	(void , assertVariableParameter ,(struct Native(Context) * const))
+	(int , variableArgumentCount ,(struct Native(Context) * const))
+	(struct Value, variableArgument ,(struct Native(Context) * const, int argumentIndex))
 	
 	(struct Text, textSeek ,(struct Native(Context) * const, struct Ecc * const ecc, enum Native(Index) argumentIndex))
 	,

@@ -56,7 +56,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	struct Chars *chars;
 	uint16_t length;
 	
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (!Value.isObject(context->this))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not an object")));
@@ -75,9 +75,9 @@ static struct Value errorConstructor (struct Native(Context) * const context, st
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(error(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -87,9 +87,9 @@ static struct Value rangeErrorConstructor (struct Native(Context) * const contex
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(rangeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -99,9 +99,9 @@ static struct Value referenceErrorConstructor (struct Native(Context) * const co
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(referenceError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -111,9 +111,9 @@ static struct Value syntaxErrorConstructor (struct Native(Context) * const conte
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(syntaxError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -123,9 +123,9 @@ static struct Value typeErrorConstructor (struct Native(Context) * const context
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(typeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
@@ -135,9 +135,9 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context,
 {
 	struct Value message;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(ecc, 0));
+	message = messageValue(Native.argument(context, 0));
 	ecc->result = Value.error(uriError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);

@@ -17,7 +17,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 {
 	int truth;
 	
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (Value.isBoolean(context->this))
 		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
@@ -32,7 +32,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 {
 	int truth;
 	
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (Value.isBoolean(context->this))
 		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
@@ -49,10 +49,10 @@ static struct Value booleanConstructor (struct Native(Context) * const context, 
 {
 	char truth;
 	
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
-	truth = Value.isTrue(Native.argument(ecc, 0));
-	if (ecc->construct)
+	truth = Value.isTrue(Native.argument(context, 0));
+	if (context->construct)
 		ecc->result = Value.boolean(Boolean.create(truth));
 	else
 		ecc->result = Value.truth(truth);

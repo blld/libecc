@@ -17,7 +17,7 @@ struct Function * RegExp(constructor) = NULL;
 
 static struct Value constructorFunction (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 1);
+	Native.assertParameterCount(context, 1);
 	
 #warning TODO
 	ecc->result = Value(null);

@@ -383,23 +383,16 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 	}
 }
 
-static inline struct Value callOps (struct Native(Context) * const context, struct Ecc * const ecc, struct Object *environment, int construct)
+static inline struct Value callOps (struct Native(Context) * const context, struct Ecc * const ecc, struct Object *environment)
 {
-	struct Object *callerEnvironement = ecc->environment;
-	
-	ecc->environment = environment;
-	ecc->construct = construct;
-	
+	context->environment = environment;
 	context->ops->native(context, ecc);
-	
-	ecc->environment = callerEnvironement;
-	
 	return ecc->result;
 }
 
 struct Value callFunctionArguments (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Native(Context) context = { function->oplist->ops, parent, this, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, parent, this, NULL, argumentOffset };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -414,7 +407,7 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, struc
 		
 		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
 		
-		return callOps(&context, ecc, environment, 0);
+		return callOps(&context, ecc, environment);
 	}
 	else
 	{
@@ -426,13 +419,13 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, struc
 		
 		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
 		
-		return callOps(&context, ecc, &environment, 0);
+		return callOps(&context, ecc, &environment);
 	}
 }
 
 struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Native(Context) context = { function->oplist->ops, parent, this, argumentOffset };
+	struct Native(Context) context = { function->oplist->ops, parent, this, NULL, argumentOffset, 0 };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -448,7 +441,7 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 		
 		va_end(ap);
 		
-		return callOps(&context, ecc, environment, 0);
+		return callOps(&context, ecc, environment);
 	}
 	else
 	{
@@ -463,13 +456,13 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(&context, ecc, &environment, 0);
+		return callOps(&context, ecc, &environment);
 	}
 }
 
 static inline struct Value callFunction (struct Native(Context) * const parent, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
-	struct Native(Context) context = { function->oplist->ops, parent, ecc->refObject };
+	struct Native(Context) context = { function->oplist->ops, parent, ecc->refObject, NULL, 0, construct };
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -480,7 +473,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		else
 			populateEnvironment(parent, ecc, environment, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, environment, construct);
+		return callOps(&context, ecc, environment);
 	}
 	else if (function->flags & Function(needArguments))
 	{
@@ -496,7 +489,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		
 		populateEnvironmentWithArgumentsOps(parent, ecc, &environment, &arguments, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, &environment, construct);
+		return callOps(&context, ecc, &environment);
 	}
 	else
 	{
@@ -507,7 +500,7 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		environment.hashmap = hashmap;
 		populateEnvironment(parent, ecc, &environment, function->parameterCount, argumentCount);
 		
-		return callOps(&context, ecc, &environment, construct);
+		return callOps(&context, ecc, &environment);
 	}
 }
 
@@ -545,7 +538,7 @@ struct Value eval (struct Native(Context) * const context, struct Ecc * const ec
 	struct Value value;
 	struct Input *input;
 	int32_t argumentCount = opValue().data.integer;
-	struct Native(Context) subContext = { NULL, context, context->this };
+	struct Native(Context) subContext = { NULL, context, context->this, context->environment, 0, 0 };
 	
 	if (!argumentCount)
 		return nextOp();
@@ -586,7 +579,7 @@ struct Value text (struct Native(Context) * const context, struct Ecc * const ec
 struct Value function (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Function *function = Function.copy(opValue().data.function);
-	function->environment.prototype = ecc->environment;
+	function->environment.prototype = context->environment;
 	return Value.function(function);
 }
 
@@ -635,7 +628,7 @@ struct Value this (struct Native(Context) * const context, struct Ecc * const ec
 struct Value getLocal (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->environment, key);
+	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
 	
@@ -646,7 +639,7 @@ struct Value getLocal (struct Native(Context) * const context, struct Ecc * cons
 struct Value getLocalRef (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->environment, key);
+	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
 	
@@ -656,7 +649,7 @@ struct Value getLocalRef (struct Native(Context) * const context, struct Ecc * c
 struct Value setLocal (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(ecc->environment, key);
+	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
 	
@@ -667,26 +660,26 @@ struct Value getLocalSlot (struct Native(Context) * const context, struct Ecc * 
 {
 	int32_t slot = opValue().data.integer;
 	ecc->refObject = Value(undefined);
-	return ecc->environment->hashmap[slot].data.value;
+	return context->environment->hashmap[slot].data.value;
 }
 
 struct Value getLocalSlotRef (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	return Value.reference(&ecc->environment->hashmap[slot].data.value);
+	return Value.reference(&context->environment->hashmap[slot].data.value);
 }
 
 struct Value setLocalSlot (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	return ecc->environment->hashmap[slot].data.value = nextOp();
+	return context->environment->hashmap[slot].data.value = nextOp();
 }
 
 struct Value getParentSlot (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->environment;
+	struct Object *object = context->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -698,7 +691,7 @@ struct Value getParentSlotRef (struct Native(Context) * const context, struct Ec
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->environment;
+	struct Object *object = context->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -709,7 +702,7 @@ struct Value setParentSlot (struct Native(Context) * const context, struct Ecc *
 {
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = ecc->environment;
+	struct Object *object = context->environment;
 	while (count--)
 		object = object->prototype;
 	
@@ -883,13 +876,13 @@ struct Value resultValue (struct Native(Context) * const context, struct Ecc * c
 
 struct Value pushEnvironment (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	ecc->environment = Object.create(ecc->environment);
+	context->environment = Object.create(context->environment);
 	return opValue();
 }
 
 struct Value popEnvironment (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	ecc->environment = ecc->environment->prototype;
+	context->environment = context->environment->prototype;
 	return opValue();
 }
 
@@ -1461,7 +1454,7 @@ struct Value try (struct Native(Context) * const context, struct Ecc * const ecc
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(ecc->environment, key, ecc->result, 0);
+				Object.add(context->environment, key, ecc->result, 0);
 				ecc->result = Value(undefined);
 				value = nextOp(); // execute until noop
 				rethrow = 0;

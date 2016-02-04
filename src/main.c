@@ -61,14 +61,14 @@ static struct Value dumpTo (struct Native(Context) * const context, struct Ecc *
 	int index, count;
 	struct Value value;
 	
-	Native.assertVariableParameter(ecc);
+	Native.assertVariableParameter(context);
 	
-	for (index = 0, count = Native.variableArgumentCount(ecc); index < count; ++index)
+	for (index = 0, count = Native.variableArgumentCount(context); index < count; ++index)
 	{
 		if (index)
 			putc(' ', file);
 		
-		value = Native.variableArgument(ecc, index);
+		value = Native.variableArgument(context, index);
 		value = Value.toPrimitive(context, ecc, value, &context->ops->text, Value(hintString));
 		Value.dumpTo(Value.toString(value), file);
 	}

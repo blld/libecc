@@ -15,7 +15,7 @@ struct Function * Function(constructor) = NULL;
 
 static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	Native.assertParameterCount(ecc, 0);
+	Native.assertParameterCount(context, 0);
 	
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
@@ -37,16 +37,16 @@ static struct Value apply (struct Native(Context) * const context, struct Ecc * 
 {
 	struct Value this, arguments;
 	
-	Native.assertParameterCount(ecc, 2);
+	Native.assertParameterCount(context, 2);
 	
-	if (ecc->construct)
+	if (context->construct)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "apply is not a constructor")));
 	
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
-	this = Native.argument(ecc, 0);
-	arguments = Native.argument(ecc, 1);
+	this = Native.argument(context, 0);
+	arguments = Native.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
 		Op.callFunctionVA(context, ecc, 2, context->this.data.function, this, 0);
@@ -65,15 +65,15 @@ static struct Value call (struct Native(Context) * const context, struct Ecc * c
 {
 	struct Object *object;
 	
-	Native.assertVariableParameter(ecc);
+	Native.assertVariableParameter(context);
 	
-	if (ecc->construct)
+	if (context->construct)
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "call is not a constructor")));
 	
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
-	object = ecc->environment->hashmap[2].data.value.data.object;
+	object = context->environment->hashmap[2].data.value.data.object;
 	
 	if (object->elementCount)
 	{
@@ -107,9 +107,9 @@ static struct Value functionConstructor (struct Native(Context) * const context,
 {
 	int argumentCount;
 	
-	Native.assertVariableParameter(ecc);
+	Native.assertVariableParameter(context);
 	
-	argumentCount = Native.variableArgumentCount(ecc);
+	argumentCount = Native.variableArgumentCount(context);
 	
 	if (argumentCount)
 	{
@@ -122,7 +122,7 @@ static struct Value functionConstructor (struct Native(Context) * const context,
 			if (index == argumentCount - 1)
 				length++, length++, length++;
 			
-			length += Value.toBufferLength(Native.variableArgument(ecc, index));
+			length += Value.toBufferLength(Native.variableArgument(context, index));
 			
 			if (index < argumentCount - 2)
 				length++;
@@ -141,7 +141,7 @@ static struct Value functionConstructor (struct Native(Context) * const context,
 				if (index == argumentCount - 1)
 					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
 				
-				offset += Value.toBuffer(Native.variableArgument(ecc, index), chars + offset, length - offset);
+				offset += Value.toBuffer(Native.variableArgument(context, index), chars + offset, length - offset);
 				
 				if (index < argumentCount - 2)
 					chars[offset++] = ',';

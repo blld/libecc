@@ -45,11 +45,7 @@ Interface(Ecc,
 	(void, garbageCollect ,(struct Ecc *))
 	,
 	{
-		struct Object *environment;
-		
 		struct {
-			struct Object *environment;
-			
 			jmp_buf buf;
 		} *envList;
 		uint16_t envCount;
@@ -58,7 +54,6 @@ Interface(Ecc,
 		struct Value refObject;
 		struct Value result;
 		
-		int construct;
 		struct Function *global;
 		struct Text text;
 		
