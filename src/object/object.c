@@ -80,15 +80,15 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 
 //
 
-static struct Object *checkObject (const struct Op ** const ops, struct Ecc * const ecc, struct Value value)
+static struct Object *checkObject (struct Native(Context) * const context, struct Ecc * const ecc, struct Value value)
 {
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "%.*s not an object", (*ops)->text.length, (*ops)->text.location)));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not an object")));
 	
 	return value.data.object;
 }
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	
@@ -110,29 +110,29 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	
-	ecc->result = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
+	ecc->result = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
 	
 	return Value(undefined);
 }
 
-static struct Value hasOwnProperty (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value hasOwnProperty (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value v;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	v = Value.toString(Native.argument(ecc, 0));
-	ecc->this = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
+	ecc->this = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
 	ecc->result = Value.truth(getSlot(ecc->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 	
 	return Value(undefined);
 }
 
-static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isPrototypeOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value arg0;
 	
@@ -143,7 +143,7 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 	if (Value.isObject(arg0))
 	{
 		struct Object *v = arg0.data.object;
-		struct Object *o = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+		struct Object *o = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 		
 		while (( v = v->prototype ))
 			if (v == o)
@@ -157,7 +157,7 @@ static struct Value isPrototypeOf (const struct Op ** const ops, struct Ecc * co
 	return Value(undefined);
 }
 
-static struct Value propertyIsEnumerable (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value propertyIsEnumerable (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value property;
 	struct Object *object;
@@ -166,7 +166,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	Native.assertParameterCount(ecc, 1);
 	
 	property = Native.argument(ecc, 0);
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
@@ -177,7 +177,7 @@ static struct Value propertyIsEnumerable (const struct Op ** const ops, struct E
 	return Value(undefined);
 }
 
-static struct Value objectConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value objectConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -190,25 +190,25 @@ static struct Value objectConstructor (const struct Op ** const ops, struct Ecc 
 	else if (ecc->construct && Value.isObject(value))
 		ecc->result = value;
 	else
-		ecc->result = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
+		ecc->result = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
 	
 	return Value(undefined);
 }
 
-static struct Value getPrototypeOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value getPrototypeOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	
 	ecc->result = object->prototype? Value.object(object->prototype): Value(undefined);
 	
 	return Value(undefined);
 }
 
-static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value getOwnPropertyDescriptor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Value property;
@@ -216,7 +216,7 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	
 	Native.assertParameterCount(ecc, 2);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	property = Native.argument(ecc, 1);
 	ref = getOwnProperty(object, property);
 	
@@ -237,7 +237,7 @@ static struct Value getOwnPropertyDescriptor (const struct Op ** const ops, stru
 	return Value(undefined);
 }
 
-static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value getOwnPropertyNames (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Object *result;
@@ -245,7 +245,7 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	result = Array.create();
 	length = 0;
 	
@@ -262,14 +262,14 @@ static struct Value getOwnPropertyNames (const struct Op ** const ops, struct Ec
 	return Value(undefined);
 }
 
-static struct Value objectCreate (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value objectCreate (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 1);
 	#warning TODO
 	return Value(undefined);
 }
 
-static struct Value defineProperty (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value defineProperty (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *property;
 	struct Value value;
@@ -277,7 +277,7 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	property = checkObject(ops, ecc, Native.argument(ecc, 1));
+	property = checkObject(context, ecc, Native.argument(ecc, 1));
 	value = Object.get(property, Key(value));
 	flags = 0;
 	
@@ -295,21 +295,21 @@ static struct Value defineProperty (const struct Op ** const ops, struct Ecc * c
 	return Value(undefined);
 }
 
-static struct Value defineProperties (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value defineProperties (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 1);
 	#warning TODO
 	return Value(undefined);
 }
 
-static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value seal (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	uint32_t index;
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -324,14 +324,14 @@ static struct Value seal (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value freeze (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	uint32_t index;
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -346,20 +346,20 @@ static struct Value freeze (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value preventExtensions (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value preventExtensions (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	object->flags |= Object(sealed);
 	
 	ecc->result = Value.object(object);
 	return Value(undefined);
 }
 
-static struct Value isSealed (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isSealed (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	uint32_t index;
@@ -368,7 +368,7 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 	
@@ -383,7 +383,7 @@ static struct Value isSealed (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isFrozen (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	uint32_t index;
@@ -392,7 +392,7 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 	
 	ecc->result = Value(true);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	if (!(object->flags & Object(sealed)))
 		ecc->result = Value(false);
 		
@@ -407,19 +407,19 @@ static struct Value isFrozen (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value isExtensible (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isExtensible (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	ecc->result = Value.truth(!(object->flags & Object(sealed)));
 	
 	return Value(undefined);
 }
 
-static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value keys (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Object *result;
@@ -427,7 +427,7 @@ static struct Value keys (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = checkObject(ops, ecc, Native.argument(ecc, 0));
+	object = checkObject(context, ecc, Native.argument(ecc, 0));
 	result = Array.create();
 	length = 0;
 	

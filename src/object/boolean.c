@@ -13,7 +13,7 @@
 struct Object * Boolean(prototype) = NULL;
 struct Function * Boolean(constructor) = NULL;
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int truth;
 	
@@ -22,13 +22,13 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	if (Value.isBoolean(ecc->this))
 		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a boolean")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	
 	ecc->result = Value.text(truth? &Text(true): &Text(false));
 	return Value(undefined);
 }
 
-static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int truth;
 	
@@ -37,7 +37,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 	if (Value.isBoolean(ecc->this))
 		truth = Value.isObject(ecc->this)? ecc->this.data.boolean->truth: Value.isTrue(ecc->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a boolean")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	
 	ecc->result = Value.truth(truth);
 	return Value(undefined);
@@ -45,7 +45,7 @@ static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ec
 
 // MARK: - Static Members
 
-static struct Value booleanConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value booleanConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	char truth;
 	

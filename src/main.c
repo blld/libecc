@@ -10,8 +10,8 @@
 
 static int printUsage (void);
 static int runTest (int verbosity);
-static struct Value print (const struct Op ** const ops, struct Ecc * const ecc);
-static struct Value alert (const struct Op ** const ops, struct Ecc * const ecc);
+static struct Value print (struct Native(Context) * const context, struct Ecc * const ecc);
+static struct Value alert (struct Native(Context) * const context, struct Ecc * const ecc);
 
 static struct Ecc *ecc = NULL;
 
@@ -56,7 +56,7 @@ static int printUsage (void)
 
 //
 
-static struct Value dumpTo (const struct Op ** const ops, struct Ecc * const ecc, FILE *file)
+static struct Value dumpTo (struct Native(Context) * const context, struct Ecc * const ecc, FILE *file)
 {
 	int index, count;
 	struct Value value;
@@ -69,7 +69,7 @@ static struct Value dumpTo (const struct Op ** const ops, struct Ecc * const ecc
 			putc(' ', file);
 		
 		value = Native.variableArgument(ecc, index);
-		value = Value.toPrimitive(ops, ecc, value, &(*ops)->text, Value(hintString));
+		value = Value.toPrimitive(context, ecc, value, &context->ops->text, Value(hintString));
 		Value.dumpTo(Value.toString(value), file);
 	}
 	putc('\n', file);
@@ -78,14 +78,14 @@ static struct Value dumpTo (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value print (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value print (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	return dumpTo(ops, ecc, stdout);
+	return dumpTo(context, ecc, stdout);
 }
 
-static struct Value alert (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value alert (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	return dumpTo(ops, ecc, stderr);
+	return dumpTo(context, ecc, stderr);
 }
 
 //

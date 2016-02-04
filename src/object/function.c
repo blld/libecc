@@ -13,12 +13,12 @@
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
 	if (ecc->this.data.function->text.location == Text(nativeCode).location)
 	{
@@ -33,45 +33,45 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value apply (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value apply (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value this, arguments;
 	
 	Native.assertParameterCount(ecc, 2);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(funcIndex)), "apply is not a constructor")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "apply is not a constructor")));
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
 	this = Native.argument(ecc, 0);
 	arguments = Native.argument(ecc, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		Op.callFunctionVA(ops, ecc, 2, ecc->this.data.function, this, 0);
+		Op.callFunctionVA(context, ecc, 2, ecc->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
-			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, 1), "arguments is not an object")));
+			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, 1), "arguments is not an object")));
 		
-		Op.callFunctionArguments(ops, ecc, 2, ecc->this.data.function, this, arguments.data.object);
+		Op.callFunctionArguments(context, ecc, 2, ecc->this.data.function, this, arguments.data.object);
 	}
 	
 	return Value(undefined);
 }
 
-static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value call (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertVariableParameter(ecc);
 	
 	if (ecc->construct)
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(funcIndex)), "call is not a constructor")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(funcIndex)), "call is not a constructor")));
 	
 	if (ecc->this.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a function")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a function")));
 	
 	object = ecc->environment->hashmap[2].data.value.data.object;
 	
@@ -89,21 +89,21 @@ static struct Value call (const struct Op ** const ops, struct Ecc * const ecc)
 			arguments.elementCapacity = 0;
 		}
 		
-		Op.callFunctionArguments(ops, ecc, 1, ecc->this.data.function, this, &arguments);
+		Op.callFunctionArguments(context, ecc, 1, ecc->this.data.function, this, &arguments);
 	}
 	else
-		Op.callFunctionVA(ops, ecc, 1, ecc->this.data.function, Value(undefined), 0);
+		Op.callFunctionVA(context, ecc, 1, ecc->this.data.function, Value(undefined), 0);
 	
 	return Value(undefined);
 }
 
-static struct Value prototypeConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value prototypeConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	ecc->result = Value(undefined);
 	return Value(undefined);
 }
 
-static struct Value functionConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value functionConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int argumentCount;
 	

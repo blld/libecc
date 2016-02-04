@@ -230,7 +230,7 @@ struct Value reference (struct Value *reference)
 	};
 }
 
-struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
+struct Value toPrimitive (struct Native(Context) * const context, struct Ecc *ecc, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
 {
 	struct Object *object;
 	struct Key aKey;
@@ -250,7 +250,7 @@ struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct 
 	aFunction = Object.get(object, aKey);
 	if (aFunction.type == Value(functionType))
 	{
-		struct Value result = Op.callFunctionVA(ops, ecc, 0, aFunction.data.function, value, 0);
+		struct Value result = Op.callFunctionVA(context, ecc, 0, aFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -258,7 +258,7 @@ struct Value toPrimitive (const struct Op ** const ops, struct Ecc *ecc, struct 
 	bFunction = Object.get(object, bKey);
 	if (bFunction.type == Value(functionType))
 	{
-		result = Op.callFunctionVA(ops, ecc, 0, bFunction.data.function, value, 0);
+		result = Op.callFunctionVA(context, ecc, 0, bFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -612,7 +612,7 @@ int isNumber (struct Value value)
 	return value.type & 0x10;
 }
 
-struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Value value, enum Native(Index) argumentIndex)
+struct Value toObject (struct Native(Context) * const context, struct Ecc *ecc, struct Value value, enum Native(Index) argumentIndex)
 {
 	if (value.type >= Value(objectType))
 		return value;
@@ -635,10 +635,10 @@ struct Value toObject (const struct Op ** const ops, struct Ecc *ecc, struct Val
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(ops, ecc, argumentIndex), "can't convert null to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(context, ecc, argumentIndex), "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(ops, ecc, argumentIndex), "can't convert undefined to object")));
+			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(context, ecc, argumentIndex), "can't convert undefined to object")));
 		
 		case Value(breakerType):
 		case Value(referenceType):

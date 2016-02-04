@@ -12,7 +12,7 @@
 
 static int instanceCount = 0;
 
-static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value eval (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Input *input;
@@ -20,7 +20,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	Native.assertParameterCount(ecc, 1);
 	
 	if (ecc->construct)
-		jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "eval is not a constructor")));
+		jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "eval is not a constructor")));
 	
 	value = Value.toString(Native.argument(ecc, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
@@ -31,7 +31,7 @@ static struct Value eval (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value parseInt (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value parseInt (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Text text;
@@ -62,7 +62,7 @@ static struct Value parseInt (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value parseFloat (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	struct Text text;
@@ -77,7 +77,7 @@ static struct Value parseFloat (const struct Op ** const ops, struct Ecc * const
 	return Value(undefined);
 }
 
-static struct Value isFinite (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isFinite (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -89,7 +89,7 @@ static struct Value isFinite (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isNaN (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -101,7 +101,7 @@ static struct Value isNaN (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value decodeURI (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	const char *bytes;
@@ -156,7 +156,7 @@ static struct Value decodeURI (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 	
 	error:
-	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Native.textSeek(ops, ecc, 0), "malformed URI")));
+	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Native.textSeek(context, ecc, 0), "malformed URI")));
 }
 
 // MARK: - Static Members
@@ -357,7 +357,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		if (flags & Ecc(globalThis))
 			self->this = Value.object(&self->global->environment);
 		
-		context.ops->native(&context.ops, self);
+		context.ops->native(&context, self);
 		
 		self->environment = environment;
 		self->this = this;

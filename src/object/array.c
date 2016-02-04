@@ -41,7 +41,7 @@ static void valueAppendFromElement (struct Value value, struct Object *object, u
 	}
 }
 
-static struct Value isArray (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value isArray (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -50,7 +50,7 @@ static struct Value isArray (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Chars *chars;
@@ -59,7 +59,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	length = toBufferLength(object, separator);
 	chars = Chars.createSized(length);
 	toBuffer(object, separator, chars->chars, chars->length);
@@ -68,14 +68,14 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value concat (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	uint32_t element = 0, length = 0, index, count;
 	struct Object *array = NULL;
 	Native.assertVariableParameter(ecc);
 	
-	value = Value.toObject(ops, ecc, ecc->this, Native(thisIndex));
+	value = Value.toObject(context, ecc, ecc->this, Native(thisIndex));
 	count = Native.variableArgumentCount(ecc);
 	
 	length += valueArrayLength(value);
@@ -92,7 +92,7 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value join (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Value value;
@@ -102,7 +102,7 @@ static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Native.assertParameterCount(ecc, 1);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	value = Native.argument(ecc, 0);
 	if (value.type == Value(undefinedType))
 		separator = (struct Text){ ",", 1 };
@@ -120,25 +120,25 @@ static struct Value join (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value pop (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value pop (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	ecc->result = object->elementCount? object->element[--object->elementCount].data.value: Value(undefined);
 	
 	return Value(undefined);
 }
 
-static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value push (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	uint32_t length = 0, index, count, base;
 	Native.assertVariableParameter(ecc);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	count = Native.variableArgumentCount(ecc);
 	
 	base = object->elementCount;
@@ -159,7 +159,7 @@ static struct Value push (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value reverse (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value reverse (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	__typeof__(*object->element) temp;
@@ -167,7 +167,7 @@ static struct Value reverse (const struct Op ** const ops, struct Ecc * const ec
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	last = object->elementCount - 1;
 	half = object->elementCount / 2;
 	
@@ -183,13 +183,13 @@ static struct Value reverse (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value shift (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value shift (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	
 	Native.assertParameterCount(ecc, 0);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	
 	if (object->elementCount)
 	{
@@ -202,7 +202,7 @@ static struct Value shift (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value slice (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object, *result;
 	struct Value start, end;
@@ -211,7 +211,7 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	
 	Native.assertParameterCount(ecc, 2);
 	
-	object = Value.toObject(ops, ecc, ecc->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, ecc, ecc->this, Native(thisIndex)).data.object;
 	start = Native.argument(ecc, 0);
 	end = Native.argument(ecc, 1);
 	
@@ -247,21 +247,21 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value getLength (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value getLength (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary(ecc->this.data.object->elementCount);
 	return Value(undefined);
 }
 
-static struct Value setLength (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value setLength (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 1);
 	Object.resizeElement(ecc->this.data.object, Value.toBinary(Native.argument(ecc, 0)).data.binary);
 	return Value(undefined);
 }
 
-static struct Value arrayConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value arrayConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	uint32_t index, count, length;
 	struct Object *array;
@@ -277,7 +277,7 @@ static struct Value arrayConstructor (const struct Op ** const ops, struct Ecc *
 			count = 0;
 		}
 		else
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(ops, ecc, 0), "invalid array length")));
+			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "invalid array length")));
 	}
 	
 	array = Array.createSized(length);

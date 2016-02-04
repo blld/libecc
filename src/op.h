@@ -141,14 +141,14 @@
 	_( iterateInRef )\
 
 
-#define _(X) (struct Value, X , (const struct Op ** const ops, struct Ecc * const ecc))
+#define _(X) (struct Value, X , (struct Native(Context) * const, struct Ecc * const))
 Interface(Op,
 	
 	(struct Op, make ,(const Native(Function) native, struct Value value, struct Text text))
 	(const char *, toChars ,(const Native(Function) native))
 	
-	(struct Value, callFunctionArguments ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
-	(struct Value, callFunctionVA ,(const struct Op ** ops, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... ))
+	(struct Value, callFunctionArguments ,(struct Native(Context) * const, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
+	(struct Value, callFunctionVA ,(struct Native(Context) * const, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... ))
 	
 	io_libecc_op_List
 	,

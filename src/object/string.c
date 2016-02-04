@@ -49,31 +49,31 @@ static inline int32_t indexPosition (const char *chars, int32_t length, int32_t 
 	return position;
 }
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	
 	return Value(undefined);
 }
 
-static struct Value valueOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	
 	if (ecc->this.type != Value(stringType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(ops, ecc, Native(thisIndex)), "not a string")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
 	ecc->result = Value.chars(ecc->this.data.string->value);
 	
 	return Value(undefined);
 }
 
-static struct Value charAt (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value charAt (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t position, index, length;
 	const char *chars;
@@ -102,7 +102,7 @@ static struct Value charAt (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value charCodeAt (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t position, index, length;
 	const char *chars;
@@ -130,7 +130,7 @@ static struct Value charCodeAt (const struct Op ** const ops, struct Ecc * const
 	return Value(undefined);
 }
 
-static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value concat (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Chars *result;
 	int32_t length = 0, offset = 0, index, count;
@@ -154,7 +154,7 @@ static struct Value concat (const struct Op ** const ops, struct Ecc * const ecc
 	return Value(undefined);
 }
 
-static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value indexOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value search;
 	int32_t position, index, offset, length, searchLength, argumentCount;
@@ -203,7 +203,7 @@ static struct Value indexOf (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value lastIndexOf (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value lastIndexOf (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value search;
 	int32_t position, index, offset, length, searchLength, argumentCount;
@@ -256,7 +256,7 @@ static struct Value lastIndexOf (const struct Op ** const ops, struct Ecc * cons
 	return Value(undefined);
 }
 
-static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value slice (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value from, to;
 	int32_t start, end, length;
@@ -296,7 +296,7 @@ static struct Value slice (const struct Op ** const ops, struct Ecc * const ecc)
 	return Value(undefined);
 }
 
-static struct Value substring (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value substring (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value from, to;
 	int32_t start, end, length;
@@ -343,7 +343,7 @@ static struct Value substring (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value stringConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value stringConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	
@@ -363,7 +363,7 @@ static struct Value stringConstructor (const struct Op ** const ops, struct Ecc 
 	return Value(undefined);
 }
 
-static struct Value fromCharCode (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value fromCharCode (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t c, index, count, length = 0;
 	struct Chars *chars;

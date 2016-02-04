@@ -14,6 +14,10 @@
 struct Op;
 struct Ecc;
 struct Value;
+struct Native(Context);
+typedef __typeof__(struct Value) (* Native(Function)) (struct Native(Context) * const context, struct Ecc * const ecc);
+
+#include "value.h"
 
 #include "interface.h"
 
@@ -27,11 +31,10 @@ enum Native(Index) {
 
 struct Native(Context) {
 	const struct Op * ops;
-	const struct Op ** parent;
+	struct Native(Context) * parent;
 	int argumentOffset;
+	struct Value this;
 };
-
-typedef __typeof__(struct Value) (* Native(Function)) (const struct Op ** const ops, struct Ecc * const ecc);
 
 
 Interface(Native,
@@ -44,13 +47,11 @@ Interface(Native,
 	(int , variableArgumentCount ,(struct Ecc * const ecc))
 	(struct Value, variableArgument ,(struct Ecc * const ecc, int argumentIndex))
 	
-	(struct Text, textSeek ,(const struct Op ** ops, struct Ecc * const ecc, enum Native(Index) argumentIndex))
+	(struct Text, textSeek ,(struct Native(Context) * const, struct Ecc * const ecc, enum Native(Index) argumentIndex))
 	,
 	{
 		char dummy;
 	}
 )
-
-#include "value.h"
 
 #endif

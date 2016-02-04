@@ -44,58 +44,58 @@ struct Value variableArgument (struct Ecc * const ecc, int argumentIndex)
 	return ecc->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
 }
 
-struct Text textSeek (const struct Op ** ops, struct Ecc * const ecc, enum Native(Index) argumentIndex)
+struct Text textSeek (struct Native(Context) * const sourceContext, struct Ecc * const ecc, enum Native(Index) argumentIndex)
 {
-	assert(ops);
+	assert(sourceContext);
 	assert(ecc);
 	
 	const char *location;
-	struct Native(Context) *context = (struct Native(Context) *)ops;
+	struct Native(Context) context = *sourceContext;
 	uint32_t breakArray = 0;
 	
-	while (context->ops->text.location == Text(nativeCode).location)
+	while (context.ops->text.location == Text(nativeCode).location)
 	{
-		if (!context->parent)
-			return context->ops->text;
+		if (!context.parent)
+			return context.ops->text;
 		
-		if (context->argumentOffset && argumentIndex >= Native(thisIndex))
+		if (context.argumentOffset && argumentIndex >= Native(thisIndex))
 		{
 			++argumentIndex;
 			breakArray <<= 1;
 			
-			if (context->argumentOffset == 2)
+			if (context.argumentOffset == 2)
 				breakArray |= 2;
 		}
-		context = (struct Native(Context) *)context->parent;
+		context = *context.parent;
 	}
 	
-	if (context && argumentIndex > Native(noIndex))
+	if (argumentIndex > Native(noIndex))
 	{
-		while (context->ops->native != Op.call && context->ops->native != Op.eval && context->ops->native != Op.construct)
-			--context->ops;
+		while (context.ops->native != Op.call && context.ops->native != Op.eval && context.ops->native != Op.construct)
+			--context.ops;
 		
 		// func
 		if (argumentIndex-- > Native(callIndex))
-			++context->ops;
+			++context.ops;
 		
 		// this
-		if (argumentIndex-- > Native(callIndex) && (context->ops + 1)->text.location <= context->ops->text.location)
-			++context->ops;
+		if (argumentIndex-- > Native(callIndex) && (context.ops + 1)->text.location <= context.ops->text.location)
+			++context.ops;
 		
 		// arguments
 		while (argumentIndex-- > Native(callIndex))
 		{
-			location = context->ops->text.location + context->ops->text.length;
-			while (location > context->ops->text.location && context->ops->text.location)
-				++context->ops;
+			location = context.ops->text.location + context.ops->text.length;
+			while (location > context.ops->text.location && context.ops->text.location)
+				++context.ops;
 			
-			if (breakArray & 0x1 && context->ops->native == Op.array)
-				++context->ops;
+			if (breakArray & 0x1 && context.ops->native == Op.array)
+				++context.ops;
 			
 			breakArray >>= 1;
 		}
 	}
 	
-	return context->ops->text;
+	return context.ops->text;
 }
 

@@ -50,7 +50,7 @@ static struct Error * createVA (struct Object *errorPrototype, struct Text text,
 	return self;
 }
 
-static struct Value toString (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Object *object;
 	struct Chars *chars;
@@ -59,7 +59,7 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	Native.assertParameterCount(ecc, 0);
 	
 	if (!Value.isObject(ecc->this))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError((*ops)->text, "not an object")));
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not an object")));
 	
 	object = ecc->this.data.object;
 	length = toBufferLength(object);
@@ -71,74 +71,74 @@ static struct Value toString (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value errorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value errorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(error((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(error(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static struct Value rangeErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value rangeErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(rangeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(rangeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static struct Value referenceErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value referenceErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(referenceError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(referenceError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static struct Value syntaxErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value syntaxErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(syntaxError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(syntaxError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static struct Value typeErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value typeErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(typeError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(typeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }
 
-static struct Value uriErrorConstructor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value uriErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value message;
 	
 	Native.assertParameterCount(ecc, 1);
 	
 	message = messageValue(Native.argument(ecc, 0));
-	ecc->result = Value.error(uriError((*ops)->text, "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	ecc->result = Value.error(uriError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 	
 	return Value(undefined);
 }

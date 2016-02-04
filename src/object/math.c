@@ -12,7 +12,7 @@
 
 // MARK: - Static Members
 
-static struct Value mathAbs (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathAbs (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -25,7 +25,7 @@ static struct Value mathAbs (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathACos (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathACos (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -38,7 +38,7 @@ static struct Value mathACos (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value mathASin (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathASin (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -51,7 +51,7 @@ static struct Value mathASin (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value mathATan (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathATan (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -64,7 +64,7 @@ static struct Value mathATan (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value mathATan2 (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathATan2 (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value x, y;
 	Native.assertParameterCount(ecc, 2);
@@ -81,7 +81,7 @@ static struct Value mathATan2 (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value mathCeil (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathCeil (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -94,7 +94,7 @@ static struct Value mathCeil (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value mathCos (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathCos (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -107,7 +107,7 @@ static struct Value mathCos (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathExp (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathExp (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -120,7 +120,7 @@ static struct Value mathExp (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathFloor (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathFloor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -133,7 +133,7 @@ static struct Value mathFloor (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value mathLog (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathLog (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -146,7 +146,7 @@ static struct Value mathLog (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathMax (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathMax (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	double result = -INFINITY, value;
 	int index, count;
@@ -165,7 +165,7 @@ static struct Value mathMax (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathMin (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	double result = INFINITY, value;
 	int index, count;
@@ -184,7 +184,7 @@ static struct Value mathMin (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathPow (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathPow (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value x, y;
 	Native.assertParameterCount(ecc, 2);
@@ -201,14 +201,14 @@ static struct Value mathPow (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathRandom (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathRandom (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(ecc, 0);
 	ecc->result = Value.binary((double)rand() / (double)RAND_MAX);
 	return Value(undefined);
 }
 
-static struct Value mathRound (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathRound (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -222,7 +222,7 @@ static struct Value mathRound (const struct Op ** const ops, struct Ecc * const 
 	return Value(undefined);
 }
 
-static struct Value mathSin (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathSin (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -235,7 +235,7 @@ static struct Value mathSin (const struct Op ** const ops, struct Ecc * const ec
 	return Value(undefined);
 }
 
-static struct Value mathSqrt (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathSqrt (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);
@@ -248,7 +248,7 @@ static struct Value mathSqrt (const struct Op ** const ops, struct Ecc * const e
 	return Value(undefined);
 }
 
-static struct Value mathTan (const struct Op ** const ops, struct Ecc * const ecc)
+static struct Value mathTan (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	struct Value value;
 	Native.assertParameterCount(ecc, 1);

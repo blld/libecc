@@ -13,9 +13,9 @@
 struct Function;
 struct Ecc;
 struct Op;
+struct Native(Context);
 
 #include "key.h"
-#include "native.h"
 
 #include "interface.h"
 
@@ -96,7 +96,7 @@ Interface(Value,
 	(struct Value, breaker ,(int32_t integer))
 	(struct Value, reference ,(struct Value *))
 	
-	(struct Value, toPrimitive ,(const struct Op ** const, struct Ecc *, struct Value, const struct Text *, enum Value(hintPrimitive)))
+	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Ecc *, struct Value, const struct Text *, enum Value(hintPrimitive)))
 	(int, isPrimitive ,(struct Value))
 	(int, isBoolean ,(struct Value))
 	(int, isDynamic ,(struct Value))
@@ -114,7 +114,7 @@ Interface(Value,
 	(struct Value, toInteger ,(struct Value))
 	(int, isNumber ,(struct Value))
 	
-	(struct Value, toObject ,(const struct Op ** const, struct Ecc *, struct Value, enum Native(Index) argumentIndex))
+	(struct Value, toObject ,(struct Native(Context) * const, struct Ecc *, struct Value, int argumentIndex))
 	(int, isObject ,(struct Value))
 	
 	(struct Value, toType ,(struct Value))
@@ -151,6 +151,7 @@ Interface(Value,
 // import object (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
+#include "native.h"
 #include "object/function.h"
 #include "object/object.h"
 #include "object/string.h"
