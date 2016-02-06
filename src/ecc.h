@@ -51,7 +51,6 @@ Interface(Ecc,
 		uint16_t envCount;
 		uint16_t envCapacity;
 		
-		struct Value refObject;
 		struct Value result;
 		
 		struct Function *global;

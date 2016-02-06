@@ -470,12 +470,12 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 	}
 }
 
-static inline struct Value callFunction (struct Native(Context) * const parent, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
+static inline struct Value callFunction (struct Native(Context) * const parent, struct Ecc * const ecc, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
 {
 	struct Native(Context) context = {
 		.ops = function->oplist->ops,
 		.parent = parent,
-		.this = ecc->refObject,
+		.this = this,
 		.construct = construct
 	};
 	
@@ -519,17 +519,23 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 	}
 }
 
+static inline struct Value callValue (struct Native(Context) * const parent, struct Ecc * const ecc, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
+{
+	if (value.type != Value(functionType))
+		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
+	
+	return callFunction(parent, ecc, value.data.function, this, argumentCount, construct);
+}
+
 struct Value construct (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value object;
 	struct Value value = nextOp();
-	if (value.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
 	
-	object = ecc->refObject = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
-	value = callFunction(context, ecc, value.data.function, argumentCount, 1);
+	object = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
+	value = callValue(context, ecc, value, object, argumentCount, 1, text);
 	
 	if (Value.isObject(value))
 		return value;
@@ -542,10 +548,7 @@ struct Value call (struct Native(Context) * const context, struct Ecc * const ec
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
-	if (value.type != Value(functionType))
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
-	
-	return callFunction(context, ecc, value.data.function, argumentCount, 0);
+	return callValue(context, ecc, value, Value(undefined), argumentCount, 0, text);
 }
 
 struct Value eval (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -651,7 +654,6 @@ struct Value getLocal (struct Native(Context) * const context, struct Ecc * cons
 	if (!ref)
 		Ecc.jmpEnv(ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
 	
-	ecc->refObject = Value(undefined);
 	return *ref;
 }
 
@@ -675,10 +677,17 @@ struct Value setLocal (struct Native(Context) * const context, struct Ecc * cons
 	return *ref = nextOp();
 }
 
+struct Value callLocal (struct Native(Context) * const context, struct Ecc * const ecc)
+{
+	const struct Text *text = opText(1);
+	int32_t argumentCount = opValue().data.integer;
+	struct Value value = nextOp();
+	return callValue(context, ecc, value, Value(undefined), argumentCount, 0, text);
+}
+
 struct Value getLocalSlot (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	int32_t slot = opValue().data.integer;
-	ecc->refObject = Value(undefined);
 	return context->environment->hashmap[slot].data.value;
 }
 
@@ -702,7 +711,6 @@ struct Value getParentSlot (struct Native(Context) * const context, struct Ecc *
 	while (count--)
 		object = object->prototype;
 	
-	ecc->refObject = Value(undefined);
 	return object->hashmap[slot].data.value;
 }
 
@@ -737,7 +745,6 @@ struct Value getMember (struct Native(Context) * const context, struct Ecc * con
 	if (!Value.isObject(object))
 		object = Value.toObject(context, ecc, object, Native(noIndex));
 	
-	ecc->refObject = object;
 	ref = Object.getMember(object.data.object, key);
 	
 	return getRefValue(context, ecc, ref, object);
@@ -754,7 +761,7 @@ struct Value getMemberRef (struct Native(Context) * const context, struct Ecc * 
 	if (!Value.isObject(object))
 		object = Value.toObject(context, ecc, object, Native(noIndex));
 	
-	ecc->refObject = object;
+	context->refObject = object;
 	ref = Object.getMember(object.data.object, key);
 	
 	if (!ref)
@@ -792,6 +799,22 @@ struct Value setMember (struct Native(Context) * const context, struct Ecc * con
 	return value;
 }
 
+struct Value callMember (struct Native(Context) * const context, struct Ecc * const ecc)
+{
+	int32_t argumentCount = opValue().data.integer;
+	const struct Text *text = &(++context->ops)->text;
+	struct Key key = opValue().data.key;
+	struct Value object = nextOp();
+	struct Value *ref;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(context, ecc, object, Native(noIndex));
+	
+	ref = Object.getMember(object.data.object, key);
+	
+	return callValue(context, ecc, getRefValue(context, ecc, ref, object), object, argumentCount, 0, text);
+}
+
 struct Value deleteMember (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	const struct Text *text = opText(0);
@@ -813,7 +836,6 @@ struct Value getProperty (struct Native(Context) * const context, struct Ecc * c
 	if (!Value.isObject(object))
 		object = Value.toObject(context, ecc, object, Native(noIndex));
 	
-	ecc->refObject = object;
 	ref = Object.getProperty(object.data.object, property);
 	
 	return getRefValue(context, ecc, ref, object);
@@ -829,7 +851,7 @@ struct Value getPropertyRef (struct Native(Context) * const context, struct Ecc 
 	if (!Value.isObject(object))
 		object = Value.toObject(context, ecc, object, Native(noIndex));
 	
-	ecc->refObject = object;
+	context->refObject = object;
 	ref = Object.getProperty(object.data.object, property);
 	
 	if (!ref)
@@ -865,6 +887,23 @@ struct Value setProperty (struct Native(Context) * const context, struct Ecc * c
 		Object.setProperty(object.data.object, property, value);
 	
 	return value;
+}
+
+struct Value callProperty (struct Native(Context) * const context, struct Ecc * const ecc)
+{
+	int32_t argumentCount = opValue().data.integer;
+	const struct Text *text = &(++context->ops)->text;
+	struct Value object = nextOp();
+	struct Value property = nextOp();
+	struct Value *ref;
+	
+	if (!Value.isObject(object))
+		object = Value.toObject(context, ecc, object, Native(noIndex));
+	
+	ref = Object.getProperty(object.data.object, property);
+	
+	return callValue(context, ecc, getRefValue(context, ecc, ref, object), object, argumentCount, 0, text);
+
 }
 
 struct Value deleteProperty (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -1199,9 +1238,9 @@ struct Value incrementRef (struct Native(Context) * const context, struct Ecc * 
 	struct Value *ref = nextOp().data.reference;
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		++value.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	++ref->data.binary;
 	return *ref;
@@ -1213,9 +1252,9 @@ struct Value decrementRef (struct Native(Context) * const context, struct Ecc * 
 	struct Value *ref = nextOp().data.reference;
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		--value.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	--ref->data.binary;
 	return *ref;
@@ -1228,9 +1267,9 @@ struct Value postIncrementRef (struct Native(Context) * const context, struct Ec
 	struct Value value = *ref;
 	if (ref->type != Value(binaryType))
 	{
-		struct Value newValue = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value newValue = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		++newValue.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, newValue, text);
+		return setRefValue(context, ecc, ref, context->refObject, newValue, text);
 	}
 	++ref->data.binary;
 	return value;
@@ -1243,9 +1282,9 @@ struct Value postDecrementRef (struct Native(Context) * const context, struct Ec
 	struct Value value = *ref;
 	if (ref->type != Value(binaryType))
 	{
-		struct Value newValue = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value newValue = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		--newValue.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, newValue, text);
+		return setRefValue(context, ecc, ref, context->refObject, newValue, text);
 	}
 	--ref->data.binary;
 	return value;
@@ -1261,9 +1300,9 @@ struct Value multiplyAssignRef (struct Native(Context) * const context, struct E
 	
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		value.data.binary *= b.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.binary *= b.data.binary;
 	return *ref;
@@ -1279,9 +1318,9 @@ struct Value divideAssignRef (struct Native(Context) * const context, struct Ecc
 	
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		value.data.binary /= b.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.binary /= b.data.binary;
 	return *ref;
@@ -1297,9 +1336,9 @@ struct Value moduloAssignRef (struct Native(Context) * const context, struct Ecc
 	
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		value.data.binary = fmod(ref->data.binary, b.data.binary);
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.binary = fmod(ref->data.binary, b.data.binary);
 	return *ref;
@@ -1312,8 +1351,8 @@ struct Value addAssignRef (struct Native(Context) * const context, struct Ecc * 
 	struct Value b = nextOp();
 	if (ref->type != Value(binaryType) || b.type != Value(binaryType))
 	{
-		struct Value value = addition(ecc, getRefValue(context, ecc, ref, ecc->refObject), text, b, opText(0));
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		struct Value value = addition(ecc, getRefValue(context, ecc, ref, context->refObject), text, b, opText(0));
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.binary += b.data.binary;
 	return *ref;
@@ -1329,9 +1368,9 @@ struct Value minusAssignRef (struct Native(Context) * const context, struct Ecc 
 	
 	if (ref->type != Value(binaryType))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toBinary(getRefValue(context, ecc, ref, context->refObject));
 		value.data.binary -= b.data.binary;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.binary -= b.data.binary;
 	return *ref;
@@ -1347,9 +1386,9 @@ struct Value leftShiftAssignRef (struct Native(Context) * const context, struct 
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer <<= (uint32_t)b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer <<= (uint32_t)b.data.integer;
 	return *ref;
@@ -1365,9 +1404,9 @@ struct Value rightShiftAssignRef (struct Native(Context) * const context, struct
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer >>= (uint32_t)b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer >>= (uint32_t)b.data.integer;
 	return *ref;
@@ -1383,9 +1422,9 @@ struct Value unsignedRightShiftAssignRef (struct Native(Context) * const context
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
 	return *ref;
@@ -1401,9 +1440,9 @@ struct Value bitAndAssignRef (struct Native(Context) * const context, struct Ecc
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer &= b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer &= b.data.integer;
 	return *ref;
@@ -1419,9 +1458,9 @@ struct Value bitXorAssignRef (struct Native(Context) * const context, struct Ecc
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer ^= b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer ^= b.data.integer;
 	return *ref;
@@ -1437,9 +1476,9 @@ struct Value bitOrAssignRef (struct Native(Context) * const context, struct Ecc 
 	
 	if (ref->type != Value(integerType))
 	{
-		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, ecc->refObject));
+		struct Value value = Value.toInteger(getRefValue(context, ecc, ref, context->refObject));
 		value.data.integer |= b.data.integer;
-		return setRefValue(context, ecc, ref, ecc->refObject, value, text);
+		return setRefValue(context, ecc, ref, context->refObject, value, text);
 	}
 	ref->data.integer |= b.data.integer;
 	return *ref;

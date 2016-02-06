@@ -71,7 +71,12 @@ struct Text textSeek (struct Native(Context) * const context, struct Ecc * const
 	
 	if (argumentIndex > Native(noIndex))
 	{
-		while (seek.ops->native != Op.call && seek.ops->native != Op.eval && seek.ops->native != Op.construct)
+		while (seek.ops->native != Op.call
+			&& seek.ops->native != Op.callLocal
+			&& seek.ops->native != Op.callMember
+			&& seek.ops->native != Op.callProperty
+			&& seek.ops->native != Op.eval
+			&& seek.ops->native != Op.construct)
 			--seek.ops;
 		
 		// func

@@ -34,6 +34,7 @@ struct Native(Context) {
 	struct Native(Context) * parent;
 	struct Value this;
 	struct Object *environment;
+	struct Value refObject;
 	int argumentOffset;
 	int construct;
 };

@@ -33,6 +33,7 @@
 	_( getLocal )\
 	_( getLocalRef )\
 	_( setLocal )\
+	_( callLocal )\
 	\
 	_( getLocalSlot )\
 	_( getLocalSlotRef )\
@@ -45,11 +46,13 @@
 	_( getMember )\
 	_( getMemberRef )\
 	_( setMember )\
+	_( callMember )\
 	_( deleteMember )\
 	\
 	_( getProperty )\
 	_( getPropertyRef )\
 	_( setProperty )\
+	_( callProperty )\
 	_( deleteProperty )\
 	\
 	_( result )\

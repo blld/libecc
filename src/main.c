@@ -430,6 +430,7 @@ static void testFunction (void)
 	
 	test("var n = 456; function b(c) { return 'c' + c + n } b(123)", "c123456");
 	test("function a() { var n = 456; function b(c) { return 'c' + c + n } return b } a()(123)", "c123456");
+	test("var a = { a: function() { var n = this; function b(c) { return n + c + this } return b }}; a.a()(123)", "[object Object]123undefined");
 	
 	test("typeof function(){}", "function");
 	test("function a(a, b){ return a + b } a.apply(null, 1, 2)", "TypeError: arguments is not an object");
