@@ -25,12 +25,10 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 		uint16_t length = toBufferLength(context->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
 		toBuffer(context->this.data.function, chars->chars, length + 1);
-		ecc->result = Value.chars(chars);
+		return Value.chars(chars);
 	}
 	else
-		ecc->result = Value.text(&context->this.data.function->text);
-	
-	return Value(undefined);
+		return Value.text(&context->this.data.function->text);
 }
 
 static struct Value apply (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -49,16 +47,14 @@ static struct Value apply (struct Native(Context) * const context, struct Ecc * 
 	arguments = Native.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		Op.callFunctionVA(context, ecc, 2, context->this.data.function, this, 0);
+		return Op.callFunctionVA(context, ecc, 2, context->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
 			Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, 1), "arguments is not an object")));
 		
-		Op.callFunctionArguments(context, ecc, 2, context->this.data.function, this, arguments.data.object);
+		return Op.callFunctionArguments(context, ecc, 2, context->this.data.function, this, arguments.data.object);
 	}
-	
-	return Value(undefined);
 }
 
 static struct Value call (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -89,17 +85,14 @@ static struct Value call (struct Native(Context) * const context, struct Ecc * c
 			arguments.elementCapacity = 0;
 		}
 		
-		Op.callFunctionArguments(context, ecc, 1, context->this.data.function, this, &arguments);
+		return Op.callFunctionArguments(context, ecc, 1, context->this.data.function, this, &arguments);
 	}
 	else
-		Op.callFunctionVA(context, ecc, 1, context->this.data.function, Value(undefined), 0);
-	
-	return Value(undefined);
+		return Op.callFunctionVA(context, ecc, 1, context->this.data.function, Value(undefined), 0);
 }
 
 static struct Value prototypeConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	ecc->result = Value(undefined);
 	return Value(undefined);
 }
 
@@ -156,7 +149,7 @@ static struct Value functionConstructor (struct Native(Context) * const context,
 		Ecc.evalInput(ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"), 0);
 	}
 	
-	return Value(undefined);
+	return ecc->result;
 }
 
 // MARK: - Static Members

@@ -32,7 +32,7 @@ static struct Value eval (struct Native(Context) * const context, struct Ecc * c
 	
 	evalInputWithContext(ecc, input, &subContext);
 	
-	return Value(undefined);
+	return ecc->result;
 }
 
 static struct Value parseInt (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -61,9 +61,7 @@ static struct Value parseInt (struct Native(Context) * const context, struct Ecc
 			base = 10;
 	}
 	
-	ecc->result = Lexer.parseInteger(text, base);
-	
-	return Value(undefined);
+	return Lexer.parseInteger(text, base);
 }
 
 static struct Value parseFloat (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -76,9 +74,7 @@ static struct Value parseFloat (struct Native(Context) * const context, struct E
 	value = Value.toString(Native.argument(context, 0));
 	
 	text = Text.make(Value.stringChars(value), Value.stringLength(value));
-	ecc->result = Lexer.parseBinary(text);
-	
-	return Value(undefined);
+	return Lexer.parseBinary(text);
 }
 
 static struct Value isFinite (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -88,9 +84,7 @@ static struct Value isFinite (struct Native(Context) * const context, struct Ecc
 	Native.assertParameterCount(context, 1);
 	
 	value = Value.toBinary(Native.argument(context, 0));
-	ecc->result = Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
-	
-	return Value(undefined);
+	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
 
 static struct Value isNaN (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -100,9 +94,7 @@ static struct Value isNaN (struct Native(Context) * const context, struct Ecc * 
 	Native.assertParameterCount(context, 1);
 	
 	value = Value.toBinary(Native.argument(context, 0));
-	ecc->result = Value.truth(isnan(value.data.binary));
-	
-	return Value(undefined);
+	return Value.truth(isnan(value.data.binary));
 }
 
 static struct Value decodeURI (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -156,8 +148,7 @@ static struct Value decodeURI (struct Native(Context) * const context, struct Ec
 	}
 	
 	chars->length = offset;
-	ecc->result = Value.chars(chars);
-	return Value(undefined);
+	return Value.chars(chars);
 	
 	error:
 	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Native.textSeek(context, ecc, 0), "malformed URI")));

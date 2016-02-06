@@ -24,8 +24,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	
-	ecc->result = Value.text(truth? &Text(true): &Text(false));
-	return Value(undefined);
+	return Value.text(truth? &Text(true): &Text(false));
 }
 
 static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -39,8 +38,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a boolean")));
 	
-	ecc->result = Value.truth(truth);
-	return Value(undefined);
+	return Value.truth(truth);
 }
 
 // MARK: - Static Members
@@ -53,11 +51,9 @@ static struct Value booleanConstructor (struct Native(Context) * const context, 
 	
 	truth = Value.isTrue(Native.argument(context, 0));
 	if (context->construct)
-		ecc->result = Value.boolean(Boolean.create(truth));
+		return Value.boolean(Boolean.create(truth));
 	else
-		ecc->result = Value.truth(truth);
-	
-	return Value(undefined);
+		return Value.truth(truth);
 }
 
 // MARK: - Methods

@@ -93,17 +93,17 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	Native.assertParameterCount(context, 0);
 	
 	if (context->this.type == Value(nullType))
-		ecc->result = Value.text(&Text(nullType));
+		return Value.text(&Text(nullType));
 	else if (context->this.type == Value(undefinedType))
-		ecc->result = Value.text(&Text(undefinedType));
+		return Value.text(&Text(undefinedType));
 	else if (Value.isString(context->this))
-		ecc->result = Value.text(&Text(stringType));
+		return Value.text(&Text(stringType));
 	else if (Value.isNumber(context->this))
-		ecc->result = Value.text(&Text(numberType));
+		return Value.text(&Text(numberType));
 	else if (Value.isBoolean(context->this))
-		ecc->result = Value.text(&Text(booleanType));
+		return Value.text(&Text(booleanType));
 	else if (Value.isObject(context->this))
-		ecc->result = Value.text(context->this.data.object->type);
+		return Value.text(context->this.data.object->type);
 	else
 		assert(0);
 	
@@ -114,9 +114,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 {
 	Native.assertParameterCount(context, 0);
 	
-	ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
-	
-	return Value(undefined);
+	return Value.toObject(context, ecc, context->this, Native(thisIndex));
 }
 
 static struct Value hasOwnProperty (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -127,9 +125,7 @@ static struct Value hasOwnProperty (struct Native(Context) * const context, stru
 	
 	v = Value.toString(Native.argument(context, 0));
 	context->this = Value.toObject(context, ecc, context->this, Native(thisIndex));
-	ecc->result = Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
-	
-	return Value(undefined);
+	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
 }
 
 static struct Value isPrototypeOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -147,14 +143,10 @@ static struct Value isPrototypeOf (struct Native(Context) * const context, struc
 		
 		while (( v = v->prototype ))
 			if (v == o)
-			{
-				ecc->result = Value(true);
-				return Value(undefined);
-			}
+				return Value(true);
 	}
 	
-	ecc->result = Value(false);
-	return Value(undefined);
+	return Value(false);
 }
 
 static struct Value propertyIsEnumerable (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -170,11 +162,9 @@ static struct Value propertyIsEnumerable (struct Native(Context) * const context
 	ref = getOwnProperty(object, property);
 	
 	if (ref)
-		ecc->result = Value.truth(!(ref->flags & Value(hidden)));
+		return Value.truth(!(ref->flags & Value(hidden)));
 	else
-		ecc->result = Value(false);
-	
-	return Value(undefined);
+		return Value(false);
 }
 
 static struct Value objectConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -186,13 +176,11 @@ static struct Value objectConstructor (struct Native(Context) * const context, s
 	value = Native.argument(context, 0);
 	
 	if (value.type == Value(nullType) || value.type == Value(undefinedType))
-		ecc->result = Value.object(Object.create(Object(prototype)));
+		return Value.object(Object.create(Object(prototype)));
 	else if (context->construct && Value.isObject(value))
-		ecc->result = value;
+		return value;
 	else
-		ecc->result = Value.toObject(context, ecc, context->this, Native(thisIndex));
-	
-	return Value(undefined);
+		return Value.toObject(context, ecc, context->this, Native(thisIndex));
 }
 
 static struct Value getPrototypeOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -203,9 +191,7 @@ static struct Value getPrototypeOf (struct Native(Context) * const context, stru
 	
 	object = checkObject(context, ecc, Native.argument(context, 0));
 	
-	ecc->result = object->prototype? Value.object(object->prototype): Value(undefined);
-	
-	return Value(undefined);
+	return object->prototype? Value.object(object->prototype): Value(undefined);
 }
 
 static struct Value getOwnPropertyDescriptor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -220,8 +206,6 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	property = Native.argument(context, 1);
 	ref = getOwnProperty(object, property);
 	
-	ecc->result = Value(undefined);
-	
 	if (ref)
 	{
 		struct Object *result = Object.create(Object(prototype));
@@ -231,9 +215,8 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 		Object.add(result, Key(enumerable), Value.truth(!(ref->flags & Value(hidden))), 0);
 		Object.add(result, Key(configurable), Value.truth(!(ref->flags & Value(sealed))), 0);
 		
-		ecc->result = Value.object(result);
+		return Value.object(result);
 	}
-	
 	return Value(undefined);
 }
 
@@ -257,9 +240,7 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context,
 		if (object->hashmap[index].data.value.check == 1)
 			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), 0);
 	
-	ecc->result = Value.object(result);
-	
-	return Value(undefined);
+	return Value.object(result);
 }
 
 static struct Value objectCreate (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -320,8 +301,7 @@ static struct Value seal (struct Native(Context) * const context, struct Ecc * c
 		if (object->hashmap[index].data.value.check == 1)
 			object->hashmap[index].data.value.flags |= Value(sealed);
 	
-	ecc->result = Value.object(object);
-	return Value(undefined);
+	return Value.object(object);
 }
 
 static struct Value freeze (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -342,8 +322,7 @@ static struct Value freeze (struct Native(Context) * const context, struct Ecc *
 		if (object->hashmap[index].data.value.check == 1)
 			object->hashmap[index].data.value.flags |= Value(frozen);
 	
-	ecc->result = Value.object(object);
-	return Value(undefined);
+	return Value.object(object);
 }
 
 static struct Value preventExtensions (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -355,8 +334,7 @@ static struct Value preventExtensions (struct Native(Context) * const context, s
 	object = checkObject(context, ecc, Native.argument(context, 0));
 	object->flags |= Object(sealed);
 	
-	ecc->result = Value.object(object);
-	return Value(undefined);
+	return Value.object(object);
 }
 
 static struct Value isSealed (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -366,21 +344,19 @@ static struct Value isSealed (struct Native(Context) * const context, struct Ecc
 	
 	Native.assertParameterCount(context, 1);
 	
-	ecc->result = Value(true);
-	
 	object = checkObject(context, ecc, Native.argument(context, 0));
 	if (!(object->flags & Object(sealed)))
-		ecc->result = Value(false);
+		return Value(false);
 	
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(sealed)))
-			ecc->result = Value(false);
+			return Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(sealed)))
-			ecc->result = Value(false);
+			return Value(false);
 	
-	return Value(undefined);
+	return Value(true);
 }
 
 static struct Value isFrozen (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -390,21 +366,19 @@ static struct Value isFrozen (struct Native(Context) * const context, struct Ecc
 	
 	Native.assertParameterCount(context, 1);
 	
-	ecc->result = Value(true);
-	
 	object = checkObject(context, ecc, Native.argument(context, 0));
 	if (!(object->flags & Object(sealed)))
-		ecc->result = Value(false);
+		return Value(false);
 		
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(readonly) && object->element[index].data.value.flags & Value(sealed)))
-			ecc->result = Value(false);
+			return Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(readonly) && object->hashmap[index].data.value.flags & Value(sealed)))
-			ecc->result = Value(false);
+			return Value(false);
 	
-	return Value(undefined);
+	return Value(true);
 }
 
 static struct Value isExtensible (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -414,9 +388,7 @@ static struct Value isExtensible (struct Native(Context) * const context, struct
 	Native.assertParameterCount(context, 1);
 	
 	object = checkObject(context, ecc, Native.argument(context, 0));
-	ecc->result = Value.truth(!(object->flags & Object(sealed)));
-	
-	return Value(undefined);
+	return Value.truth(!(object->flags & Object(sealed)));
 }
 
 static struct Value keys (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -439,9 +411,7 @@ static struct Value keys (struct Native(Context) * const context, struct Ecc * c
 		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(hidden)))
 			Object.addElementAtIndex(result, length++, Value.key(object->hashmap[index].data.key), 0);
 	
-	ecc->result = Value.object(result);
-	
-	return Value(undefined);
+	return Value.object(result);
 }
 
 // MARK: - Static Members

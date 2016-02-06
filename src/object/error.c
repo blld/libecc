@@ -66,9 +66,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	chars = Chars.createSized(length);
 	toBuffer(object, chars->chars, length);
 	
-	ecc->result = Value.chars(chars);
-	
-	return Value(undefined);
+	return Value.chars(chars);
 }
 
 static struct Value errorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -78,9 +76,7 @@ static struct Value errorConstructor (struct Native(Context) * const context, st
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(error(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(error(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static struct Value rangeErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -90,9 +86,7 @@ static struct Value rangeErrorConstructor (struct Native(Context) * const contex
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(rangeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(rangeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static struct Value referenceErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -102,9 +96,7 @@ static struct Value referenceErrorConstructor (struct Native(Context) * const co
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(referenceError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(referenceError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static struct Value syntaxErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -114,9 +106,7 @@ static struct Value syntaxErrorConstructor (struct Native(Context) * const conte
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(syntaxError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(syntaxError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static struct Value typeErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -126,9 +116,7 @@ static struct Value typeErrorConstructor (struct Native(Context) * const context
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(typeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(typeError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static struct Value uriErrorConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -138,9 +126,7 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context,
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	ecc->result = Value.error(uriError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
-	
-	return Value(undefined);
+	return Value.error(uriError(Native.textSeek(context, ecc, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
 }
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)

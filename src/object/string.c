@@ -56,9 +56,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	if (context->this.type != Value(stringType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
-	ecc->result = Value.chars(context->this.data.string->value);
-	
-	return Value(undefined);
+	return Value.chars(context->this.data.string->value);
 }
 
 static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -68,9 +66,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 	if (context->this.type != Value(stringType))
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a string")));
 	
-	ecc->result = Value.chars(context->this.data.string->value);
-	
-	return Value(undefined);
+	return Value.chars(context->this.data.string->value);
 }
 
 static struct Value charAt (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -91,15 +87,13 @@ static struct Value charAt (struct Native(Context) * const context, struct Ecc *
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
 	if (length <= 0)
-		ecc->result = Value.text(&Text(empty));
+		return Value.text(&Text(empty));
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
 		memcpy(result->chars, chars + index, length);
-		ecc->result = Value.chars(result);
+		return Value.chars(result);
 	}
-	
-	return Value(undefined);
 }
 
 static struct Value charCodeAt (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -120,14 +114,12 @@ static struct Value charCodeAt (struct Native(Context) * const context, struct E
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
 	if (length <= 0)
-		ecc->result = Value.binary(NAN);
+		return Value.binary(NAN);
 	else
 	{
 		struct Text text = { chars + index, length };
-		ecc->result = Value.binary(Text.nextCodepoint(&text));
+		return Value.binary(Text.nextCodepoint(&text));
 	}
-	
-	return Value(undefined);
 }
 
 static struct Value concat (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -149,9 +141,7 @@ static struct Value concat (struct Native(Context) * const context, struct Ecc *
 	for (index = 0; index < count; ++index)
 		offset += Value.toBuffer(Native.variableArgument(context, index), result->chars + offset, length - offset + 1);
 	
-	ecc->result = Value.chars(result);
-	
-	return Value(undefined);
+	return Value.chars(result);
 }
 
 static struct Value indexOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -187,10 +177,8 @@ static struct Value indexOf (struct Native(Context) * const context, struct Ecc 
 			do
 			{
 				if (offset >= searchLength - 1)
-				{
-					ecc->result = Value.integer(position);
-					return Value(undefined);
-				}
+					return Value.integer(position);
+				
 				++offset;
 			}
 			while (chars[index + offset] == searchChars[offset]);
@@ -199,8 +187,7 @@ static struct Value indexOf (struct Native(Context) * const context, struct Ecc 
 		++position;
 	}
 	
-	ecc->result = Value.integer(-1);
-	return Value(undefined);
+	return Value.integer(-1);
 }
 
 static struct Value lastIndexOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -240,10 +227,8 @@ static struct Value lastIndexOf (struct Native(Context) * const context, struct 
 			do
 			{
 				if (offset >= searchLength - 1)
-				{
-					ecc->result = Value.integer(position);
-					return Value(undefined);
-				}
+					return Value.integer(position);
+				
 				++offset;
 			}
 			while (chars[index + offset] == searchChars[offset]);
@@ -252,8 +237,7 @@ static struct Value lastIndexOf (struct Native(Context) * const context, struct 
 		--position;
 	}
 	
-	ecc->result = Value.integer(-1);
-	return Value(undefined);
+	return Value.integer(-1);
 }
 
 static struct Value slice (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -285,15 +269,13 @@ static struct Value slice (struct Native(Context) * const context, struct Ecc * 
 	length = end - start;
 	
 	if (length <= 0)
-		ecc->result = Value.text(&Text(empty));
+		return Value.text(&Text(empty));
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
 		memcpy(result->chars, chars + start, length);
-		ecc->result = Value.chars(result);
+		return Value.chars(result);
 	}
-	
-	return Value(undefined);
 }
 
 static struct Value substring (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -332,15 +314,13 @@ static struct Value substring (struct Native(Context) * const context, struct Ec
 	length = end - start;
 	
 	if (length <= 0)
-		ecc->result = Value.text(&Text(empty));
+		return Value.text(&Text(empty));
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
 		memcpy(result->chars, chars + start, length);
-		ecc->result = Value.chars(result);
+		return Value.chars(result);
 	}
-	
-	return Value(undefined);
 }
 
 static struct Value stringConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -356,11 +336,9 @@ static struct Value stringConstructor (struct Native(Context) * const context, s
 		value = Value.toString(value);
 	
 	if (context->construct)
-		ecc->result = Value.string(String.create(Chars.createWithBuffer(Value.stringLength(value), Value.stringChars(value))));
+		return Value.string(String.create(Chars.createWithBuffer(Value.stringLength(value), Value.stringChars(value))));
 	else
-		ecc->result = value;
-	
-	return Value(undefined);
+		return value;
 }
 
 static struct Value fromCharCode (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -395,9 +373,7 @@ static struct Value fromCharCode (struct Native(Context) * const context, struct
 	while (chars->length && !chars->chars[chars->length - 1])
 		--chars->length;
 	
-	ecc->result = Value.chars(chars);
-	
-	return Value(undefined);
+	return Value.chars(chars);
 }
 
 // MARK: - Static Members

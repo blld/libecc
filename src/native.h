@@ -37,6 +37,7 @@ struct Native(Context) {
 	struct Value refObject;
 	int argumentOffset;
 	int construct;
+	int breaker;
 };
 
 

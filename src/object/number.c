@@ -31,12 +31,10 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*e", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*e", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.chars(Chars.create("%e", context->this.data.binary));
-	
-	return Value(undefined);
+		return Value.chars(Chars.create("%e", context->this.data.binary));
 }
 
 static struct Value toFixed (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -57,12 +55,10 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*f", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*f", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.chars(Chars.create("%f", context->this.data.binary));
-	
-	return Value(undefined);
+		return Value.chars(Chars.create("%f", context->this.data.binary));
 }
 
 static struct Value toPrecision (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -83,12 +79,10 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 		if (precision < 0 || precision > 100)
 			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
 		
-		ecc->result = Value.chars(Chars.create("%.*g", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*g", precision, context->this.data.binary));
 	}
 	else
-		ecc->result = Value.binaryToString(context->this.data.binary, 10);
-	
-	return Value(undefined);
+		return Value.binaryToString(context->this.data.binary, 10);
 }
 
 static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -114,9 +108,7 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", context->this.data.binary, radix);
 	}
 	
-	ecc->result = Value.binaryToString(context->this.data.binary, radix);
-	
-	return Value(undefined);
+	return Value.binaryToString(context->this.data.binary, radix);
 }
 
 static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -128,8 +120,7 @@ static struct Value valueOf (struct Native(Context) * const context, struct Ecc 
 	else
 		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
 	
-	ecc->result = context->this;
-	return Value(undefined);
+	return context->this;
 }
 
 static struct Value numberConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -145,11 +136,9 @@ static struct Value numberConstructor (struct Native(Context) * const context, s
 		value = Value.toBinary(value);
 	
 	if (context->construct)
-		ecc->result = Value.number(Number.create(value.data.binary));
+		return Value.number(Number.create(value.data.binary));
 	else
-		ecc->result = value;
-	
-	return Value(undefined);
+		return value;
 }
 
 // MARK: - Static Members

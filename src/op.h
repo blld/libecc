@@ -136,6 +136,7 @@
 	_( jumpIf )\
 	_( jumpIfNot )\
 	_( switchOp )\
+	_( breaker )\
 	_( iterate )\
 	_( iterateLessRef )\
 	_( iterateMoreRef )\

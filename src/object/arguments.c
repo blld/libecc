@@ -15,8 +15,7 @@ struct Object * Arguments(prototype);
 static struct Value getLength (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(context, 0);
-	ecc->result = Value.binary(context->this.data.object->elementCount);
-	return Value(undefined);
+	return Value.binary(context->this.data.object->elementCount);
 }
 
 static struct Value setLength (struct Native(Context) * const context, struct Ecc * const ecc)

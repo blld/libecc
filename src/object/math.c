@@ -21,8 +21,7 @@ static struct Value mathAbs (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(abs(value.data.binary));
-	return Value(undefined);
+	return Value.binary(abs(value.data.binary));
 }
 
 static struct Value mathACos (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -34,8 +33,7 @@ static struct Value mathACos (struct Native(Context) * const context, struct Ecc
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(acos(value.data.binary));
-	return Value(undefined);
+	return Value.binary(acos(value.data.binary));
 }
 
 static struct Value mathASin (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -47,8 +45,7 @@ static struct Value mathASin (struct Native(Context) * const context, struct Ecc
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(asin(value.data.binary));
-	return Value(undefined);
+	return Value.binary(asin(value.data.binary));
 }
 
 static struct Value mathATan (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -60,8 +57,7 @@ static struct Value mathATan (struct Native(Context) * const context, struct Ecc
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(atan(value.data.binary));
-	return Value(undefined);
+	return Value.binary(atan(value.data.binary));
 }
 
 static struct Value mathATan2 (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -77,8 +73,7 @@ static struct Value mathATan2 (struct Native(Context) * const context, struct Ec
 	if (y.type != Value(binaryType))
 		y = Value.toBinary(y);
 	
-	ecc->result = Value.binary(atan2(x.data.binary, y.data.binary));
-	return Value(undefined);
+	return Value.binary(atan2(x.data.binary, y.data.binary));
 }
 
 static struct Value mathCeil (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -90,8 +85,7 @@ static struct Value mathCeil (struct Native(Context) * const context, struct Ecc
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(ceil(value.data.binary));
-	return Value(undefined);
+	return Value.binary(ceil(value.data.binary));
 }
 
 static struct Value mathCos (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -103,8 +97,7 @@ static struct Value mathCos (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(cos(value.data.binary));
-	return Value(undefined);
+	return Value.binary(cos(value.data.binary));
 }
 
 static struct Value mathExp (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -116,8 +109,7 @@ static struct Value mathExp (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(exp(value.data.binary));
-	return Value(undefined);
+	return Value.binary(exp(value.data.binary));
 }
 
 static struct Value mathFloor (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -129,8 +121,7 @@ static struct Value mathFloor (struct Native(Context) * const context, struct Ec
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(floor(value.data.binary));
-	return Value(undefined);
+	return Value.binary(floor(value.data.binary));
 }
 
 static struct Value mathLog (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -142,8 +133,7 @@ static struct Value mathLog (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(log(value.data.binary));
-	return Value(undefined);
+	return Value.binary(log(value.data.binary));
 }
 
 static struct Value mathMax (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -160,9 +150,7 @@ static struct Value mathMax (struct Native(Context) * const context, struct Ecc 
 			result = value;
 	}
 	
-	ecc->result = Value.binary(result);
-	
-	return Value(undefined);
+	return Value.binary(result);
 }
 
 static struct Value mathMin (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -179,9 +167,7 @@ static struct Value mathMin (struct Native(Context) * const context, struct Ecc 
 			result = value;
 	}
 	
-	ecc->result = Value.binary(result);
-	
-	return Value(undefined);
+	return Value.binary(result);
 }
 
 static struct Value mathPow (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -197,15 +183,13 @@ static struct Value mathPow (struct Native(Context) * const context, struct Ecc 
 	if (y.type != Value(binaryType))
 		y = Value.toBinary(y);
 	
-	ecc->result = Value.binary(pow(x.data.binary, y.data.binary));
-	return Value(undefined);
+	return Value.binary(pow(x.data.binary, y.data.binary));
 }
 
 static struct Value mathRandom (struct Native(Context) * const context, struct Ecc * const ecc)
 {
 	Native.assertParameterCount(context, 0);
-	ecc->result = Value.binary((double)rand() / (double)RAND_MAX);
-	return Value(undefined);
+	return Value.binary((double)rand() / (double)RAND_MAX);
 }
 
 static struct Value mathRound (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -217,9 +201,7 @@ static struct Value mathRound (struct Native(Context) * const context, struct Ec
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(floor(value.data.binary + 0.5));
-	
-	return Value(undefined);
+	return Value.binary(floor(value.data.binary + 0.5));
 }
 
 static struct Value mathSin (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -231,8 +213,7 @@ static struct Value mathSin (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(sin(value.data.binary));
-	return Value(undefined);
+	return Value.binary(sin(value.data.binary));
 }
 
 static struct Value mathSqrt (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -244,8 +225,7 @@ static struct Value mathSqrt (struct Native(Context) * const context, struct Ecc
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(sqrt(value.data.binary));
-	return Value(undefined);
+	return Value.binary(sqrt(value.data.binary));
 }
 
 static struct Value mathTan (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -257,8 +237,7 @@ static struct Value mathTan (struct Native(Context) * const context, struct Ecc 
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	ecc->result = Value.binary(tan(value.data.binary));
-	return Value(undefined);
+	return Value.binary(tan(value.data.binary));
 }
 
 // MARK: - Public

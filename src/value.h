@@ -31,8 +31,6 @@ enum Value(Type) {
 	Value(undefinedType) = 0x00,
 	Value(trueType) = 0x01,
 	
-	Value(breakerType) = 0x02,
-	
 	Value(integerType) = 0x10,
 	Value(binaryType) = 0x12,
 	
@@ -80,6 +78,7 @@ extern const struct Value Value(null);
 
 Interface(Value,
 	
+	(struct Value, none ,(void))
 	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
@@ -93,7 +92,6 @@ Interface(Value,
 	(struct Value, boolean ,(struct Boolean *))
 	(struct Value, date ,(struct Date *))
 	(struct Value, function ,(struct Function *))
-	(struct Value, breaker ,(int32_t integer))
 	(struct Value, reference ,(struct Value *))
 	
 	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Ecc *, struct Value, const struct Text *, enum Value(hintPrimitive)))

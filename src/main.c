@@ -74,7 +74,6 @@ static struct Value dumpTo (struct Native(Context) * const context, struct Ecc *
 	}
 	putc('\n', file);
 	
-	ecc->result = Value(undefined);
 	return Value(undefined);
 }
 
@@ -214,11 +213,13 @@ static void testException (void)
 	test("try { throw 'a' } catch(b){ 'b' } 'c'", "c");
 	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' }", "c");
 	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' } 'd'", "d");
-	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "abc");
-	test("try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "b");
-	test("try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }", "c");
+	test("try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' }", "SyntaxError: return not in function");
+	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }})()", "abc");
+	test("(function(){ try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' } })()", "b");
+	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }})()", "c");
 	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f");
 	test("var a = 123; try { throw a + 'abc' } catch(b) { a + b }", "123123abc");
+	test("(function (){ try { return 'a'; } finally { return 'b'; } })()", "b");
 	
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script");
 }

@@ -169,7 +169,7 @@ static struct OpList * array (struct Parser *self)
 		while (previewToken(self) == ',')
 		{
 			++count;
-			oplist = OpList.append(oplist, Op.make(Op.value, Value.breaker(0), self->lexer->text));
+			oplist = OpList.append(oplist, Op.make(Op.value, Value.none(), self->lexer->text));
 			nextToken(self);
 		}
 		
@@ -1150,7 +1150,7 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 		
 		if (lastestDepth == 2)
 			if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
-				return OpList.create(Op.value, Value.breaker(breaker - 1), self->lexer->text);
+				return OpList.create(Op.breaker, Value.integer(breaker - 1), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
 	return oplist;
@@ -1178,7 +1178,7 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 	{
 		breaker += self->depths[depth].depth;
 		if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
-			return OpList.create(Op.value, Value.breaker(breaker), self->lexer->text);
+			return OpList.create(Op.breaker, Value.integer(breaker), self->lexer->text);
 	}
 	error(self, Error.syntaxError(labelText, "label not found"));
 	return oplist;
@@ -1187,6 +1187,9 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 static struct OpList * returnStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
+	
+	if (self->sourceDepth <= 1)
+		error(self, Error.syntaxError(text, "return not in function"));
 	
 	if (!self->lexer->didLineBreak && previewToken(self) != ';' && previewToken(self) != '}' && previewToken(self) != Lexer(noToken))
 		oplist = expression(self, 0);
@@ -1331,7 +1334,7 @@ static struct OpList * statement (struct Parser *self)
 			}
 		}
 		else
-			oplist = OpList.appendNoop(oplist);
+			oplist = OpList.append(OpList.append(oplist, Op.make(Op.jump, Value.integer(1), text)), Op.make(Op.next, Value(undefined), text));
 		
 		if (acceptToken(self, Lexer(finallyToken)))
 			oplist = OpList.join(oplist, block(self));
@@ -1538,7 +1541,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 		if (self->sourceDepth <= 1)
 			last = OpList.appendNoop(last);
 		else
-			last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), OpList.text(last)));
+			last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), Text(empty)));
 	}
 	
 	oplist = OpList.join(init, oplist);

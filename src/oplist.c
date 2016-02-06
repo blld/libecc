@@ -310,7 +310,7 @@ void dumpTo (struct OpList *self, FILE *file)
 		}
 		else if (self->ops[i].native == Op.getParentSlot || self->ops[i].native == Op.getParentSlotRef || self->ops[i].native == Op.setParentSlot)
 			fprintf(file, "[-%d] %d", self->ops[i].value.data.integer >> 16, self->ops[i].value.data.integer & 0xffff);
-		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
+		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange || self->ops[i].native == Op.resultValue)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)

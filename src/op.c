@@ -386,8 +386,7 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 static inline struct Value callOps (struct Native(Context) * const context, struct Ecc * const ecc, struct Object *environment)
 {
 	context->environment = environment;
-	context->ops->native(context, ecc);
-	return ecc->result;
+	return context->ops->native(context, ecc);
 }
 
 struct Value callFunctionArguments (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
@@ -633,7 +632,7 @@ struct Value array (struct Native(Context) * const context, struct Ecc * const e
 	for (index = 0; index < length; ++index)
 	{
 		value = nextOp();
-		if (value.type != Value(breakerType))
+		if (value.check == 1)
 		{
 			object->element[index].data.value = value;
 			object->element[index].data.value.flags = 0;
@@ -922,14 +921,16 @@ struct Value deleteProperty (struct Native(Context) * const context, struct Ecc 
 
 struct Value result (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	ecc->result = nextOp();
-	return Value.breaker(0);
+	struct Value result = nextOp();
+	context->breaker = -1;
+	return result;
 }
 
 struct Value resultValue (struct Native(Context) * const context, struct Ecc * const ecc)
 {
-	ecc->result = opValue();
-	return Value.breaker(0);
+	struct Value result = opValue();
+	context->breaker = -1;
+	return result;
 }
 
 struct Value pushEnvironment (struct Native(Context) * const context, struct Ecc * const ecc)
@@ -1493,7 +1494,7 @@ struct Value try (struct Native(Context) * const context, struct Ecc * const ecc
 	struct Key key;
 	
 	const struct Op * volatile rethrowOps = NULL;
-	volatile int rethrow = 0;
+	volatile int rethrow = 0, breaker = 0;
 	volatile struct Value value = Value(undefined);
 	struct Value finallyValue;
 	
@@ -1512,8 +1513,7 @@ struct Value try (struct Native(Context) * const context, struct Ecc * const ecc
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(context->environment, key, ecc->result, 0);
-				ecc->result = Value(undefined);
+				Object.add(context->environment, key, value, 0);
 				value = nextOp(); // execute until noop
 				rethrow = 0;
 			}
@@ -1522,18 +1522,23 @@ struct Value try (struct Native(Context) * const context, struct Ecc * const ecc
 	
 	Ecc.popEnv(ecc);
 	
+	breaker = context->breaker;
+	context->breaker = 0;
 	context->ops = end; // op[end] = Op.jump, to after catch
 	finallyValue = nextOp(); // jump to after catch, and execute until noop
 	
-	if (finallyValue.type != Value(undefinedType)) /* return breaker */
+	if (context->breaker) /* return breaker */
 		return finallyValue;
 	else if (rethrow)
 	{
 		context->ops = rethrowOps;
 		Ecc.jmpEnv(ecc, value);
 	}
-	else if (value.type != Value(undefinedType)) /* return breaker */
+	else if (breaker)
+	{
+		context->breaker = breaker;
 		return value;
+	}
 	else
 		return nextOp();
 }
@@ -1719,15 +1724,24 @@ struct Value switchOp (struct Native(Context) * const context, struct Ecc * cons
 // MARK: Iteration
 
 #define stepIteration(value, nextOps) \
-	if (( value = nextOp() ).type == Value(breakerType) && --value.data.integer) \
 	{ \
-		if (--value.data.integer) \
-			return value; /* return breaker */\
+		value = nextOp(); \
+		if (context->breaker && --context->breaker) \
+		{ \
+			if (--context->breaker) \
+				return value; /* return breaker */\
+			else \
+				break; \
+		} \
 		else \
-			break; \
-	} \
-	else \
-		context->ops = nextOps;
+			context->ops = nextOps; \
+	}
+
+struct Value breaker (struct Native(Context) * const context, struct Ecc * const ecc)
+{
+	context->breaker = opValue().data.integer;
+	return Value(undefined);
+}
 
 struct Value iterate (struct Native(Context) * const context, struct Ecc * const ecc)
 {

@@ -78,6 +78,13 @@ static inline uint16_t binaryToBuffer (double binary, int base, char *buffer, ui
 
 // MARK: - Methods
 
+struct Value none (void)
+{
+	return (struct Value){
+		.check = 0,
+	};
+}
+
 struct Value truth (int truth)
 {
 	return (struct Value){
@@ -210,15 +217,6 @@ struct Value function (struct Function *function)
 	};
 }
 
-struct Value breaker (int32_t integer)
-{
-	return (struct Value){
-		.data = { .integer = integer },
-		.type = Value(breakerType),
-		.check = 0,
-	};
-}
-
 struct Value reference (struct Value *reference)
 {
 	assert(reference);
@@ -347,7 +345,6 @@ struct Value toString (struct Value value)
 			return Value.chars(chars);
 		}
 		
-		case Value(breakerType):
 		case Value(referenceType):
 			break;
 	}
@@ -412,7 +409,6 @@ uint16_t toBufferLength (struct Value value)
 		case Value(functionType):
 			return Function.toBufferLength(value.data.function);
 		
-		case Value(breakerType):
 		case Value(referenceType):
 			break;
 	}
@@ -475,7 +471,6 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 		case Value(functionType):
 			return Function.toBuffer(value.data.function, buffer, length);
 		
-		case Value(breakerType):
 		case Value(referenceType):
 			break;
 	}
@@ -589,7 +584,6 @@ struct Value toBinary (struct Value value)
 		case Value(functionType):
 			return binary(NAN);
 		
-		case Value(breakerType):
 		case Value(referenceType):
 			break;
 	}
@@ -640,7 +634,6 @@ struct Value toObject (struct Native(Context) * const context, struct Ecc *ecc, 
 		case Value(undefinedType):
 			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(context, ecc, argumentIndex), "can't convert undefined to object")));
 		
-		case Value(breakerType):
 		case Value(referenceType):
 		case Value(functionType):
 		case Value(objectType):
@@ -692,7 +685,6 @@ struct Value toType (struct Value value)
 		case Value(functionType):
 			return text(&Text(function));
 		
-		case Value(breakerType):
 		case Value(referenceType):
 			break;
 	}
@@ -726,10 +718,6 @@ void dumpTo (struct Value value, FILE *file)
 		
 		case Value(integerType):
 			fprintf(file, "%d", (int)value.data.integer);
-			return;
-		
-		case Value(breakerType):
-			fprintf(file, "[[breaker:%d]]", (int)value.data.integer);
 			return;
 		
 		case Value(numberType):

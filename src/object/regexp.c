@@ -20,9 +20,7 @@ static struct Value constructorFunction (struct Native(Context) * const context,
 	Native.assertParameterCount(context, 1);
 	
 #warning TODO
-	ecc->result = Value(null);
-	
-	return Value(undefined);
+	return Value(null);
 }
 
 // MARK: - Methods

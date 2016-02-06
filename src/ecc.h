@@ -51,9 +51,9 @@ Interface(Ecc,
 		uint16_t envCount;
 		uint16_t envCapacity;
 		
-		struct Value result;
-		
 		struct Function *global;
+		
+		struct Value result;
 		struct Text text;
 		
 		struct Input **inputs;
