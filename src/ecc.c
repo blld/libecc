@@ -16,7 +16,11 @@ static struct Value eval (struct Native(Context) * const context, struct Ecc * c
 {
 	struct Value value;
 	struct Input *input;
-	struct Native(Context) subContext = { NULL, context, Value.object(&ecc->global->environment), &ecc->global->environment };
+	struct Native(Context) subContext = {
+		.parent = context,
+		.this = Value.object(&ecc->global->environment),
+		.environment =&ecc->global->environment,
+	};
 	
 	Native.assertParameterCount(context, 1);
 	
@@ -292,7 +296,9 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	volatile int result = EXIT_SUCCESS, try = !self->envCount, catch = 0;
-	struct Native(Context) context = { NULL, NULL, Value(undefined), &self->global->environment };
+	struct Native(Context) context = {
+		.environment = &self->global->environment
+	};
 	
 	if (!input)
 		return EXIT_FAILURE;

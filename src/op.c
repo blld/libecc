@@ -392,7 +392,12 @@ static inline struct Value callOps (struct Native(Context) * const context, stru
 
 struct Value callFunctionArguments (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Native(Context) context = { function->oplist->ops, parent, this, NULL, argumentOffset };
+	struct Native(Context) context = {
+		.ops = function->oplist->ops,
+		.parent = parent,
+		.this = this,
+		.argumentOffset = argumentOffset
+	};
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -425,7 +430,12 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, struc
 
 struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc * const ecc, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Native(Context) context = { function->oplist->ops, parent, this, NULL, argumentOffset, 0 };
+	struct Native(Context) context = {
+		.ops = function->oplist->ops,
+		.parent = parent,
+		.this = this,
+		.argumentOffset = argumentOffset,
+	};
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -462,7 +472,12 @@ struct Value callFunctionVA (struct Native(Context) * const parent, struct Ecc *
 
 static inline struct Value callFunction (struct Native(Context) * const parent, struct Ecc * const ecc, struct Function * const function, int32_t argumentCount, int construct)
 {
-	struct Native(Context) context = { function->oplist->ops, parent, ecc->refObject, NULL, 0, construct };
+	struct Native(Context) context = {
+		.ops = function->oplist->ops,
+		.parent = parent,
+		.this = ecc->refObject,
+		.construct = construct
+	};
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -538,7 +553,11 @@ struct Value eval (struct Native(Context) * const context, struct Ecc * const ec
 	struct Value value;
 	struct Input *input;
 	int32_t argumentCount = opValue().data.integer;
-	struct Native(Context) subContext = { NULL, context, context->this, context->environment, 0, 0 };
+	struct Native(Context) subContext = {
+		.parent = context,
+		.this = context->this,
+		.environment = context->environment,
+	};
 	
 	if (!argumentCount)
 		return nextOp();
