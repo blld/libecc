@@ -10,8 +10,8 @@
 
 static int printUsage (void);
 static int runTest (int verbosity);
-static struct Value print (struct Native(Context) * const context, struct Ecc * const ecc);
-static struct Value alert (struct Native(Context) * const context, struct Ecc * const ecc);
+static struct Value print (struct Native(Context) * const context);
+static struct Value alert (struct Native(Context) * const context);
 
 static struct Ecc *ecc = NULL;
 
@@ -69,7 +69,7 @@ static struct Value dumpTo (struct Native(Context) * const context, struct Ecc *
 			putc(' ', file);
 		
 		value = Native.variableArgument(context, index);
-		value = Value.toPrimitive(context, ecc, value, &context->ops->text, Value(hintString));
+		value = Value.toPrimitive(context, value, &context->ops->text, Value(hintString));
 		Value.dumpTo(Value.toString(value), file);
 	}
 	putc('\n', file);
@@ -77,12 +77,12 @@ static struct Value dumpTo (struct Native(Context) * const context, struct Ecc *
 	return Value(undefined);
 }
 
-static struct Value print (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value print (struct Native(Context) * const context)
 {
 	return dumpTo(context, ecc, stdout);
 }
 
-static struct Value alert (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value alert (struct Native(Context) * const context)
 {
 	return dumpTo(context, ecc, stderr);
 }

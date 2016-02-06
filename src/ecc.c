@@ -12,30 +12,31 @@
 
 static int instanceCount = 0;
 
-static struct Value eval (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value eval (struct Native(Context) * const context)
 {
 	struct Value value;
 	struct Input *input;
 	struct Native(Context) subContext = {
 		.parent = context,
-		.this = Value.object(&ecc->global->environment),
-		.environment =&ecc->global->environment,
+		.this = Value.object(&context->ecc->global->environment),
+		.environment = &context->ecc->global->environment,
+		.ecc = context->ecc,
 	};
 	
 	Native.assertParameterCount(context, 1);
 	
 	if (context->construct)
-		jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "eval is not a constructor")));
+		jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "eval is not a constructor")));
 	
 	value = Value.toString(Native.argument(context, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	
-	evalInputWithContext(ecc, input, &subContext);
+	evalInputWithContext(context->ecc, input, &subContext);
 	
-	return ecc->result;
+	return context->ecc->result;
 }
 
-static struct Value parseInt (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value parseInt (struct Native(Context) * const context)
 {
 	struct Value value;
 	struct Text text;
@@ -64,7 +65,7 @@ static struct Value parseInt (struct Native(Context) * const context, struct Ecc
 	return Lexer.parseInteger(text, base);
 }
 
-static struct Value parseFloat (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value parseFloat (struct Native(Context) * const context)
 {
 	struct Value value;
 	struct Text text;
@@ -77,7 +78,7 @@ static struct Value parseFloat (struct Native(Context) * const context, struct E
 	return Lexer.parseBinary(text);
 }
 
-static struct Value isFinite (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value isFinite (struct Native(Context) * const context)
 {
 	struct Value value;
 	
@@ -87,7 +88,7 @@ static struct Value isFinite (struct Native(Context) * const context, struct Ecc
 	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
 
-static struct Value isNaN (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value isNaN (struct Native(Context) * const context)
 {
 	struct Value value;
 	
@@ -97,7 +98,7 @@ static struct Value isNaN (struct Native(Context) * const context, struct Ecc * 
 	return Value.truth(isnan(value.data.binary));
 }
 
-static struct Value decodeURI (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value decodeURI (struct Native(Context) * const context)
 {
 	struct Value value;
 	const char *bytes;
@@ -151,7 +152,7 @@ static struct Value decodeURI (struct Native(Context) * const context, struct Ec
 	return Value.chars(chars);
 	
 	error:
-	Ecc.jmpEnv(ecc, Value.error(Error.uriError(Native.textSeek(context, ecc, 0), "malformed URI")));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.uriError(Native.textSeek(context, 0), "malformed URI")));
 }
 
 // MARK: - Static Members
@@ -288,7 +289,8 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	volatile int result = EXIT_SUCCESS, try = !self->envCount, catch = 0;
 	struct Native(Context) context = {
-		.environment = &self->global->environment
+		.environment = &self->global->environment,
+		.ecc = self,
 	};
 	
 	if (!input)
@@ -332,7 +334,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		evalInputWithContext(self, input, &context);
 		
 		if (flags & Ecc(primitiveResult))
-			self->result = Value.toPrimitive(NULL, self, self->result, NULL, Value(hintAuto));
+			self->result = Value.toPrimitive(&context, self->result, NULL, Value(hintAuto));
 	}
 	
 	if (try)
@@ -365,7 +367,7 @@ void evalInputWithContext (struct Ecc *self, struct Input *input, struct Native(
 	
 	self->result = Value(undefined);
 	
-	context->ops->native(context, self);
+	context->ops->native(context);
 }
 
 jmp_buf * pushEnv(struct Ecc *self)

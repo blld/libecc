@@ -12,13 +12,13 @@
 
 struct Object * Arguments(prototype);
 
-static struct Value getLength (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value getLength (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
 	return Value.binary(context->this.data.object->elementCount);
 }
 
-static struct Value setLength (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value setLength (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 1);
 	Object.resizeElement(context->this.data.object, Value.toBinary(Native.argument(context, 0)).data.binary);

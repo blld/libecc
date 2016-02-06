@@ -94,7 +94,7 @@ Interface(Value,
 	(struct Value, function ,(struct Function *))
 	(struct Value, reference ,(struct Value *))
 	
-	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Ecc *, struct Value, const struct Text *, enum Value(hintPrimitive)))
+	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Value, const struct Text *, enum Value(hintPrimitive)))
 	(int, isPrimitive ,(struct Value))
 	(int, isBoolean ,(struct Value))
 	(int, isDynamic ,(struct Value))
@@ -112,7 +112,7 @@ Interface(Value,
 	(struct Value, toInteger ,(struct Value))
 	(int, isNumber ,(struct Value))
 	
-	(struct Value, toObject ,(struct Native(Context) * const, struct Ecc *, struct Value, int argumentIndex))
+	(struct Value, toObject ,(struct Native(Context) * const, struct Value, int argumentIndex))
 	(int, isObject ,(struct Value))
 	
 	(struct Value, toType ,(struct Value))

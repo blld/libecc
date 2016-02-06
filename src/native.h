@@ -15,7 +15,7 @@ struct Op;
 struct Ecc;
 struct Value;
 struct Native(Context);
-typedef __typeof__(struct Value) (* Native(Function)) (struct Native(Context) * const context, struct Ecc * const ecc);
+typedef __typeof__(struct Value) (* Native(Function)) (struct Native(Context) * const context);
 
 #include "value.h"
 
@@ -33,7 +33,8 @@ struct Native(Context) {
 	const struct Op * ops;
 	struct Native(Context) * parent;
 	struct Value this;
-	struct Object *environment;
+	struct Object * environment;
+	struct Ecc * ecc;
 	struct Value refObject;
 	int argumentOffset;
 	int construct;
@@ -51,7 +52,7 @@ Interface(Native,
 	(int , variableArgumentCount ,(struct Native(Context) * const))
 	(struct Value, variableArgument ,(struct Native(Context) * const, int argumentIndex))
 	
-	(struct Text, textSeek ,(struct Native(Context) * const, struct Ecc * const ecc, enum Native(Index) argumentIndex))
+	(struct Text, textSeek ,(struct Native(Context) * const, enum Native(Index) argumentIndex))
 	,
 	{
 		char dummy;

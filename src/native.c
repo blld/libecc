@@ -44,7 +44,7 @@ struct Value variableArgument (struct Native(Context) * const context, int argum
 	return context->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
 }
 
-struct Text textSeek (struct Native(Context) * const context, struct Ecc * const ecc, enum Native(Index) argumentIndex)
+struct Text textSeek (struct Native(Context) * const context, enum Native(Index) argumentIndex)
 {
 	assert(context);
 	assert(ecc);

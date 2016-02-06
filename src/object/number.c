@@ -13,7 +13,7 @@
 struct Object * Number(prototype) = NULL;
 struct Function * Number(constructor) = NULL;
 
-static struct Value toExponential (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value toExponential (struct Native(Context) * const context)
 {
 	struct Value value;
 	
@@ -22,14 +22,14 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
 	
 	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
 		
 		return Value.chars(Chars.create("%.*e", precision, context->this.data.binary));
 	}
@@ -37,7 +37,7 @@ static struct Value toExponential (struct Native(Context) * const context, struc
 		return Value.chars(Chars.create("%e", context->this.data.binary));
 }
 
-static struct Value toFixed (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value toFixed (struct Native(Context) * const context)
 {
 	struct Value value;
 	
@@ -46,14 +46,14 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
 	
 	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
 		
 		return Value.chars(Chars.create("%.*f", precision, context->this.data.binary));
 	}
@@ -61,7 +61,7 @@ static struct Value toFixed (struct Native(Context) * const context, struct Ecc 
 		return Value.chars(Chars.create("%f", context->this.data.binary));
 }
 
-static struct Value toPrecision (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value toPrecision (struct Native(Context) * const context)
 {
 	struct Value value;
 	
@@ -70,14 +70,14 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
 	
 	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 100)
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
 		
 		return Value.chars(Chars.create("%.*g", precision, context->this.data.binary));
 	}
@@ -85,7 +85,7 @@ static struct Value toPrecision (struct Native(Context) * const context, struct 
 		return Value.binaryToString(context->this.data.binary, 10);
 }
 
-static struct Value toString (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value toString (struct Native(Context) * const context)
 {
 	struct Value value;
 	int32_t radix = 10;
@@ -95,14 +95,14 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
 	
 	value = Native.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		radix = Value.toInteger(value).data.integer;
 		if (radix < 2 || radix > 36)
-			Ecc.jmpEnv(ecc, Value.error(Error.rangeError(Native.textSeek(context, ecc, 0), "radix must be an integer at least 2 and no greater than 36")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "radix must be an integer at least 2 and no greater than 36")));
 		
 		if (radix != 10 && (context->this.data.binary < LONG_MIN || context->this.data.binary > LONG_MAX))
 			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", context->this.data.binary, radix);
@@ -111,19 +111,19 @@ static struct Value toString (struct Native(Context) * const context, struct Ecc
 	return Value.binaryToString(context->this.data.binary, radix);
 }
 
-static struct Value valueOf (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value valueOf (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
 	
 	if (Value.isNumber(context->this))
 		context->this = Value.toBinary(context->this);
 	else
-		Ecc.jmpEnv(ecc, Value.error(Error.typeError(Native.textSeek(context, ecc, Native(thisIndex)), "not a number")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
 	
 	return context->this;
 }
 
-static struct Value numberConstructor (struct Native(Context) * const context, struct Ecc * const ecc)
+static struct Value numberConstructor (struct Native(Context) * const context)
 {
 	struct Value value;
 	

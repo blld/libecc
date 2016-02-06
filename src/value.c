@@ -228,7 +228,7 @@ struct Value reference (struct Value *reference)
 	};
 }
 
-struct Value toPrimitive (struct Native(Context) * const context, struct Ecc *ecc, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
+struct Value toPrimitive (struct Native(Context) * const context, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
 {
 	struct Object *object;
 	struct Key aKey;
@@ -248,7 +248,7 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Ecc *ec
 	aFunction = Object.get(object, aKey);
 	if (aFunction.type == Value(functionType))
 	{
-		struct Value result = Op.callFunctionVA(context, ecc, 0, aFunction.data.function, value, 0);
+		struct Value result = Op.callFunctionVA(context, 0, aFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
@@ -256,12 +256,12 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Ecc *ec
 	bFunction = Object.get(object, bKey);
 	if (bFunction.type == Value(functionType))
 	{
-		result = Op.callFunctionVA(context, ecc, 0, bFunction.data.function, value, 0);
+		result = Op.callFunctionVA(context, 0, bFunction.data.function, value, 0);
 		if (isPrimitive(result))
 			return result;
 	}
 	
-	Ecc.jmpEnv(ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->location: "", text? " ": "")));
+	Ecc.jmpEnv(context->ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->location: "", text? " ": "")));
 }
 
 int isPrimitive (struct Value value)
@@ -606,7 +606,7 @@ int isNumber (struct Value value)
 	return value.type & 0x10;
 }
 
-struct Value toObject (struct Native(Context) * const context, struct Ecc *ecc, struct Value value, enum Native(Index) argumentIndex)
+struct Value toObject (struct Native(Context) * const context, struct Value value, enum Native(Index) argumentIndex)
 {
 	if (value.type >= Value(objectType))
 		return value;
@@ -629,10 +629,10 @@ struct Value toObject (struct Native(Context) * const context, struct Ecc *ecc, 
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(context, ecc, argumentIndex), "can't convert null to object")));
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(Native.textSeek(context, argumentIndex), "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(ecc, error(Error.typeError(Native.textSeek(context, ecc, argumentIndex), "can't convert undefined to object")));
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(Native.textSeek(context, argumentIndex), "can't convert undefined to object")));
 		
 		case Value(referenceType):
 		case Value(functionType):
