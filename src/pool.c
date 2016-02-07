@@ -31,10 +31,10 @@ static void markFunction (struct Function *function)
 
 static void markObject (struct Object *object)
 {
+	uint32_t index, count;
+	
 	if (object->flags & Object(mark))
 		return;
-	
-	uint32_t index, count;
 	
 	object->flags |= Object(mark);
 	

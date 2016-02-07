@@ -46,12 +46,12 @@ struct Value variableArgument (struct Native(Context) * const context, int argum
 
 struct Text textSeek (struct Native(Context) * const context, enum Native(Index) argumentIndex)
 {
-	assert(context);
-	assert(ecc);
-	
 	const char *location;
 	struct Native(Context) seek = *context;
 	uint32_t breakArray = 0;
+	
+	assert(context);
+	assert(context->ecc);
 	
 	while (seek.ops->text.location == Text(nativeCode).location)
 	{

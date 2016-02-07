@@ -729,6 +729,7 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 			
 			do
 			{
+				assert(self->hashmapCount < UINT16_MAX);
 				slot = self->hashmap[slot].slot[key.data.depth[depth]] = self->hashmapCount++;
 			} while (++depth < 4);
 			
@@ -853,8 +854,7 @@ void stripMap (struct Object *self)
 	
 //	fprintf(stderr, "%d->%d\n", self->hashmapCount, index);
 	
-	self->hashmapCount = index;
-	self->hashmapCapacity = self->hashmapCount;
+	self->hashmapCapacity = self->hashmapCount = index;
 	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
 }
 

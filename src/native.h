@@ -31,14 +31,15 @@ enum Native(Index) {
 
 struct Native(Context) {
 	const struct Op * ops;
-	struct Native(Context) * parent;
 	struct Value this;
-	struct Object * environment;
-	struct Ecc * ecc;
 	struct Value refObject;
 	int argumentOffset;
 	int construct;
 	int breaker;
+	
+	struct Ecc * ecc;
+	struct Object * environment;
+	struct Native(Context) * parent;
 };
 
 
