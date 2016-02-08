@@ -60,9 +60,10 @@ struct Input * createFromFile (const char *filename)
 	self = create();
 	
 	strncat(self->name, filename, sizeof(self->name) - 1);
-	self->bytes = malloc(size);
+	self->bytes = malloc(size + 1);
 	self->length = (uint32_t)fread(self->bytes, sizeof(char), size, file);
 	fclose(file), file = NULL;
+	self->bytes[size] = '\0';
 	
 	return self;
 }
@@ -82,9 +83,10 @@ struct Input * createFromBytes (const char *bytes, uint32_t length, const char *
 		va_end(ap);
 	}
 	self->length = length;
-	self->bytes = malloc(length);
+	self->bytes = malloc(length + 1);
 	assert(self->bytes);
 	memcpy(self->bytes, bytes, length);
+	self->bytes[length] = '\0';
 	
 	return self;
 }
