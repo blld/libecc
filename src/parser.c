@@ -1076,7 +1076,7 @@ static struct OpList * forStatement (struct Parser *self)
 			oplist = OpList.unshift(Op.make(Op.discard, Value(undefined), OpList.text(oplist)), oplist);
 	}
 	
-	if (acceptToken(self, Lexer(inToken)))
+	if (oplist && acceptToken(self, Lexer(inToken)))
 	{
 		if (oplist && oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
