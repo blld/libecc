@@ -103,7 +103,9 @@ static struct OpList * foldConstant (struct OpList * ops)
 {
 	struct Native(Context) context = { ops->ops };
 	struct Value value = context.ops->native(&context);
-	return OpList.create(Op.value, value, OpList.text(ops));
+	struct Text text = OpList.text(ops);
+	OpList.destroy(ops);
+	return OpList.create(Op.value, value, text);
 }
 
 static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
