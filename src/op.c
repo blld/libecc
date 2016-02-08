@@ -566,7 +566,7 @@ struct Value eval (struct Native(Context) * const context)
 	};
 	
 	if (!argumentCount)
-		return nextOp();
+		return Value(undefined);
 	
 	value = nextOp();
 	while (--argumentCount)
