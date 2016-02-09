@@ -10,46 +10,48 @@
 
 // MARK: - Private
 
-#define textMake(T) { T, sizeof(T)-1 }
+#define textMake(N, T) \
+	static const char N ## Literal[] = T; \
+	const struct Text Text(N) = { N ## Literal, sizeof N ## Literal - 1 }
 
-const struct Text Text(undefined) = textMake("undefined");
-const struct Text Text(null) = textMake("null");
-const struct Text Text(true) = textMake("true");
-const struct Text Text(false) = textMake("false");
-const struct Text Text(boolean) = textMake("boolean");
-const struct Text Text(number) = textMake("number");
-const struct Text Text(string) = textMake("string");
-const struct Text Text(object) = textMake("object");
-const struct Text Text(function) = textMake("function");
-const struct Text Text(zero) = textMake("0");
-const struct Text Text(one) = textMake("1");
-const struct Text Text(nan) = textMake("NaN");
-const struct Text Text(infinity) = textMake("Infinity");
-const struct Text Text(negativeInfinity) = textMake("-Infinity");
-const struct Text Text(nativeCode) = textMake("[native code]");
-const struct Text Text(empty) = textMake("");
+textMake(undefined, "undefined");
+textMake(null, "null");
+textMake(true, "true");
+textMake(false, "false");
+textMake(boolean, "boolean");
+textMake(number, "number");
+textMake(string, "string");
+textMake(object, "object");
+textMake(function, "function");
+textMake(zero, "0");
+textMake(one, "1");
+textMake(nan, "NaN");
+textMake(infinity, "Infinity");
+textMake(negativeInfinity, "-Infinity");
+textMake(nativeCode, "[native code]");
+textMake(empty, "");
 
-const struct Text Text(nullType) = textMake("[object Null]");
-const struct Text Text(undefinedType) =  textMake("[object Undefined]");
-const struct Text Text(objectType) = textMake("[object Object]");
-const struct Text Text(errorType) = textMake("[object Error]");
-const struct Text Text(arrayType) = textMake("[object Array]");
-const struct Text Text(stringType) = textMake("[object String]");
-const struct Text Text(numberType) = textMake("[object Number]");
-const struct Text Text(booleanType) = textMake("[object Boolean]");
-const struct Text Text(dateType) = textMake("[object Date]");
-const struct Text Text(functionType) = textMake("[object Function]");
-const struct Text Text(argumentsType) = textMake("[object Arguments]");
-const struct Text Text(mathType) = textMake("[object Math]");
-const struct Text Text(globalType) = textMake("[object Global]");
+textMake(nullType, "[object Null]");
+textMake(undefinedType, "[object Undefined]");
+textMake(objectType, "[object Object]");
+textMake(errorType, "[object Error]");
+textMake(arrayType, "[object Array]");
+textMake(stringType, "[object String]");
+textMake(numberType, "[object Number]");
+textMake(booleanType, "[object Boolean]");
+textMake(dateType, "[object Date]");
+textMake(functionType, "[object Function]");
+textMake(argumentsType, "[object Arguments]");
+textMake(mathType, "[object Math]");
+textMake(globalType, "[object Global]");
 
-const struct Text Text(errorName) = textMake("Error");
-const struct Text Text(rangeErrorName) = textMake("RangeError");
-const struct Text Text(referenceErrorName) = textMake("ReferenceError");
-const struct Text Text(syntaxErrorName) = textMake("SyntaxError");
-const struct Text Text(typeErrorName) = textMake("TypeError");
-const struct Text Text(uriErrorName) = textMake("URIError");
-const struct Text Text(inputErrorName) = textMake("InputError");
+textMake(errorName, "Error");
+textMake(rangeErrorName, "RangeError");
+textMake(referenceErrorName, "ReferenceError");
+textMake(syntaxErrorName, "SyntaxError");
+textMake(typeErrorName, "TypeError");
+textMake(uriErrorName, "URIError");
+textMake(inputErrorName, "InputError");
 
 // MARK: - Static Members
 
