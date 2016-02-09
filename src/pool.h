@@ -30,7 +30,11 @@ Interface(Pool,
 	
 	(void, unmarkAll ,(void))
 	(void, markValue ,(struct Value value))
+	
 	(void, collectUnmarked ,(void))
+	(void, collectUnreferencedFromIndices ,(uint32_t indices[3]))
+	
+	(void, getCounts ,(uint32_t counts[3]))
 	,
 	{
 		struct Function **functionList;

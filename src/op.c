@@ -16,6 +16,26 @@
 
 //
 
+static struct Value retain(struct Value value)
+{
+	if (value.type == Value(charsType))
+		++value.data.chars->referenceCount;
+	if (value.type >= Value(objectType))
+		++value.data.object->referenceCount;
+	
+	return value;
+}
+
+static struct Value release(struct Value value)
+{
+	if (value.type == Value(charsType))
+		--value.data.chars->referenceCount;
+	if (value.type >= Value(objectType))
+		--value.data.object->referenceCount;
+	
+	return value;
+}
+
 static struct Value addition (struct Native(Context) * const context, struct Value a, const struct Text *aText, struct Value b, const struct Text *bText)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
@@ -255,6 +275,7 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only property", text->length, text->location)));
 		
 		value.flags = ref->flags;
+		release(*ref);
 	}
 	else if (this.data.object->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->location)));
@@ -304,11 +325,11 @@ static inline void populateEnvironmentWithArguments (struct Object *environment,
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value;
+			environment->hashmap[index + 3].data.value = retain(arguments->element[index].data.value);
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value;
+			environment->hashmap[index + 3].data.value = retain(arguments->element[index].data.value);
 	}
 }
 
@@ -321,11 +342,11 @@ static inline void populateEnvironmentWithArgumentsVA (struct Object *environmen
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(va_arg(ap, struct Value));
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(va_arg(ap, struct Value));
 		
 		for (; index < argumentCount; ++index)
 			arguments->element[index].data.value = va_arg(ap, struct Value);
@@ -340,11 +361,11 @@ static inline void populateEnvironmentWithArgumentsOps (struct Native(Context) *
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(nextOp());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(nextOp());
 		
 		for (; index < argumentCount; ++index)
 			arguments->element[index].data.value = nextOp();
@@ -356,11 +377,11 @@ static inline void populateEnvironmentVA (struct Object *environment, int parame
 	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = va_arg(ap, struct Value);
+			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
 		
 		for (; index < argumentCount; ++index)
 			va_arg(ap, struct Value);
@@ -372,11 +393,11 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 	uint32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = retain(nextOp());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = nextOp();
+			environment->hashmap[index + 3].data.value = retain(nextOp());
 		
 		for (; index < argumentCount; ++index)
 			nextOp();
@@ -385,18 +406,27 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 
 static inline struct Value callOps (struct Native(Context) * const context, struct Object *environment)
 {
+	struct Value value;
+	uint16_t index, count;
+	
 	context->environment = environment;
-	return context->ops->native(context);
+	
+	value = context->ops->native(context);
+	
+	for (index = 2, count = environment->hashmapCount; index < count; ++index)
+		release(environment->hashmap[index].data.value);
+	
+	return value;
 }
 
-struct Value callFunctionArguments (struct Native(Context) * const parent, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
+struct Value callFunctionArguments (struct Native(Context) * const context, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
-	struct Native(Context) context = {
+	struct Native(Context) subContext = {
 		.ops = function->oplist->ops,
-		.parent = parent,
+		.parent = context,
 		.this = this,
 		.argumentOffset = argumentOffset,
-		.ecc = parent->ecc,
+		.ecc = context->ecc,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -411,8 +441,7 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, int a
 		}
 		
 		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
-		
-		return callOps(&context, environment);
+		return callOps(&subContext, environment);
 	}
 	else
 	{
@@ -423,19 +452,18 @@ struct Value callFunctionArguments (struct Native(Context) * const parent, int a
 		environment.hashmap = hashmap;
 		
 		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
-		
-		return callOps(&context, &environment);
+		return callOps(&subContext, &environment);
 	}
 }
 
-struct Value callFunctionVA (struct Native(Context) * const parent, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
+struct Value callFunctionVA (struct Native(Context) * const context, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
 {
-	struct Native(Context) context = {
+	struct Native(Context) subContext = {
 		.ops = function->oplist->ops,
-		.parent = parent,
+		.parent = context,
 		.this = this,
 		.argumentOffset = argumentOffset,
-		.ecc = parent->ecc,
+		.ecc = context->ecc,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -452,7 +480,7 @@ struct Value callFunctionVA (struct Native(Context) * const parent, int argument
 		
 		va_end(ap);
 		
-		return callOps(&context, environment);
+		return callOps(&subContext, environment);
 	}
 	else
 	{
@@ -467,18 +495,18 @@ struct Value callFunctionVA (struct Native(Context) * const parent, int argument
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		va_end(ap);
 		
-		return callOps(&context, &environment);
+		return callOps(&subContext, &environment);
 	}
 }
 
-static inline struct Value callFunction (struct Native(Context) * const parent, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
+static inline struct Value callFunction (struct Native(Context) * const context, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
 {
-	struct Native(Context) context = {
+	struct Native(Context) subContext = {
 		.ops = function->oplist->ops,
-		.parent = parent,
+		.parent = context,
 		.this = this,
 		.construct = construct,
-		.ecc = parent->ecc,
+		.ecc = context->ecc,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -486,11 +514,11 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
-			populateEnvironmentWithArgumentsOps(parent, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
+			populateEnvironmentWithArgumentsOps(context, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
 		else
-			populateEnvironment(parent, environment, function->parameterCount, argumentCount);
+			populateEnvironment(context, environment, function->parameterCount, argumentCount);
 		
-		return callOps(&context, environment);
+		return callOps(&subContext, environment);
 	}
 	else if (function->flags & Function(needArguments))
 	{
@@ -504,9 +532,8 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		arguments.element = element;
 		arguments.elementCount = argumentCount;
 		
-		populateEnvironmentWithArgumentsOps(parent, &environment, &arguments, function->parameterCount, argumentCount);
-		
-		return callOps(&context, &environment);
+		populateEnvironmentWithArgumentsOps(context, &environment, &arguments, function->parameterCount, argumentCount);
+		return callOps(&subContext, &environment);
 	}
 	else
 	{
@@ -515,9 +542,8 @@ static inline struct Value callFunction (struct Native(Context) * const parent, 
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
-		populateEnvironment(parent, &environment, function->parameterCount, argumentCount);
-		
-		return callOps(&context, &environment);
+		populateEnvironment(context, &environment, function->parameterCount, argumentCount);
+		return callOps(&subContext, &environment);
 	}
 }
 
@@ -619,9 +645,9 @@ struct Value object (struct Native(Context) * const context)
 		value = nextOp();
 		
 		if (value.type == Value(keyType))
-			Object.add(object, value.data.key, nextOp(), 0);
+			Object.add(object, value.data.key, retain(nextOp()), 0);
 		else if (value.type == Value(integerType))
-			Object.addElementAtIndex(object, value.data.integer, nextOp(), 0);
+			Object.addElementAtIndex(object, value.data.integer, retain(nextOp()), 0);
 	}
 	return Value.object(object);
 }
@@ -638,7 +664,7 @@ struct Value array (struct Native(Context) * const context)
 		value = nextOp();
 		if (value.check == 1)
 		{
-			object->element[index].data.value = value;
+			object->element[index].data.value = retain(value);
 			object->element[index].data.value.flags = 0;
 		}
 	}
@@ -677,15 +703,8 @@ struct Value setLocal (struct Native(Context) * const context)
 	if (!ref)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
 	
-	return *ref = nextOp();
-}
-
-struct Value callLocal (struct Native(Context) * const context)
-{
-	const struct Text *text = opText(1);
-	int32_t argumentCount = opValue().data.integer;
-	struct Value value = nextOp();
-	return callValue(context, value, Value(undefined), argumentCount, 0, text);
+	release(*ref);
+	return *ref = retain(nextOp());
 }
 
 struct Value getLocalSlot (struct Native(Context) * const context)
@@ -703,7 +722,9 @@ struct Value getLocalSlotRef (struct Native(Context) * const context)
 struct Value setLocalSlot (struct Native(Context) * const context)
 {
 	int32_t slot = opValue().data.integer;
-	return context->environment->hashmap[slot].data.value = nextOp();
+	
+	release(context->environment->hashmap[slot].data.value);
+	return context->environment->hashmap[slot].data.value = retain(nextOp());
 }
 
 struct Value getParentSlot (struct Native(Context) * const context)
@@ -736,7 +757,8 @@ struct Value setParentSlot (struct Native(Context) * const context)
 	while (count--)
 		object = object->prototype;
 	
-	return object->hashmap[slot].data.value = nextOp();
+	release(object->hashmap[slot].data.value);
+	return object->hashmap[slot].data.value = retain(nextOp());
 }
 
 struct Value getMember (struct Native(Context) * const context)
@@ -784,7 +806,7 @@ struct Value setMember (struct Native(Context) * const context)
 	const struct Text *textObject = opText(1);
 	struct Value key = opValue();
 	struct Value object = nextOp();
-	struct Value value = nextOp();
+	struct Value value = retain(nextOp());
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
@@ -874,7 +896,7 @@ struct Value setProperty (struct Native(Context) * const context)
 	const struct Text *textObject = opText(1);
 	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Value value = nextOp();
+	struct Value value = retain(nextOp());
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
@@ -1357,7 +1379,7 @@ struct Value addAssignRef (struct Native(Context) * const context)
 	if (ref->type != Value(binaryType) || b.type != Value(binaryType))
 	{
 		struct Value value = addition(context, getRefValue(context, ref, context->refObject), text, b, opText(0));
-		return setRefValue(context, ref, context->refObject, value, text);
+		return setRefValue(context, ref, context->refObject, retain(value), text);
 	}
 	ref->data.binary += b.data.binary;
 	return *ref;
@@ -1536,7 +1558,7 @@ struct Value try (struct Native(Context) * const context)
 	else if (rethrow)
 	{
 		context->ops = rethrowOps;
-		Ecc.jmpEnv(context->ecc, value);
+		Ecc.jmpEnv(context->ecc, retain(value));
 	}
 	else if (breaker)
 	{
@@ -1550,7 +1572,7 @@ struct Value try (struct Native(Context) * const context)
 dead struct Value throw (struct Native(Context) * const context)
 {
 	context->ecc->text = *opText(1);
-	Ecc.jmpEnv(context->ecc, nextOp());
+	Ecc.jmpEnv(context->ecc, retain(nextOp()));
 }
 
 struct Value debug (struct Native(Context) * const context)
@@ -1575,7 +1597,8 @@ struct Value nextIf (struct Native(Context) * const context)
 
 struct Value expression (struct Native(Context) * const context)
 {
-	context->ecc->result = nextOp();
+	release(context->ecc->result);
+	context->ecc->result = retain(nextOp());
 	return nextOp();
 }
 
@@ -1729,6 +1752,8 @@ struct Value switchOp (struct Native(Context) * const context)
 
 #define stepIteration(value, nextOps) \
 	{ \
+		Pool.getCounts(counts); \
+		 \
 		value = nextOp(); \
 		if (context->breaker && --context->breaker) \
 		{ \
@@ -1739,6 +1764,8 @@ struct Value switchOp (struct Native(Context) * const context)
 		} \
 		else \
 			context->ops = nextOps; \
+		 \
+		Pool.collectUnreferencedFromIndices(counts); \
 	}
 
 struct Value breaker (struct Native(Context) * const context)
@@ -1753,6 +1780,7 @@ struct Value iterate (struct Native(Context) * const context)
 	const struct Op *endOps = startOps;
 	const struct Op *nextOps = startOps + 1;
 	struct Value value;
+	uint32_t counts[3];
 	
 	context->ops += opValue().data.integer;
 	
@@ -1779,6 +1807,7 @@ static struct Value iterateIntegerRef (
 	struct Value *countRef = nextOp().data.reference;
 	const struct Op *nextOps = context->ops;
 	struct Value value;
+	uint32_t counts[3];
 	
 	if (indexRef->type == Value(binaryType) && indexRef->data.binary >= INT32_MIN && indexRef->data.binary <= INT32_MAX)
 	{
@@ -1845,6 +1874,7 @@ struct Value iterateInRef (struct Native(Context) * const context)
 	struct Value value = nextOp();
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
+	uint32_t counts[3];
 	
 	if (Value.isObject(object))
 	{

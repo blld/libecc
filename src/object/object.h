@@ -86,6 +86,7 @@ Interface(Object,
 		uint16_t hashmapCount;
 		uint16_t hashmapCapacity;
 		
+		int16_t referenceCount;
 		uint8_t flags;
 	}
 )

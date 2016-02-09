@@ -33,6 +33,7 @@ Interface(Chars,
 	,
 	{
 		uint16_t length;
+		int16_t referenceCount;
 		uint8_t flags;
 		char chars[1];
 	}

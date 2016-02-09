@@ -161,6 +161,40 @@ void markValue (struct Value value)
 		markChars(value.data.chars);
 }
 
+static void cleanupObject(struct Object *object);
+
+static struct Value releaseValue(struct Value value)
+{
+	if (value.type == Value(charsType))
+		--value.data.chars->referenceCount;
+	if (value.type >= Value(objectType))
+		if (value.data.object->referenceCount && --value.data.object->referenceCount <= 0)
+			cleanupObject(value.data.object);
+	
+	return value;
+}
+
+static void cleanupObject(struct Object *object)
+{
+	struct Value value;
+	
+	if (object->elementCount)
+		while (object->elementCount--)
+		{
+			value = object->element[object->elementCount].data.value;
+			if (value.check == 1)
+				releaseValue(value);
+		}
+	
+	if (object->hashmapCount)
+		while (object->hashmapCount--)
+		{
+			value = object->hashmap[object->hashmapCount].data.value;
+			if (value.check == 1)
+				releaseValue(value);
+		}
+}
+
 void collectUnmarked (void)
 {
 	uint32_t index;
@@ -188,4 +222,47 @@ void collectUnmarked (void)
 			Chars.destroy(self->charsList[index]);
 			self->charsList[index] = self->charsList[--self->charsCount];
 		}
+}
+
+void collectUnreferencedFromIndices (uint32_t indices[3])
+{
+	uint32_t index;
+	
+	index = self->objectCount;
+	while (index-- > indices[1])
+		if (self->objectList[index]->referenceCount <= 0)
+			cleanupObject(self->objectList[index]);
+	
+	//
+	
+//	index = self->functionCount;
+//	while (index-- > counts[0])
+//		if (!self->functionList[index]->object.referenceCount)
+//		{
+//			Function.destroy(self->functionList[index]);
+//			self->functionList[index] = self->functionList[--self->functionCount];
+//		}
+	
+	index = self->objectCount;
+	while (index-- > indices[1])
+		if (self->objectList[index]->referenceCount <= 0)
+		{
+			Object.destroy(self->objectList[index]);
+			self->objectList[index] = self->objectList[--self->objectCount];
+		}
+	
+	index = self->charsCount;
+	while (index-- > indices[2])
+		if (self->charsList[index]->referenceCount <= 0)
+		{
+			Chars.destroy(self->charsList[index]);
+			self->charsList[index] = self->charsList[--self->charsCount];
+		}
+}
+
+void getCounts (uint32_t counts[3])
+{
+	counts[0] = self->functionCount;
+	counts[1] = self->objectCount;
+	counts[2] = self->charsCount;
 }
