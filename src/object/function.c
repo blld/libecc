@@ -217,7 +217,7 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 
 struct Function * createWithNativeAccessor (const Native(Function) getter, const Native(Function) setter)
 {
-	struct Function *self, *setterFunction = NULL;
+	struct Function *self = NULL, *setterFunction = NULL;
 	if (setter)
 		setterFunction = createWithNative(setter, 1);
 	
@@ -227,10 +227,8 @@ struct Function * createWithNativeAccessor (const Native(Function) getter, const
 		self->flags |= Function(isGetter);
 		if (setter)
 			self->pair = setterFunction;
-		
-		return self;
 	}
-	else
+	else if (setter)
 	{
 		self = setterFunction;
 		self->flags |= Function(isSetter);
