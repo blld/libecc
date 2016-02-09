@@ -449,8 +449,6 @@ static struct OpList * leftHandSide (struct Parser *self)
 			
 			if (isEval)
 				oplist = OpList.unshift(Op.make(Op.eval, Value.integer(count), text), oplist);
-			else if (oplist->ops->native == Op.getLocal)
-				oplist = OpList.unshift(Op.make(Op.callLocal, Value.integer(count), text), oplist);
 			else if (oplist->ops->native == Op.getMember)
 				oplist = OpList.unshift(Op.make(Op.callMember, Value.integer(count), text), oplist);
 			else if (oplist->ops->native == Op.getProperty)

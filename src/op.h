@@ -33,7 +33,6 @@
 	_( getLocal )\
 	_( getLocalRef )\
 	_( setLocal )\
-	_( callLocal )\
 	\
 	_( getLocalSlot )\
 	_( getLocalSlotRef )\
