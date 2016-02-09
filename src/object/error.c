@@ -32,7 +32,7 @@ static struct Value messageValue (struct Value value)
 		return Value.toString(value);
 }
 
-static struct Error * createVA (struct Object *errorPrototype, struct Text text, struct Chars *message)
+static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
 	assert(self);
@@ -190,7 +190,7 @@ struct Error * error (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(prototype), text, chars);
+	return create(Error(prototype), text, chars);
 }
 
 struct Error * rangeError (struct Text text, const char *format, ...)
@@ -209,7 +209,7 @@ struct Error * rangeError (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(rangePrototype), text, chars);
+	return create(Error(rangePrototype), text, chars);
 }
 
 struct Error * referenceError (struct Text text, const char *format, ...)
@@ -228,7 +228,7 @@ struct Error * referenceError (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(referencePrototype), text, chars);
+	return create(Error(referencePrototype), text, chars);
 }
 
 struct Error * syntaxError (struct Text text, const char *format, ...)
@@ -247,7 +247,7 @@ struct Error * syntaxError (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(syntaxPrototype), text, chars);
+	return create(Error(syntaxPrototype), text, chars);
 }
 
 struct Error * typeError (struct Text text, const char *format, ...)
@@ -266,7 +266,7 @@ struct Error * typeError (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(typePrototype), text, chars);
+	return create(Error(typePrototype), text, chars);
 }
 
 struct Error * uriError (struct Text text, const char *format, ...)
@@ -285,7 +285,7 @@ struct Error * uriError (struct Text text, const char *format, ...)
 		chars = Chars.createVA(length, format, ap);
 		va_end(ap);
 	}
-	return createVA(Error(uriPrototype), text, chars);
+	return create(Error(uriPrototype), text, chars);
 }
 
 void destroy (struct Error *self)
