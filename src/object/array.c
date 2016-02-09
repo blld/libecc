@@ -201,8 +201,6 @@ static struct Value slice (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 2);
 	
 	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	start = Native.argument(context, 0);
-	end = Native.argument(context, 1);
 	
 	start = Native.argument(context, 0);
 	binary = Value.toBinary(start).data.binary;
