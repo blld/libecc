@@ -56,7 +56,7 @@ static int printUsage (void)
 
 //
 
-static struct Value dumpTo (struct Native(Context) * const context, struct Ecc * const ecc, FILE *file)
+static struct Value dumpTo (struct Native(Context) * const context, FILE *file)
 {
 	int index, count;
 	struct Value value;
@@ -79,12 +79,12 @@ static struct Value dumpTo (struct Native(Context) * const context, struct Ecc *
 
 static struct Value print (struct Native(Context) * const context)
 {
-	return dumpTo(context, ecc, stdout);
+	return dumpTo(context, stdout);
 }
 
 static struct Value alert (struct Native(Context) * const context)
 {
-	return dumpTo(context, ecc, stderr);
+	return dumpTo(context, stderr);
 }
 
 //
