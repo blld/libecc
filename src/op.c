@@ -559,16 +559,25 @@ struct Value construct (struct Native(Context) * const context)
 {
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
-	struct Value object;
-	struct Value value = nextOp();
+	struct Value value, object, function = nextOp();
 	
-	object = Value.object(Object.create(Object.get(&value.data.function->object, Key(prototype)).data.object));
-	value = callValue(context, value, object, argumentCount, 1, text);
+	if (function.type != Value(functionType))
+		goto error;
+	
+	value = Object.get(&function.data.function->object, Key(prototype));
+	if (!Value.isObject(value))
+		goto error;
+	
+	object = Value.object(Object.create(value.data.object));
+	value = callValue(context, function, object, argumentCount, 1, text);
 	
 	if (Value.isObject(value))
 		return value;
 	else
 		return object;
+	
+error:
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
 }
 
 struct Value call (struct Native(Context) * const context)
@@ -732,8 +741,9 @@ struct Value getParentSlot (struct Native(Context) * const context)
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
 	struct Object *object = context->environment;
-	while (count--)
+	do
 		object = object->prototype;
+	while (--count);
 	
 	return object->hashmap[slot].data.value;
 }

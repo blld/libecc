@@ -25,9 +25,6 @@ static struct Value eval (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	if (context->construct)
-		jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "eval is not a constructor")));
-	
 	value = Value.toString(Native.argument(context, 0));
 	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
 	

@@ -37,9 +37,6 @@ static struct Value apply (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 2);
 	
-	if (context->construct)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(funcIndex)), "apply is not a constructor")));
-	
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
 	
@@ -62,9 +59,6 @@ static struct Value call (struct Native(Context) * const context)
 	struct Object *object;
 	
 	Native.assertVariableParameter(context);
-	
-	if (context->construct)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(funcIndex)), "call is not a constructor")));
 	
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));

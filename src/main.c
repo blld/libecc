@@ -197,8 +197,8 @@ static void testEval (void)
 	test("x", "ReferenceError: x is not defined");
 	test("x = 1", "ReferenceError: x is not defined");
 	test("new eval('123')", "TypeError: eval is not a constructor");
-	test("new eval.call('123')", "TypeError: call is not a constructor");
-	test("new eval.apply('123')", "TypeError: apply is not a constructor");
+	test("new eval.call('123')", "TypeError: eval.call is not a constructor");
+	test("new eval.apply('123')", "TypeError: eval.apply is not a constructor");
 	test("eval.call('123', 'this+456')", "[object Global]456");
 }
 
