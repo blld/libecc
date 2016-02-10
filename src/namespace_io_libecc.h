@@ -111,4 +111,8 @@
 #define             io_libecc_RegExp(X) \
                     io_libecc_regexp_## X
 
+#define Global      io_libecc_Global
+#define             io_libecc_Global(X) \
+                    io_libecc_global_## X
+
 #endif

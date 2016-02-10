@@ -411,6 +411,8 @@ static void testGlobal (void)
 	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%BC')", "ハロー");
 	test("decodeURI('%F0%A9%B8%BD')", "𩸽");
 	test("decodeURI('%C3%A7')", "ç");
+	test("decodeURI('%3B%2F%3F%3A%40%26%3D%2B%24%2C%23')", "%3B%2F%3F%3A%40%26%3D%2B%24%2C%23");
+	test("decodeURIComponent('%3B%2F%3F%3A%40%26%3D%2B%24%2C%23')", ";/?:@&=+$,#");
 }
 
 static void testFunction (void)

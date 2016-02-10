@@ -16,6 +16,7 @@
 #include "object/math.h"
 #include "object/number.h"
 #include "object/regexp.h"
+#include "object/global.h"
 
 #include "interface.h"
 
