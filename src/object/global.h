@@ -20,9 +20,6 @@
 
 Interface(Global,
 	
-	(void, setup ,(void))
-	(void, teardown ,(void))
-	
 	(struct Function *, create ,(void))
 	,
 	{
