@@ -180,7 +180,7 @@ jmp_buf * pushEnv(struct Ecc *self)
 		self->envList = realloc(self->envList, sizeof(*self->envList) * self->envCapacity);
 	}
 	
-	return &self->envList[self->envCount++].buf;
+	return &self->envList[self->envCount++];
 }
 
 void popEnv(struct Ecc *self)
@@ -200,7 +200,7 @@ void jmpEnv (struct Ecc *self, struct Value value)
 	if (value.type == Value(errorType))
 		self->text = value.data.error->text;
 	
-	longjmp(self->envList[self->envCount - 1].buf, 1);
+	longjmp(self->envList[self->envCount - 1], 1);
 }
 
 void printTextInput (struct Ecc *self, struct Text text)

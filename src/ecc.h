@@ -46,9 +46,7 @@ Interface(Ecc,
 	(void, garbageCollect ,(struct Ecc *))
 	,
 	{
-		struct {
-			jmp_buf buf;
-		} *envList;
+		jmp_buf *envList;
 		uint16_t envCount;
 		uint16_t envCapacity;
 		
