@@ -930,7 +930,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->prototype == Array(prototype);
+	isArray = self->type == &Text(arrayType);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	

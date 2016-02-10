@@ -14,11 +14,16 @@
 #include "object.h"
 #include "function.h"
 #include "boolean.h"
+#include "date.h"
+#include "arguments.h"
 
 #include "interface.h"
 
 
 Interface(Global,
+	
+	(void, setup ,(void))
+	(void, teardown ,(void))
 	
 	(struct Function *, create ,(void))
 	,

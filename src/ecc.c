@@ -36,27 +36,13 @@ static void addInput(struct Ecc *self, struct Input *input)
 struct Ecc *create (void)
 {
 	struct Ecc *self;
-	enum Value(Flags) flags = Value(hidden);
 	
 	if (!instanceCount++)
 	{
 		Env.setup();
 		Pool.setup();
 		Key.setup();
-		
-		Function(prototype) = Object(prototype) = Object.create(NULL);
-		
-		Function.setup();
-		Object.setup();
-		String.setup();
-		Error.setup();
-		Array.setup();
-		Date.setup();
-		Math.setup();
-		Number.setup();
-		Boolean.setup();
-		RegExp.setup();
-		Arguments.setup();
+		Global.setup();
 	}
 	
 	self = malloc(sizeof(*self));
@@ -80,18 +66,7 @@ void destroy (struct Ecc *self)
 	
 	if (!--instanceCount)
 	{
-		Function.teardown();
-		Object.teardown();
-		String.teardown();
-		Error.teardown();
-		Array.teardown();
-		Date.teardown();
-		Math.teardown();
-		Number.teardown();
-		Boolean.teardown();
-		RegExp.teardown();
-		Arguments.teardown();
-		
+		Global.teardown();
 		Key.teardown();
 		Pool.teardown();
 		Env.teardown();

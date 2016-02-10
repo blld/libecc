@@ -164,6 +164,38 @@ static struct Value decodeURIComponent (struct Native(Context) * const context)
 
 // MARK: - Methods
 
+void setup (void)
+{
+	Function(prototype) = Object(prototype) = Object.create(NULL);
+	
+	Function.setup();
+	Object.setup();
+	String.setup();
+	Error.setup();
+	Array.setup();
+	Date.setup();
+	Math.setup();
+	Number.setup();
+	Boolean.setup();
+	RegExp.setup();
+	Arguments.setup();
+}
+
+void teardown (void)
+{
+	Function.teardown();
+	Object.teardown();
+	String.teardown();
+	Error.teardown();
+	Array.teardown();
+	Date.teardown();
+	Math.teardown();
+	Number.teardown();
+	Boolean.teardown();
+	RegExp.teardown();
+	Arguments.teardown();
+}
+
 struct Function * create (void)
 {
 	enum Value(Flags) flags = Value(hidden);
