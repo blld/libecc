@@ -94,26 +94,27 @@ Interface(Value,
 	(struct Value, function ,(struct Function *))
 	(struct Value, reference ,(struct Value *))
 	
-	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Value, const struct Text *, enum Value(hintPrimitive)))
 	(int, isPrimitive ,(struct Value))
 	(int, isBoolean ,(struct Value))
+	(int, isNumber ,(struct Value))
+	(int, isString ,(struct Value))
+	(int, isObject ,(struct Value))
 	(int, isDynamic ,(struct Value))
 	(int, isTrue ,(struct Value))
 	
-	(struct Value, toString ,(struct Value))
-	(struct Value, binaryToString ,(double binary, int base))
-	(uint16_t, toBufferLength ,(struct Value))
-	(uint16_t, toBuffer ,(struct Value, char *buffer, uint16_t length))
-	(int, isString ,(struct Value))
-	(const char *, stringChars ,(struct Value))
-	(uint16_t, stringLength ,(struct Value))
+	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Value, const struct Text *, enum Value(hintPrimitive)))
 	
 	(struct Value, toBinary ,(struct Value))
 	(struct Value, toInteger ,(struct Value))
-	(int, isNumber ,(struct Value))
+	
+	(struct Value, toString ,(struct Value))
+	(struct Value, binaryToString ,(double binary, int base))
+	(uint16_t, toLength ,(struct Value))
+	(uint16_t, toBuffer ,(struct Value, char *buffer, uint16_t length))
+	(const char *, stringChars ,(struct Value))
+	(uint16_t, stringLength ,(struct Value))
 	
 	(struct Value, toObject ,(struct Native(Context) * const, struct Value, int argumentIndex))
-	(int, isObject ,(struct Value))
 	
 	(struct Value, toType ,(struct Value))
 	

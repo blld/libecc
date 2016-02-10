@@ -49,7 +49,7 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 			}
 			else
 			{
-				uint16_t length = Value.toBufferLength(property);
+				uint16_t length = Value.toLength(property);
 				{
 					char bytes[length + 1];
 					struct Text text = Text.make(bytes, length);

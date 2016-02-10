@@ -48,7 +48,7 @@ Interface(Function,
 	(void, linkPrototype ,(struct Function *, struct Value prototype))
 	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Text *type))
 	
-	(uint16_t, toBufferLength ,(struct Function *))
+	(uint16_t, toLength ,(struct Function *))
 	(uint16_t, toBuffer ,(struct Function *, char *buffer, uint16_t length))
 	,
 	{

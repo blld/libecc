@@ -131,9 +131,9 @@ static struct Value concat (struct Native(Context) * const context)
 	
 	count = Native.variableArgumentCount(context);
 	
-	length += Value.toBufferLength(context->this);
+	length += Value.toLength(context->this);
 	for (index = 0; index < count; ++index)
-		length += Value.toBufferLength(Native.variableArgument(context, index));
+		length += Value.toLength(Native.variableArgument(context, index));
 	
 	result = Chars.createSized(length);
 	

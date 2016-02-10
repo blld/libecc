@@ -59,7 +59,7 @@ static struct Value toString (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 0);
 	
 	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	length = toBufferLength(object, separator);
+	length = toLength(object, separator);
 	chars = Chars.createSized(length);
 	toBuffer(object, separator, chars->chars, chars->length);
 	return Value.chars(chars);
@@ -108,7 +108,7 @@ static struct Value join (struct Native(Context) * const context)
 		separator = Text.make(Value.stringChars(value), Value.stringLength(value));
 	}
 	
-	length = toBufferLength(object, separator);
+	length = toLength(object, separator);
 	chars = Chars.createSized(length);
 	toBuffer(object, separator, chars->chars, chars->length);
 	return Value.chars(chars);
@@ -318,7 +318,7 @@ struct Object *createSized (uint32_t size)
 	return self;
 }
 
-uint16_t toBufferLength (struct Object *object, struct Text separator)
+uint16_t toLength (struct Object *object, struct Text separator)
 {
 	struct Value value;
 	uint16_t offset = 0;
@@ -331,7 +331,7 @@ uint16_t toBufferLength (struct Object *object, struct Text separator)
 		
 		value = object->element[index].data.value;
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toBufferLength(object->element[index].data.value);
+			offset += Value.toLength(object->element[index].data.value);
 	}
 	
 	return offset;

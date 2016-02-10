@@ -62,7 +62,7 @@ static struct Value toString (struct Native(Context) * const context)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
 	
 	object = context->this.data.object;
-	length = toBufferLength(object);
+	length = toLength(object);
 	chars = Chars.createSized(length);
 	toBuffer(object, chars->chars, length);
 	
@@ -299,7 +299,7 @@ void destroy (struct Error *self)
 	free(self), self = NULL;
 }
 
-uint16_t toBufferLength (struct Object *self)
+uint16_t toLength (struct Object *self)
 {
 	struct Value name, message;
 	

@@ -22,7 +22,7 @@ static struct Value toString (struct Native(Context) * const context)
 	
 	if (context->this.data.function->text.location == Text(nativeCode).location)
 	{
-		uint16_t length = toBufferLength(context->this.data.function);
+		uint16_t length = toLength(context->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
 		toBuffer(context->this.data.function, chars->chars, length + 1);
 		return Value.chars(chars);
@@ -109,7 +109,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 			if (index == argumentCount - 1)
 				length++, length++, length++;
 			
-			length += Value.toBufferLength(Native.variableArgument(context, index));
+			length += Value.toLength(Native.variableArgument(context, index));
 			
 			if (index < argumentCount - 2)
 				length++;
@@ -319,7 +319,7 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 	*constructor = function;
 }
 
-uint16_t toBufferLength (struct Function *self)
+uint16_t toLength (struct Function *self)
 {
 	assert(self);
 	
