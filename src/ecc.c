@@ -176,10 +176,11 @@ jmp_buf * pushEnv(struct Ecc *self)
 {
 	if (self->envCount >= self->envCapacity)
 	{
-		self->envCapacity = self->envCapacity? self->envCapacity * 2: 8;
-		self->envList = realloc(self->envList, sizeof(*self->envList) * self->envCapacity);
+		uint16_t capacity = self->envCapacity? self->envCapacity * 2: 8;
+		self->envList = realloc(self->envList, sizeof(*self->envList) * capacity);
+		memset(self->envList + self->envCapacity, 0, sizeof(*self->envList) * (capacity - self->envCapacity));
+		self->envCapacity = capacity;
 	}
-	
 	return &self->envList[self->envCount++];
 }
 
