@@ -808,7 +808,7 @@ int deleteProperty (struct Object *self, struct Value property)
 
 void packValue (struct Object *self)
 {
-	__typeof__(*self->hashmap) data;
+	typeof(*self->hashmap) data;
 	uint32_t index = 2, valueIndex = 2, copyIndex, slot;
 	
 	assert(self);

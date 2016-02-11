@@ -39,7 +39,7 @@ Interface(Ecc,
 	
 	(jmp_buf *, pushEnv ,(struct Ecc *))
 	(void, popEnv ,(struct Ecc *))
-	(void, jmpEnv, (struct Ecc *, struct Value value) dead)
+	(void, jmpEnv, (struct Ecc *, struct Value value) noreturn)
 	
 	(void, printTextInput, (struct Ecc *, struct Text text))
 	

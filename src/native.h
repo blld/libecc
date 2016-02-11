@@ -15,7 +15,7 @@ struct Op;
 struct Ecc;
 struct Value;
 struct Native(Context);
-typedef __typeof__(struct Value) (* Native(Function)) (struct Native(Context) * const context);
+typedef typeof(struct Value) (* Native(Function)) (struct Native(Context) * const context);
 
 #include "value.h"
 

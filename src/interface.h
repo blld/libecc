@@ -33,7 +33,7 @@
 	#define io_libecc_interface_E_odd(R, N, P) io_libecc_interface_E(R, N, P) io_libecc_interface_E_even
 	#define io_libecc_interface_E_even_end
 	#define io_libecc_interface_E_odd_end
-	#define io_libecc_interface_E(R, N, P) __typeof__(R) (*N) P;
+	#define io_libecc_interface_E(R, N, P) typeof(R) (*N) P;
 
 	#define io_libecc_interface_Declaration(M) io_libecc_interface_CAT(_end, io_libecc_interface_D_even M)
 	#define io_libecc_interface_D_even(R, N, P) io_libecc_interface_D(R, N, P) io_libecc_interface_D_odd
@@ -42,7 +42,7 @@
 	#define io_libecc_interface_D_odd_end
 	#define io_libecc_interface_D(R, N, P) static R N P;
 
-	#define io_libecc_interface_Initialization(N, M) __typeof__(N) N = { io_libecc_interface_CAT(_end, io_libecc_interface_I_even M) };
+	#define io_libecc_interface_Initialization(N, M) typeof(N) N = { io_libecc_interface_CAT(_end, io_libecc_interface_I_even M) };
 	#define io_libecc_interface_I_even(R, N, P) io_libecc_interface_Unwrap io_libecc_interface_I(R, N, P) io_libecc_interface_I_odd
 	#define io_libecc_interface_I_odd(R, N, P) io_libecc_interface_Unwrap io_libecc_interface_I(R, N, P) io_libecc_interface_I_even
 	#define io_libecc_interface_I_even_end

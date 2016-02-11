@@ -28,11 +28,14 @@
 	#include <time.h>
 
 	#if __GNUC__
-		#define dead __attribute__((noreturn))
+		#define noreturn __attribute__((noreturn))
+		#define typeof __typeof__
 	#elif _MSC_VER
-		#define dead __declspec(noreturn)
+		#define noreturn __declspec(noreturn)
+		#define typeof __typeof
 	#else
-		#define dead
+		#define noreturn
+		#define typeof __typeof__
 	#endif
 
 	#if (__STDC_VERSION__ < 199901L)

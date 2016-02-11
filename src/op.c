@@ -446,7 +446,7 @@ struct Value callFunctionArguments (struct Native(Context) * const context, int 
 	else
 	{
 		struct Object environment = function->environment;
-		__typeof__(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		typeof(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -485,8 +485,7 @@ struct Value callFunctionVA (struct Native(Context) * const context, int argumen
 	else
 	{
 		struct Object environment = function->environment;
-		__typeof__(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
-		va_list ap;
+		typeof(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -524,8 +523,8 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 	{
 		struct Object environment = function->environment;
 		struct Object arguments = Object.identity;
-		__typeof__(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
-		__typeof__(*arguments.element) element[argumentCount];
+		typeof(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		typeof(*arguments.element) element[argumentCount];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -538,7 +537,7 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 	else
 	{
 		struct Object environment = function->environment;
-		__typeof__(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		typeof(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -1579,7 +1578,8 @@ struct Value try (struct Native(Context) * const context)
 		return nextOp();
 }
 
-dead struct Value throw (struct Native(Context) * const context)
+noreturn
+struct Value throw (struct Native(Context) * const context)
 {
 	context->ecc->text = *opText(1);
 	Ecc.jmpEnv(context->ecc, retain(nextOp()));
@@ -1804,9 +1804,9 @@ struct Value iterate (struct Native(Context) * const context)
 static struct Value iterateIntegerRef (
 	struct Native(Context) * const context,
 	int (*compareInteger) (int32_t, int32_t),
-	__typeof__(integerWontOverflowPositive) wontOverflow,
-	__typeof__(compare) compareValue,
-	__typeof__(addition) valueStep)
+	typeof(integerWontOverflowPositive) wontOverflow,
+	typeof(compare) compareValue,
+	typeof(addition) valueStep)
 {
 	const struct Op *endOps = context->ops + opValue().data.integer;
 	const struct Text *stepText = opText(0);

@@ -152,7 +152,7 @@ static struct Value push (struct Native(Context) * const context)
 static struct Value reverse (struct Native(Context) * const context)
 {
 	struct Object *object;
-	__typeof__(*object->element) temp;
+	typeof(*object->element) temp;
 	uint32_t last, index, half;
 	
 	Native.assertParameterCount(context, 0);
