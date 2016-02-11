@@ -1428,6 +1428,8 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	}
 	
 	parentFunction = self->function;
+	parentFunction->flags |= Function(needHeap);
+	
 	function = Function.create(&self->function->environment);
 	Function.linkPrototype(function, Value.object(Object.create(Object(prototype))));
 	
@@ -1460,7 +1462,6 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->oplist = oplist;
 	function->text = text;
 	function->parameterCount = parameterCount;
-	parentFunction->flags |= Function(needHeap);
 	
 	Object.add(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
 	

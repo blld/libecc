@@ -316,6 +316,25 @@ const char * toChars (const Native(Function) native)
 
 // MARK: call
 
+static inline struct Value callOps (struct Native(Context) * const context, struct Object *environment)
+{
+	context->environment = environment;
+	return context->ops->native(context);
+}
+
+static inline struct Value callOpsRelease (struct Native(Context) * const context, struct Object *environment)
+{
+	struct Value value;
+	uint16_t index, count;
+	
+	value = callOps(context, environment);
+	
+	for (index = 2, count = environment->hashmapCount; index < count; ++index)
+		release(environment->hashmap[index].data.value);
+	
+	return value;
+}
+
 static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int parameterCount)
 {
 	uint32_t index = 0;
@@ -404,21 +423,6 @@ static inline void populateEnvironment (struct Native(Context) * const context, 
 	}
 }
 
-static inline struct Value callOps (struct Native(Context) * const context, struct Object *environment)
-{
-	struct Value value;
-	uint16_t index, count;
-	
-	context->environment = environment;
-	
-	value = context->ops->native(context);
-	
-	for (index = 2, count = environment->hashmapCount; index < count; ++index)
-		release(environment->hashmap[index].data.value);
-	
-	return value;
-}
-
 struct Value callFunctionArguments (struct Native(Context) * const context, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
 {
 	struct Native(Context) subContext = {
@@ -439,8 +443,8 @@ struct Value callFunctionArguments (struct Native(Context) * const context, int 
 			memcpy(copy->element, arguments->element, sizeof(*copy->element) * copy->elementCount);
 			arguments = copy;
 		}
-		
 		populateEnvironmentWithArguments(environment, arguments, function->parameterCount);
+		
 		return callOps(&subContext, environment);
 	}
 	else
@@ -450,9 +454,9 @@ struct Value callFunctionArguments (struct Native(Context) * const context, int 
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
-		
 		populateEnvironmentWithArguments(&environment, arguments, function->parameterCount);
-		return callOps(&subContext, &environment);
+		
+		return callOpsRelease(&subContext, &environment);
 	}
 }
 
@@ -465,22 +469,21 @@ struct Value callFunctionVA (struct Native(Context) * const context, int argumen
 		.argumentOffset = argumentOffset,
 		.ecc = context->ecc,
 	};
+	va_list ap;
+	struct Value result;
+	
+	va_start(ap, argumentCount);
 	
 	if (function->flags & Function(needHeap))
 	{
 		struct Object *environment = Object.copy(&function->environment);
-		va_list ap;
-		
-		va_start(ap, argumentCount);
 		
 		if (function->flags & Function(needArguments))
 			populateEnvironmentWithArgumentsVA(environment, function->parameterCount, argumentCount, ap);
 		else
 			populateEnvironmentVA(environment, function->parameterCount, argumentCount, ap);
 		
-		va_end(ap);
-		
-		return callOps(&subContext, environment);
+		result = callOps(&subContext, environment);
 	}
 	else
 	{
@@ -490,12 +493,14 @@ struct Value callFunctionVA (struct Native(Context) * const context, int argumen
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
 		
-		va_start(ap, argumentCount);
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
-		va_end(ap);
 		
-		return callOps(&subContext, &environment);
+		result = callOpsRelease(&subContext, &environment);
 	}
+	
+	va_end(ap);
+	
+	return result;
 }
 
 static inline struct Value callFunction (struct Native(Context) * const context, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
@@ -530,9 +535,9 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 		environment.hashmap = hashmap;
 		arguments.element = element;
 		arguments.elementCount = argumentCount;
-		
 		populateEnvironmentWithArgumentsOps(context, &environment, &arguments, function->parameterCount, argumentCount);
-		return callOps(&subContext, &environment);
+		
+		return callOpsRelease(&subContext, &environment);
 	}
 	else
 	{
@@ -542,7 +547,8 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
 		populateEnvironment(context, &environment, function->parameterCount, argumentCount);
-		return callOps(&subContext, &environment);
+		
+		return callOpsRelease(&subContext, &environment);
 	}
 }
 
@@ -568,6 +574,7 @@ struct Value construct (struct Native(Context) * const context)
 		goto error;
 	
 	object = Value.object(Object.create(value.data.object));
+	++value.data.object->referenceCount;
 	value = callValue(context, function, object, argumentCount, 1, text);
 	
 	if (Value.isObject(value))
@@ -639,6 +646,7 @@ struct Value function (struct Native(Context) * const context)
 {
 	struct Function *function = Function.copy(opValue().data.function);
 	function->environment.prototype = context->environment;
+	++context->environment->referenceCount;
 	return Value.function(function);
 }
 

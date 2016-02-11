@@ -455,6 +455,8 @@ static void testFunction (void)
 	test("new Function('a, b, c', 'return a+b+c')(1, 2, 3)", "6");
 	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6");
 	
+	test("function a(){ var b = { c: 123 }; function d() { return b.c }; return d; } for (var i = 0; !i; ++i){ var b = a(); } b()", "123");
+	
 	test("123 .toFixed.call.apply([ 123 ], [ 'abc', 100 ])", "TypeError: not a function");
 	test("123 .toFixed.call.call([ 123 ], 'abc', 100)", "TypeError: not a function");
 	test("123 .toFixed.call.apply(123 .toFixed, [ 'abc', 100 ])", "TypeError: not a number");

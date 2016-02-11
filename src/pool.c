@@ -178,6 +178,8 @@ static void cleanupObject(struct Object *object)
 {
 	struct Value value;
 	
+	releaseValue(Value.object(object->prototype));
+	
 	if (object->elementCount)
 		while (object->elementCount--)
 		{
@@ -227,6 +229,9 @@ void collectUnmarked (void)
 void collectUnreferencedFromIndices (uint32_t indices[3])
 {
 	uint32_t index;
+	
+	if (indices[1] >= self->objectCount || indices[2] >= self->charsCount)
+		return;
 	
 	index = self->objectCount;
 	while (index-- > indices[1])
