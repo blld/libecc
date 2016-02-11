@@ -45,6 +45,25 @@ struct OpList * join (struct OpList *self, struct OpList *with)
 	return self;
 }
 
+struct OpList * join3 (struct OpList *self, struct OpList *a, struct OpList *b)
+{
+	if (!self)
+		return join(a, b);
+	else if (!a)
+		return join(self, b);
+	else if (!b)
+		return join(self, a);
+	
+	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount));
+	memcpy(self->ops + self->opCount, a->ops, sizeof(*self->ops) * a->opCount);
+	memcpy(self->ops + self->opCount + a->opCount, b->ops, sizeof(*self->ops) * b->opCount);
+	self->opCount += a->opCount + b->opCount;
+	free(a), a = NULL;
+	free(b), b = NULL;
+	
+	return self;
+}
+
 struct OpList * joinDiscarded (struct OpList *self, uint16_t n, struct OpList *with)
 {
 	while (n >= 16)
@@ -114,6 +133,44 @@ struct OpList * unshift (struct Op op, struct OpList *self)
 	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + 1));
 	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount++);
 	self->ops[0] = op;
+	return self;
+}
+
+struct OpList * unshiftJoin (struct Op op, struct OpList *self, struct OpList *with)
+{
+	if (!self)
+		return unshift(op, with);
+	else if (!with)
+		return unshift(op, self);
+	
+	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + with->opCount + 1));
+	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
+	memcpy(self->ops + self->opCount + 1, with->ops, sizeof(*self->ops) * with->opCount);
+	self->ops[0] = op;
+	self->opCount += with->opCount + 1;
+	free(with), with = NULL;
+	
+	return self;
+}
+
+struct OpList * unshiftJoin3 (struct Op op, struct OpList *self, struct OpList *a, struct OpList *b)
+{
+	if (!self)
+		return unshiftJoin(op, a, b);
+	else if (!a)
+		return unshiftJoin(op, self, b);
+	else if (!b)
+		return unshiftJoin(op, self, a);
+	
+	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount + 1));
+	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
+	memcpy(self->ops + self->opCount + 1, a->ops, sizeof(*self->ops) * a->opCount);
+	memcpy(self->ops + self->opCount + a->opCount + 1, b->ops, sizeof(*self->ops) * b->opCount);
+	self->ops[0] = op;
+	self->opCount += a->opCount + b->opCount + 1;
+	free(a), a = NULL;
+	free(b), b = NULL;
+	
 	return self;
 }
 

@@ -386,6 +386,8 @@
 				OTHER_CFLAGS = (
 					"-fomit-frame-pointer",
 					"-fstrict-aliasing",
+					"-fno-math-errno",
+					"-fno-trapping-math",
 				);
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wall";

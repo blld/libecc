@@ -22,8 +22,11 @@ Interface(OpList,
 	(void, destroy ,(struct OpList *))
 	
 	(struct OpList *, join ,(struct OpList *, struct OpList *))
+	(struct OpList *, join3 ,(struct OpList *, struct OpList *, struct OpList *))
 	(struct OpList *, joinDiscarded ,(struct OpList *, uint16_t n, struct OpList *))
 	(struct OpList *, unshift ,(struct Op op, struct OpList *))
+	(struct OpList *, unshiftJoin ,(struct Op op, struct OpList *, struct OpList *))
+	(struct OpList *, unshiftJoin3 ,(struct Op op, struct OpList *, struct OpList *, struct OpList *))
 	(struct OpList *, shift ,(struct OpList *))
 	(struct OpList *, append ,(struct OpList *, struct Op op))
 	(struct OpList *, appendNoop ,(struct OpList *))
