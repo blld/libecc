@@ -13,6 +13,10 @@
 struct Object * Number(prototype) = NULL;
 struct Function * Number(constructor) = NULL;
 
+static const struct Object(Type) numberType = {
+	.text = &Text(numberType),
+};
+
 static struct Value toExponential (struct Native(Context) * const context)
 {
 	struct Value value;
@@ -149,7 +153,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &Text(numberType));
+	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &numberType);
 	
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);

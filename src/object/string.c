@@ -13,6 +13,10 @@
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
 
+static const struct Object(Type) stringType = {
+	.text = &Text(stringType),
+};
+
 static inline int32_t positionIndex (const char *chars, int32_t length, int32_t position, int enableReverse)
 {
 	int32_t byte;
@@ -384,7 +388,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &Text(stringType));
+	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &stringType);
 	
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);

@@ -10,6 +10,10 @@
 
 // MARK: - Private
 
+static const struct Object(Type) globalType = {
+	.text = &Text(globalType),
+};
+
 static struct Value eval (struct Native(Context) * const context)
 {
 	struct Value value;
@@ -201,7 +205,7 @@ struct Function * create (void)
 	enum Value(Flags) flags = Value(hidden);
 	
 	struct Function * self = Function.create(Object(prototype));
-	self->environment.type = &Text(globalType);
+	self->environment.type = &globalType;
 	
 	Function.addValue(self, "NaN", Value.binary(NAN), flags | Value(frozen));
 	Function.addValue(self, "Infinity", Value.binary(INFINITY), flags | Value(frozen));

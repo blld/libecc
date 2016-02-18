@@ -13,9 +13,13 @@
 struct Object * Array(prototype) = NULL;
 struct Function * Array(constructor) = NULL;
 
+static const struct Object(Type) arrayType = {
+	.text = &Text(arrayType),
+};
+
 static int valueIsArray(struct Value value)
 {
-	return value.type == Value(objectType) && value.data.object->type == &Text(arrayType);
+	return value.type == Value(objectType) && value.data.object->type == &arrayType;
 }
 
 static uint32_t valueArrayLength(struct Value value)
@@ -46,7 +50,7 @@ static struct Value isArray (struct Native(Context) * const context)
 	struct Value value;
 	Native.assertParameterCount(context, 1);
 	value = Native.argument(context, 0);
-	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Text(arrayType));
+	return Value.truth(value.type == Value(objectType) && value.data.object->type == &arrayType);
 }
 
 static struct Value toString (struct Native(Context) * const context)
@@ -283,7 +287,7 @@ void setup (void)
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &Text(arrayType));
+	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &arrayType);
 	
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);

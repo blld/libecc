@@ -12,6 +12,10 @@
 
 struct Object * Arguments(prototype);
 
+static const struct Object(Type) argumentsType = {
+	.text = &Text(argumentsType),
+};
+
 static struct Value getLength (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
@@ -31,7 +35,7 @@ static struct Value setLength (struct Native(Context) * const context)
 
 void setup (void)
 {
-	Arguments(prototype) = Object.createTyped(&Text(argumentsType));
+	Arguments(prototype) = Object.createTyped(&argumentsType);
 	Object.add(Arguments(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 }
 

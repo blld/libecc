@@ -13,6 +13,10 @@
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
 
+static struct Object(Type) functionType = {
+	.text = &Text(functionType),
+};
+
 static struct Value toString (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
@@ -152,7 +156,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 
 void setup ()
 {
-	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &Text(functionType));
+	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &functionType);
 	
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
@@ -300,7 +304,7 @@ void linkPrototype (struct Function *self, struct Value prototype)
 	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
 }
 
-void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Text *type)
+void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Object(Type) *type)
 {
 	struct Function *function = createWithNative(native, parameterCount);
 	

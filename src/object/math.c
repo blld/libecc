@@ -10,6 +10,10 @@
 
 // MARK: - Private
 
+static const struct Object(Type) mathType = {
+	.text = &Text(mathType),
+};
+
 // MARK: - Static Members
 
 static struct Value mathAbs (struct Native(Context) * const context)
@@ -248,7 +252,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Math(object) = Object.createTyped(&Text(mathType));
+	Math(object) = Object.createTyped(&mathType);
 	
 	Object.add(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
 	Object.add(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);

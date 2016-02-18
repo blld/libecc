@@ -427,7 +427,7 @@ struct Value toString (struct Value value)
 		case Value(objectType):
 		case Value(dateType):
 		case Value(functionType):
-			return text(value.data.object->type);
+			return text(value.data.object->type->text);
 		
 		case Value(errorType):
 		{
@@ -488,12 +488,13 @@ uint16_t toLength (struct Value value)
 			return binaryToBuffer(value.data.binary, 10, NULL, 0);
 		
 		case Value(objectType):
-			if (value.data.object->type == &Text(arrayType))
+		#warning FIXME
+			if (value.data.object->type->text == &Text(arrayType))
 				return Array.toLength(value.data.object, (struct Text){ ",", 1 });
 			/*vvv*/
 		
 		case Value(dateType):
-			return value.data.object->type->length;
+			return value.data.object->type->text->length;
 		
 		case Value(errorType):
 			return Error.toLength(&value.data.error->object);
@@ -550,12 +551,13 @@ uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
 			return binaryToBuffer(value.data.binary, 10, buffer, length);
 		
 		case Value(objectType):
-			if (value.data.object->type == &Text(arrayType))
+		#warning TIXME
+			if (value.data.object->type->text == &Text(arrayType))
 				return Array.toBuffer(value.data.object, (struct Text){ ",", 1 }, buffer, length);
 			/*vvv*/
 		
 		case Value(dateType):
-			return textToBuffer(*value.data.object->type, buffer, length);
+			return textToBuffer(*value.data.object->type->text, buffer, length);
 		
 		case Value(errorType):
 			return Error.toBuffer(&value.data.error->object, buffer, length);

@@ -24,6 +24,10 @@ struct Function * Error(syntaxConstructor) = NULL;
 struct Function * Error(typeConstructor) = NULL;
 struct Function * Error(uriConstructor) = NULL;
 
+static struct Object(Type) errorType = {
+	.text = &Text(errorType),
+};
+
 static struct Value messageValue (struct Value value)
 {
 	if (value.type == Value(undefinedType))
@@ -131,7 +135,7 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context)
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
-	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Text(errorType));
+	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &errorType);
 	Object.add(*prototype, Key(name), Value.text(name), Value(hidden));
 }
 

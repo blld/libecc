@@ -18,6 +18,11 @@
 #include "interface.h"
 
 
+struct Object(Type)
+{
+	const struct Text *text;
+};
+
 enum Object(Flags)
 {
 	Object(mark) = 1 << 0,
@@ -35,10 +40,9 @@ Interface(Object,
 	
 	(struct Object *, create ,(struct Object * prototype))
 	(struct Object *, createSized ,(struct Object * prototype, uint16_t size))
-	(struct Object *, createTyped ,(const struct Text *type))
+	(struct Object *, createTyped ,(const struct Object(Type) *type))
 	(struct Object *, initialize ,(struct Object * restrict, struct Object * restrict prototype))
 	(struct Object *, initializeSized ,(struct Object * restrict, struct Object * restrict prototype, uint16_t size))
-	(struct Object *, initializePrototype ,(struct Object *, const struct Text *type))
 	(struct Object *, finalize ,(struct Object *))
 	(struct Object *, copy ,(const struct Object * original))
 	(void, destroy ,(struct Object *))
@@ -65,7 +69,7 @@ Interface(Object,
 	{
 		struct Object *prototype;
 		
-		const struct Text *type;
+		const struct Object(Type) *type;
 		
 		struct {
 			struct {

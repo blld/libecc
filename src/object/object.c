@@ -12,6 +12,10 @@
 
 static const int defaultSize = 8;
 
+static const struct Object(Type) objectType = {
+	.text = &Text(objectType),
+};
+
 static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
 {
 	return
@@ -103,7 +107,7 @@ static struct Value toString (struct Native(Context) * const context)
 	else if (Value.isBoolean(context->this))
 		return Value.text(&Text(booleanType));
 	else if (Value.isObject(context->this))
-		return Value.text(context->this.data.object->type);
+		return Value.text(context->this.data.object->type->text);
 	else
 		assert(0);
 	
@@ -470,7 +474,7 @@ struct Object * createSized (struct Object *prototype, uint16_t size)
 	return initializeSized(self, prototype, size);
 }
 
-struct Object * createTyped (const struct Text *type)
+struct Object * createTyped (const struct Object(Type) *type)
 {
 	struct Object *self = createSized(Object(prototype), defaultSize);
 	self->type = type;
@@ -490,7 +494,7 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	
 	*self = Object.identity;
 	
-	self->type = prototype? prototype->type: &Text(objectType);
+	self->type = prototype? prototype->type: &objectType;
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;
@@ -512,13 +516,6 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 		self->hashmapCapacity = 2;
 	
 	return self;
-}
-
-struct Object * initializePrototype (struct Object *prototype, const struct Text *type)
-{
-	prototype->prototype = Object(prototype);
-	prototype->type = type;
-	return prototype;
 }
 
 struct Object * finalize (struct Object *self)
@@ -930,7 +927,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->type == &Text(arrayType);
+	isArray = self->type->text == &Text(arrayType);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	
