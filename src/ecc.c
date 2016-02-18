@@ -19,7 +19,7 @@ static struct Input * findInput (struct Ecc *self, struct Text text)
 	uint16_t i;
 	
 	for (i = 0; i < self->inputCount; ++i)
-		if (text.location >= self->inputs[i]->bytes && text.location <= self->inputs[i]->bytes + self->inputs[i]->length)
+		if (text.bytes >= self->inputs[i]->bytes && text.bytes <= self->inputs[i]->bytes + self->inputs[i]->length)
 			return self->inputs[i];
 	
 	return NULL;
@@ -124,7 +124,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 			name = Value.text(&Text(errorName));
 		
 		Env.newline();
-		Env.printError(Value.stringLength(name), Value.stringChars(name), "%.*s" , Value.stringLength(message), Value.stringChars(message));
+		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
 		
 		printTextInput(self, self->text);
 	}
@@ -216,7 +216,7 @@ void printTextInput (struct Ecc *self, struct Text text)
 	else
 	{
 		Env.printColor(0, Env(dim), "(unknown input)\n");
-		Env.print("%.*s", text.length, text.location);
+		Env.print("%.*s", text.length, text.bytes);
 		Env.newline();
 		Env.newline();
 	}

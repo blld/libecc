@@ -24,6 +24,7 @@ struct Object(Type)
 	
 	uint16_t (*toLength)(void *object);
 	uint16_t (*toBytes)(void *object, char *bytes);
+	uint16_t (*finalize)(void *object);
 };
 
 enum Object(Flags)

@@ -19,7 +19,7 @@ const struct Value Value(null) = valueMake(nullType);
 
 static inline uint16_t textToBytes (struct Text text, char *bytes)
 {
-	memcpy(bytes, text.location, text.length);
+	memcpy(bytes, text.bytes, text.length);
 	return text.length;
 }
 
@@ -311,7 +311,7 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Value v
 			return result;
 	}
 	
-	Ecc.jmpEnv(context->ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->location: "", text? " ": "")));
+	Ecc.jmpEnv(context->ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->bytes: "", text? " ": "")));
 }
 
 struct Value toBinary (struct Value value)
@@ -357,7 +357,7 @@ struct Value toBinary (struct Value value)
 		case Value(keyType):
 		case Value(charsType):
 		case Value(stringType):
-			return Lexer.parseBinary(Text.make(stringChars(value), stringLength(value)));
+			return Lexer.parseBinary(Text.make(stringBytes(value), stringLength(value)));
 		
 		case Value(objectType):
 		case Value(errorType):
@@ -433,7 +433,7 @@ struct Value toString (struct Value value)
 				
 				uint16_t length = object->type->toLength(object);
 				struct Chars *chars = Chars.createSized(length);
-				object->type->toBytes(object, chars->chars);
+				object->type->toBytes(object, chars->bytes);
 				return Value.chars(chars);
 			}
 			else
@@ -524,10 +524,10 @@ uint16_t toBytes (struct Value value, char *bytes)
 			return textToBytes(*value.data.text, bytes);
 		
 		case Value(stringType):
-			return textToBytes((struct Text){ value.data.string->value->chars, value.data.string->value->length }, bytes);
+			return textToBytes((struct Text){ value.data.string->value->bytes, value.data.string->value->length }, bytes);
 		
 		case Value(charsType):
-			return textToBytes((struct Text){ value.data.chars->chars, value.data.chars->length }, bytes);
+			return textToBytes((struct Text){ value.data.chars->bytes, value.data.chars->length }, bytes);
 		
 		case Value(nullType):
 			return textToBytes(Text(null), bytes);
@@ -594,20 +594,8 @@ struct Value binaryToString (double binary, int base)
 	
 	length = binaryToBytes(binary, base, NULL);
 	chars = Chars.createSized(length);
-	binaryToBytes(binary, base, chars->chars);
+	binaryToBytes(binary, base, chars->bytes);
 	return Value.chars(chars);
-}
-
-const char * stringChars (struct Value value)
-{
-	if (value.type == Value(charsType))
-		return value.data.chars->chars;
-	else if (value.type == Value(textType))
-		return value.data.text->location;
-	else if (value.type == Value(stringType))
-		return value.data.string->value->chars;
-	else
-		return NULL;
 }
 
 uint16_t stringLength (struct Value value)
@@ -620,6 +608,18 @@ uint16_t stringLength (struct Value value)
 		return value.data.string->value->length;
 	else
 		return 0;
+}
+
+const char * stringBytes (struct Value value)
+{
+	if (value.type == Value(charsType))
+		return value.data.chars->bytes;
+	else if (value.type == Value(textType))
+		return value.data.text->bytes;
+	else if (value.type == Value(stringType))
+		return value.data.string->value->bytes;
+	else
+		return NULL;
 }
 
 struct Value toObject (struct Native(Context) * const context, struct Value value, enum Native(Index) argumentIndex)
@@ -637,7 +637,7 @@ struct Value toObject (struct Native(Context) * const context, struct Value valu
 		
 		case Value(textType):
 		case Value(charsType):
-			return string(String.create(Chars.create("%.*s", stringLength(value), stringChars(value))));
+			return string(String.create(Chars.create("%.*s", stringLength(value), stringBytes(value))));
 		
 		case Value(falseType):
 		case Value(trueType):
@@ -742,20 +742,20 @@ void dumpTo (struct Value value, FILE *file)
 		case Value(keyType):
 		{
 			const struct Text *text = Key.textOf(value.data.key);
-			fwrite(text->location, sizeof(char), text->length, file);
+			fwrite(text->bytes, sizeof(char), text->length, file);
 			return;
 		}
 		
 		case Value(textType):
-			fwrite(value.data.text->location, sizeof(char), value.data.text->length, file);
+			fwrite(value.data.text->bytes, sizeof(char), value.data.text->length, file);
 			return;
 		
 		case Value(charsType):
-			fwrite(value.data.chars->chars, sizeof(char), value.data.chars->length, file);
+			fwrite(value.data.chars->bytes, sizeof(char), value.data.chars->length, file);
 			return;
 		
 		case Value(stringType):
-			fwrite(value.data.string->value->chars, sizeof(char), value.data.string->value->length, file);
+			fwrite(value.data.string->value->bytes, sizeof(char), value.data.string->value->length, file);
 			return;
 		
 		case Value(objectType):
@@ -765,7 +765,7 @@ void dumpTo (struct Value value, FILE *file)
 			return;
 		
 		case Value(functionType):
-			fwrite(value.data.function->text.location, sizeof(char), value.data.function->text.length, file);
+			fwrite(value.data.function->text.bytes, sizeof(char), value.data.function->text.length, file);
 			return;
 		
 		case Value(referenceType):

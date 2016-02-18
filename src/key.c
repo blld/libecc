@@ -82,7 +82,7 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 	#warning TODO: use binary tree
 	for (index = 0; index < keyCount; ++index)
 	{
-		if (text.length == keyPool[index].length && memcmp(keyPool[index].location, text.location, text.length) == 0)
+		if (text.length == keyPool[index].length && memcmp(keyPool[index].bytes, text.bytes, text.length) == 0)
 		{
 			number = index + 1;
 			break;
@@ -100,7 +100,7 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 		if (copyOnCreate)
 		{
 			char *chars = malloc(text.length);
-			memcpy(chars, text.location, text.length);
+			memcpy(chars, text.bytes, text.length);
 			charsList = realloc(charsList, sizeof(*charsList) * (charsCount + 1));
 			charsList[charsCount++] = chars;
 			keyPool[keyCount++] = Text.make(chars, text.length);
@@ -136,5 +136,5 @@ const struct Text *textOf (struct Key key)
 void dumpTo (struct Key key, FILE *file)
 {
 	const struct Text *text = textOf(key);
-	fprintf(file, "%.*s", text->length, text->location);
+	fprintf(file, "%.*s", text->length, text->bytes);
 }

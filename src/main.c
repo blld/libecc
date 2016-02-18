@@ -106,12 +106,12 @@ static void test (const char *func, int line, const char *test, const char *expe
 	result = Value.toString(ecc->result);
 	length = Value.stringLength(result);
 	
-	if (length != strlen(expect) || memcmp(expect, Value.stringChars(result), length))
+	if (length != strlen(expect) || memcmp(expect, Value.stringBytes(result), length))
 	{
 		++testErrorCount;
 		Env.printColor(Env(red), Env(bold), "[failure]");
 		Env.print(" %s:%d - ", func, line);
-		Env.printColor(0, Env(bold), "expect \"%s\" was \"%.*s\"", expect, Value.stringLength(result), Value.stringChars(result));
+		Env.printColor(0, Env(bold), "expect \"%s\" was \"%.*s\"", expect, Value.stringLength(result), Value.stringBytes(result));
 		Env.newline();
 	}
 	else if (testVerbosity >= 0)

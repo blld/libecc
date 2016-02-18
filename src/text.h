@@ -56,7 +56,7 @@ extern const struct Text Text(inputErrorName);
 
 Interface(Text,
 	
-	(struct Text, make ,(const char *location, uint16_t length))
+	(struct Text, make ,(const char *bytes, uint16_t length))
 	(struct Text, join ,(struct Text from, struct Text to))
 	
 	(uint16_t, nextCodepointBytes ,(struct Text))
@@ -66,7 +66,7 @@ Interface(Text,
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
 	,
 	{
-		const char *location;
+		const char *bytes;
 		uint16_t length;
 	}
 )

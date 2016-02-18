@@ -26,11 +26,11 @@ static struct Value toString (struct Native(Context) * const context)
 	if (context->this.type != Value(functionType))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
 	
-	if (context->this.data.function->text.location == Text(nativeCode).location)
+	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
 	{
 		uint16_t length = toLength(context->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
-		toBytes(context->this.data.function, chars->chars);
+		toBytes(context->this.data.function, chars->bytes);
 		return Value.chars(chars);
 	}
 	else
@@ -329,7 +329,7 @@ uint16_t toLength (struct Function *self)
 {
 	assert(self);
 	
-	if (self->text.location == Text(nativeCode).location)
+	if (self->text.bytes == Text(nativeCode).bytes)
 		return sizeof("function () [native code]")-1 + (self->name? strlen(self->name): 0);
 	
 	return self->text.length;
@@ -339,9 +339,9 @@ uint16_t toBytes (struct Function *self, char *bytes)
 {
 	assert(self);
 	
-	if (self->text.location == Text(nativeCode).location)
+	if (self->text.bytes == Text(nativeCode).bytes)
 		return sprintf(bytes, "function %s() [native code]", self->name? self->name: "");
 	
-	memcpy(bytes, self->text.location, self->text.length);
+	memcpy(bytes, self->text.bytes, self->text.length);
 	return self->text.length;
 }

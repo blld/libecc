@@ -28,7 +28,7 @@ static struct Value eval (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 1);
 	
 	value = Value.toString(Native.argument(context, 0));
-	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
@@ -46,18 +46,18 @@ static struct Value parseInt (struct Native(Context) * const context)
 	value = Value.toString(Native.argument(context, 0));
 	base = Value.toInteger(Native.argument(context, 1)).data.integer;
 	
-	text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	
 	if (!base)
 	{
 		// prevent octal auto-detection
 		
-		if (text.length > 2 && text.location[0] == '-')
+		if (text.length > 2 && text.bytes[0] == '-')
 		{
-			if (text.location[1] == '0' && tolower(text.location[2]) != 'x')
+			if (text.bytes[1] == '0' && tolower(text.bytes[2]) != 'x')
 				base = 10;
 		}
-		else if (text.length > 1 && text.location[0] == '0' && tolower(text.location[1]) != 'x')
+		else if (text.length > 1 && text.bytes[0] == '0' && tolower(text.bytes[1]) != 'x')
 			base = 10;
 	}
 	
@@ -73,7 +73,7 @@ static struct Value parseFloat (struct Native(Context) * const context)
 	
 	value = Value.toString(Native.argument(context, 0));
 	
-	text = Text.make(Value.stringChars(value), Value.stringLength(value));
+	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	return Lexer.parseBinary(text);
 }
 
@@ -108,7 +108,7 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 	Native.assertParameterCount(context, 1);
 	
 	value = Value.toString(Native.argument(context, 0));
-	bytes = Value.stringChars(value);
+	bytes = Value.stringBytes(value);
 	count = Value.stringLength(value);
 	chars = Chars.createSized(count);
 	
@@ -116,7 +116,7 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 	{
 		c = bytes[index++];
 		if (c != '%')
-			chars->chars[offset++] = c;
+			chars->bytes[offset++] = c;
 		else if (index + 2 > count || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
 			goto error;
 		else
@@ -130,20 +130,20 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 				if (!continuation || index + continuation * 3 > count)
 					goto error;
 				
-				chars->chars[offset++] = c;
+				chars->bytes[offset++] = c;
 				while (continuation--)
 				{
 					if (bytes[index++] != '%' || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
 						goto error;
 					
-					chars->chars[offset++] = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
+					chars->bytes[offset++] = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
 					index += 2;
 				}
 			}
 			else if (exclude && strchr(exclude, c))
-				chars->chars[offset++] = '%', chars->chars[offset++] = bytes[index - 2], chars->chars[offset++] = bytes[index - 1];
+				chars->bytes[offset++] = '%', chars->bytes[offset++] = bytes[index - 2], chars->bytes[offset++] = bytes[index - 1];
 			else
-				chars->chars[offset++] = c;
+				chars->bytes[offset++] = c;
 		}
 	}
 	

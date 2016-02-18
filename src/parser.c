@@ -339,7 +339,7 @@ static struct OpList * arguments (struct Parser *self, int *count)
 		{
 			argumentOps = assignment(self, 0);
 			if (!argumentOps)
-				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 			
 			++*count;
 			oplist = OpList.join(oplist, argumentOps);
@@ -413,7 +413,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 		if (previewToken(self) == '.')
 		{
 			if (!oplist)
-				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 			
 			nextToken(self);
 			
@@ -496,7 +496,7 @@ static struct OpList * unary (struct Parser *self)
 		else if (oplist)
 			error(self, Error.referenceError(OpList.text(oplist), "invalid delete operand"));
 		else
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return oplist;
 	}
@@ -780,7 +780,7 @@ static struct OpList * logicalAnd (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalAnd, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
+			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return oplist;
 }
@@ -797,7 +797,7 @@ static struct OpList * logicalOr (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalOr, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
+			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return oplist;
 }
@@ -825,7 +825,7 @@ static struct OpList * conditional (struct Parser *self, int noIn)
 			return oplist;
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
+			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
 	}
 	return oplist;
 }
@@ -857,7 +857,7 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
 		
 		if (!( opassign = assignment(self, noIn) ))
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.join(oplist, opassign);
 	}
@@ -889,12 +889,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 	if (oplist)
 	{
 		if (!( opassign = assignment(self, noIn) ))
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.unshiftJoin(Op.make(native, Value(undefined), text), expressionRef(self, oplist, "invalid assignment left-hand side"), opassign);
 	}
 	
-	error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.location));
+	error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return NULL;
 }
@@ -979,7 +979,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	{
 		struct OpList *opassign = assignment(self, noIn);
 		if (!opassign)
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.location));
+			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), self->lexer->text), OpList.create(Op.setLocal, value, text), opassign);
 	}
@@ -1455,7 +1455,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	expectToken(self, ')');
 	expectToken(self, '{');
 	oplist = OpList.join(oplist, sourceElements(self, '}'));
-	text.length = self->lexer->text.location - text.location + 1;
+	text.length = self->lexer->text.bytes - text.bytes + 1;
 	expectToken(self, '}');
 	self->function = parentFunction;
 	

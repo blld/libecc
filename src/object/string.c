@@ -83,7 +83,7 @@ static struct Value charAt (struct Native(Context) * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(Native.argument(context, 0)).data.integer;
@@ -95,7 +95,7 @@ static struct Value charAt (struct Native(Context) * const context)
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
-		memcpy(result->chars, chars + index, length);
+		memcpy(result->bytes, chars + index, length);
 		return Value.chars(result);
 	}
 }
@@ -110,7 +110,7 @@ static struct Value charCodeAt (struct Native(Context) * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(Native.argument(context, 0)).data.integer;
@@ -141,9 +141,9 @@ static struct Value concat (struct Native(Context) * const context)
 	
 	result = Chars.createSized(length);
 	
-	offset += Value.toBytes(context->this, result->chars + offset);
+	offset += Value.toBytes(context->this, result->bytes + offset);
 	for (index = 0; index < count; ++index)
-		offset += Value.toBytes(Native.variableArgument(context, index), result->chars + offset);
+		offset += Value.toBytes(Native.variableArgument(context, index), result->bytes + offset);
 	
 	return Value.chars(result);
 }
@@ -159,11 +159,11 @@ static struct Value indexOf (struct Native(Context) * const context)
 	argumentCount = Native.variableArgumentCount(context);
 	
 	context->this = Value.toString(context->this);
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	search = argumentCount >= 1? Value.toString(Native.variableArgument(context, 0)): Value.text(&Text(undefined));
-	searchChars = Value.stringChars(search);
+	searchChars = Value.stringBytes(search);
 	searchLength = Value.stringLength(search);
 	
 	length -= searchLength;
@@ -205,11 +205,11 @@ static struct Value lastIndexOf (struct Native(Context) * const context)
 	argumentCount = Native.variableArgumentCount(context);
 	
 	context->this = Value.toString(context->this);
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	search = argumentCount >= 1? Value.toString(Native.variableArgument(context, 0)): Value.text(&Text(undefined));
-	searchChars = Value.stringChars(search);
+	searchChars = Value.stringBytes(search);
 	searchLength = Value.stringLength(search) - 1;
 	
 	if (argumentCount < 2 || Native.variableArgument(context, 1).type == Value(undefinedType))
@@ -255,7 +255,7 @@ static struct Value slice (struct Native(Context) * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	from = Native.argument(context, 0);
@@ -277,7 +277,7 @@ static struct Value slice (struct Native(Context) * const context)
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
-		memcpy(result->chars, chars + start, length);
+		memcpy(result->bytes, chars + start, length);
 		return Value.chars(result);
 	}
 }
@@ -293,7 +293,7 @@ static struct Value substring (struct Native(Context) * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context->this);
 	
-	chars = Value.stringChars(context->this);
+	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
 	from = Native.argument(context, 0);
@@ -322,7 +322,7 @@ static struct Value substring (struct Native(Context) * const context)
 	else
 	{
 		struct Chars *result = Chars.createSized(length);
-		memcpy(result->chars, chars + start, length);
+		memcpy(result->bytes, chars + start, length);
 		return Value.chars(result);
 	}
 }
@@ -340,7 +340,7 @@ static struct Value stringConstructor (struct Native(Context) * const context)
 		value = Value.toString(value);
 	
 	if (context->construct)
-		return Value.string(String.create(Chars.createWithBytes(Value.stringLength(value), Value.stringChars(value))));
+		return Value.string(String.create(Chars.createWithBytes(Value.stringLength(value), Value.stringBytes(value))));
 	else
 		return value;
 }
@@ -363,7 +363,7 @@ static struct Value fromCharCode (struct Native(Context) * const context)
 	}
 	
 	chars = Chars.createSized(length);
-	b = chars->chars;
+	b = chars->bytes;
 	
 	for (index = 0, count = Native.variableArgumentCount(context); index < count; ++index)
 	{
@@ -374,7 +374,7 @@ static struct Value fromCharCode (struct Native(Context) * const context)
 		else *b++ = '\0';
 	}
 	
-	while (chars->length && !chars->chars[chars->length - 1])
+	while (chars->length && !chars->bytes[chars->length - 1])
 		--chars->length;
 	
 	return Value.chars(chars);
@@ -415,7 +415,7 @@ struct String * create (struct Chars *chars)
 	*self = String.identity;
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, String(prototype));
-	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->chars, chars->length, chars->length)), Value(readonly));
+	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
 	

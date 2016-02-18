@@ -46,13 +46,13 @@ struct Input * createFromFile (const char *filename)
 	file = fopen(filename, "rb");
 	if (!file)
 	{
-		Env.printError(inputError.length, inputError.location, "cannot open file '%s'", filename);
+		Env.printError(inputError.length, inputError.bytes, "cannot open file '%s'", filename);
 		return NULL;
 	}
 	
 	if (fseek(file, 0, SEEK_END) || (size = ftell(file)) < 0 || fseek(file, 0, SEEK_SET))
 	{
-		Env.printError(inputError.length, inputError.location, "cannot handle file '%s'", filename);
+		Env.printError(inputError.length, inputError.bytes, "cannot handle file '%s'", filename);
 		fclose(file);
 		return NULL;
 	}
@@ -96,7 +96,7 @@ void destroy (struct Input *self)
 	assert(self);
 	
 	while (self->escapedTextCount--)
-		free((char *)self->escapedTextList[self->escapedTextCount].location), self->escapedTextList[self->escapedTextCount].location = NULL;
+		free((char *)self->escapedTextList[self->escapedTextCount].bytes), self->escapedTextList[self->escapedTextCount].bytes = NULL;
 	
 	free(self->escapedTextList), self->escapedTextList = NULL;
 	free(self->bytes), self->bytes = NULL;
@@ -119,48 +119,48 @@ void printText (struct Input *self, struct Text text)
 	
 	if (line >= 0)
 	{
-		const char *location;
+		const char *bytes;
 		size_t start, length = 0;
 		
 		Env.printColor(0, Env(bold), " line:%d", line);
 		Env.newline();
 		
 		start = self->lines[line];
-		location = self->bytes + start;
+		bytes = self->bytes + start;
 		
 		do
 		{
-			if (!isblank(location[length]) && !isgraph(location[length]) && location[length] >= 0)
+			if (!isblank(bytes[length]) && !isgraph(bytes[length]) && bytes[length] >= 0)
 				break;
 			
 			++length;
 		} while (start + length < self->length);
 		
-		Env.print("%.*s", length, location);
+		Env.print("%.*s", length, bytes);
 		Env.newline();
 		
-		if (length >= text.location - location)
+		if (length >= text.bytes - bytes)
 		{
 			char mark[length + 2];
 			long index = 0;
 			
-			for (; index < text.location - location; ++index)
-				if (isgraph(location[index]))
+			for (; index < text.bytes - bytes; ++index)
+				if (isgraph(bytes[index]))
 					mark[index] = ' ';
 				else
-					mark[index] = location[index];
+					mark[index] = bytes[index];
 			
 			mark[index] = '^';
 			
-			while (++index < text.location - location + text.length && index <= length)
+			while (++index < text.bytes - bytes + text.length && index <= length)
 				mark[index] = '~';
 			
 			mark[index] = '\0';
 			
-			if ((text.location - location) > 0)
-				Env.printColor(0, Env(invisible), "%.*s", (text.location - location), mark);
+			if ((text.bytes - bytes) > 0)
+				Env.printColor(0, Env(invisible), "%.*s", (text.bytes - bytes), mark);
 			
-			Env.printColor(Env(green), Env(bold), "%s", mark + (text.location - location));
+			Env.printColor(Env(green), Env(bold), "%s", mark + (text.bytes - bytes));
 		}
 	}
 	
@@ -171,7 +171,7 @@ int32_t findLine (struct Input *self, struct Text text)
 {
 	uint16_t line = self->lineCount + 1;
 	while (line--)
-		if ((self->bytes + self->lines[line] <= text.location) && (self->bytes + self->lines[line] < self->bytes + self->length))
+		if ((self->bytes + self->lines[line] <= text.bytes) && (self->bytes + self->lines[line] < self->bytes + self->length))
 			return line;
 	
 	return -1;

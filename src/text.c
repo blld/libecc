@@ -57,17 +57,17 @@ textMake(inputErrorName, "InputError");
 
 // MARK: - Methods
 
-struct Text make (const char *location, uint16_t length)
+struct Text make (const char *bytes, uint16_t length)
 {
 	return (struct Text){
-		location,
+		bytes,
 		length,
 	};
 }
 
 struct Text join (struct Text from, struct Text to)
 {
-	return make(from.location, to.location - from.location + to.length);
+	return make(from.bytes, to.bytes - from.bytes + to.length);
 }
 
 uint16_t nextCodepointBytes (struct Text text)
@@ -76,15 +76,15 @@ uint16_t nextCodepointBytes (struct Text text)
 	{
 		default:
 		case 4:
-			if ((text.location[0] & 0xf8) == 0xf0 && (text.location[1] & 0xc0) == 0x80 && (text.location[2] & 0xc0) == 0x80 && (text.location[3] & 0xc0) == 0x80)
+			if ((text.bytes[0] & 0xf8) == 0xf0 && (text.bytes[1] & 0xc0) == 0x80 && (text.bytes[2] & 0xc0) == 0x80 && (text.bytes[3] & 0xc0) == 0x80)
 				return 4;
 		
 		case 3:
-			if ((text.location[0] & 0xf0) == 0xe0 && (text.location[1] & 0xc0) == 0x80 && (text.location[2] & 0xc0) == 0x80 )
+			if ((text.bytes[0] & 0xf0) == 0xe0 && (text.bytes[1] & 0xc0) == 0x80 && (text.bytes[2] & 0xc0) == 0x80 )
 				return 3;
 		
 		case 2:
-			if ((text.location[0] & 0xe0) == 0xc0 && (text.location[1] & 0xc0) == 0x80)
+			if ((text.bytes[0] & 0xe0) == 0xc0 && (text.bytes[1] & 0xc0) == 0x80)
 				return 2;
 		
 		case 1:
@@ -103,38 +103,38 @@ uint32_t nextCodepoint (struct Text *text)
 	{
 		default:
 		case 4:
-			if ((text->location[0] & 0xf8) == 0xf0 && (text->location[1] & 0xc0) == 0x80 && (text->location[2] & 0xc0) == 0x80 && (text->location[3] & 0xc0) == 0x80)
+			if ((text->bytes[0] & 0xf8) == 0xf0 && (text->bytes[1] & 0xc0) == 0x80 && (text->bytes[2] & 0xc0) == 0x80 && (text->bytes[3] & 0xc0) == 0x80)
 			{
-				cp  = (*text->location++ & 0x07) << 18;
-				cp |= (*text->location++ & 0x3f) << 12;
-				cp |= (*text->location++ & 0x3f) << 6;
-				cp |= (*text->location++ & 0x3f);
+				cp  = (*text->bytes++ & 0x07) << 18;
+				cp |= (*text->bytes++ & 0x3f) << 12;
+				cp |= (*text->bytes++ & 0x3f) << 6;
+				cp |= (*text->bytes++ & 0x3f);
 				text->length -= 4;
 				return cp;
 			}
 		
 		case 3:
-			if ((text->location[0] & 0xf0) == 0xe0 && (text->location[1] & 0xc0) == 0x80 && (text->location[2] & 0xc0) == 0x80 )
+			if ((text->bytes[0] & 0xf0) == 0xe0 && (text->bytes[1] & 0xc0) == 0x80 && (text->bytes[2] & 0xc0) == 0x80 )
 			{
-				cp  = (*text->location++ & 0x0f) << 12;
-				cp |= (*text->location++ & 0x3f) << 6;
-				cp |= (*text->location++ & 0x3f);
+				cp  = (*text->bytes++ & 0x0f) << 12;
+				cp |= (*text->bytes++ & 0x3f) << 6;
+				cp |= (*text->bytes++ & 0x3f);
 				text->length -= 3;
 				return cp;
 			}
 		
 		case 2:
-			if ((text->location[0] & 0xe0) == 0xc0 && (text->location[1] & 0xc0) == 0x80)
+			if ((text->bytes[0] & 0xe0) == 0xc0 && (text->bytes[1] & 0xc0) == 0x80)
 			{
-				cp  = (*text->location++ & 0x1f) << 6;
-				cp |= (*text->location++ & 0x3f);
+				cp  = (*text->bytes++ & 0x1f) << 6;
+				cp |= (*text->bytes++ & 0x3f);
 				text->length -= 2;
 				return cp;
 			}
 		
 		case 1:
 			--text->length;
-			return *text->location++;
+			return *text->bytes++;
 		
 		case 0:
 			return 0;

@@ -49,7 +49,7 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 		{
 			if (Value.isString(property))
 			{
-				struct Text text = Text.make(Value.stringChars(property), Value.stringLength(property));
+				struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
 				
 				if ((element = Lexer.parseElement(text)) < 0)
 					*key = Key.makeWithText(text, 1);
@@ -132,7 +132,7 @@ static struct Value hasOwnProperty (struct Native(Context) * const context)
 	
 	v = Value.toString(Native.argument(context, 0));
 	context->this = Value.toObject(context, context->this, Native(thisIndex));
-	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringChars(v), Value.stringLength(v) }, 0)));
+	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringBytes(v), Value.stringLength(v) }, 0)));
 }
 
 static struct Value isPrototypeOf (struct Native(Context) * const context)
@@ -912,7 +912,7 @@ void populateElementWithCList (struct Object *self, int count, const char * list
 		else
 		{
 			struct Chars *chars = Chars.createSized(length);
-			memcpy(chars->chars, list[index], length);
+			memcpy(chars->bytes, list[index], length);
 			
 			self->element[index].data.value = Value.chars(chars);
 			self->element[index].data.value.flags = 0;

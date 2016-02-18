@@ -54,8 +54,8 @@ static struct Value addition (struct Native(Context) * const context, struct Val
 			uint16_t lengthA = Value.toLength(a);
 			uint16_t lengthB = Value.toLength(b);
 			struct Chars *chars = Chars.createSized(lengthA + lengthB);
-			Value.toBytes(a, chars->chars);
-			Value.toBytes(b, chars->chars + lengthA);
+			Value.toBytes(a, chars->bytes);
+			Value.toBytes(b, chars->bytes + lengthA);
 			return Value.chars(chars);
 		}
 		else
@@ -88,7 +88,7 @@ static struct Value equality (struct Native(Context) * const context, struct Val
 		if (aLength != bLength)
 			return Value(false);
 		
-		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
+		return Value.truth(!memcmp(Value.stringBytes(a), Value.stringBytes(b), aLength));
 	}
 	else if (Value.isBoolean(a) && Value.isBoolean(b))
 		return Value.truth(a.type == b.type);
@@ -135,7 +135,7 @@ static struct Value identicality (struct Native(Context) * const context, struct
 		if (aLength != bLength)
 			return Value(false);
 		
-		return Value.truth(!memcmp(Value.stringChars(a), Value.stringChars(b), aLength));
+		return Value.truth(!memcmp(Value.stringBytes(a), Value.stringBytes(b), aLength));
 	}
 	else if (Value.isBoolean(a) && Value.isBoolean(b))
 		return Value.truth(a.type == b.type);
@@ -157,7 +157,7 @@ static struct Value compare (struct Native(Context) * const context, struct Valu
 		uint32_t aLength = Value.stringLength(a);
 		uint32_t bLength = Value.stringLength(b);
 		if (aLength == bLength)
-			return Value.truth(memcmp(Value.stringChars(a), Value.stringChars(b), aLength) < 0);
+			return Value.truth(memcmp(Value.stringBytes(a), Value.stringBytes(b), aLength) < 0);
 		else
 			return Value.truth(aLength < bLength);
 	}
@@ -264,7 +264,7 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 		else if (ref->data.function->pair)
 			callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
 		else
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only accessor", text->length, text->location)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only accessor", text->length, text->bytes)));
 		
 		return value;
 	}
@@ -272,13 +272,13 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only property", text->length, text->location)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only property", text->length, text->bytes)));
 		
 		value.flags = ref->flags;
 		release(*ref);
 	}
 	else if (this.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->bytes)));
 	else
 		value.flags = 0;
 	
@@ -555,7 +555,7 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 static inline struct Value callValue (struct Native(Context) * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
 {
 	if (value.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
 	
 	return callFunction(context, value.data.function, this, argumentCount, construct);
 }
@@ -583,7 +583,7 @@ struct Value construct (struct Native(Context) * const context)
 		return object;
 	
 error:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->location)));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->bytes)));
 }
 
 struct Value call (struct Native(Context) * const context)
@@ -613,7 +613,7 @@ struct Value eval (struct Native(Context) * const context)
 	while (--argumentCount)
 		nextOp();
 	
-	input = Input.createFromBytes(Value.stringChars(value), Value.stringLength(value), "(eval)");
+	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
 	return context->ecc->result;
@@ -697,7 +697,7 @@ struct Value getLocal (struct Native(Context) * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
 	
 	return *ref;
 }
@@ -707,7 +707,7 @@ struct Value getLocalRef (struct Native(Context) * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
 	
 	return Value.reference(ref);
 }
@@ -717,7 +717,7 @@ struct Value setLocal (struct Native(Context) * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.getMember(context->environment, key);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
 	
 	release(*ref);
 	return *ref = retain(nextOp());
@@ -809,7 +809,7 @@ struct Value getMemberRef (struct Native(Context) * const context)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->location)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
 		
 		ref = Object.add(object.data.object, key, Value(undefined), 0);
 	}
@@ -834,7 +834,7 @@ struct Value setMember (struct Native(Context) * const context)
 	if (ref)
 		return setRefValue(context, ref, object, value, text);
 	else if (object.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
 	else
 		Object.add(object.data.object, key.data.key, value, 0);
 	
@@ -864,7 +864,7 @@ struct Value deleteMember (struct Native(Context) * const context)
 	struct Value object = Value.toObject(context, nextOp(), Native(noIndex));
 	int result = Object.delete(object.data.object, key);
 	if (!result)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
 	return Value.truth(result);
 }
@@ -901,7 +901,7 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 		Object.setProperty(object.data.object, property, Value(undefined));
 		ref = Object.getProperty(object.data.object, property);
 		if (!ref)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->location)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->bytes)));
 	}
 	
 	return Value.reference(ref);
@@ -924,7 +924,7 @@ struct Value setProperty (struct Native(Context) * const context)
 	if (ref)
 		return setRefValue(context, ref, object, value, text);
 	else if (object.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
 	else
 		Object.setProperty(object.data.object, property, value);
 	
@@ -957,7 +957,7 @@ struct Value deleteProperty (struct Native(Context) * const context)
 	if (!result)
 	{
 		struct Value string = Value.toString(property);
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringChars(string))));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringBytes(string))));
 	}
 	return Value.truth(result);
 }
@@ -1088,11 +1088,11 @@ struct Value instanceOf (struct Native(Context) * const context)
 		return Value(false);
 	
 	if (b.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
 	
 	b = Object.get(b.data.object, Key(prototype));
 	if (!Value.isObject(b))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s.prototype not an object", text->length, text->location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s.prototype not an object", text->length, text->bytes)));
 	
 	object = a.data.object;
 	while (( object = object->prototype ))
@@ -1109,7 +1109,7 @@ struct Value in (struct Native(Context) * const context)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "invalid 'in' operand %.*s", context->ops->text.length, context->ops->text.location)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "invalid 'in' operand %.*s", context->ops->text.length, context->ops->text.bytes)));
 	
 	ref = Object.getProperty(object.data.object, property);
 	return Value.truth(ref != NULL);

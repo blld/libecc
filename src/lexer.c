@@ -102,7 +102,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 	self->disallowKeyword = 0;
 	
 	retry:
-	self->text.location = self->input->bytes + self->offset;
+	self->text.bytes = self->input->bytes + self->offset;
 	self->text.length = 0;
 	
 	while (( c = nextChar(self) ))
@@ -169,7 +169,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					}
 					else if (c == end)
 					{
-						const char *location = self->text.location++;
+						const char *bytes = self->text.bytes++;
 						uint32_t length = self->text.length -= 2;
 						
 						if (haveEscape)
@@ -177,12 +177,12 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							char buffer[length];
 							uint32_t index = 0, bufferIndex = 0;
 							
-							++location;
+							++bytes;
 							
 							for (; index <= length; ++index, ++bufferIndex)
-								if (location[index] == '\\' && location[++index] != '\\')
+								if (bytes[index] == '\\' && bytes[++index] != '\\')
 								{
-									switch (location[index])
+									switch (bytes[index])
 									{
 										case '0': buffer[bufferIndex] = '\0'; break;
 										case 'a': buffer[bufferIndex] = '\a'; break;
@@ -193,18 +193,18 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 										case 't': buffer[bufferIndex] = '\t'; break;
 										case 'v': buffer[bufferIndex] = '\v'; break;
 										case 'x':
-											if (isxdigit(location[index + 1]) && isxdigit(location[index + 2]))
+											if (isxdigit(bytes[index + 1]) && isxdigit(bytes[index + 2]))
 											{
-												buffer[bufferIndex] = uint8Hex(location[index + 1], location[index + 2]);
+												buffer[bufferIndex] = uint8Hex(bytes[index + 1], bytes[index + 2]);
 												index += 2;
 												break;
 											}
-											return error(self, Error.syntaxError(Text.make(self->text.location + bufferIndex, 4), "malformed hexadecimal character escape sequence"));
+											return error(self, Error.syntaxError(Text.make(self->text.bytes + bufferIndex, 4), "malformed hexadecimal character escape sequence"));
 										
 										case 'u':
-											if (isxdigit(location[index + 1]) && isxdigit(location[index + 2]) && isxdigit(location[index + 3]) && isxdigit(location[index + 4]))
+											if (isxdigit(bytes[index + 1]) && isxdigit(bytes[index + 2]) && isxdigit(bytes[index + 3]) && isxdigit(bytes[index + 4]))
 											{
-												uint16_t c = uint16Hex(location[index+ 1], location[index + 2], location[index + 3], location[index + 4]);
+												uint16_t c = uint16Hex(bytes[index+ 1], bytes[index + 2], bytes[index + 3], bytes[index + 4]);
 												char *b = buffer + bufferIndex;
 												
 												if (c < 0x80) *b++=c;
@@ -218,19 +218,19 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 												break;
 											}
 											error:
-											return error(self, Error.syntaxError(Text.make(self->text.location + bufferIndex, 6), "malformed Unicode character escape sequence"));
+											return error(self, Error.syntaxError(Text.make(self->text.bytes + bufferIndex, 6), "malformed Unicode character escape sequence"));
 										
 										default:
-											buffer[bufferIndex] = location[index];
+											buffer[bufferIndex] = bytes[index];
 									}
 								}
 								else
-									buffer[bufferIndex] = location[index];
+									buffer[bufferIndex] = bytes[index];
 							
 							--bufferIndex;
 							
 							self->text = Text.make(malloc(length), bufferIndex);
-							memcpy((char *)self->text.location, buffer, bufferIndex);
+							memcpy((char *)self->text.bytes, buffer, bufferIndex);
 							Input.addEscapedText(self->input, self->text);
 						}
 						
@@ -304,7 +304,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				
 				if (isalpha(previewChar(self)))
 				{
-					self->text.location += self->text.length;
+					self->text.bytes += self->text.length;
 					self->text.length = 1;
 					return error(self, Error.syntaxError(self->text, "identifier starts immediately after numeric literal"));
 				}
@@ -524,14 +524,14 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					if (!disallowKeyword)
 					{
 						for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
-							if (self->text.length == keywords[k].length && memcmp(self->text.location, keywords[k].name, keywords[k].length) == 0)
+							if (self->text.length == keywords[k].length && memcmp(self->text.bytes, keywords[k].name, keywords[k].length) == 0)
 							{
 								self->disallowRegex |= keywords[k].disallowRegex;
 								return keywords[k].token;
 							}
 						
 						for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
-							if (self->text.length == reservedKeywords[k].length && memcmp(self->text.location, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
+							if (self->text.length == reservedKeywords[k].length && memcmp(self->text.bytes, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
 								return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
 					}
 					
@@ -587,7 +587,7 @@ struct Value parseBinary (struct Text text)
 	double binary;
 	char buffer[text.length + 1];
 	char *end;
-	memcpy(buffer, text.location, text.length);
+	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
 	binary = strtod(buffer, &end);
@@ -605,16 +605,16 @@ static double strtolHexFallback (struct Text text)
 	int offset = 0;
 	int c;
 	
-	if (text.location[offset] == '-')
+	if (text.bytes[offset] == '-')
 		sign = -1, ++offset;
 	
-	if (text.length - offset > 1 && text.location[offset] == '0' && tolower(text.location[offset + 1]) == 'x')
+	if (text.length - offset > 1 && text.bytes[offset] == '0' && tolower(text.bytes[offset + 1]) == 'x')
 	{
 		offset += 2;
 		
 		while (text.length - offset >= 1)
 		{
-			c = text.location[offset++];
+			c = text.bytes[offset++];
 			
 			binary *= 16;
 			
@@ -638,7 +638,7 @@ struct Value parseInteger (struct Text text, int base)
 	if (!text.length)
 		return Value.binary(NAN);
 	
-	memcpy(buffer, text.location, text.length);
+	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
 	errno = 0;
@@ -656,7 +656,7 @@ struct Value parseInteger (struct Text text, int base)
 			return Value.binary(binary);
 		}
 		
-		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.location, base);
+		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.bytes, base);
 		return Value.binary(NAN);
 	}
 	else if (integer < INT32_MIN || integer > INT32_MAX)
@@ -674,7 +674,7 @@ int32_t parseElement (struct Text text)
 	
 	for (index = 0; index < text.length; ++index)
 	{
-		c = text.location[index];
+		c = text.bytes[index];
 		if (isdigit(c))
 			hadDigit = 1;
 		else if (isgraph(c))

@@ -84,7 +84,7 @@ uint16_t toSeparatedBytes (struct Object *object, struct Text separator, char *b
 	{
 		if (index)
 		{
-			memcpy(bytes + offset, separator.location, separator.length);
+			memcpy(bytes + offset, separator.bytes, separator.length);
 			offset += separator.length;
 		}
 		
@@ -108,7 +108,7 @@ static struct Value toString (struct Native(Context) * const context)
 	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
 	length = toSeparatedLength(object, separator);
 	chars = Chars.createSized(length);
-	toSeparatedBytes(object, separator, chars->chars);
+	toSeparatedBytes(object, separator, chars->bytes);
 	return Value.chars(chars);
 }
 
@@ -152,12 +152,12 @@ static struct Value join (struct Native(Context) * const context)
 	else
 	{
 		value = Value.toString(value);
-		separator = Text.make(Value.stringChars(value), Value.stringLength(value));
+		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	}
 	
 	length = toSeparatedLength(object, separator);
 	chars = Chars.createSized(length);
-	toSeparatedBytes(object, separator, chars->chars);
+	toSeparatedBytes(object, separator, chars->bytes);
 	return Value.chars(chars);
 }
 

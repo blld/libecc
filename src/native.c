@@ -46,14 +46,14 @@ struct Value variableArgument (struct Native(Context) * const context, int argum
 
 struct Text textSeek (struct Native(Context) * const context, enum Native(Index) argumentIndex)
 {
-	const char *location;
+	const char *bytes;
 	struct Native(Context) seek = *context;
 	uint32_t breakArray = 0;
 	
 	assert(context);
 	assert(context->ecc);
 	
-	while (seek.ops->text.location == Text(nativeCode).location)
+	while (seek.ops->text.bytes == Text(nativeCode).bytes)
 	{
 		if (!seek.parent)
 			return seek.ops->text;
@@ -86,14 +86,14 @@ struct Text textSeek (struct Native(Context) * const context, enum Native(Index)
 			++seek.ops;
 		
 		// this
-		if (argumentIndex-- > Native(callIndex) && (seek.ops + 1)->text.location <= seek.ops->text.location)
+		if (argumentIndex-- > Native(callIndex) && (seek.ops + 1)->text.bytes <= seek.ops->text.bytes)
 			++seek.ops;
 		
 		// arguments
 		while (argumentIndex-- > Native(callIndex))
 		{
-			location = seek.ops->text.location + seek.ops->text.length;
-			while (location > seek.ops->text.location && seek.ops->text.location)
+			bytes = seek.ops->text.bytes + seek.ops->text.length;
+			while (bytes > seek.ops->text.bytes && seek.ops->text.bytes)
 				++seek.ops;
 			
 			if (breakArray & 0x1 && seek.ops->native == Op.array)

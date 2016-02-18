@@ -19,7 +19,7 @@ struct Chars * createVA (uint16_t length, const char *format, va_list ap)
 	struct Chars *self;
 	
 	self = createSized(length);
-	vsprintf(self->chars, format, ap);
+	vsprintf(self->bytes, format, ap);
 	
 	return self;
 }
@@ -48,7 +48,7 @@ struct Chars * createSized (uint16_t length)
 	*self = Chars.identity;
 	
 	self->length = length;
-	self->chars[length] = '\0';
+	self->bytes[length] = '\0';
 	
 	return self;
 }
@@ -60,8 +60,8 @@ struct Chars * createWithBytes (uint16_t length, const char *bytes)
 	*self = Chars.identity;
 	
 	self->length = length;
-	memcpy(self->chars, bytes, length);
-	self->chars[length] = '\0';
+	memcpy(self->bytes, bytes, length);
+	self->bytes[length] = '\0';
 	
 	return self;
 }

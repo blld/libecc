@@ -70,7 +70,7 @@ static struct Value toString (struct Native(Context) * const context)
 	object = context->this.data.object;
 	length = toLength(object);
 	chars = Chars.createSized(length);
-	toBytes(object, chars->chars);
+	toBytes(object, chars->bytes);
 	
 	return Value.chars(chars);
 }
@@ -82,7 +82,7 @@ static struct Value errorConstructor (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(error(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(error(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static struct Value rangeErrorConstructor (struct Native(Context) * const context)
@@ -92,7 +92,7 @@ static struct Value rangeErrorConstructor (struct Native(Context) * const contex
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(rangeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(rangeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static struct Value referenceErrorConstructor (struct Native(Context) * const context)
@@ -102,7 +102,7 @@ static struct Value referenceErrorConstructor (struct Native(Context) * const co
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(referenceError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(referenceError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static struct Value syntaxErrorConstructor (struct Native(Context) * const context)
@@ -112,7 +112,7 @@ static struct Value syntaxErrorConstructor (struct Native(Context) * const conte
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(syntaxError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(syntaxError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static struct Value typeErrorConstructor (struct Native(Context) * const context)
@@ -122,7 +122,7 @@ static struct Value typeErrorConstructor (struct Native(Context) * const context
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(typeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(typeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static struct Value uriErrorConstructor (struct Native(Context) * const context)
@@ -132,7 +132,7 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 1);
 	
 	message = messageValue(Native.argument(context, 0));
-	return Value.error(uriError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringChars(message)));
+	return Value.error(uriError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
@@ -344,7 +344,7 @@ uint16_t toBytes (struct Object *self, char *bytes)
 	else
 		message = Value.toString(message);
 	
-	memcpy(bytes, Value.stringChars(name), Value.stringLength(name));
+	memcpy(bytes, Value.stringBytes(name), Value.stringLength(name));
 	offset += Value.stringLength(name);
 	
 	if (Value.stringLength(name) && Value.stringLength(message))
@@ -354,7 +354,7 @@ uint16_t toBytes (struct Object *self, char *bytes)
 		offset += sizeof(separator)-1;
 	}
 	
-	memcpy(bytes + offset, Value.stringChars(message), Value.stringLength(message));
+	memcpy(bytes + offset, Value.stringBytes(message), Value.stringLength(message));
 	offset += Value.stringLength(message);
 	
 	return offset;
