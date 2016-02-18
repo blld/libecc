@@ -28,9 +28,9 @@ static struct Value toString (struct Native(Context) * const context)
 	
 	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
 	{
-		uint16_t length = toLength(context->this.data.function);
+		uint16_t length = toLength(context->this);
 		struct Chars *chars = Chars.createSized(length);
-		toBytes(context->this.data.function, chars->bytes);
+		toBytes(context->this, chars->bytes);
 		return Value.chars(chars);
 	}
 	else
@@ -325,9 +325,14 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 	*constructor = function;
 }
 
-uint16_t toLength (struct Function *self)
+uint16_t toLength (struct Value value)
 {
-	assert(self);
+	struct Function *self;
+	
+	assert(value.type == Value(functionType));
+	assert(value.data.function);
+	
+	self = value.data.function;
 	
 	if (self->text.bytes == Text(nativeCode).bytes)
 		return sizeof("function () [native code]")-1 + (self->name? strlen(self->name): 0);
@@ -335,9 +340,14 @@ uint16_t toLength (struct Function *self)
 	return self->text.length;
 }
 
-uint16_t toBytes (struct Function *self, char *bytes)
+uint16_t toBytes (struct Value value, char *bytes)
 {
-	assert(self);
+	struct Function *self;
+	
+	assert(value.type == Value(functionType));
+	assert(value.data.function);
+	
+	self = value.data.function;
 	
 	if (self->text.bytes == Text(nativeCode).bytes)
 		return sprintf(bytes, "function %s() [native code]", self->name? self->name: "");

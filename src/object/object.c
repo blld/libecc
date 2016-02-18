@@ -525,6 +525,9 @@ struct Object * finalize (struct Object *self)
 	free(self->hashmap), self->hashmap = NULL;
 	free(self->element), self->element = NULL;
 	
+	if (self->type->finalize)
+		self->type->finalize(self);
+	
 	return self;
 }
 

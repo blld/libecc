@@ -431,9 +431,9 @@ struct Value toString (struct Value value)
 			{
 				assert(object->type->toBytes);
 				
-				uint16_t length = object->type->toLength(object);
+				uint16_t length = object->type->toLength(value);
 				struct Chars *chars = Chars.createSized(length);
-				object->type->toBytes(object, chars->bytes);
+				object->type->toBytes(value, chars->bytes);
 				return Value.chars(chars);
 			}
 			else
@@ -499,7 +499,7 @@ uint16_t toLength (struct Value value)
 			if (object->type->toLength)
 			{
 				assert(object->type->toBytes);
-				return object->type->toLength(object);
+				return object->type->toLength(value);
 			}
 			else
 				return value.data.object->type->text->length;
@@ -560,7 +560,7 @@ uint16_t toBytes (struct Value value, char *bytes)
 		{
 			struct Object *object = value.data.object;
 			if (object->type->toBytes)
-				return object->type->toBytes(object, bytes);
+				return object->type->toBytes(value, bytes);
 			else
 				return textToBytes(*value.data.object->type->text, bytes);
 		}

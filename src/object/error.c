@@ -58,7 +58,6 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 
 static struct Value toString (struct Native(Context) * const context)
 {
-	struct Object *object;
 	struct Chars *chars;
 	uint16_t length;
 	
@@ -67,10 +66,9 @@ static struct Value toString (struct Native(Context) * const context)
 	if (!Value.isObject(context->this))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
 	
-	object = context->this.data.object;
-	length = toLength(object);
+	length = toLength(context->this);
 	chars = Chars.createSized(length);
-	toBytes(object, chars->bytes);
+	toBytes(context->this, chars->bytes);
 	
 	return Value.chars(chars);
 }
@@ -305,9 +303,15 @@ void destroy (struct Error *self)
 	free(self), self = NULL;
 }
 
-uint16_t toLength (struct Object *self)
+uint16_t toLength (struct Value value)
 {
 	struct Value name, message;
+	struct Object *self;
+	
+	assert(value.type == Value(errorType));
+	assert(value.data.error);
+	
+	self = value.data.object;
 	
 	name = Object.get(self, Key(name));
 	if (name.type == Value(undefinedType))
@@ -327,10 +331,16 @@ uint16_t toLength (struct Object *self)
 		return Value.stringLength(name) + Value.stringLength(message);
 }
 
-uint16_t toBytes (struct Object *self, char *bytes)
+uint16_t toBytes (struct Value value, char *bytes)
 {
 	struct Value name, message;
 	uint16_t offset = 0;
+	struct Object *self;
+	
+	assert(value.type == Value(errorType));
+	assert(value.data.error);
+	
+	self = value.data.object;
 	
 	name = Object.get(self, Key(name));
 	if (name.type == Value(undefinedType))

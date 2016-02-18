@@ -22,9 +22,10 @@ struct Object(Type)
 {
 	const struct Text *text;
 	
-	uint16_t (*toLength)(void *object);
-	uint16_t (*toBytes)(void *object, char *bytes);
-	uint16_t (*finalize)(void *object);
+	uint16_t (*toLength)(struct Value);
+	uint16_t (*toBytes)(struct Value, char *bytes);
+	
+	void (*finalize)(struct Object *);
 };
 
 enum Object(Flags)

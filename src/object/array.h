@@ -28,8 +28,8 @@ Interface(Array,
 	(struct Object *, create ,(void))
 	(struct Object *, createSized ,(uint32_t size))
 	
-	(uint16_t, toLength ,(struct Object *))
-	(uint16_t, toBytes ,(struct Object *, char *bytes))
+	(uint16_t, toLength ,(struct Value))
+	(uint16_t, toBytes ,(struct Value, char *bytes))
 	,
 	{
 		struct Object object;

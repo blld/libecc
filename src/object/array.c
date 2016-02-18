@@ -365,12 +365,18 @@ struct Object *createSized (uint32_t size)
 	return self;
 }
 
-uint16_t toLength (struct Object *object)
+uint16_t toLength (struct Value value)
 {
-	return toSeparatedLength(object, (struct Text){ ",", 1 });
+	assert(value.type == Value(objectType));
+	assert(value.data.object);
+	
+	return toSeparatedLength(value.data.object, (struct Text){ ",", 1 });
 }
 
-uint16_t toBytes (struct Object *object, char *bytes)
+uint16_t toBytes (struct Value value, char *bytes)
 {
-	return toSeparatedBytes(object, (struct Text){ ",", 1 }, bytes);
+	assert(value.type == Value(objectType));
+	assert(value.data.object);
+	
+	return toSeparatedBytes(value.data.object, (struct Text){ ",", 1 }, bytes);
 }
