@@ -15,9 +15,9 @@
 
 #include "interface.h"
 
-
 extern struct Object * Array(prototype);
 extern struct Function * Array(constructor);
+extern const struct Object(Type) Array(type);
 
 
 Interface(Array,
@@ -28,8 +28,8 @@ Interface(Array,
 	(struct Object *, create ,(void))
 	(struct Object *, createSized ,(uint32_t size))
 	
-	(uint16_t, toLength ,(struct Object *, struct Text separator))
-	(uint16_t, toBuffer ,(struct Object *, struct Text separator, char *buffer, uint16_t length))
+	(uint16_t, toLength ,(struct Object *))
+	(uint16_t, toBytes ,(struct Object *, char *bytes))
 	,
 	{
 		struct Object object;

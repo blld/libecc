@@ -24,8 +24,10 @@ struct Function * Error(syntaxConstructor) = NULL;
 struct Function * Error(typeConstructor) = NULL;
 struct Function * Error(uriConstructor) = NULL;
 
-static struct Object(Type) errorType = {
+const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
+	.toLength = toLength,
+	.toBytes = toBytes,
 };
 
 static struct Value messageValue (struct Value value)
@@ -68,7 +70,7 @@ static struct Value toString (struct Native(Context) * const context)
 	object = context->this.data.object;
 	length = toLength(object);
 	chars = Chars.createSized(length);
-	toBuffer(object, chars->chars, length);
+	toBytes(object, chars->chars);
 	
 	return Value.chars(chars);
 }
@@ -135,7 +137,7 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context)
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
-	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &errorType);
+	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Error(type));
 	Object.add(*prototype, Key(name), Value.text(name), Value(hidden));
 }
 
@@ -325,7 +327,7 @@ uint16_t toLength (struct Object *self)
 		return Value.stringLength(name) + Value.stringLength(message);
 }
 
-uint16_t toBuffer (struct Object *self, char *buffer, uint16_t length)
+uint16_t toBytes (struct Object *self, char *bytes)
 {
 	struct Value name, message;
 	uint16_t offset = 0;
@@ -342,17 +344,17 @@ uint16_t toBuffer (struct Object *self, char *buffer, uint16_t length)
 	else
 		message = Value.toString(message);
 	
-	memcpy(buffer, Value.stringChars(name), Value.stringLength(name));
+	memcpy(bytes, Value.stringChars(name), Value.stringLength(name));
 	offset += Value.stringLength(name);
 	
 	if (Value.stringLength(name) && Value.stringLength(message))
 	{
 		const char separator[] = ": ";
-		memcpy(buffer + offset, separator, sizeof(separator)-1);
+		memcpy(bytes + offset, separator, sizeof(separator)-1);
 		offset += sizeof(separator)-1;
 	}
 	
-	memcpy(buffer + offset, Value.stringChars(message), Value.stringLength(message));
+	memcpy(bytes + offset, Value.stringChars(message), Value.stringLength(message));
 	offset += Value.stringLength(message);
 	
 	return offset;

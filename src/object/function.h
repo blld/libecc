@@ -27,6 +27,7 @@ enum Function(Flags) {
 
 extern struct Object * Function(prototype);
 extern struct Function * Function(constructor);
+extern const struct Object(Type) Function(type);
 
 
 Interface(Function,
@@ -49,7 +50,7 @@ Interface(Function,
 	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Object(Type) *type))
 	
 	(uint16_t, toLength ,(struct Function *))
-	(uint16_t, toBuffer ,(struct Function *, char *buffer, uint16_t length))
+	(uint16_t, toBytes ,(struct Function *, char *bytes))
 	,
 	{
 		struct Object object;

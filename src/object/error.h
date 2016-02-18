@@ -33,6 +33,8 @@ extern struct Function * Error(syntaxConstructor);
 extern struct Function * Error(typeConstructor);
 extern struct Function * Error(uriConstructor);
 
+extern const struct Object(Type) Error(type);
+
 
 Interface(Error,
 	
@@ -48,7 +50,7 @@ Interface(Error,
 	(void, destroy ,(struct Error *))
 	
 	(uint16_t, toLength ,(struct Object *))
-	(uint16_t, toBuffer ,(struct Object *, char *buffer, uint16_t length))
+	(uint16_t, toBytes ,(struct Object *, char *bytes))
 	,
 	{
 		struct Object object;

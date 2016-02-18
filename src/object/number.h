@@ -18,6 +18,7 @@
 
 extern struct Object * Number(prototype);
 extern struct Function * Number(constructor);
+extern const struct Object(Type) Number(type);
 
 
 Interface(Number,

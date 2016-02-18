@@ -21,6 +21,9 @@
 struct Object(Type)
 {
 	const struct Text *text;
+	
+	uint16_t (*toLength)(void *object);
+	uint16_t (*toBytes)(void *object, char *bytes);
 };
 
 enum Object(Flags)
@@ -31,6 +34,7 @@ enum Object(Flags)
 
 extern struct Object * Object(prototype);
 extern struct Function * Object(constructor);
+extern const struct Object(Type) Object(type);
 
 
 Interface(Object,

@@ -13,7 +13,7 @@
 struct Object * Number(prototype) = NULL;
 struct Function * Number(constructor) = NULL;
 
-static const struct Object(Type) numberType = {
+const struct Object(Type) Number(type) = {
 	.text = &Text(numberType),
 };
 
@@ -153,7 +153,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &numberType);
+	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &Number(type));
 	
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);

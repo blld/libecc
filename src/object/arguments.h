@@ -17,6 +17,7 @@
 
 
 extern struct Object * Arguments(prototype);
+extern const struct Object(Type) Arguments(type);
 
 
 Interface(Arguments,

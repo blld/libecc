@@ -13,13 +13,15 @@
 struct Object * Array(prototype) = NULL;
 struct Function * Array(constructor) = NULL;
 
-static const struct Object(Type) arrayType = {
+const struct Object(Type) Array(type) = {
 	.text = &Text(arrayType),
+	.toLength = toLength,
+	.toBytes = toBytes,
 };
 
 static int valueIsArray(struct Value value)
 {
-	return value.type == Value(objectType) && value.data.object->type == &arrayType;
+	return value.type == Value(objectType) && value.data.object->type == &Array(type);
 }
 
 static uint32_t valueArrayLength(struct Value value)
@@ -50,7 +52,48 @@ static struct Value isArray (struct Native(Context) * const context)
 	struct Value value;
 	Native.assertParameterCount(context, 1);
 	value = Native.argument(context, 0);
-	return Value.truth(value.type == Value(objectType) && value.data.object->type == &arrayType);
+	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
+}
+
+uint16_t toSeparatedLength (struct Object *object, struct Text separator)
+{
+	struct Value value;
+	uint16_t offset = 0;
+	uint16_t index, count = object->elementCount;
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+			offset += separator.length;
+		
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
+			offset += Value.toLength(object->element[index].data.value);
+	}
+	
+	return offset;
+}
+
+uint16_t toSeparatedBytes (struct Object *object, struct Text separator, char *bytes)
+{
+	struct Value value;
+	uint16_t offset = 0;
+	uint16_t index, count = object->elementCount;
+	
+	for (index = 0; index < count; ++index)
+	{
+		if (index)
+		{
+			memcpy(bytes + offset, separator.location, separator.length);
+			offset += separator.length;
+		}
+		
+		value = object->element[index].data.value;
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
+			offset += Value.toBytes(object->element[index].data.value, bytes + offset);
+	}
+	
+	return offset;
 }
 
 static struct Value toString (struct Native(Context) * const context)
@@ -63,9 +106,9 @@ static struct Value toString (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 0);
 	
 	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	length = toLength(object, separator);
+	length = toSeparatedLength(object, separator);
 	chars = Chars.createSized(length);
-	toBuffer(object, separator, chars->chars, chars->length);
+	toSeparatedBytes(object, separator, chars->chars);
 	return Value.chars(chars);
 }
 
@@ -112,9 +155,9 @@ static struct Value join (struct Native(Context) * const context)
 		separator = Text.make(Value.stringChars(value), Value.stringLength(value));
 	}
 	
-	length = toLength(object, separator);
+	length = toSeparatedLength(object, separator);
 	chars = Chars.createSized(length);
-	toBuffer(object, separator, chars->chars, chars->length);
+	toSeparatedBytes(object, separator, chars->chars);
 	return Value.chars(chars);
 }
 
@@ -287,7 +330,7 @@ void setup (void)
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &arrayType);
+	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &Array(type));
 	
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
@@ -322,43 +365,12 @@ struct Object *createSized (uint32_t size)
 	return self;
 }
 
-uint16_t toLength (struct Object *object, struct Text separator)
+uint16_t toLength (struct Object *object)
 {
-	struct Value value;
-	uint16_t offset = 0;
-	uint16_t index, count = object->elementCount;
-	
-	for (index = 0; index < count; ++index)
-	{
-		if (index)
-			offset += separator.length;
-		
-		value = object->element[index].data.value;
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toLength(object->element[index].data.value);
-	}
-	
-	return offset;
+	return toSeparatedLength(object, (struct Text){ ",", 1 });
 }
 
-uint16_t toBuffer (struct Object *object, struct Text separator, char *buffer, uint16_t length)
+uint16_t toBytes (struct Object *object, char *bytes)
 {
-	struct Value value;
-	uint16_t offset = 0;
-	uint16_t index, count = object->elementCount;
-	
-	for (index = 0; index < count; ++index)
-	{
-		if (index)
-		{
-			memcpy(buffer + offset, separator.location, separator.length);
-			offset += separator.length;
-		}
-		
-		value = object->element[index].data.value;
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toBuffer(object->element[index].data.value, buffer + offset, length - offset + 1);
-	}
-	
-	return offset;
+	return toSeparatedBytes(object, (struct Text){ ",", 1 }, bytes);
 }

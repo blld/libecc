@@ -20,6 +20,9 @@
 #include "interface.h"
 
 
+extern const struct Object(Type) Global(type);
+
+
 Interface(Global,
 	
 	(void, setup ,(void))

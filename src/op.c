@@ -54,8 +54,8 @@ static struct Value addition (struct Native(Context) * const context, struct Val
 			uint16_t lengthA = Value.toLength(a);
 			uint16_t lengthB = Value.toLength(b);
 			struct Chars *chars = Chars.createSized(lengthA + lengthB);
-			Value.toBuffer(a, chars->chars, chars->length + 1);
-			Value.toBuffer(b, chars->chars + lengthA, chars->length - lengthA + 1);
+			Value.toBytes(a, chars->chars);
+			Value.toBytes(b, chars->chars + lengthA);
 			return Value.chars(chars);
 		}
 		else

@@ -13,8 +13,10 @@
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
 
-static struct Object(Type) functionType = {
+const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
+	.toLength = toLength,
+	.toBytes = toBytes,
 };
 
 static struct Value toString (struct Native(Context) * const context)
@@ -28,7 +30,7 @@ static struct Value toString (struct Native(Context) * const context)
 	{
 		uint16_t length = toLength(context->this.data.function);
 		struct Chars *chars = Chars.createSized(length);
-		toBuffer(context->this.data.function, chars->chars, length + 1);
+		toBytes(context->this.data.function, chars->chars);
 		return Value.chars(chars);
 	}
 	else
@@ -132,7 +134,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 				if (index == argumentCount - 1)
 					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
 				
-				offset += Value.toBuffer(Native.variableArgument(context, index), chars + offset, length - offset);
+				offset += Value.toBytes(Native.variableArgument(context, index), chars + offset);
 				
 				if (index < argumentCount - 2)
 					chars[offset++] = ',';
@@ -156,7 +158,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 
 void setup ()
 {
-	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &functionType);
+	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &Function(type));
 	
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
@@ -333,16 +335,13 @@ uint16_t toLength (struct Function *self)
 	return self->text.length;
 }
 
-uint16_t toBuffer (struct Function *self, char *buffer, uint16_t length)
+uint16_t toBytes (struct Function *self, char *bytes)
 {
 	assert(self);
 	
 	if (self->text.location == Text(nativeCode).location)
-		return snprintf(buffer, length, "function %s() [native code]", self->name? self->name: "");
+		return sprintf(bytes, "function %s() [native code]", self->name? self->name: "");
 	
-	if (length > self->text.length)
-		length = self->text.length;
-	
-	memcpy(buffer, self->text.location, length);
-	return length;
+	memcpy(bytes, self->text.location, self->text.length);
+	return self->text.length;
 }

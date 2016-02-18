@@ -110,7 +110,7 @@ Interface(Value,
 	(struct Value, toString ,(struct Value))
 	(struct Value, binaryToString ,(double binary, int base))
 	(uint16_t, toLength ,(struct Value))
-	(uint16_t, toBuffer ,(struct Value, char *buffer, uint16_t length))
+	(uint16_t, toBytes ,(struct Value, char *bytes))
 	(const char *, stringChars ,(struct Value))
 	(uint16_t, stringLength ,(struct Value))
 	

@@ -13,7 +13,7 @@
 struct Object * Boolean(prototype) = NULL;
 struct Function * Boolean(constructor) = NULL;
 
-static struct Object(Type) booleanType = {
+const struct Object(Type) Boolean(type) = {
 	.text = &Text(booleanType),
 };
 
@@ -66,7 +66,7 @@ void setup ()
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Boolean(constructor), booleanConstructor, 1, &Boolean(prototype), Value.boolean(create(0)), &booleanType);
+	Function.setupBuiltinObject(&Boolean(constructor), booleanConstructor, 1, &Boolean(prototype), Value.boolean(create(0)), &Boolean(type));
 	
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);

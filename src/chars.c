@@ -53,14 +53,14 @@ struct Chars * createSized (uint16_t length)
 	return self;
 }
 
-struct Chars * createWithBuffer (uint16_t length, const char *buffer)
+struct Chars * createWithBytes (uint16_t length, const char *bytes)
 {
 	struct Chars *self = malloc(sizeof(*self) + length);
 	Pool.addChars(self);
 	*self = Chars.identity;
 	
 	self->length = length;
-	memcpy(self->chars, buffer, length);
+	memcpy(self->chars, bytes, length);
 	self->chars[length] = '\0';
 	
 	return self;

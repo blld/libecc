@@ -16,6 +16,11 @@
 #include "interface.h"
 
 
+extern struct Object * Date(prototype);
+extern struct Function * Date(constructor);
+extern const struct Object(Type) Date(type);
+
+
 Interface(Date,
 	
 	(void, setup ,(void))

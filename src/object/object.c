@@ -10,11 +10,14 @@
 
 // MARK: - Private
 
-static const int defaultSize = 8;
+struct Object * Object(prototype) = NULL;
+struct Function * Object(constructor) = NULL;
 
-static const struct Object(Type) objectType = {
+const struct Object(Type) Object(type) = {
 	.text = &Text(objectType),
 };
+
+static const int defaultSize = 8;
 
 static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
 {
@@ -58,7 +61,7 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 					char bytes[length + 1];
 					struct Text text = Text.make(bytes, length);
 					
-					Value.toBuffer(property, bytes, length);
+					Value.toBytes(property, bytes);
 					
 					if ((element = Lexer.parseElement(text)) < 0)
 						*key = Key.makeWithText(text, 1);
@@ -422,9 +425,6 @@ static struct Value keys (struct Native(Context) * const context)
 
 // MARK: - Methods
 
-struct Object * Object(prototype) = NULL;
-struct Function * Object(constructor) = NULL;
-
 void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
@@ -494,7 +494,7 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 	
 	*self = Object.identity;
 	
-	self->type = prototype? prototype->type: &objectType;
+	self->type = prototype? prototype->type: &Object(type);
 	
 	self->prototype = prototype;
 	self->hashmapCount = 2;
@@ -927,7 +927,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->type->text == &Text(arrayType);
+	isArray = self->type == &Array(type);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	

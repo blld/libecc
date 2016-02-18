@@ -17,6 +17,7 @@
 
 
 extern struct Object * Math(object);
+extern const struct Object(Type) Math(type);
 
 
 Interface(Math,

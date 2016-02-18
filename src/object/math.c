@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-static const struct Object(Type) mathType = {
+const struct Object(Type) Math(type) = {
 	.text = &Text(mathType),
 };
 
@@ -252,7 +252,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Math(object) = Object.createTyped(&mathType);
+	Math(object) = Object.createTyped(&Math(type));
 	
 	Object.add(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
 	Object.add(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);

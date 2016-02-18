@@ -13,7 +13,7 @@
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
 
-static const struct Object(Type) stringType = {
+const struct Object(Type) String(type) = {
 	.text = &Text(stringType),
 };
 
@@ -141,9 +141,9 @@ static struct Value concat (struct Native(Context) * const context)
 	
 	result = Chars.createSized(length);
 	
-	offset += Value.toBuffer(context->this, result->chars + offset, length - offset + 1);
+	offset += Value.toBytes(context->this, result->chars + offset);
 	for (index = 0; index < count; ++index)
-		offset += Value.toBuffer(Native.variableArgument(context, index), result->chars + offset, length - offset + 1);
+		offset += Value.toBytes(Native.variableArgument(context, index), result->chars + offset);
 	
 	return Value.chars(result);
 }
@@ -340,7 +340,7 @@ static struct Value stringConstructor (struct Native(Context) * const context)
 		value = Value.toString(value);
 	
 	if (context->construct)
-		return Value.string(String.create(Chars.createWithBuffer(Value.stringLength(value), Value.stringChars(value))));
+		return Value.string(String.create(Chars.createWithBytes(Value.stringLength(value), Value.stringChars(value))));
 	else
 		return value;
 }
@@ -388,7 +388,7 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &stringType);
+	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &String(type));
 	
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);

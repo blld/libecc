@@ -17,24 +17,24 @@ const struct Value Value(true) = valueMake(trueType);
 const struct Value Value(false) = valueMake(falseType);
 const struct Value Value(null) = valueMake(nullType);
 
-static inline uint16_t textToBuffer (struct Text text, char *buffer, uint16_t length)
+static inline uint16_t textToBytes (struct Text text, char *bytes)
 {
-	memcpy(buffer, text.location, text.length);
+	memcpy(bytes, text.location, text.length);
 	return text.length;
 }
 
-static inline uint16_t binaryToBuffer (double binary, int base, char *buffer, uint16_t length)
+static inline uint16_t binaryToBytes (double binary, int base, char *bytes)
 {
 	if (!base || base == 10)
 	{
 		if (binary <= -1e+21 || binary >= 1e+21)
-			return snprintf(buffer, length, "%g", binary);
+			return bytes? sprintf(bytes, "%g", binary): snprintf(NULL, 0, "%g", binary);
 		else
 		{
 			double dblDig10 = pow(10, DBL_DIG);
 			int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: 21;
 			
-			return snprintf(buffer, length, "%.*g", precision, binary);
+			return bytes? sprintf(bytes, "%.*g", precision, binary): snprintf(NULL, 0, "%.*g", precision, binary);
 		}
 	}
 	else
@@ -46,13 +46,13 @@ static inline uint16_t binaryToBuffer (double binary, int base, char *buffer, ui
 		{
 			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
 			
-			return snprintf(buffer, length, format, integer);
+			return bytes? sprintf(bytes, format, integer): snprintf(NULL, 0, format, integer);
 		}
 		else
 		{
 			static char const digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-			char bytes[1 + sizeof(integer) * CHAR_BIT];
-			char *p = bytes + sizeof(bytes);
+			char buffer[1 + sizeof(integer) * CHAR_BIT];
+			char *p = buffer + sizeof(buffer);
 			uint16_t count;
 			
 			while (integer) {
@@ -62,12 +62,9 @@ static inline uint16_t binaryToBuffer (double binary, int base, char *buffer, ui
 			if (sign)
 				*(--p) = '-';
 			
-			count = bytes + sizeof(bytes) - p;
-			if (buffer && count > length)
-				count = length;
-			
-			if (buffer)
-				memcpy(buffer, p, count);
+			count = buffer + sizeof(buffer) - p;
+			if (bytes)
+				memcpy(bytes, p, count);
 			
 			return count;
 		}
@@ -427,14 +424,20 @@ struct Value toString (struct Value value)
 		case Value(objectType):
 		case Value(dateType):
 		case Value(functionType):
-			return text(value.data.object->type->text);
-		
 		case Value(errorType):
 		{
-			uint16_t length = Error.toLength(&value.data.error->object);
-			struct Chars *chars = Chars.createSized(length);
-			Error.toBuffer(&value.data.error->object, chars->chars, length + 1);
-			return Value.chars(chars);
+			struct Object *object = value.data.object;
+			if (object->type->toLength)
+			{
+				assert(object->type->toBytes);
+				
+				uint16_t length = object->type->toLength(object);
+				struct Chars *chars = Chars.createSized(length);
+				object->type->toBytes(object, chars->chars);
+				return Value.chars(chars);
+			}
+			else
+				return text(value.data.object->type->text);
 		}
 		
 		case Value(referenceType):
@@ -479,28 +482,28 @@ uint16_t toLength (struct Value value)
 				return Text(false).length;
 		
 		case Value(integerType):
-			return binaryToBuffer(value.data.integer, 10, NULL, 0);
+			return binaryToBytes(value.data.integer, 10, NULL);
 		
 		case Value(numberType):
-			return binaryToBuffer(value.data.number->value, 10, NULL, 0);
+			return binaryToBytes(value.data.number->value, 10, NULL);
 		
 		case Value(binaryType):
-			return binaryToBuffer(value.data.binary, 10, NULL, 0);
+			return binaryToBytes(value.data.binary, 10, NULL);
 		
 		case Value(objectType):
-		#warning FIXME
-			if (value.data.object->type->text == &Text(arrayType))
-				return Array.toLength(value.data.object, (struct Text){ ",", 1 });
-			/*vvv*/
-		
 		case Value(dateType):
-			return value.data.object->type->text->length;
-		
 		case Value(errorType):
-			return Error.toLength(&value.data.error->object);
-		
 		case Value(functionType):
-			return Function.toLength(value.data.function);
+		{
+			struct Object *object = value.data.object;
+			if (object->type->toLength)
+			{
+				assert(object->type->toBytes);
+				return object->type->toLength(object);
+			}
+			else
+				return value.data.object->type->text->length;
+		}
 		
 		case Value(referenceType):
 			break;
@@ -510,60 +513,57 @@ uint16_t toLength (struct Value value)
 	abort();
 }
 
-uint16_t toBuffer (struct Value value, char *buffer, uint16_t length)
+uint16_t toBytes (struct Value value, char *bytes)
 {
 	switch ((enum Value(Type))value.type)
 	{
 		case Value(keyType):
-			return textToBuffer(*Key.textOf(value.data.key), buffer, length);
+			return textToBytes(*Key.textOf(value.data.key), bytes);
 		
 		case Value(textType):
-			return textToBuffer(*value.data.text, buffer, length);
+			return textToBytes(*value.data.text, bytes);
 		
 		case Value(stringType):
-			return textToBuffer((struct Text){ value.data.string->value->chars, value.data.string->value->length }, buffer, length);
+			return textToBytes((struct Text){ value.data.string->value->chars, value.data.string->value->length }, bytes);
 		
 		case Value(charsType):
-			return textToBuffer((struct Text){ value.data.chars->chars, value.data.chars->length }, buffer, length);
+			return textToBytes((struct Text){ value.data.chars->chars, value.data.chars->length }, bytes);
 		
 		case Value(nullType):
-			return textToBuffer(Text(null), buffer, length);
+			return textToBytes(Text(null), bytes);
 		
 		case Value(undefinedType):
-			return textToBuffer(Text(undefined), buffer, length);
+			return textToBytes(Text(undefined), bytes);
 		
 		case Value(falseType):
-			return textToBuffer(Text(false), buffer, length);
+			return textToBytes(Text(false), bytes);
 		
 		case Value(trueType):
-			return textToBuffer(Text(true), buffer, length);
+			return textToBytes(Text(true), bytes);
 		
 		case Value(booleanType):
-			return textToBuffer(value.data.boolean->truth? Text(true): Text(false), buffer, length);
+			return textToBytes(value.data.boolean->truth? Text(true): Text(false), bytes);
 		
 		case Value(integerType):
-			return binaryToBuffer(value.data.integer, 10, buffer, length);
+			return binaryToBytes(value.data.integer, 10, bytes);
 		
 		case Value(numberType):
-			return binaryToBuffer(value.data.number->value, 10, buffer, length);
+			return binaryToBytes(value.data.number->value, 10, bytes);
 		
 		case Value(binaryType):
-			return binaryToBuffer(value.data.binary, 10, buffer, length);
+			return binaryToBytes(value.data.binary, 10, bytes);
 		
 		case Value(objectType):
-		#warning TIXME
-			if (value.data.object->type->text == &Text(arrayType))
-				return Array.toBuffer(value.data.object, (struct Text){ ",", 1 }, buffer, length);
-			/*vvv*/
-		
-		case Value(dateType):
-			return textToBuffer(*value.data.object->type->text, buffer, length);
-		
 		case Value(errorType):
-			return Error.toBuffer(&value.data.error->object, buffer, length);
-		
+		case Value(dateType):
 		case Value(functionType):
-			return Function.toBuffer(value.data.function, buffer, length);
+		{
+			struct Object *object = value.data.object;
+			if (object->type->toBytes)
+				return object->type->toBytes(object, bytes);
+			else
+				return textToBytes(*value.data.object->type->text, bytes);
+		}
 		
 		case Value(referenceType):
 			break;
@@ -592,9 +592,9 @@ struct Value binaryToString (double binary, int base)
 			return text(&Text(infinity));
 	}
 	
-	length = binaryToBuffer(binary, base, NULL, 0);
+	length = binaryToBytes(binary, base, NULL);
 	chars = Chars.createSized(length);
-	binaryToBuffer(binary, base, chars->chars, chars->length + 1);
+	binaryToBytes(binary, base, chars->chars);
 	return Value.chars(chars);
 }
 

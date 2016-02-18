@@ -18,6 +18,7 @@
 
 extern struct Object * Boolean(prototype);
 extern struct Function * Boolean(constructor);
+extern const struct Object(Type) Boolean(type);
 
 
 Interface(Boolean,

@@ -12,7 +12,7 @@
 
 struct Object * Arguments(prototype);
 
-static const struct Object(Type) argumentsType = {
+const struct Object(Type) Arguments(type) = {
 	.text = &Text(argumentsType),
 };
 
@@ -35,7 +35,7 @@ static struct Value setLength (struct Native(Context) * const context)
 
 void setup (void)
 {
-	Arguments(prototype) = Object.createTyped(&argumentsType);
+	Arguments(prototype) = Object.createTyped(&Arguments(type));
 	Object.add(Arguments(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 }
 

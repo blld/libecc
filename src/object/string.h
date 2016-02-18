@@ -18,6 +18,7 @@
 
 extern struct Object * String(prototype);
 extern struct Function * String(constructor);
+extern const struct Object(Type) String(type);
 
 
 Interface(String,

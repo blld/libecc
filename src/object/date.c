@@ -13,7 +13,7 @@
 static struct Object *datePrototype = NULL;
 static struct Object *dateConstructor = NULL;
 
-static const struct Object(Type) dateType = {
+const struct Object(Type) Date(type) = {
 	.text = &Text(dateType),
 };
 
@@ -24,7 +24,7 @@ static const struct Object(Type) dateType = {
 void setup (void)
 {
 	datePrototype = Object.create(Object(prototype));
-	datePrototype->type = &dateType;
+	datePrototype->type = &Date(type);
 	
 //	Function.addToObject(arrayPrototype, "toString", toString, 0);
 //	Function.addToObject(arrayPrototype, "toLocaleString", toString, 0);
