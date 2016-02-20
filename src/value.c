@@ -250,32 +250,32 @@ struct Value reference (struct Value *reference)
 
 int isPrimitive (struct Value value)
 {
-	return !(value.type & 0x40);
+	return !(value.type & Value(objectMask));
 }
 
 int isBoolean (struct Value value)
 {
-	return value.type & 0x20;
+	return value.type & Value(booleanMask);
 }
 
 int isNumber (struct Value value)
 {
-	return value.type & 0x08;
+	return value.type & Value(numberMask);
 }
 
 int isString (struct Value value)
 {
-	return value.type & 0x10;
+	return value.type & Value(stringMask);
 }
 
 int isObject (struct Value value)
 {
-	return value.type & 0x40;
+	return value.type & Value(objectMask);
 }
 
 int isDynamic (struct Value value)
 {
-	return value.type & 0x41;
+	return value.type & Value(dynamicMask);
 }
 
 int isTrue (struct Value value)

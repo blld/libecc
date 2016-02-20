@@ -55,8 +55,14 @@ enum Value(Type) {
 	
 	/* 0100 0110 */ Value(hostType) = 0x46,
 	/* 0100 0111 */ Value(referenceType) = 0x47,
-	
-	/* .x.. ...x dynamic if any x is 1 */
+};
+
+enum Value(Mask) {
+	/* 0000 1000 */ Value(numberMask) = 0x08,
+	/* 0001 0000 */ Value(stringMask) = 0x10,
+	/* 0010 0000 */ Value(booleanMask) = 0x20,
+	/* 0100 0000 */ Value(objectMask) = 0x40,
+	/* 0100 0001 */ Value(dynamicMask) = 0x41,
 };
 
 enum Value(Flags)
