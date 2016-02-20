@@ -79,7 +79,7 @@ struct Text textSeek (struct Native(Context) * const context, enum Native(Index)
 			--seek.ops;
 		
 		if (seek.ops->value.data.integer <= argumentIndex)
-			return seek.ops->text;
+			return Text.make(seek.ops->text.bytes + seek.ops->text.length - 1, 1);
 		
 		// func
 		if (argumentIndex-- > Native(callIndex))
