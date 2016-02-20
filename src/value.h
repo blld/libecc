@@ -24,34 +24,39 @@ enum Value(Type) {
 	
 	/* Primitive */
 	
-	/* static */
+	/* false */
 	
-	Value(nullType) = -2 & ~0x70,
-	Value(falseType) = -1 & ~0x70,
-	Value(undefinedType) = 0x00,
-	Value(trueType) = 0x01,
+	/* 1000 0110 */ Value(nullType) = -1 & ~0x79,
+	/* 1010 0110 */ Value(falseType) = -1 & ~0x59,
+	/* 0000 0000 */ Value(undefinedType) = 0x00,
 	
-	Value(integerType) = 0x10,
-	Value(binaryType) = 0x12,
+	/* computed truth */
 	
-	Value(keyType) = 0x20,
-	Value(textType) = 0x22,
+	/* 0000 1000 */ Value(integerType) = 0x08,
+	/* 0000 1010 */ Value(binaryType) = 0x0a,
 	
-	/* dynamic */
+	/* 0001 0000 */ Value(keyType) = 0x10,
+	/* 0001 0010 */ Value(textType) = 0x12,
+	/* 0001 0011 */ Value(charsType) = 0x13,
 	
-	Value(charsType) = 0x24,
+	/* true */
+	
+	/* 0010 0000 */ Value(trueType) = 0x20,
 	
 	/* Objects */
 	
-	Value(objectType) = 0x40,
-	Value(booleanType) = 0x41,
-	Value(errorType) = 0x42,
-	Value(functionType) = 0x44,
-	Value(stringType) = 0x46,
-	Value(dateType) = 0x48,
-	Value(numberType) = 0x50,
+	/* 0100 0000 */ Value(objectType) = 0x40,
+	/* 0100 0001 */ Value(errorType) = 0x41,
+	/* 0100 0010 */ Value(functionType) = 0x42,
+	/* 0100 0100 */ Value(dateType) = 0x44,
+	/* 0100 1000 */ Value(numberType) = 0x48,
+	/* 0101 0000 */ Value(stringType) = 0x50,
+	/* 0110 0000 */ Value(booleanType) = 0x60,
 	
-	Value(referenceType) = 0x4e,
+	/* 0100 0110 */ Value(hostType) = 0x46,
+	/* 0100 0111 */ Value(referenceType) = 0x47,
+	
+	/* .x.. ...x dynamic if any x is 1 */
 };
 
 enum Value(Flags)
@@ -92,6 +97,7 @@ Interface(Value,
 	(struct Value, boolean ,(struct Boolean *))
 	(struct Value, date ,(struct Date *))
 	(struct Value, function ,(struct Function *))
+	(struct Value, host ,(struct Object *))
 	(struct Value, reference ,(struct Value *))
 	
 	(int, isPrimitive ,(struct Value))

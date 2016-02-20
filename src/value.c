@@ -28,13 +28,17 @@ static inline uint16_t binaryToBytes (double binary, int base, char *bytes)
 	if (!base || base == 10)
 	{
 		if (binary <= -1e+21 || binary >= 1e+21)
-			return bytes? sprintf(bytes, "%g", binary): snprintf(NULL, 0, "%g", binary);
+			return bytes?
+				sprintf(bytes, "%g", binary):
+				snprintf(NULL, 0, "%g", binary);
 		else
 		{
 			double dblDig10 = pow(10, DBL_DIG);
 			int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: 21;
 			
-			return bytes? sprintf(bytes, "%.*g", precision, binary): snprintf(NULL, 0, "%.*g", precision, binary);
+			return bytes?
+				sprintf(bytes, "%.*g", precision, binary):
+				snprintf(NULL, 0, "%.*g", precision, binary);
 		}
 	}
 	else
@@ -46,7 +50,9 @@ static inline uint16_t binaryToBytes (double binary, int base, char *bytes)
 		{
 			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
 			
-			return bytes? sprintf(bytes, format, integer): snprintf(NULL, 0, format, integer);
+			return bytes?
+				sprintf(bytes, format, integer):
+				snprintf(NULL, 0, format, integer);
 		}
 		else
 		{
@@ -217,6 +223,17 @@ struct Value function (struct Function *function)
 	};
 }
 
+struct Value host (struct Object *object)
+{
+	assert(object);
+	
+	return (struct Value){
+		.data = { .object = object },
+		.type = Value(hostType),
+		.check = 1,
+	};
+}
+
 struct Value reference (struct Value *reference)
 {
 	assert(reference);
@@ -233,46 +250,49 @@ struct Value reference (struct Value *reference)
 
 int isPrimitive (struct Value value)
 {
-	return value.type < Value(objectType);
+	return !(value.type & 0x40);
 }
 
 int isBoolean (struct Value value)
 {
-	return value.type & 0x01;
+	return value.type & 0x20;
 }
 
 int isNumber (struct Value value)
 {
-	return value.type & 0x10;
+	return value.type & 0x08;
 }
 
 int isString (struct Value value)
 {
-	return value.type & 0x20;
+	return value.type & 0x10;
 }
 
 int isObject (struct Value value)
 {
-	return value.type >= Value(objectType);
+	return value.type & 0x40;
 }
 
 int isDynamic (struct Value value)
 {
-	return value.type >= Value(charsType);
+	return value.type & 0x41;
 }
 
 int isTrue (struct Value value)
 {
-	if (value.type <= 0)
+	if (value.type <= Value(undefinedType))
 		return 0;
+	if (value.type >= Value(trueType))
+		return 1;
 	else if (value.type == Value(integerType))
 		return value.data.integer != 0;
 	else if (value.type == Value(binaryType))
 		return value.data.binary != 0;
 	else if (isString(value))
 		return stringLength(value) > 0;
-	else
-		return 1;
+	
+	assert(0);
+	abort();
 }
 
 
@@ -363,6 +383,7 @@ struct Value toBinary (struct Value value)
 		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
+		case Value(hostType):
 			return binary(NAN);
 		
 		case Value(referenceType):
@@ -425,6 +446,7 @@ struct Value toString (struct Value value)
 		case Value(dateType):
 		case Value(functionType):
 		case Value(errorType):
+		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
 			if (object->type->toLength)
@@ -494,6 +516,7 @@ uint16_t toLength (struct Value value)
 		case Value(dateType):
 		case Value(errorType):
 		case Value(functionType):
+		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
 			if (object->type->toLength)
@@ -557,6 +580,7 @@ uint16_t toBytes (struct Value value, char *bytes)
 		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
+		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
 			if (object->type->toBytes)
@@ -658,6 +682,7 @@ struct Value toObject (struct Native(Context) * const context, struct Value valu
 		case Value(numberType):
 		case Value(dateType):
 		case Value(booleanType):
+		case Value(hostType):
 			break;
 	}
 	assert(0);
@@ -691,6 +716,7 @@ struct Value toType (struct Value value)
 		case Value(booleanType):
 		case Value(errorType):
 		case Value(dateType):
+		case Value(hostType):
 			return text(&Text(object));
 		
 		case Value(functionType):
@@ -761,6 +787,7 @@ void dumpTo (struct Value value, FILE *file)
 		case Value(objectType):
 		case Value(dateType):
 		case Value(errorType):
+		case Value(hostType):
 			Object.dumpTo(value.data.object, file);
 			return;
 		
