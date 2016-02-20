@@ -163,13 +163,18 @@ void markValue (struct Value value)
 
 static void cleanupObject(struct Object *object);
 
+static void releaseObject(struct Object *object)
+{
+	if (object->referenceCount && --object->referenceCount <= 0)
+		cleanupObject(object);
+}
+
 static struct Value releaseValue(struct Value value)
 {
 	if (value.type == Value(charsType))
 		--value.data.chars->referenceCount;
 	if (value.type >= Value(objectType))
-		if (value.data.object->referenceCount && --value.data.object->referenceCount <= 0)
-			cleanupObject(value.data.object);
+		releaseObject(value.data.object);
 	
 	return value;
 }
@@ -178,23 +183,18 @@ static void cleanupObject(struct Object *object)
 {
 	struct Value value;
 	
-	releaseValue(Value.object(object->prototype));
+	if (object->prototype && object->prototype->referenceCount)
+		--object->referenceCount;
 	
 	if (object->elementCount)
 		while (object->elementCount--)
-		{
-			value = object->element[object->elementCount].data.value;
-			if (value.check == 1)
+			if ((value = object->element[object->elementCount].data.value).check == 1)
 				releaseValue(value);
-		}
 	
 	if (object->hashmapCount)
 		while (object->hashmapCount--)
-		{
-			value = object->hashmap[object->hashmapCount].data.value;
-			if (value.check == 1)
+			if ((value = object->hashmap[object->hashmapCount].data.value).check == 1)
 				releaseValue(value);
-		}
 }
 
 void collectUnmarked (void)
@@ -263,6 +263,8 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 			Chars.destroy(self->charsList[index]);
 			self->charsList[index] = self->charsList[--self->charsCount];
 		}
+	
+	getCounts(indices);
 }
 
 void getCounts (uint32_t counts[3])

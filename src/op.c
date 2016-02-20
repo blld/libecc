@@ -1770,8 +1770,6 @@ struct Value switchOp (struct Native(Context) * const context)
 
 #define stepIteration(value, nextOps) \
 	{ \
-		Pool.getCounts(counts); \
-		 \
 		value = nextOp(); \
 		if (context->breaker && --context->breaker) \
 		{ \
@@ -1802,6 +1800,8 @@ struct Value iterate (struct Native(Context) * const context)
 	
 	context->ops += opValue().data.integer;
 	
+	Pool.getCounts(counts);
+	
 	while (Value.isTrue(nextOp()))
 		stepIteration(value, nextOps);
 	
@@ -1826,6 +1826,8 @@ static struct Value iterateIntegerRef (
 	const struct Op *nextOps = context->ops;
 	struct Value value;
 	uint32_t counts[3];
+	
+	Pool.getCounts(counts);
 	
 	if (indexRef->type == Value(binaryType) && indexRef->data.binary >= INT32_MIN && indexRef->data.binary <= INT32_MAX)
 	{
@@ -1893,6 +1895,8 @@ struct Value iterateInRef (struct Native(Context) * const context)
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
 	uint32_t counts[3];
+	
+	Pool.getCounts(counts);
 	
 	if (Value.isObject(object))
 	{
