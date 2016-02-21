@@ -239,6 +239,24 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
+static const struct Value propertyTypeError(struct Value *ref, struct Value this, const struct Text *text, const char *description)
+{
+	if (Value.isObject(this))
+	{
+		__typeof__(this.data.object->hashmap) hashmap = (__typeof__(hashmap))ref;
+		__typeof__(this.data.object->element) element = (__typeof__(element))ref;
+		
+		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
+		{
+			const struct Text *keyText = Key.textOf(hashmap->data.key);
+			return Value.error(Error.typeError(*text, "'%.*s' %s", keyText->length, keyText->bytes, description));
+		}
+		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
+			return Value.error(Error.typeError(*text, "'%d' %s", element - this.data.object->element, description));
+	}
+	return Value.error(Error.typeError(*text, "'%.*s' %s", text->length, text->bytes, description));
+}
+
 static inline struct Value getRefValue(struct Native(Context) * const context, struct Value *ref, struct Value this)
 {
 	if (!ref)
@@ -264,7 +282,7 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 		else if (ref->data.function->pair)
 			callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
 		else
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only accessor", text->length, text->bytes)));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(ref, this, text, "is read-only accessor"));
 		
 		return value;
 	}
@@ -272,13 +290,13 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is read-only property", text->length, text->bytes)));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(ref, this, text, "is read-only property"));
 		
 		value.flags = ref->flags;
 		release(*ref);
 	}
 	else if (this.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", text->length, text->bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not extensible", text->length, text->bytes)));
 	else
 		value.flags = 0;
 	
@@ -896,13 +914,8 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 	context->refObject = object;
 	ref = Object.getProperty(object.data.object, property);
 	
-	if (!ref)
-	{
-		Object.setProperty(object.data.object, property, Value(undefined));
-		ref = Object.getProperty(object.data.object, property);
-		if (!ref)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->bytes)));
-	}
+	if (!ref && !(ref = Object.setProperty(object.data.object, property, Value(undefined))))
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->bytes)));
 	
 	return Value.reference(ref);
 }

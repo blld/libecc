@@ -87,10 +87,11 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 
 //
 
-static struct Object *checkObject (struct Native(Context) * const context, struct Value value)
+static struct Object *checkObject (struct Native(Context) * const context, int argument)
 {
+	struct Value value = Native.argument(context, argument);
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, argument), "not an object")));
 	
 	return value.data.object;
 }
@@ -196,7 +197,7 @@ static struct Value getPrototypeOf (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	
 	return object->prototype? Value.object(object->prototype): Value(undefined);
 }
@@ -209,7 +210,7 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	
 	Native.assertParameterCount(context, 2);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	property = Native.argument(context, 1);
 	ref = getOwnProperty(object, property);
 	
@@ -235,7 +236,7 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	result = Array.create();
 	length = 0;
 	
@@ -252,33 +253,33 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context)
 
 static struct Value objectCreate (struct Native(Context) * const context)
 {
-	Native.assertParameterCount(context, 1);
+	Native.assertParameterCount(context, 2);
 	#warning TODO
 	return Value(undefined);
 }
 
 static struct Value defineProperty (struct Native(Context) * const context)
 {
-	struct Object *property;
-	struct Value value;
-	enum Object(Flags) flags;
+	struct Object *object, *descriptor;
+	struct Value property, value;
 	
-	Native.assertParameterCount(context, 1);
+	Native.assertParameterCount(context, 3);
 	
-	property = checkObject(context, Native.argument(context, 1));
-	value = Object.get(property, Key(value));
-	flags = 0;
+	object = checkObject(context, 0);
+	property = Value.toString(Native.argument(context, 1));
+	descriptor = checkObject(context, 2);
+	value = Object.get(descriptor, Key(value));
 	
-	if (!Value.isTrue(Object.get(property, Key(enumerable))))
-		flags |= Value(hidden);
+	if (!Value.isTrue(Object.get(descriptor, Key(enumerable))))
+		value.flags |= Value(hidden);
 	
-	if (!Value.isTrue(Object.get(property, Key(configurable))))
-		flags |= Value(sealed);
+	if (!Value.isTrue(Object.get(descriptor, Key(configurable))))
+		value.flags |= Value(sealed);
 	
-	if (!Value.isTrue(Object.get(property, Key(writable))))
-		flags |= Value(readonly);
+	if (!Value.isTrue(Object.get(descriptor, Key(writable))))
+		value.flags |= Value(readonly);
 	
-	#warning TODO
+	setProperty(object, property, value);
 	
 	return Value(undefined);
 }
@@ -297,7 +298,7 @@ static struct Value seal (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -318,7 +319,7 @@ static struct Value freeze (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
@@ -338,7 +339,7 @@ static struct Value preventExtensions (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
 	return Value.object(object);
@@ -351,7 +352,7 @@ static struct Value isSealed (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
 	
@@ -373,7 +374,7 @@ static struct Value isFrozen (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
 		
@@ -394,7 +395,7 @@ static struct Value isExtensible (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	return Value.truth(!(object->flags & Object(sealed)));
 }
 
@@ -406,7 +407,7 @@ static struct Value keys (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = checkObject(context, Native.argument(context, 0));
+	object = checkObject(context, 0);
 	result = Array.create();
 	length = 0;
 	
@@ -444,8 +445,8 @@ void setup ()
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "create", objectCreate, -1, flags);
-	Function.addToObject(&Object(constructor)->object, "defineProperty", defineProperty, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "defineProperties", defineProperties, 1, flags);
+	Function.addToObject(&Object(constructor)->object, "defineProperty", defineProperty, 3, flags);
+	Function.addToObject(&Object(constructor)->object, "defineProperties", defineProperties, 2, flags);
 	Function.addToObject(&Object(constructor)->object, "seal", seal, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "freeze", freeze, 1, flags);
 	Function.addToObject(&Object(constructor)->object, "preventExtensions", preventExtensions, 1, flags);
@@ -660,7 +661,7 @@ struct Value * getProperty (struct Object *self, struct Value property)
 	return NULL;
 }
 
-void setProperty (struct Object *self, struct Value property, struct Value value)
+struct Value * setProperty (struct Object *self, struct Value property, struct Value value)
 {
 	struct Object *object = self;
 	
@@ -676,16 +677,16 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 			if (element < object->elementCount)
 			{
 				if (self->element[element].data.value.flags & Value(readonly))
-					return;
+					return NULL;
 				
 				object->element[element].data.value = value;
 			}
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(sealed))
-			return;
+			return NULL;
 		
-		addElementAtIndex(self, element, value, 0);
+		return addElementAtIndex(self, element, value, value.flags);
 	}
 	else
 	{
@@ -693,16 +694,16 @@ void setProperty (struct Object *self, struct Value property, struct Value value
 			if (( slot = getSlot(object, key) ))
 			{
 				if (self->hashmap[slot].data.value.flags & Value(readonly))
-					return;
+					return NULL;
 				
 				object->hashmap[slot].data.value = value;
 			}
 		while ((object = object->prototype));
 		
 		if (self->flags & Object(sealed))
-			return;
+			return NULL;
 		
-		add(self, key, value, 0);
+		return add(self, key, value, value.flags);
 	}
 }
 

@@ -562,16 +562,16 @@ static void testObject (void)
 	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: a is not extensible");
 	
 	test("var a = { b:1 }; ++a.b", "2");
-	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: a.b is read-only property");
-	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: a.b is read-only property");
-	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: a.b is read-only property");
-	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: a['b'] is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only property");
+	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: 'b' is read-only property");
 	
 	test("var a = { v: 1, get b() { return this.v }, set b(v) { this.v = v } }; ++a.b", "2");
-	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: a.b is read-only accessor");
-	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: a.b is read-only accessor");
-	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: a.b is read-only accessor");
-	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: a['b'] is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: 'b' is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: 'b' is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: 'b' is read-only accessor");
+	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: 'b' is read-only accessor");
 }
 
 static void testError (void)
@@ -872,7 +872,7 @@ static void testString (void)
 	test("''.lastIndexOf.length", "1");
 	
 	test("'aべcaべc'.length", "6");
-	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: a.length is read-only property");
+	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property");
 }
 
 static int runTest (int verbosity)
