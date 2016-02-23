@@ -261,14 +261,13 @@ static struct Value objectCreate (struct Native(Context) * const context)
 static struct Value defineProperty (struct Native(Context) * const context)
 {
 	struct Object *object, *descriptor;
-	struct Value property, value;
+	struct Value property, value, *getter, *setter;
 	
 	Native.assertParameterCount(context, 3);
 	
 	object = checkObject(context, 0);
 	property = Value.toString(Native.argument(context, 1));
 	descriptor = checkObject(context, 2);
-	value = Object.get(descriptor, Key(value));
 	
 	if (!Value.isTrue(Object.get(descriptor, Key(enumerable))))
 		value.flags |= Value(hidden);
@@ -276,8 +275,33 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	if (!Value.isTrue(Object.get(descriptor, Key(configurable))))
 		value.flags |= Value(sealed);
 	
-	if (!Value.isTrue(Object.get(descriptor, Key(writable))))
-		value.flags |= Value(readonly);
+	getter = Object.getOwnMember(descriptor, Key(get));
+	setter = Object.getOwnMember(descriptor, Key(get));
+	
+	if (getter || setter)
+	{
+		if (Object.getOwnMember(descriptor, Key(value)) || Object.getOwnMember(descriptor, Key(writable)))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptors must not specify a value or be writable when a getter or setter has been specified")));
+		
+		if (getter)
+		{
+			value = *getter;
+			value.data.function->pair = setter->data.function;
+			value.data.function->flags |= Function(isGetter);
+		}
+		else
+		{
+			value = *setter;
+			value.data.function->flags |= Function(isSetter);
+		}
+	}
+	else
+	{
+		value = Object.get(descriptor, Key(value));
+		
+		if (!Value.isTrue(Object.get(descriptor, Key(writable))))
+			value.flags |= Value(readonly);
+	}
 	
 	setProperty(object, property, value);
 	
