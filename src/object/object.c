@@ -36,6 +36,8 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 {
 	int32_t element = -1;
 	
+	assert(Value.isPrimitive(property));
+	
 	if (property.type == Value(keyType))
 		*key = property.data.key;
 	else
@@ -56,12 +58,12 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 			}
 			else
 			{
-				uint16_t length = Value.toLength(property);
+				uint16_t length = Value.toLength(NULL, property);
 				{
 					char bytes[length + 1];
 					struct Text text = Text.make(bytes, length);
 					
-					Value.toBytes(property, bytes);
+					Value.toBytes(NULL, property, bytes);
 					
 					if ((element = Lexer.parseElement(text)) < 0)
 						*key = Key.makeWithText(text, 1);
@@ -131,7 +133,7 @@ static struct Value hasOwnProperty (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	v = Value.toString(Native.argument(context, 0));
+	v = Value.toString(context, Native.argument(context, 0));
 	context->this = Value.toObject(context, context->this, Native(thisIndex));
 	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringBytes(v), Value.stringLength(v) }, 0)));
 }
@@ -266,7 +268,7 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 3);
 	
 	object = checkObject(context, 0);
-	property = Value.toString(Native.argument(context, 1));
+	property = Value.toString(context, Native.argument(context, 1));
 	descriptor = checkObject(context, 2);
 	
 	if (!Value.isTrue(Object.get(descriptor, Key(enumerable))))
@@ -276,7 +278,7 @@ static struct Value defineProperty (struct Native(Context) * const context)
 		value.flags |= Value(sealed);
 	
 	getter = Object.getOwnMember(descriptor, Key(get));
-	setter = Object.getOwnMember(descriptor, Key(get));
+	setter = Object.getOwnMember(descriptor, Key(set));
 	
 	if (getter || setter)
 	{
@@ -286,7 +288,9 @@ static struct Value defineProperty (struct Native(Context) * const context)
 		if (getter)
 		{
 			value = *getter;
-			value.data.function->pair = setter->data.function;
+			if (setter)
+				value.data.function->pair = setter->data.function;
+			
 			value.data.function->flags |= Function(isGetter);
 		}
 		else

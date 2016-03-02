@@ -28,9 +28,9 @@ static struct Value toString (struct Native(Context) * const context)
 	
 	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
 	{
-		uint16_t length = toLength(context->this);
+		uint16_t length = toLength(context, context->this);
 		struct Chars *chars = Chars.createSized(length);
-		toBytes(context->this, chars->bytes);
+		toBytes(context, context->this, chars->bytes);
 		return Value.chars(chars);
 	}
 	else
@@ -115,7 +115,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 			if (index == argumentCount - 1)
 				length++, length++, length++;
 			
-			length += Value.toLength(Native.variableArgument(context, index));
+			length += Value.toLength(context, Native.variableArgument(context, index));
 			
 			if (index < argumentCount - 2)
 				length++;
@@ -134,7 +134,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 				if (index == argumentCount - 1)
 					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
 				
-				offset += Value.toBytes(Native.variableArgument(context, index), chars + offset);
+				offset += Value.toBytes(context, Native.variableArgument(context, index), chars + offset);
 				
 				if (index < argumentCount - 2)
 					chars[offset++] = ',';
@@ -325,7 +325,7 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 	*constructor = function;
 }
 
-uint16_t toLength (struct Value value)
+uint16_t toLength (struct Native(Context) * const context, struct Value value)
 {
 	struct Function *self;
 	
@@ -340,7 +340,7 @@ uint16_t toLength (struct Value value)
 	return self->text.length;
 }
 
-uint16_t toBytes (struct Value value, char *bytes)
+uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
 {
 	struct Function *self;
 	

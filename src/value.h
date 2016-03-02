@@ -118,11 +118,11 @@ Interface(Value,
 	
 	(struct Value, toBinary ,(struct Value))
 	(struct Value, toInteger ,(struct Value))
-	
-	(struct Value, toString ,(struct Value))
 	(struct Value, binaryToString ,(double binary, int base))
-	(uint16_t, toLength ,(struct Value))
-	(uint16_t, toBytes ,(struct Value, char *bytes))
+	
+	(struct Value, toString ,(struct Native(Context) * const, struct Value))
+	(uint16_t, toLength ,(struct Native(Context) * const, struct Value))
+	(uint16_t, toBytes ,(struct Native(Context) * const, struct Value, char *bytes))
 	(uint16_t, stringLength ,(struct Value))
 	(const char *, stringBytes ,(struct Value))
 	

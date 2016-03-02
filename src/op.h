@@ -150,6 +150,9 @@ Interface(Op,
 	(struct Op, make ,(const Native(Function) native, struct Value value, struct Text text))
 	(const char *, toChars ,(const Native(Function) native))
 	
+	(struct Value, getRefValue ,(struct Native(Context) * const context, struct Value *ref, struct Value this))
+	(struct Value, setRefValue ,(struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text))
+	
 	(struct Value, callFunctionArguments ,(struct Native(Context) * const, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
 	(struct Value, callFunctionVA ,(struct Native(Context) * const, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... ))
 	

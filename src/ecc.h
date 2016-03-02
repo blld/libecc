@@ -23,25 +23,27 @@
 enum Ecc(EvalFlags) {
 	Ecc(globalThis) = 1 << 0,
 	Ecc(primitiveResult) = 1 << 1,
+	Ecc(stringResult) = 1 << 2,
 };
 
 
 Interface(Ecc,
 	
 	(struct Ecc *, create ,(void))
-	(void, destroy, (struct Ecc *))
+	(void, destroy ,(struct Ecc *))
 	
 	(void, addNative ,(struct Ecc *, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags)))
 	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Value(Flags)))
 	
-	(int, evalInput, (struct Ecc *, struct Input *, enum Ecc(EvalFlags)))
-	(void, evalInputWithContext, (struct Ecc *, struct Input *, struct Native(Context) *context))
+	(int, evalInput ,(struct Ecc *, struct Input *, enum Ecc(EvalFlags)))
+	(void, evalInputWithContext ,(struct Ecc *, struct Input *, struct Native(Context) *context))
 	
 	(jmp_buf *, pushEnv ,(struct Ecc *))
 	(void, popEnv ,(struct Ecc *))
-	(void, jmpEnv, (struct Ecc *, struct Value value) noreturn)
+	(void, jmpEnv ,(struct Ecc *, struct Value value) noreturn)
 	
-	(void, printTextInput, (struct Ecc *, struct Text text))
+	(struct Input *, findInput ,(struct Ecc *self, struct Text text))
+	(void, printTextInput ,(struct Ecc *, struct Text text))
 	
 	(void, garbageCollect ,(struct Ecc *))
 	,

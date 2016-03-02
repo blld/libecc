@@ -81,7 +81,7 @@ static struct Value charAt (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 1);
 	
 	if (!Value.isString(context->this))
-		context->this = Value.toString(context->this);
+		context->this = Value.toString(context, context->this);
 	
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
@@ -108,7 +108,7 @@ static struct Value charCodeAt (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 1);
 	
 	if (!Value.isString(context->this))
-		context->this = Value.toString(context->this);
+		context->this = Value.toString(context, context->this);
 	
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
@@ -135,15 +135,15 @@ static struct Value concat (struct Native(Context) * const context)
 	
 	count = Native.variableArgumentCount(context);
 	
-	length += Value.toLength(context->this);
+	length += Value.toLength(context, context->this);
 	for (index = 0; index < count; ++index)
-		length += Value.toLength(Native.variableArgument(context, index));
+		length += Value.toLength(context, Native.variableArgument(context, index));
 	
 	result = Chars.createSized(length);
 	
-	offset += Value.toBytes(context->this, result->bytes + offset);
+	offset += Value.toBytes(context, context->this, result->bytes + offset);
 	for (index = 0; index < count; ++index)
-		offset += Value.toBytes(Native.variableArgument(context, index), result->bytes + offset);
+		offset += Value.toBytes(context, Native.variableArgument(context, index), result->bytes + offset);
 	
 	return Value.chars(result);
 }
@@ -158,11 +158,11 @@ static struct Value indexOf (struct Native(Context) * const context)
 	
 	argumentCount = Native.variableArgumentCount(context);
 	
-	context->this = Value.toString(context->this);
+	context->this = Value.toString(context, context->this);
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
-	search = argumentCount >= 1? Value.toString(Native.variableArgument(context, 0)): Value.text(&Text(undefined));
+	search = argumentCount >= 1? Value.toString(context, Native.variableArgument(context, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringBytes(search);
 	searchLength = Value.stringLength(search);
 	
@@ -204,11 +204,11 @@ static struct Value lastIndexOf (struct Native(Context) * const context)
 	
 	argumentCount = Native.variableArgumentCount(context);
 	
-	context->this = Value.toString(context->this);
+	context->this = Value.toString(context, context->this);
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
-	search = argumentCount >= 1? Value.toString(Native.variableArgument(context, 0)): Value.text(&Text(undefined));
+	search = argumentCount >= 1? Value.toString(context, Native.variableArgument(context, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringBytes(search);
 	searchLength = Value.stringLength(search) - 1;
 	
@@ -253,7 +253,7 @@ static struct Value slice (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 2);
 	
 	if (!Value.isString(context->this))
-		context->this = Value.toString(context->this);
+		context->this = Value.toString(context, context->this);
 	
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
@@ -291,7 +291,7 @@ static struct Value substring (struct Native(Context) * const context)
 	Native.assertParameterCount(context, 2);
 	
 	if (!Value.isString(context->this))
-		context->this = Value.toString(context->this);
+		context->this = Value.toString(context, context->this);
 	
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
@@ -337,7 +337,7 @@ static struct Value stringConstructor (struct Native(Context) * const context)
 	if (value.type == Value(undefinedType))
 		value = Value.text(&Text(empty));
 	else
-		value = Value.toString(value);
+		value = Value.toString(context, value);
 	
 	if (context->construct)
 		return Value.string(String.create(Chars.createWithBytes(Value.stringLength(value), Value.stringBytes(value))));

@@ -1398,7 +1398,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 
 static struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
 {
-	struct Text text = self->lexer->text;
+	struct Text text = self->lexer->text, textParameter;
 	
 	struct OpList *oplist = NULL;
 	int parameterCount = 0;
@@ -1437,13 +1437,14 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	self->function = function;
 	expectToken(self, '(');
+	textParameter = self->lexer->text;
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
 	
 	if (isGetter)
 	{
 		function->flags |= Function(isGetter);
 		if (parameterCount != 0)
-			error(self, Error.syntaxError(self->lexer->text, "getter functions must have no arguments"));
+			error(self, Error.syntaxError(Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), "getter functions must have no arguments"));
 	}
 	else if (isSetter)
 	{

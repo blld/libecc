@@ -14,17 +14,6 @@ static int instanceCount = 0;
 
 // MARK: - Static Members
 
-static struct Input * findInput (struct Ecc *self, struct Text text)
-{
-	uint16_t i;
-	
-	for (i = 0; i < self->inputCount; ++i)
-		if (text.bytes >= self->inputs[i]->bytes && text.bytes <= self->inputs[i]->bytes + self->inputs[i]->length)
-			return self->inputs[i];
-	
-	return NULL;
-}
-
 static void addInput(struct Ecc *self, struct Input *input)
 {
 	self->inputs = realloc(self->inputs, sizeof(*self->inputs) * (self->inputCount + 1));
@@ -112,13 +101,13 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		value = self->result;
 		name = Value(undefined);
 		
-		if (Value.isObject(value))
+		if (value.type == Value(errorType))
 		{
-			name = Value.toString(Object.get(value.data.object, Key(name)));
-			message = Value.toString(Object.get(value.data.object, Key(message)));
+			name = Value.toString(NULL, Object.get(value.data.object, Key(name)));
+			message = Value.toString(NULL, Object.get(value.data.object, Key(message)));
 		}
 		else
-			message = Value.toString(value);
+			message = Value.toString(NULL, value);
 		
 		if (name.type == Value(undefinedType))
 			name = Value.text(&Text(errorName));
@@ -127,6 +116,9 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
 		
 		printTextInput(self, self->text);
+		
+		if (flags & ( Ecc(primitiveResult) | Ecc(stringResult) ))
+			self->result = Value.toString(NULL, self->result);
 	}
 	else
 	{
@@ -135,8 +127,11 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		
 		evalInputWithContext(self, input, &context);
 		
-		if (flags & Ecc(primitiveResult))
-			self->result = Value.toPrimitive(&context, self->result, NULL, Value(hintAuto));
+		if (flags & ( Ecc(primitiveResult) | Ecc(stringResult) ))
+			self->result = Value.toPrimitive(&context, self->result, &(context.ops - 1)->text, Value(hintAuto));
+		
+		if (flags & Ecc(stringResult))
+			self->result = Value.toString(&context, self->result);
 	}
 	
 	if (try)
@@ -202,6 +197,17 @@ void jmpEnv (struct Ecc *self, struct Value value)
 		self->text = value.data.error->text;
 	
 	longjmp(self->envList[self->envCount - 1], 1);
+}
+
+struct Input * findInput (struct Ecc *self, struct Text text)
+{
+	uint16_t i;
+	
+	for (i = 0; i < self->inputCount; ++i)
+		if (text.bytes >= self->inputs[i]->bytes && text.bytes <= self->inputs[i]->bytes + self->inputs[i]->length)
+			return self->inputs[i];
+	
+	return NULL;
 }
 
 void printTextInput (struct Ecc *self, struct Text text)

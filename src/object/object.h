@@ -22,8 +22,8 @@ struct Object(Type)
 {
 	const struct Text *text;
 	
-	uint16_t (*toLength)(struct Value);
-	uint16_t (*toBytes)(struct Value, char *bytes);
+	uint16_t (*toLength)(struct Native(Context) * const, struct Value);
+	uint16_t (*toBytes)(struct Native(Context) * const, struct Value, char *bytes);
 	
 	void (*finalize)(struct Object *);
 };

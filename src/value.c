@@ -403,7 +403,32 @@ struct Value toInteger (struct Value value)
 		return integer((uint32_t)binary);
 }
 
-struct Value toString (struct Value value)
+struct Value binaryToString (double binary, int base)
+{
+	uint16_t length;
+	struct Chars *chars;
+	
+	if (binary == 0)
+		return text(&Text(zero));
+	else if (binary == 1)
+		return text(&Text(one));
+	else if (isnan(binary))
+		return text(&Text(nan));
+	else if (isinf(binary))
+	{
+		if (signbit(binary))
+			return text(&Text(negativeInfinity));
+		else
+			return text(&Text(infinity));
+	}
+	
+	length = binaryToBytes(binary, base, NULL);
+	chars = Chars.createSized(length);
+	binaryToBytes(binary, base, chars->bytes);
+	return Value.chars(chars);
+}
+
+struct Value toString (struct Native(Context) * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
@@ -449,13 +474,14 @@ struct Value toString (struct Value value)
 		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
+			
 			if (object->type->toLength)
 			{
 				assert(object->type->toBytes);
 				
-				uint16_t length = object->type->toLength(value);
+				uint16_t length = object->type->toLength(context, value);
 				struct Chars *chars = Chars.createSized(length);
-				object->type->toBytes(value, chars->bytes);
+				object->type->toBytes(context, value, chars->bytes);
 				return Value.chars(chars);
 			}
 			else
@@ -469,7 +495,7 @@ struct Value toString (struct Value value)
 	abort();
 }
 
-uint16_t toLength (struct Value value)
+uint16_t toLength (struct Native(Context) * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
@@ -514,15 +540,16 @@ uint16_t toLength (struct Value value)
 		
 		case Value(objectType):
 		case Value(dateType):
-		case Value(errorType):
 		case Value(functionType):
 		case Value(hostType):
+		case Value(errorType):
 		{
 			struct Object *object = value.data.object;
+			
 			if (object->type->toLength)
 			{
 				assert(object->type->toBytes);
-				return object->type->toLength(value);
+				return object->type->toLength(context, value);
 			}
 			else
 				return value.data.object->type->text->length;
@@ -536,7 +563,7 @@ uint16_t toLength (struct Value value)
 	abort();
 }
 
-uint16_t toBytes (struct Value value, char *bytes)
+uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
 {
 	switch ((enum Value(Type))value.type)
 	{
@@ -583,8 +610,9 @@ uint16_t toBytes (struct Value value, char *bytes)
 		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
+			
 			if (object->type->toBytes)
-				return object->type->toBytes(value, bytes);
+				return object->type->toBytes(context, value, bytes);
 			else
 				return textToBytes(*value.data.object->type->text, bytes);
 		}
@@ -595,31 +623,6 @@ uint16_t toBytes (struct Value value, char *bytes)
 	
 	assert(0);
 	abort();
-}
-
-struct Value binaryToString (double binary, int base)
-{
-	uint16_t length;
-	struct Chars *chars;
-	
-	if (binary == 0)
-		return text(&Text(zero));
-	else if (binary == 1)
-		return text(&Text(one));
-	else if (isnan(binary))
-		return text(&Text(nan));
-	else if (isinf(binary))
-	{
-		if (signbit(binary))
-			return text(&Text(negativeInfinity));
-		else
-			return text(&Text(infinity));
-	}
-	
-	length = binaryToBytes(binary, base, NULL);
-	chars = Chars.createSized(length);
-	binaryToBytes(binary, base, chars->bytes);
-	return Value.chars(chars);
 }
 
 uint16_t stringLength (struct Value value)

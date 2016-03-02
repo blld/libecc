@@ -78,9 +78,6 @@ struct Text textSeek (struct Native(Context) * const context, enum Native(Index)
 			&& seek.ops->native != Op.construct)
 			--seek.ops;
 		
-		if (seek.ops->value.data.integer <= argumentIndex)
-			return Text.make(seek.ops->text.bytes + seek.ops->text.length - 1, 1);
-		
 		// func
 		if (argumentIndex-- > Native(callIndex))
 			++seek.ops;
@@ -92,6 +89,9 @@ struct Text textSeek (struct Native(Context) * const context, enum Native(Index)
 		// arguments
 		while (argumentIndex-- > Native(callIndex))
 		{
+			if (seek.ops->value.data.integer <= argumentIndex)
+				return Text.make(seek.ops->text.bytes + seek.ops->text.length - 1, 1);
+			
 			bytes = seek.ops->text.bytes + seek.ops->text.length;
 			while (bytes > seek.ops->text.bytes && seek.ops->text.bytes)
 				++seek.ops;

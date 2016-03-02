@@ -27,7 +27,7 @@ static struct Value eval (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	value = Value.toString(Native.argument(context, 0));
+	value = Value.toString(context, Native.argument(context, 0));
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
@@ -43,7 +43,7 @@ static struct Value parseInt (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 2);
 	
-	value = Value.toString(Native.argument(context, 0));
+	value = Value.toString(context, Native.argument(context, 0));
 	base = Value.toInteger(Native.argument(context, 1)).data.integer;
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
@@ -71,7 +71,7 @@ static struct Value parseFloat (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	value = Value.toString(Native.argument(context, 0));
+	value = Value.toString(context, Native.argument(context, 0));
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	return Lexer.parseBinary(text);
@@ -107,7 +107,7 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 	
 	Native.assertParameterCount(context, 1);
 	
-	value = Value.toString(Native.argument(context, 0));
+	value = Value.toString(context, Native.argument(context, 0));
 	bytes = Value.stringBytes(value);
 	count = Value.stringLength(value);
 	chars = Chars.createSized(count);

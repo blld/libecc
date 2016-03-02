@@ -32,19 +32,15 @@ static uint32_t valueArrayLength(struct Value value)
 	return 1;
 }
 
-static void valueAppendFromElement (struct Value value, struct Object *object, uint32_t *element)
+static void valueAppendFromElement (struct Native(Context) * const context, struct Value value, struct Object *object, uint32_t *element)
 {
+	uint32_t index, count;
+	
 	if (valueIsArray(value))
-	{
-		uint32_t index, count;
 		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
-			object->element[(*element)++] = value.data.object->element[index];
-	}
+			object->element[(*element)++].data.value = Op.getRefValue(context, &value.data.object->element[index].data.value, value);
 	else
-	{
-		object->element[*element].data.value = value;
-		object->element[(*element)++].data.value.flags = 0;
-	}
+		object->element[(*element)++].data.value = value;
 }
 
 static struct Value isArray (struct Native(Context) * const context)
@@ -55,30 +51,32 @@ static struct Value isArray (struct Native(Context) * const context)
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
 }
 
-uint16_t toSeparatedLength (struct Object *object, struct Text separator)
+static uint16_t toSeparatedLength (struct Native(Context) * const context, struct Value this, struct Text separator)
 {
 	struct Value value;
 	uint16_t offset = 0;
-	uint16_t index, count = object->elementCount;
+	struct Object *object = this.data.object;
+	uint32_t index, count = object->elementCount;
 	
 	for (index = 0; index < count; ++index)
 	{
 		if (index)
 			offset += separator.length;
 		
-		value = object->element[index].data.value;
+		value = Op.getRefValue(context, &object->element[index].data.value, this);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toLength(object->element[index].data.value);
+			offset += Value.toLength(context, value);
 	}
 	
 	return offset;
 }
 
-uint16_t toSeparatedBytes (struct Object *object, struct Text separator, char *bytes)
+static uint16_t toSeparatedBytes (struct Native(Context) * const context, struct Value this, struct Text separator, char *bytes)
 {
 	struct Value value;
 	uint16_t offset = 0;
-	uint16_t index, count = object->elementCount;
+	struct Object *object = this.data.object;
+	uint32_t index, count = object->elementCount;
 	
 	for (index = 0; index < count; ++index)
 	{
@@ -88,9 +86,9 @@ uint16_t toSeparatedBytes (struct Object *object, struct Text separator, char *b
 			offset += separator.length;
 		}
 		
-		value = object->element[index].data.value;
+		value = Op.getRefValue(context, &object->element[index].data.value, this);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toBytes(object->element[index].data.value, bytes + offset);
+			offset += Value.toBytes(context, value, bytes + offset);
 	}
 	
 	return offset;
@@ -98,17 +96,17 @@ uint16_t toSeparatedBytes (struct Object *object, struct Text separator, char *b
 
 static struct Value toString (struct Native(Context) * const context)
 {
-	struct Object *object;
+	struct Value object;
 	struct Chars *chars;
 	uint32_t length;
 	struct Text separator = (struct Text){ ",", 1 };
 	
 	Native.assertParameterCount(context, 0);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	length = toSeparatedLength(object, separator);
+	object = Value.toObject(context, context->this, Native(thisIndex));
+	length = toSeparatedLength(context, object, separator);
 	chars = Chars.createSized(length);
-	toSeparatedBytes(object, separator, chars->bytes);
+	toSeparatedBytes(context, object, separator, chars->bytes);
 	return Value.chars(chars);
 }
 
@@ -128,16 +126,16 @@ static struct Value concat (struct Native(Context) * const context)
 	
 	array = Array.createSized(length);
 	
-	valueAppendFromElement(value, array, &element);
+	valueAppendFromElement(context, value, array, &element);
 	for (index = 0; index < count; ++index)
-		valueAppendFromElement(Native.variableArgument(context, index), array, &element);
+		valueAppendFromElement(context, Native.variableArgument(context, index), array, &element);
 	
 	return Value.object(array);
 }
 
 static struct Value join (struct Native(Context) * const context)
 {
-	struct Object *object;
+	struct Value object;
 	struct Value value;
 	struct Text separator;
 	struct Chars *chars;
@@ -145,30 +143,36 @@ static struct Value join (struct Native(Context) * const context)
 	
 	Native.assertParameterCount(context, 1);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	object = Value.toObject(context, context->this, Native(thisIndex));
 	value = Native.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		separator = (struct Text){ ",", 1 };
 	else
 	{
-		value = Value.toString(value);
+		value = Value.toString(context, value);
 		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	}
 	
-	length = toSeparatedLength(object, separator);
+	length = toSeparatedLength(context, object, separator);
 	chars = Chars.createSized(length);
-	toSeparatedBytes(object, separator, chars->bytes);
+	toSeparatedBytes(context, object, separator, chars->bytes);
 	return Value.chars(chars);
 }
 
 static struct Value pop (struct Native(Context) * const context)
 {
-	struct Object *object;
+	struct Value this, value;
 	
 	Native.assertParameterCount(context, 0);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	return object->elementCount? object->element[--object->elementCount].data.value: Value(undefined);
+	this = Value.toObject(context, context->this, Native(thisIndex));
+	value = this.data.object->elementCount?
+		Op.getRefValue(context, &this.data.object->element[this.data.object->elementCount - 1].data.value, this):
+		Value(undefined);
+	
+	--this.data.object->elementCount;
+	
+	return value;
 }
 
 static struct Value push (struct Native(Context) * const context)
@@ -198,38 +202,39 @@ static struct Value push (struct Native(Context) * const context)
 
 static struct Value reverse (struct Native(Context) * const context)
 {
-	struct Object *object;
-	typeof(*object->element) temp;
+	struct Value this, temp;
 	uint32_t last, index, half;
+	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
 	Native.assertParameterCount(context, 0);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	last = object->elementCount - 1;
-	half = object->elementCount / 2;
+	this = Value.toObject(context, context->this, Native(thisIndex));
+	last = this.data.object->elementCount - 1;
+	half = this.data.object->elementCount / 2;
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = object->element[index];
-		object->element[index] = object->element[last - index];
-		object->element[last - index] = temp;
+		temp = Op.getRefValue(context, &this.data.object->element[index].data.value, this);
+		Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[last - index].data.value, this), &text);
+		Op.setRefValue(context, &this.data.object->element[last - index].data.value, this, temp, &text);
 	}
 	
-	return Value.object(object);
+	return this;
 }
 
 static struct Value shift (struct Native(Context) * const context)
 {
 	struct Object *object;
-	struct Value result;
+	struct Value this, result;
 	
 	Native.assertParameterCount(context, 0);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	this = Value.toObject(context, context->this, Native(thisIndex));
+	object = this.data.object;
 	
 	if (object->elementCount)
 	{
-		result = object->element[0].data.value;
+		result = Op.getRefValue(context, &object->element[0].data.value, this);
 		memmove(object->element, object->element + 1, sizeof(*object->element) * --object->elementCount);
 	}
 	else
@@ -365,18 +370,18 @@ struct Object *createSized (uint32_t size)
 	return self;
 }
 
-uint16_t toLength (struct Value value)
+uint16_t toLength (struct Native(Context) * const context, struct Value value)
 {
 	assert(value.type == Value(objectType));
 	assert(value.data.object);
 	
-	return toSeparatedLength(value.data.object, (struct Text){ ",", 1 });
+	return toSeparatedLength(context, value, (struct Text){ ",", 1 });
 }
 
-uint16_t toBytes (struct Value value, char *bytes)
+uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
 {
 	assert(value.type == Value(objectType));
 	assert(value.data.object);
 	
-	return toSeparatedBytes(value.data.object, (struct Text){ ",", 1 }, bytes);
+	return toSeparatedBytes(context, value, (struct Text){ ",", 1 }, bytes);
 }

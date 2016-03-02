@@ -35,7 +35,7 @@ static struct Value messageValue (struct Value value)
 	if (value.type == Value(undefinedType))
 		return value;
 	else
-		return Value.toString(value);
+		return Value.toString(NULL, value);
 }
 
 static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
@@ -66,9 +66,9 @@ static struct Value toString (struct Native(Context) * const context)
 	if (!Value.isObject(context->this))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
 	
-	length = toLength(context->this);
+	length = toLength(context, context->this);
 	chars = Chars.createSized(length);
-	toBytes(context->this, chars->bytes);
+	toBytes(context, context->this, chars->bytes);
 	
 	return Value.chars(chars);
 }
@@ -303,7 +303,7 @@ void destroy (struct Error *self)
 	free(self), self = NULL;
 }
 
-uint16_t toLength (struct Value value)
+uint16_t toLength (struct Native(Context) * const context, struct Value value)
 {
 	struct Value name, message;
 	struct Object *self;
@@ -317,13 +317,13 @@ uint16_t toLength (struct Value value)
 	if (name.type == Value(undefinedType))
 		name = Value.text(&Text(errorName));
 	else
-		name = Value.toString(name);
+		name = Value.toString(context, name);
 	
 	message = Object.get(self, Key(message));
 	if (message.type == Value(undefinedType))
 		message = Value.text(&Text(empty));
 	else
-		message = Value.toString(message);
+		message = Value.toString(context, message);
 	
 	if (Value.stringLength(name) && Value.stringLength(message))
 		return sizeof(": ")-1 + Value.stringLength(name) + Value.stringLength(message);
@@ -331,7 +331,7 @@ uint16_t toLength (struct Value value)
 		return Value.stringLength(name) + Value.stringLength(message);
 }
 
-uint16_t toBytes (struct Value value, char *bytes)
+uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
 {
 	struct Value name, message;
 	uint16_t offset = 0;
@@ -346,13 +346,13 @@ uint16_t toBytes (struct Value value, char *bytes)
 	if (name.type == Value(undefinedType))
 		name = Value.text(&Text(errorName));
 	else
-		name = Value.toString(name);
+		name = Value.toString(context, name);
 	
 	message = Object.get(self, Key(message));
 	if (message.type == Value(undefinedType))
 		message = Value.text(&Text(empty));
 	else
-		message = Value.toString(message);
+		message = Value.toString(context, message);
 	
 	memcpy(bytes, Value.stringBytes(name), Value.stringLength(name));
 	offset += Value.stringLength(name);

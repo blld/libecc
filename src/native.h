@@ -15,12 +15,8 @@ struct Op;
 struct Ecc;
 struct Value;
 struct Native(Context);
+
 typedef typeof(struct Value) (* Native(Function)) (struct Native(Context) * const context);
-
-#include "value.h"
-
-#include "interface.h"
-
 
 enum Native(Index) {
 	Native(noIndex) = -4,
@@ -28,6 +24,11 @@ enum Native(Index) {
 	Native(funcIndex) = -2,
 	Native(thisIndex) = -1,
 };
+
+#include "value.h"
+
+#include "interface.h"
+
 
 struct Native(Context) {
 	const struct Op * ops;

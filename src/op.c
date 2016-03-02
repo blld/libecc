@@ -51,11 +51,11 @@ static struct Value addition (struct Native(Context) * const context, struct Val
 		
 		if (Value.isString(a) || Value.isString(b))
 		{
-			uint16_t lengthA = Value.toLength(a);
-			uint16_t lengthB = Value.toLength(b);
+			uint16_t lengthA = Value.toLength(context, a);
+			uint16_t lengthB = Value.toLength(context, b);
 			struct Chars *chars = Chars.createSized(lengthA + lengthB);
-			Value.toBytes(a, chars->bytes);
-			Value.toBytes(b, chars->bytes + lengthA);
+			Value.toBytes(context, a, chars->bytes);
+			Value.toBytes(context, b, chars->bytes + lengthA);
 			return Value.chars(chars);
 		}
 		else
@@ -239,7 +239,12 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
-static const struct Value propertyTypeError(struct Value *ref, struct Value this, const struct Text *text, const char *description)
+static const struct Text propertyText (struct Native(Context) * context, enum Native(Index) argumentIndex)
+{
+	return Native.textSeek(context, argumentIndex);
+}
+
+static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
 {
 	if (Value.isObject(this))
 	{
@@ -249,21 +254,28 @@ static const struct Value propertyTypeError(struct Value *ref, struct Value this
 		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
 		{
 			const struct Text *keyText = Key.textOf(hashmap->data.key);
-			return Value.error(Error.typeError(*text, "'%.*s' %s", keyText->length, keyText->bytes, description));
+			return Value.error(Error.typeError(text, "'%.*s' %s", keyText->length, keyText->bytes, description));
 		}
 		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
-			return Value.error(Error.typeError(*text, "'%d' %s", element - this.data.object->element, description));
+			return Value.error(Error.typeError(text, "'%d' %s", element - this.data.object->element, description));
 	}
-	return Value.error(Error.typeError(*text, "'%.*s' %s", text->length, text->bytes, description));
+	return Value.error(Error.typeError(text, "'%.*s' %s", text.length, text.bytes, description));
 }
 
-static inline struct Value getRefValue(struct Native(Context) * const context, struct Value *ref, struct Value this)
+static struct Value getRefValue (struct Native(Context) * const context, struct Value *ref, struct Value this)
 {
 	if (!ref)
 		return Value(undefined);
 	
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
+		if (!context)
+		{
+			static const char error[] = "Fatal";
+			Env.printError(sizeof(error)-1, error, "cannot use getter outside context");
+			abort();
+		}
+		
 		if (ref->data.function->flags & Function(isGetter))
 			return callFunctionVA(context, 0, ref->data.function, this, 0);
 		else if (ref->data.function->pair)
@@ -273,16 +285,23 @@ static inline struct Value getRefValue(struct Native(Context) * const context, s
 	return *ref;
 }
 
-static inline struct Value setRefValue(struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
+static struct Value setRefValue (struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
 {
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
+		if (!context)
+		{
+			static const char error[] = "Fatal";
+			Env.printError(sizeof(error)-1, error, "cannot use setter outside context");
+			abort();
+		}
+		
 		if (ref->data.function->flags & Function(isSetter))
 			callFunctionVA(context, 0, ref->data.function, this, 1, value);
 		else if (ref->data.function->pair)
 			callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
 		else
-			Ecc.jmpEnv(context->ecc, propertyTypeError(ref, this, text, "is read-only accessor"));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only accessor", *text));
 		
 		return value;
 	}
@@ -290,7 +309,7 @@ static inline struct Value setRefValue(struct Native(Context) * const context, s
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, propertyTypeError(ref, this, text, "is read-only property"));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only property", *text));
 		
 		value.flags = ref->flags;
 		release(*ref);
@@ -342,15 +361,15 @@ static inline struct Value callOps (struct Native(Context) * const context, stru
 
 static inline struct Value callOpsRelease (struct Native(Context) * const context, struct Object *environment)
 {
-	struct Value value;
+	struct Value result;
 	uint16_t index, count;
 	
-	value = callOps(context, environment);
+	result = callOps(context, environment);
 	
 	for (index = 2, count = environment->hashmapCount; index < count; ++index)
 		release(environment->hashmap[index].data.value);
 	
-	return value;
+	return result;
 }
 
 static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int parameterCount)
@@ -627,7 +646,7 @@ struct Value eval (struct Native(Context) * const context)
 	if (!argumentCount)
 		return Value(undefined);
 	
-	value = Value.toString(nextOp());
+	value = Value.toString(context, nextOp());
 	while (--argumentCount)
 		nextOp();
 	
@@ -893,7 +912,10 @@ struct Value getProperty (struct Native(Context) * const context)
 	struct Value property = nextOp();
 	struct Value *ref;
 	
-	if (!Value.isObject(object))
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	ref = Object.getProperty(object.data.object, property);
@@ -908,7 +930,10 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 	struct Value property = nextOp();
 	struct Value *ref;
 	
-	if (!Value.isObject(object))
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	context->refObject = object;
@@ -929,7 +954,10 @@ struct Value setProperty (struct Native(Context) * const context)
 	struct Value value = retain(nextOp());
 	struct Value *ref;
 	
-	if (!Value.isObject(object))
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	ref = Object.getOwnProperty(object.data.object, property);
@@ -952,7 +980,10 @@ struct Value callProperty (struct Native(Context) * const context)
 	struct Value property = nextOp();
 	struct Value *ref;
 	
-	if (!Value.isObject(object))
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	ref = Object.getProperty(object.data.object, property);
@@ -964,12 +995,19 @@ struct Value callProperty (struct Native(Context) * const context)
 struct Value deleteProperty (struct Native(Context) * const context)
 {
 	const struct Text *text = opText(0);
-	struct Value object = Value.toObject(context, nextOp(), Native(noIndex));
-	struct Value property = nextOp();
+	struct Value object = nextOp();
+	struct Value property =  nextOp();
+	
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
+		object = Value.toObject(context, object, Native(noIndex));
+	
 	int result = Object.deleteProperty(object.data.object, property);
 	if (!result)
 	{
-		struct Value string = Value.toString(property);
+		struct Value string = Value.toString(NULL, property);
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringBytes(string))));
 	}
 	return Value.truth(result);
