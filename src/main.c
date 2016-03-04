@@ -9,9 +9,9 @@
 #include "main.h"
 
 static int printUsage (void);
-static int runTest (int verbosity);
 static struct Value print (struct Native(Context) * const context);
 static struct Value alert (struct Native(Context) * const context);
+static int runTest (int verbosity);
 
 static struct Ecc *ecc = NULL;
 
@@ -917,7 +917,11 @@ static void testArray (void)
 	test("var a = [1, 2], b = ''; b += a.pop(); b += a.pop(); b += a.pop()", "21undefined", NULL);
 	
 	test("var a = [1, 2]; a.push(); a.toString()", "1,2", NULL);
-	test("var a = [1, 2]; a.push('abc', 345); a.toString()", "1,2,abc,345", NULL);
+	test("var a = [1, 2]; a.push('abc', 345)", "4", NULL);
+	test("var a = [1, 2]; a.push('abc', 345); a", "1,2,abc,345", NULL);
+	test("var a = [1, 2]; a.unshift(); a.toString()", "1,2", NULL);
+	test("var a = [1, 2]; a.unshift('abc', 345)", "4", NULL);
+	test("var a = [1, 2]; a.unshift('abc', 345); a", "abc,345,1,2", NULL);
 	
 	test("var a = [1]; a.reverse(); a.toString()", "1", NULL);
 	test("var a = [1,2]; a.reverse(); a.toString()", "2,1", NULL);

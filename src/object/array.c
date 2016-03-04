@@ -243,6 +243,33 @@ static struct Value shift (struct Native(Context) * const context)
 	return result;
 }
 
+static struct Value unshift (struct Native(Context) * const context)
+{
+	struct Object *object;
+	uint32_t length = 0, index, count, base;
+	Native.assertVariableParameter(context);
+	
+	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	count = Native.variableArgumentCount(context);
+	
+	base = object->elementCount;
+	length = object->elementCount + count;
+	if (length > object->elementCapacity)
+		Object.resizeElement(object, length);
+	else
+		object->elementCount = length;
+	
+	memmove(object->element + count, object->element, sizeof(*object->element) * object->elementCount - count);
+	
+	for (index = 0; index < count; ++index)
+	{
+		object->element[index].data.value = Native.variableArgument(context, index);
+		object->element[index].data.value.flags = 0;
+	}
+	
+	return Value.binary(length);
+}
+
 static struct Value slice (struct Native(Context) * const context)
 {
 	struct Object *object, *result;
@@ -345,6 +372,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
+	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
 	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
 	
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
