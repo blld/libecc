@@ -245,6 +245,12 @@ static void testParser (void)
 	test("arguments++", "SyntaxError: invalid increment operand"
 	,    "^~~~~~~~~  "
 	);
+	test("++eval", "SyntaxError: invalid increment operand"
+	,    "  ^~~~"
+	);
+	test("++arguments", "SyntaxError: invalid increment operand"
+	,    "  ^~~~~~~~~"
+	);
 	test("eval += 1", "SyntaxError: invalid assignment left-hand side"
 	,    "^~~~     "
 	);

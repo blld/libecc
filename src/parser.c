@@ -505,7 +505,7 @@ static struct OpList * unary (struct Parser *self)
 	else if (acceptToken(self, Lexer(typeofToken)))
 		native = Op.typeOf, alt = unary(self);
 	else if (acceptToken(self, Lexer(incrementToken)))
-		native = Op.incrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
+		native = Op.incrementRef, alt = expressionRef(self, unary(self), "invalid increment operand");
 	else if (acceptToken(self, Lexer(decrementToken)))
 		native = Op.decrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
 	else if (acceptToken(self, '+'))
