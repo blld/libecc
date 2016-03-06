@@ -355,6 +355,9 @@ const char * toChars (const Native(Function) native)
 
 static inline struct Value callOps (struct Native(Context) * const context, struct Object *environment)
 {
+	if (context->depth >= context->ecc->maximumCallDepth)
+		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(context->parent->ops->text, "maximum depth exceeded")));
+	
 	context->environment = environment;
 	return context->ops->native(context);
 }
@@ -468,6 +471,7 @@ struct Value callFunctionArguments (struct Native(Context) * const context, int 
 		.this = this,
 		.argumentOffset = argumentOffset,
 		.ecc = context->ecc,
+		.depth = context->depth + 1,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -505,6 +509,7 @@ struct Value callFunctionVA (struct Native(Context) * const context, int argumen
 		.this = this,
 		.argumentOffset = argumentOffset,
 		.ecc = context->ecc,
+		.depth = context->depth + 1,
 	};
 	va_list ap;
 	struct Value result;
@@ -548,6 +553,7 @@ static inline struct Value callFunction (struct Native(Context) * const context,
 		.this = this,
 		.construct = construct,
 		.ecc = context->ecc,
+		.depth = context->depth + 1,
 	};
 	
 	if (function->flags & Function(needHeap))

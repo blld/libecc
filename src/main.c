@@ -119,8 +119,10 @@ static void test (const char *func, int line, const char *test, const char *expe
 	if (text)
 	{
 		const char *end = strrchr(text, '~');
-		size_t textStart = strchr(text, '^') - text, textLength = (end? end - text - textStart: 0) + 1;
+		ptrdiff_t textStart = strchr(text, '^') - text, textLength = (end? end - text - textStart: 0) + 1;
 		struct Input *input = Ecc.findInput(ecc, ecc->text);
+		
+		assert(textStart >= 0);
 		
 		if (input->length - textStart == 0 && textLength == 1)
 			textLength = 0;
@@ -683,6 +685,8 @@ static void testFunction (void)
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range"
 	,    "                                                ^~~     "
 	);
+	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
+	,    "                                                                                     ^                                    ");
 }
 
 static void testLoop (void)

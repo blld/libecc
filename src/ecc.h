@@ -13,12 +13,10 @@
 
 #include "value.h"
 #include "parser.h"
-#include "object/math.h"
-#include "object/number.h"
-#include "object/regexp.h"
 #include "object/global.h"
 
 #include "interface.h"
+
 
 enum Ecc(EvalFlags) {
 	Ecc(globalThis) = 1 << 0,
@@ -59,6 +57,8 @@ Interface(Ecc,
 		
 		struct Input **inputs;
 		uint16_t inputCount;
+		
+		uint16_t maximumCallDepth;
 	}
 )
 

@@ -16,6 +16,9 @@
 #include "boolean.h"
 #include "date.h"
 #include "arguments.h"
+#include "math.h"
+#include "number.h"
+#include "regexp.h"
 
 #include "interface.h"
 

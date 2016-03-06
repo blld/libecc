@@ -34,9 +34,10 @@ struct Native(Context) {
 	const struct Op * ops;
 	struct Value this;
 	struct Value refObject;
-	int argumentOffset;
-	int construct;
 	int breaker;
+	int construct;
+	int argumentOffset;
+	int depth;
 	
 	struct Ecc * ecc;
 	struct Object * environment;
