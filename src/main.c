@@ -932,18 +932,25 @@ static void testArray (void)
 	test("var a = [1, 2]; a.unshift(); a.toString()", "1,2", NULL);
 	test("var a = [1, 2]; a.unshift('abc', 345)", "4", NULL);
 	test("var a = [1, 2]; a.unshift('abc', 345); a", "abc,345,1,2", NULL);
+	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.unshift(); a", "123,def,def", NULL);
 	
 	test("var a = [1]; a.reverse(); a.toString()", "1", NULL);
 	test("var a = [1,2]; a.reverse(); a.toString()", "2,1", NULL);
 	test("var a = [1,2,'abc']; a.reverse(); a.toString()", "abc,2,1", NULL);
 	
 	test("var a = [1, 2], b = ''; b += a.shift(); b += a.shift(); b += a.shift()", "12undefined", NULL);
+	test("var a = ['abc', 'def']; Object.defineProperty(a, 0, {get: function(){ return this[1]; }}); a.shift()", "TypeError: '0' is read-only accessor"
+	,    "                                                                                           ^~~~~~~~~");
+	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift()", "123", NULL);
+	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift(); a", "def,", NULL);
+	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this.length },set: function(v){}}); a.shift(); a.push(123, 456); a", "3,4,123,456", NULL);
 	
 	test("var a = [1, 2, 'abc', null, 456]; a.slice().toString()", "1,2,abc,,456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(2).toString()", "abc,,456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(2,4).toString()", "abc,", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-2).toString()", ",456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-4,-2).toString()", "2,abc", NULL);
+	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.slice(-2)", "def,def", NULL);
 	
 	test("var a = Array(); a.length", "0", NULL);
 	test("var a = Array(4); a.length", "4", NULL);

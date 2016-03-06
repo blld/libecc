@@ -46,8 +46,10 @@ static void valueAppendFromElement (struct Native(Context) * const context, stru
 static struct Value isArray (struct Native(Context) * const context)
 {
 	struct Value value;
+	
 	Native.assertParameterCount(context, 1);
 	value = Native.argument(context, 0);
+	
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
 }
 
@@ -107,6 +109,7 @@ static struct Value toString (struct Native(Context) * const context)
 	length = toSeparatedLength(context, object, separator);
 	chars = Chars.createSized(length);
 	toSeparatedBytes(context, object, separator, chars->bytes);
+	
 	return Value.chars(chars);
 }
 
@@ -156,6 +159,7 @@ static struct Value join (struct Native(Context) * const context)
 	length = toSeparatedLength(context, object, separator);
 	chars = Chars.createSized(length);
 	toSeparatedBytes(context, object, separator, chars->bytes);
+	
 	return Value.chars(chars);
 }
 
@@ -203,20 +207,22 @@ static struct Value push (struct Native(Context) * const context)
 static struct Value reverse (struct Native(Context) * const context)
 {
 	struct Value this, temp;
-	uint32_t last, index, half;
+	struct Object *object;
+	uint32_t index, half, last;
 	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
 	Native.assertParameterCount(context, 0);
 	
 	this = Value.toObject(context, context->this, Native(thisIndex));
-	last = this.data.object->elementCount - 1;
-	half = this.data.object->elementCount / 2;
+	object = this.data.object;
+	last = object->elementCount - 1;
+	half = object->elementCount / 2;
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Op.getRefValue(context, &this.data.object->element[index].data.value, this);
-		Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[last - index].data.value, this), &text);
-		Op.setRefValue(context, &this.data.object->element[last - index].data.value, this, temp, &text);
+		temp = Op.getRefValue(context, &object->element[index].data.value, this);
+		Op.setRefValue(context, &object->element[index].data.value, this, Op.getRefValue(context, &object->element[last - index].data.value, this), &text);
+		Op.setRefValue(context, &object->element[last - index].data.value, this, temp, &text);
 	}
 	
 	return this;
@@ -224,8 +230,10 @@ static struct Value reverse (struct Native(Context) * const context)
 
 static struct Value shift (struct Native(Context) * const context)
 {
-	struct Object *object;
 	struct Value this, result;
+	struct Object *object;
+	uint32_t index, count;
+	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
 	Native.assertParameterCount(context, 0);
 	
@@ -235,7 +243,11 @@ static struct Value shift (struct Native(Context) * const context)
 	if (object->elementCount)
 	{
 		result = Op.getRefValue(context, &object->element[0].data.value, this);
-		memmove(object->element, object->element + 1, sizeof(*object->element) * --object->elementCount);
+		
+		for (index = 0, count = object->elementCount - 1; index < count; ++index)
+			Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[index + 1].data.value, this), &text);
+		
+		--object->elementCount;
 	}
 	else
 		result = Value(undefined);
@@ -245,11 +257,14 @@ static struct Value shift (struct Native(Context) * const context)
 
 static struct Value unshift (struct Native(Context) * const context)
 {
+	struct Value this;
 	struct Object *object;
 	uint32_t length = 0, index, count, base;
 	Native.assertVariableParameter(context);
+	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	this = Value.toObject(context, context->this, Native(thisIndex));
+	object = this.data.object;
 	count = Native.variableArgumentCount(context);
 	
 	base = object->elementCount;
@@ -259,7 +274,8 @@ static struct Value unshift (struct Native(Context) * const context)
 	else
 		object->elementCount = length;
 	
-	memmove(object->element + count, object->element, sizeof(*object->element) * object->elementCount - count);
+	for (index = count; index < length; ++index)
+		Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[index - count].data.value, this), &text);
 	
 	for (index = 0; index < count; ++index)
 	{
@@ -273,13 +289,14 @@ static struct Value unshift (struct Native(Context) * const context)
 static struct Value slice (struct Native(Context) * const context)
 {
 	struct Object *object, *result;
-	struct Value start, end;
+	struct Value this, start, end;
 	uint32_t from, to, length;
 	double binary;
 	
 	Native.assertParameterCount(context, 2);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	this = Value.toObject(context, context->this, Native(thisIndex));
+	object = this.data.object;
 	
 	start = Native.argument(context, 0);
 	binary = Value.toBinary(start).data.binary;
@@ -303,7 +320,9 @@ static struct Value slice (struct Native(Context) * const context)
 	{
 		length = to - from;
 		result = Array.createSized(length);
-		memcpy(result->element, object->element + from, sizeof(*result->element) * length);
+		
+		for (to = 0; to < length; ++from, ++to)
+			result->element[to].data.value = Op.getRefValue(context, &this.data.object->element[from].data.value, this);
 	}
 	else
 		result = Array.createSized(0);
@@ -314,6 +333,7 @@ static struct Value slice (struct Native(Context) * const context)
 static struct Value getLength (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
+	
 	return Value.binary(context->this.data.object->elementCount);
 }
 
@@ -321,6 +341,7 @@ static struct Value setLength (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 1);
 	Object.resizeElement(context->this.data.object, Value.toBinary(Native.argument(context, 0)).data.binary);
+	
 	return Value(undefined);
 }
 
