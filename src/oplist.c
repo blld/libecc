@@ -66,62 +66,13 @@ struct OpList * join3 (struct OpList *self, struct OpList *a, struct OpList *b)
 
 struct OpList * joinDiscarded (struct OpList *self, uint16_t n, struct OpList *with)
 {
-	while (n >= 16)
+	while (n > 16)
 	{
-		self = OpList.append(self, Op.make(Op.discard16, Value(undefined), Text(empty)));
+		self = OpList.append(self, Op.make(Op.discardN, Value.integer(16), Text(empty)));
 		n -= 16;
 	}
 	
-	switch (n)
-	{
-		case 15:
-			self = OpList.append(self, Op.make(Op.discard15, Value(undefined), Text(empty)));
-			break;
-		case 14:
-			self = OpList.append(self, Op.make(Op.discard14, Value(undefined), Text(empty)));
-			break;
-		case 13:
-			self = OpList.append(self, Op.make(Op.discard13, Value(undefined), Text(empty)));
-			break;
-		case 12:
-			self = OpList.append(self, Op.make(Op.discard12, Value(undefined), Text(empty)));
-			break;
-		case 11:
-			self = OpList.append(self, Op.make(Op.discard11, Value(undefined), Text(empty)));
-			break;
-		case 10:
-			self = OpList.append(self, Op.make(Op.discard10, Value(undefined), Text(empty)));
-			break;
-		case 9:
-			self = OpList.append(self, Op.make(Op.discard9, Value(undefined), Text(empty)));
-			break;
-		case 8:
-			self = OpList.append(self, Op.make(Op.discard8, Value(undefined), Text(empty)));
-			break;
-		case 7:
-			self = OpList.append(self, Op.make(Op.discard7, Value(undefined), Text(empty)));
-			break;
-		case 6:
-			self = OpList.append(self, Op.make(Op.discard6, Value(undefined), Text(empty)));
-			break;
-		case 5:
-			self = OpList.append(self, Op.make(Op.discard5, Value(undefined), Text(empty)));
-			break;
-		case 4:
-			self = OpList.append(self, Op.make(Op.discard4, Value(undefined), Text(empty)));
-			break;
-		case 3:
-			self = OpList.append(self, Op.make(Op.discard3, Value(undefined), Text(empty)));
-			break;
-		case 2:
-			self = OpList.append(self, Op.make(Op.discard2, Value(undefined), Text(empty)));
-			break;
-		case 1:
-			self = OpList.append(self, Op.make(Op.discard, Value(undefined), Text(empty)));
-			break;
-		case 0:
-			break;
-	}
+	self = OpList.append(self, Op.make(Op.discardN, Value.integer(n), Text(empty)));
 	return join(self, with);
 }
 

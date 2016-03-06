@@ -239,11 +239,6 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
-static const struct Text propertyText (struct Native(Context) * context, enum Native(Index) argumentIndex)
-{
-	return Native.textSeek(context, argumentIndex);
-}
-
 static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
 {
 	if (Value.isObject(this))
@@ -262,6 +257,13 @@ static const struct Value propertyTypeError(struct Native(Context) * const conte
 	return Value.error(Error.typeError(text, "'%.*s' %s", text.length, text.bytes, description));
 }
 
+static void refFatalError (const char *message)
+{
+	static const char error[] = "Fatal";
+	Env.printError(sizeof(error)-1, error, message);
+	abort();
+}
+
 static struct Value getRefValue (struct Native(Context) * const context, struct Value *ref, struct Value this)
 {
 	if (!ref)
@@ -270,16 +272,14 @@ static struct Value getRefValue (struct Native(Context) * const context, struct 
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
 		if (!context)
-		{
-			static const char error[] = "Fatal";
-			Env.printError(sizeof(error)-1, error, "cannot use getter outside context");
-			abort();
-		}
+			refFatalError("cannot use getter outside context");
 		
 		if (ref->data.function->flags & Function(isGetter))
 			return callFunctionVA(context, 0, ref->data.function, this, 0);
 		else if (ref->data.function->pair)
 			return callFunctionVA(context, 0, ref->data.function->pair, this, 0);
+		else
+			return Value(undefined);
 	}
 	
 	return *ref;
@@ -290,11 +290,7 @@ static struct Value setRefValue (struct Native(Context) * const context, struct 
 	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
 	{
 		if (!context)
-		{
-			static const char error[] = "Fatal";
-			Env.printError(sizeof(error)-1, error, "cannot use setter outside context");
-			abort();
-		}
+			refFatalError("cannot use setter outside context");
 		
 		if (ref->data.function->flags & Function(isSetter))
 			callFunctionVA(context, 0, ref->data.function, this, 1, value);
@@ -1683,93 +1679,47 @@ struct Value discard (struct Native(Context) * const context)
 	return nextOp();
 }
 
-struct Value discard2 (struct Native(Context) * const context)
+struct Value discardN (struct Native(Context) * const context)
 {
-	nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard3 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard4 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard5 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard6 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard7 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard8 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard9 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard10 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard11 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard12 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard13 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard14 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard15 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
-	return nextOp();
-}
-
-struct Value discard16 (struct Native(Context) * const context)
-{
-	nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp(), nextOp();
+	switch (opValue().data.integer)
+	{
+		default:
+			assert(0);
+			abort();
+		
+		case 16:
+			nextOp();
+		case 15:
+			nextOp();
+		case 14:
+			nextOp();
+		case 13:
+			nextOp();
+		case 12:
+			nextOp();
+		case 11:
+			nextOp();
+		case 10:
+			nextOp();
+		case 9:
+			nextOp();
+		case 8:
+			nextOp();
+		case 7:
+			nextOp();
+		case 6:
+			nextOp();
+		case 5:
+			nextOp();
+		case 4:
+			nextOp();
+		case 3:
+			nextOp();
+		case 2:
+			nextOp();
+		case 1:
+			nextOp();
+	}
 	return nextOp();
 }
 
