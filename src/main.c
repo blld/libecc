@@ -469,6 +469,8 @@ static void testOperator (void)
 	test("10 & 3", "2", NULL);
 	test("10 ^ 3", "9", NULL);
 	test("10 | 3", "11", NULL);
+	
+	test("var u = undefined; u += 123.;", "NaN", NULL);
 }
 
 static void testEquality (void)
@@ -755,6 +757,7 @@ static void testObject (void)
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; ++a['b']", "2", NULL);
 	test("var a = {}; ++a.b", "NaN", NULL);
+	test("var o = {}; Object.defineProperty(o, 'a', { value: 123 }); var b = o.a; b += 123;", "246", NULL);
 	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: a is not extensible"
 	,    "                                ^~~"
 	);

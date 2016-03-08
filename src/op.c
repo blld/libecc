@@ -239,83 +239,79 @@ static int integerWontOverflowNegative(int32_t a, int32_t negative)
 	return a >= INT32_MIN - negative;
 }
 
-static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
+static void multiplyBinary (double *a, double b)
 {
-	if (Value.isObject(this))
-	{
-		__typeof__(this.data.object->hashmap) hashmap = (__typeof__(hashmap))ref;
-		__typeof__(this.data.object->element) element = (__typeof__(element))ref;
-		
-		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
-		{
-			const struct Text *keyText = Key.textOf(hashmap->data.key);
-			return Value.error(Error.typeError(text, "'%.*s' %s", keyText->length, keyText->bytes, description));
-		}
-		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
-			return Value.error(Error.typeError(text, "'%d' %s", element - this.data.object->element, description));
-	}
-	return Value.error(Error.typeError(text, "'%.*s' %s", text.length, text.bytes, description));
+	*a *= b;
 }
 
-static void refFatalError (const char *message)
+static void divideBinary (double *a, double b)
 {
-	static const char error[] = "Fatal";
-	Env.printError(sizeof(error)-1, error, message);
-	abort();
+	*a /= b;
 }
 
-static struct Value getRefValue (struct Native(Context) * const context, struct Value *ref, struct Value this)
+static void moduloBinary (double *a, double b)
 {
-	if (!ref)
-		return Value(undefined);
-	
-	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
-	{
-		if (!context)
-			refFatalError("cannot use getter outside context");
-		
-		if (ref->data.function->flags & Function(isGetter))
-			return callFunctionVA(context, 0, ref->data.function, this, 0);
-		else if (ref->data.function->pair)
-			return callFunctionVA(context, 0, ref->data.function->pair, this, 0);
-		else
-			return Value(undefined);
-	}
-	
-	return *ref;
+	*a = fmod(*a, b);
 }
 
-static struct Value setRefValue (struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
+static void addBinary (double *a, double b)
 {
-	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
-	{
-		if (!context)
-			refFatalError("cannot use setter outside context");
-		
-		if (ref->data.function->flags & Function(isSetter))
-			callFunctionVA(context, 0, ref->data.function, this, 1, value);
-		else if (ref->data.function->pair)
-			callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
-		else
-			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only accessor", *text));
-		
-		return value;
-	}
-	
-	if (ref->check == 1)
-	{
-		if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only property", *text));
-		
-		value.flags = ref->flags;
-		release(*ref);
-	}
-	else if (this.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not extensible", text->length, text->bytes)));
-	else
-		value.flags = 0;
-	
-	return *ref = value;
+	*a += b;
+}
+
+static void minusBinary (double *a, double b)
+{
+	*a -= b;
+}
+
+static void leftShiftInteger (int32_t *a, int32_t b)
+{
+	*a <<= (uint32_t)b;
+}
+
+static void rightShiftInteger (int32_t *a, int32_t b)
+{
+	*a >>= (uint32_t)b;
+}
+
+static void unsignedRightShiftInteger (int32_t *a, int32_t b)
+{
+	*a = (uint32_t)*a >> (uint32_t)b;
+}
+
+static void bitAndInteger (int32_t *a, int32_t b)
+{
+	*a &= b;
+}
+
+static void bitXorInteger (int32_t *a, int32_t b)
+{
+	*a ^= b;
+}
+
+static void bitOrInteger (int32_t *a, int32_t b)
+{
+	*a |= b;
+}
+
+static double incrementBinary (double *a)
+{
+	return ++(*a);
+}
+
+static double decrementBinary (double *a)
+{
+	return --(*a);
+}
+
+static double postIncrementBinary (double *a)
+{
+	return (*a)++;
+}
+
+static double postDecrementBinary (double *a)
+{
+	return (*a)--;
 }
 
 // MARK: - Static Members
@@ -755,11 +751,14 @@ struct Value setLocal (struct Native(Context) * const context)
 {
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.getMember(context->environment, key);
+	struct Value value;
 	if (!ref)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
 	
+	value = nextOp();
+	value.flags = 0;
 	release(*ref);
-	return *ref = retain(nextOp());
+	return *ref = value;
 }
 
 struct Value getLocalSlot (struct Native(Context) * const context)
@@ -777,9 +776,10 @@ struct Value getLocalSlotRef (struct Native(Context) * const context)
 struct Value setLocalSlot (struct Native(Context) * const context)
 {
 	int32_t slot = opValue().data.integer;
-	
+	struct Value value = nextOp();
+	value.flags = 0;
 	release(context->environment->hashmap[slot].data.value);
-	return context->environment->hashmap[slot].data.value = retain(nextOp());
+	return context->environment->hashmap[slot].data.value = retain(value);
 }
 
 struct Value getParentSlot (struct Native(Context) * const context)
@@ -810,11 +810,13 @@ struct Value setParentSlot (struct Native(Context) * const context)
 	int32_t slot = opValue().data.integer & 0xffff;
 	int32_t count = opValue().data.integer >> 16;
 	struct Object *object = context->environment;
+	struct Value value = nextOp();
+	value.flags = 0;
 	while (count--)
 		object = object->prototype;
 	
 	release(object->hashmap[slot].data.value);
-	return object->hashmap[slot].data.value = retain(nextOp());
+	return object->hashmap[slot].data.value = retain(value);
 }
 
 struct Value getMember (struct Native(Context) * const context)
@@ -828,7 +830,7 @@ struct Value getMember (struct Native(Context) * const context)
 	
 	ref = Object.getMember(object.data.object, key);
 	
-	return getRefValue(context, ref, object);
+	return Object.getValue(context, ref, object);
 }
 
 struct Value getMemberRef (struct Native(Context) * const context)
@@ -871,7 +873,7 @@ struct Value setMember (struct Native(Context) * const context)
 	ref = Object.getOwnMember(object.data.object, key.data.key);
 	
 	if (ref)
-		return setRefValue(context, ref, object, value, text);
+		return Object.putValue(context, ref, object, value, text);
 	else if (object.data.object->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
 	else
@@ -893,7 +895,7 @@ struct Value callMember (struct Native(Context) * const context)
 	
 	ref = Object.getMember(object.data.object, key);
 	
-	return callValue(context, getRefValue(context, ref, object), object, argumentCount, 0, text);
+	return callValue(context, Object.getValue(context, ref, object), object, argumentCount, 0, text);
 }
 
 struct Value deleteMember (struct Native(Context) * const context)
@@ -922,7 +924,7 @@ struct Value getProperty (struct Native(Context) * const context)
 	
 	ref = Object.getProperty(object.data.object, property);
 	
-	return getRefValue(context, ref, object);
+	return Object.getValue(context, ref, object);
 }
 
 struct Value getPropertyRef (struct Native(Context) * const context)
@@ -965,7 +967,7 @@ struct Value setProperty (struct Native(Context) * const context)
 	ref = Object.getOwnProperty(object.data.object, property);
 	
 	if (ref)
-		return setRefValue(context, ref, object, value, text);
+		return Object.putValue(context, ref, object, value, text);
 	else if (object.data.object->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
 	else
@@ -990,7 +992,7 @@ struct Value callProperty (struct Native(Context) * const context)
 	
 	ref = Object.getProperty(object.data.object, property);
 	
-	return callValue(context, getRefValue(context, ref, object), object, argumentCount, 0, text);
+	return callValue(context, Object.getValue(context, ref, object), object, argumentCount, 0, text);
 
 }
 
@@ -1329,256 +1331,145 @@ struct Value not (struct Native(Context) * const context)
 
 // MARK: assignement
 
-struct Value incrementRef (struct Native(Context) * const context)
+static struct Value changeBinaryRef (struct Native(Context) * const context, double (*operationBinary)(double *))
 {
 	const struct Text *text = opText(1);
 	struct Value *ref = nextOp().data.reference;
-	if (ref->type != Value(binaryType))
+	
+	if (ref->type != Value(binaryType) || ref->flags & Value(readonly))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		++value.data.binary;
-		return setRefValue(context, ref, context->refObject, value, text);
+		struct Value value = Value.toBinary(Object.getValue(context, ref, context->refObject));
+		double result = operationBinary(&value.data.binary);
+		Object.putValue(context, ref, context->refObject, value, text);
+		return Value.binary(result);
 	}
-	++ref->data.binary;
-	return *ref;
+	return Value.binary(operationBinary(&ref->data.binary));
+}
+
+struct Value incrementRef (struct Native(Context) * const context)
+{
+	return changeBinaryRef(context, incrementBinary);
 }
 
 struct Value decrementRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	if (ref->type != Value(binaryType))
-	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		--value.data.binary;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	--ref->data.binary;
-	return *ref;
+	return changeBinaryRef(context, decrementBinary);
 }
 
 struct Value postIncrementRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value value = *ref;
-	if (ref->type != Value(binaryType))
-	{
-		struct Value newValue = Value.toBinary(getRefValue(context, ref, context->refObject));
-		++newValue.data.binary;
-		return setRefValue(context, ref, context->refObject, newValue, text);
-	}
-	++ref->data.binary;
-	return value;
+	return changeBinaryRef(context, postIncrementBinary);
 }
 
 struct Value postDecrementRef (struct Native(Context) * const context)
 {
+	return changeBinaryRef(context, postDecrementBinary);
+}
+
+//
+
+static struct Value operationAny (struct Native(Context) * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
+{
+	b = Value.toBinary(b);
+	
+	struct Value value = Value.toBinary(Object.getValue(context, a, context->refObject));
+	operationBinary(&value.data.binary, b.data.binary);
+	return Object.putValue(context, a, context->refObject, value, text);
+}
+
+static struct Value addAny (struct Native(Context) * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
+{
+	struct Value value = addition(context, Object.getValue(context, a, context->refObject), text, b, opText(0));
+	return Object.putValue(context, a, context->refObject, retain(value), text);
+}
+
+static struct Value assignBinaryRef (struct Native(Context) * const context, void (*operationBinary)(double *, double), typeof (operationAny) operationAny)
+{
 	const struct Text *text = opText(1);
 	struct Value *ref = nextOp().data.reference;
-	struct Value value = *ref;
-	if (ref->type != Value(binaryType))
-	{
-		struct Value newValue = Value.toBinary(getRefValue(context, ref, context->refObject));
-		--newValue.data.binary;
-		return setRefValue(context, ref, context->refObject, newValue, text);
-	}
-	--ref->data.binary;
-	return value;
+	struct Value b = nextOp();
+	
+	if (ref->type != Value(binaryType) || b.type != Value(binaryType) || ref->flags & Value(readonly))
+		return operationAny(context, operationBinary, ref, b, text);
+	
+	operationBinary(&ref->data.binary, b.data.binary);
+	return *ref;
 }
 
 struct Value multiplyAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(binaryType))
-		b = Value.toBinary(b);
-	
-	if (ref->type != Value(binaryType))
-	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		value.data.binary *= b.data.binary;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.binary *= b.data.binary;
-	return *ref;
+	return assignBinaryRef(context, multiplyBinary, operationAny);
 }
 
 struct Value divideAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(binaryType))
-		b = Value.toBinary(b);
-	
-	if (ref->type != Value(binaryType))
-	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		value.data.binary /= b.data.binary;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.binary /= b.data.binary;
-	return *ref;
+	return assignBinaryRef(context, divideBinary, operationAny);
 }
 
 struct Value moduloAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(binaryType))
-		b = Value.toBinary(b);
-	
-	if (ref->type != Value(binaryType))
-	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		value.data.binary = fmod(ref->data.binary, b.data.binary);
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.binary = fmod(ref->data.binary, b.data.binary);
-	return *ref;
+	return assignBinaryRef(context, moduloBinary, operationAny);
 }
 
 struct Value addAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (ref->type != Value(binaryType) || b.type != Value(binaryType))
-	{
-		struct Value value = addition(context, getRefValue(context, ref, context->refObject), text, b, opText(0));
-		return setRefValue(context, ref, context->refObject, retain(value), text);
-	}
-	ref->data.binary += b.data.binary;
-	return *ref;
+	return assignBinaryRef(context, addBinary, addAny);
 }
 
 struct Value minusAssignRef (struct Native(Context) * const context)
 {
+	return assignBinaryRef(context, minusBinary, operationAny);
+}
+
+//
+
+static struct Value assignIntegerRef (struct Native(Context) * const context, void (*operationInteger)(int32_t *, int32_t))
+{
 	const struct Text *text = opText(1);
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
-	if (b.type != Value(binaryType))
-		b = Value.toBinary(b);
 	
-	if (ref->type != Value(binaryType))
+	if (b.type != Value(integerType))
+		b = Value.toInteger(b);
+	
+	if (ref->type != Value(integerType) || ref->flags & Value(readonly))
 	{
-		struct Value value = Value.toBinary(getRefValue(context, ref, context->refObject));
-		value.data.binary -= b.data.binary;
-		return setRefValue(context, ref, context->refObject, value, text);
+		struct Value value = Value.toInteger(Object.getValue(context, ref, context->refObject));
+		operationInteger(&value.data.integer, b.data.integer);
+		return Object.putValue(context, ref, context->refObject, value, text);
 	}
-	ref->data.binary -= b.data.binary;
+	operationInteger(&ref->data.integer, b.data.integer);
 	return *ref;
 }
 
 struct Value leftShiftAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer <<= (uint32_t)b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer <<= (uint32_t)b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, leftShiftInteger);
 }
 
 struct Value rightShiftAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer >>= (uint32_t)b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer >>= (uint32_t)b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, rightShiftInteger);
 }
 
 struct Value unsignedRightShiftAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer = (uint32_t)ref->data.integer >> (uint32_t)b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, unsignedRightShiftInteger);
 }
 
 struct Value bitAndAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer &= b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer &= b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, bitAndInteger);
 }
 
 struct Value bitXorAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer ^= b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer ^= b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, bitXorInteger);
 }
 
 struct Value bitOrAssignRef (struct Native(Context) * const context)
 {
-	const struct Text *text = opText(1);
-	struct Value *ref = nextOp().data.reference;
-	struct Value b = nextOp();
-	if (b.type != Value(integerType))
-		b = Value.toInteger(b);
-	
-	if (ref->type != Value(integerType))
-	{
-		struct Value value = Value.toInteger(getRefValue(context, ref, context->refObject));
-		value.data.integer |= b.data.integer;
-		return setRefValue(context, ref, context->refObject, value, text);
-	}
-	ref->data.integer |= b.data.integer;
-	return *ref;
+	return assignIntegerRef(context, bitOrInteger);
 }
 
 

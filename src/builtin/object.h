@@ -61,6 +61,9 @@ Interface(Object,
 	(struct Value *, setProperty ,(struct Object *, struct Value, struct Value))
 	(struct Value *, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
 	
+	(struct Value, getValue ,(struct Native(Context) * const, struct Value *ref, struct Value this))
+	(struct Value, putValue ,(struct Native(Context) * const, struct Value *ref, struct Value this, struct Value value, const struct Text *text))
+	
 	(int, delete ,(struct Object *, struct Key))
 	(int, deleteProperty ,(struct Object *, struct Value))
 	(void, packValue ,(struct Object *))

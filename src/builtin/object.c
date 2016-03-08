@@ -87,6 +87,31 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
+static void fatalError (const char *message)
+{
+	static const char error[] = "Fatal";
+	Env.printError(sizeof(error)-1, error, message);
+	abort();
+}
+
+static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
+{
+	if (Value.isObject(this))
+	{
+		__typeof__(this.data.object->hashmap) hashmap = (__typeof__(hashmap))ref;
+		__typeof__(this.data.object->element) element = (__typeof__(element))ref;
+		
+		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
+		{
+			const struct Text *keyText = Key.textOf(hashmap->data.key);
+			return Value.error(Error.typeError(text, "'%.*s' %s", keyText->length, keyText->bytes, description));
+		}
+		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
+			return Value.error(Error.typeError(text, "'%d' %s", element - this.data.object->element, description));
+	}
+	return Value.error(Error.typeError(text, "'%.*s' %s", text.length, text.bytes, description));
+}
+
 //
 
 static struct Object *checkObject (struct Native(Context) * const context, int argument)
@@ -782,6 +807,59 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 	self->hashmap[slot].data.value.flags = flags;
 	
 	return &self->hashmap[slot].data.value;
+}
+
+struct Value getValue (struct Native(Context) * const context, struct Value *ref, struct Value this)
+{
+	if (!ref)
+		return Value(undefined);
+	
+	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+	{
+		if (!context)
+			fatalError("cannot use getter outside context");
+		
+		if (ref->data.function->flags & Function(isGetter))
+			return Op.callFunctionVA(context, 0, ref->data.function, this, 0);
+		else if (ref->data.function->pair)
+			return Op.callFunctionVA(context, 0, ref->data.function->pair, this, 0);
+		else
+			return Value(undefined);
+	}
+	
+	return *ref;
+}
+
+struct Value putValue (struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
+{
+	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+	{
+		if (!context)
+			fatalError("cannot use setter outside context");
+		
+		if (ref->data.function->flags & Function(isSetter))
+			Op.callFunctionVA(context, 0, ref->data.function, this, 1, value);
+		else if (ref->data.function->pair)
+			Op.callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
+		else
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only accessor", *text));
+		
+		return value;
+	}
+	
+	if (ref->check == 1)
+	{
+		if (ref->flags & Value(readonly))
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, this, "is read-only property", *text));
+		
+		value.flags = ref->flags;
+	}
+	else if (this.data.object->flags & Object(sealed))
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not extensible", text->length, text->bytes)));
+	else
+		value.flags = 0;
+	
+	return *ref = value;
 }
 
 int delete (struct Object *self, struct Key key)

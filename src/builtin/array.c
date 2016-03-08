@@ -38,7 +38,7 @@ static void valueAppendFromElement (struct Native(Context) * const context, stru
 	
 	if (valueIsArray(value))
 		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
-			object->element[(*element)++].data.value = Op.getRefValue(context, &value.data.object->element[index].data.value, value);
+			object->element[(*element)++].data.value = Object.getValue(context, &value.data.object->element[index].data.value, value);
 	else
 		object->element[(*element)++].data.value = value;
 }
@@ -65,7 +65,7 @@ static uint16_t toSeparatedLength (struct Native(Context) * const context, struc
 		if (index)
 			offset += separator.length;
 		
-		value = Op.getRefValue(context, &object->element[index].data.value, this);
+		value = Object.getValue(context, &object->element[index].data.value, this);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 			offset += Value.toLength(context, value);
 	}
@@ -88,7 +88,7 @@ static uint16_t toSeparatedBytes (struct Native(Context) * const context, struct
 			offset += separator.length;
 		}
 		
-		value = Op.getRefValue(context, &object->element[index].data.value, this);
+		value = Object.getValue(context, &object->element[index].data.value, this);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 			offset += Value.toBytes(context, value, bytes + offset);
 	}
@@ -171,7 +171,7 @@ static struct Value pop (struct Native(Context) * const context)
 	
 	this = Value.toObject(context, context->this, Native(thisIndex));
 	value = this.data.object->elementCount?
-		Op.getRefValue(context, &this.data.object->element[this.data.object->elementCount - 1].data.value, this):
+		Object.getValue(context, &this.data.object->element[this.data.object->elementCount - 1].data.value, this):
 		Value(undefined);
 	
 	--this.data.object->elementCount;
@@ -220,9 +220,9 @@ static struct Value reverse (struct Native(Context) * const context)
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Op.getRefValue(context, &object->element[index].data.value, this);
-		Op.setRefValue(context, &object->element[index].data.value, this, Op.getRefValue(context, &object->element[last - index].data.value, this), &text);
-		Op.setRefValue(context, &object->element[last - index].data.value, this, temp, &text);
+		temp = Object.getValue(context, &object->element[index].data.value, this);
+		Object.putValue(context, &object->element[index].data.value, this, Object.getValue(context, &object->element[last - index].data.value, this), &text);
+		Object.putValue(context, &object->element[last - index].data.value, this, temp, &text);
 	}
 	
 	return this;
@@ -242,10 +242,10 @@ static struct Value shift (struct Native(Context) * const context)
 	
 	if (object->elementCount)
 	{
-		result = Op.getRefValue(context, &object->element[0].data.value, this);
+		result = Object.getValue(context, &object->element[0].data.value, this);
 		
 		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[index + 1].data.value, this), &text);
+			Object.putValue(context, &this.data.object->element[index].data.value, this, Object.getValue(context, &this.data.object->element[index + 1].data.value, this), &text);
 		
 		--object->elementCount;
 	}
@@ -275,7 +275,7 @@ static struct Value unshift (struct Native(Context) * const context)
 		object->elementCount = length;
 	
 	for (index = count; index < length; ++index)
-		Op.setRefValue(context, &this.data.object->element[index].data.value, this, Op.getRefValue(context, &this.data.object->element[index - count].data.value, this), &text);
+		Object.putValue(context, &this.data.object->element[index].data.value, this, Object.getValue(context, &this.data.object->element[index - count].data.value, this), &text);
 	
 	for (index = 0; index < count; ++index)
 	{
@@ -322,7 +322,7 @@ static struct Value slice (struct Native(Context) * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			result->element[to].data.value = Op.getRefValue(context, &this.data.object->element[from].data.value, this);
+			result->element[to].data.value = Object.getValue(context, &this.data.object->element[from].data.value, this);
 	}
 	else
 		result = Array.createSized(0);
