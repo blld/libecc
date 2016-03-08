@@ -13,7 +13,7 @@
 
 #include "native.h"
 #include "value.h"
-#include "object/function.h"
+#include "builtin/function.h"
 
 #include "interface.h"
 

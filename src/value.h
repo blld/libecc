@@ -163,15 +163,15 @@ Interface(Value,
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
 #include "native.h"
-#include "object/function.h"
-#include "object/object.h"
-#include "object/string.h"
-#include "object/boolean.h"
-#include "object/number.h"
-#include "object/array.h"
-#include "object/arguments.h"
-#include "object/date.h"
-#include "object/error.h"
+#include "builtin/function.h"
+#include "builtin/object.h"
+#include "builtin/string.h"
+#include "builtin/boolean.h"
+#include "builtin/number.h"
+#include "builtin/array.h"
+#include "builtin/arguments.h"
+#include "builtin/date.h"
+#include "builtin/error.h"
 #include "ecc.h"
 #endif
 

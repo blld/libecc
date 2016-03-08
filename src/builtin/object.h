@@ -2,8 +2,8 @@
 //  object.h
 //  libecc
 //
-//  Created by Bouilland Aurélien on 04/07/2015.
-//  Copyright (c) 2015 Libeccio. All rights reserved.
+//  Copyright (c) 2019 Aurélien Bouilland
+//  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
 #ifndef io_libecc_object_h

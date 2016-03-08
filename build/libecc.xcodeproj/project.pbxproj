@@ -136,7 +136,7 @@
 		0DD57DC11B2D542A00CD8119 /* libecc */ = {
 			isa = PBXGroup;
 			children = (
-				0DD57DDF1B3689C900CD8119 /* object */,
+				0DD57DDF1B3689C900CD8119 /* builtin */,
 				0DD57DC21B2D542A00CD8119 /* main.c */,
 				0DD57DCE1B2EF3B900CD8119 /* main.h */,
 				0DD57DCB1B2D545D00CD8119 /* input.c */,
@@ -173,7 +173,7 @@
 			path = ../src;
 			sourceTree = "<group>";
 		};
-		0DD57DDF1B3689C900CD8119 /* object */ = {
+		0DD57DDF1B3689C900CD8119 /* builtin */ = {
 			isa = PBXGroup;
 			children = (
 				0D718DD81B47B07E004C3350 /* object.c */,
@@ -201,7 +201,7 @@
 				0D8DF2961C6A41A30076627D /* global.c */,
 				0D8DF2971C6A41A30076627D /* global.h */,
 			);
-			path = object;
+			path = builtin;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

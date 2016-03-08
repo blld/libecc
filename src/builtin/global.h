@@ -2,8 +2,8 @@
 //  global.h
 //  libecc
 //
-//  Created by Bouilland Aurélien on 10/02/2016.
-//  Copyright (c) 2016 Libeccio. All rights reserved.
+//  Copyright (c) 2019 Aurélien Bouilland
+//  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
 #ifndef io_libecc__global_h

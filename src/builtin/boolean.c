@@ -2,8 +2,8 @@
 //  boolean.c
 //  libecc
 //
-//  Created by Bouilland Aurélien on 25/10/2015.
-//  Copyright (c) 2015 Libeccio. All rights reserved.
+//  Copyright (c) 2019 Aurélien Bouilland
+//  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
 #include "boolean.h"

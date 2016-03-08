@@ -13,7 +13,7 @@
 
 #include "value.h"
 #include "parser.h"
-#include "object/global.h"
+#include "builtin/global.h"
 
 #include "interface.h"
 
