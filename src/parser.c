@@ -237,14 +237,7 @@ static struct OpList * propertyAssignment (struct Parser *self)
 			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
 	else if (previewToken(self) == Lexer(identifierToken))
-	{
-		if (Key.isEqual(self->lexer->value.data.key, Key(eval)))
-			error(self, Error.syntaxError(self->lexer->text, "eval in object identifier"));
-		else if (Key.isEqual(self->lexer->value.data.key, Key(arguments)))
-			error(self, Error.syntaxError(self->lexer->text, "arguments in object identifier"));
-		else
-			oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
-	}
+		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else
 	{
 		expectToken(self, Lexer(identifierToken));

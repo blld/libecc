@@ -259,12 +259,8 @@ static void testParser (void)
 	test("arguments += 1", "SyntaxError: invalid assignment left-hand side"
 	,    "^~~~~~~~~     "
 	);
-	test("var a = { eval: 123 }", "SyntaxError: eval in object identifier"
-	,    "          ^~~~       "
-	);
-	test("var a = { arguments: 123 }", "SyntaxError: arguments in object identifier"
-	,    "          ^~~~~~~~~       "
-	);
+	test("var a = { eval: 123 }", "undefined", NULL);
+	test("var a = { arguments: 123 }", "undefined", NULL);
 	test("a(==)", "SyntaxError: expected expression, got '=='"
 	,    "  ^~ "
 	);
