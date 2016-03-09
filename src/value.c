@@ -474,21 +474,7 @@ struct Value toString (struct Native(Context) * const context, struct Value valu
 		case Value(functionType):
 		case Value(errorType):
 		case Value(hostType):
-		{
-			struct Object *object = value.data.object;
-			
-			if (object->type->toLength)
-			{
-				assert(object->type->toBytes);
-				
-				uint16_t length = object->type->toLength(context, value);
-				struct Chars *chars = Chars.createSized(length);
-				object->type->toBytes(context, value, chars->bytes);
-				return Value.chars(chars);
-			}
-			else
-				return text(value.data.object->type->text);
-		}
+			return toString(context, toPrimitive(context, value, &Text(empty), Value(hintString)));
 		
 		case Value(referenceType):
 			break;
@@ -547,14 +533,8 @@ uint16_t toLength (struct Native(Context) * const context, struct Value value)
 		case Value(errorType):
 		{
 			struct Object *object = value.data.object;
-			
-			if (object->type->toLength)
-			{
-				assert(object->type->toBytes);
-				return object->type->toLength(context, value);
-			}
-			else
-				return value.data.object->type->text->length;
+			object->stringValue = toString(context, toPrimitive(context, value, &Text(empty), Value(hintString)));
+			return stringLength(object->stringValue);
 		}
 		
 		case Value(referenceType):
@@ -612,11 +592,9 @@ uint16_t toBytes (struct Native(Context) * const context, struct Value value, ch
 		case Value(hostType):
 		{
 			struct Object *object = value.data.object;
-			
-			if (object->type->toBytes)
-				return object->type->toBytes(context, value, bytes);
-			else
-				return textToBytes(*value.data.object->type->text, bytes);
+			uint16_t length = stringLength(object->stringValue);
+			memcpy(bytes, stringBytes(object->stringValue), length);
+			return length;
 		}
 		
 		case Value(referenceType):

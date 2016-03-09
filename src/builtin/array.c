@@ -15,8 +15,6 @@ struct Function * Array(constructor) = NULL;
 
 const struct Object(Type) Array(type) = {
 	.text = &Text(arrayType),
-	.toLength = toLength,
-	.toBytes = toBytes,
 };
 
 static int valueIsArray(struct Value value)

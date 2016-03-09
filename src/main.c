@@ -975,6 +975,9 @@ static void testArray (void)
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a.push(123); a[1]", "3", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a = a.reverse(); a.push(123); a[0]", "2", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 0, {get: function(){ return this[1]; }, set: function(v){ }}); a = a.shift()", "def", NULL);
+	
+	test("var o = { toString: function(){ return ' world!' } }, a = [ 'hello', o ]; a", "hello, world!", NULL);
+	test("var a = [ 123, 456 ], a = [ 'hello', a ]; a.toString = function(){ return 'test' }; [ a ]", "test", NULL);
 }
 
 static void testBoolean (void)

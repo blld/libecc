@@ -15,8 +15,6 @@ struct Function * Function(constructor) = NULL;
 
 const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
-	.toLength = toLength,
-	.toBytes = toBytes,
 };
 
 static struct Value toString (struct Native(Context) * const context)

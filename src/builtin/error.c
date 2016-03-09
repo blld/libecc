@@ -26,8 +26,6 @@ struct Function * Error(uriConstructor) = NULL;
 
 const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
-	.toLength = toLength,
-	.toBytes = toBytes,
 };
 
 static struct Value messageValue (struct Value value)
