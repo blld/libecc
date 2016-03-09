@@ -310,6 +310,8 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Value v
 	if (value.type < Value(objectType))
 		return value;
 	
+	assert(context);
+	
 	object = value.data.object;
 	hint = hint? hint: value.type == Value(dateType)? 1: -1;
 	aKey = hint > 0? Key(toString): Key(valueOf);

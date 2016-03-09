@@ -104,11 +104,11 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		
 		if (value.type == Value(errorType))
 		{
-			name = Value.toString(NULL, Object.get(value.data.object, Key(name)));
-			message = Value.toString(NULL, Object.get(value.data.object, Key(message)));
+			name = Value.toString(&context, Object.get(value.data.object, Key(name)));
+			message = Value.toString(&context, Object.get(value.data.object, Key(message)));
 		}
 		else
-			message = Value.toString(NULL, value);
+			message = Value.toString(&context, value);
 		
 		if (name.type == Value(undefinedType))
 			name = Value.text(&Text(errorName));
@@ -119,7 +119,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		printTextInput(self, self->text);
 		
 		if (flags & ( Ecc(primitiveResult) | Ecc(stringResult) ))
-			self->result = Value.toString(NULL, self->result);
+			self->result = Value.toString(&context, self->result);
 	}
 	else
 	{
