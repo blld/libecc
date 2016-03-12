@@ -70,8 +70,11 @@ enum Value(Flags)
 	Value(readonly) = 1 << 0,
 	Value(hidden) = 1 << 1,
 	Value(sealed) = 1 << 2,
+	Value(getter) = 1 << 3,
+	Value(setter) = 1 << 4,
 	
 	Value(frozen) = Value(readonly) | Value(sealed),
+	Value(accessor) = Value(getter) | Value(setter),
 };
 
 enum Value(hintPrimitive)
@@ -121,8 +124,6 @@ Interface(Value,
 	(struct Value, binaryToString ,(double binary, int base))
 	
 	(struct Value, toString ,(struct Native(Context) * const, struct Value))
-	(uint16_t, toLength ,(struct Native(Context) * const, struct Value))
-	(uint16_t, toBytes ,(struct Native(Context) * const, struct Value, char *bytes))
 	(uint16_t, stringLength ,(struct Value))
 	(const char *, stringBytes ,(struct Value))
 	

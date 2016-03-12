@@ -76,7 +76,6 @@ Interface(Object,
 		struct Object *prototype;
 		
 		const struct Object(Type) *type;
-		struct Value stringValue;
 		
 		struct {
 			struct {

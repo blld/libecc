@@ -17,6 +17,25 @@ const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
 };
 
+static struct Chars * toChars (struct Native(Context) * const context, struct Value value)
+{
+	struct Function *self;
+	struct Chars *chars;
+	
+	assert(value.type == Value(functionType));
+	assert(value.data.function);
+	
+	self = value.data.function;
+	chars = Chars.beginAppend();
+	
+	if (self->text.bytes == Text(nativeCode).bytes)
+		chars = Chars.append(chars, "function %s() [native code]", self->name? self->name: "");
+	else
+		chars = Chars.append(chars, "%.*s", self->text.length, self->text.bytes);
+	
+	return Chars.endAppend(chars);
+}
+
 static struct Value toString (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
@@ -26,10 +45,7 @@ static struct Value toString (struct Native(Context) * const context)
 	
 	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
 	{
-		uint16_t length = toLength(context, context->this);
-		struct Chars *chars = Chars.createSized(length);
-		toBytes(context, context->this, chars->bytes);
-		return Value.chars(chars);
+		return Value.chars(toChars(context, context->this));
 	}
 	else
 		return Value.text(&context->this.data.function->text);
@@ -104,42 +120,24 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 	
 	if (argumentCount)
 	{
-		static const char prefix[] = "(function(";
-		uint16_t length = sizeof(prefix)-1;
 		int_fast32_t index;
-		
+		struct Value value;
+		struct Chars *chars = Chars.beginAppend();
+		chars = Chars.append(chars, "(function(");
 		for (index = 0; index < argumentCount; ++index)
 		{
 			if (index == argumentCount - 1)
-				length++, length++, length++;
+				chars = Chars.append(chars, ") {");
 			
-			length += Value.toLength(context, Native.variableArgument(context, index));
+			value = Value.toString(context, Native.variableArgument(context, index));
+			chars = Chars.append(chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
 			
 			if (index < argumentCount - 2)
-				length++;
+				chars = Chars.append(chars, ",");
 		}
-		length++, length++;
-		
-		{
-			char chars[length];
-			uint16_t offset = 0;
-			
-			memcpy(chars, prefix, sizeof(prefix)-1);
-			offset += sizeof(prefix)-1;
-			
-			for (index = 0; index < argumentCount; ++index)
-			{
-				if (index == argumentCount - 1)
-					chars[offset++] = ')', chars[offset++] = ' ', chars[offset++] = '{';
-				
-				offset += Value.toBytes(context, Native.variableArgument(context, index), chars + offset);
-				
-				if (index < argumentCount - 2)
-					chars[offset++] = ',';
-			}
-			chars[offset++] = '}', chars[offset++] = ')';
-			Ecc.evalInput(context->ecc, Input.createFromBytes(chars, length, "(Function)"), 0);
-		}
+		chars = Chars.append(chars, "})");
+		Chars.endAppend(chars);
+		Ecc.evalInput(context->ecc, Input.createFromBytes(chars->bytes, chars->length, "(Function)"), 0);
 	}
 	else
 	{
@@ -321,35 +319,4 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 	
 	linkPrototype(function, prototypeValue);
 	*constructor = function;
-}
-
-uint16_t toLength (struct Native(Context) * const context, struct Value value)
-{
-	struct Function *self;
-	
-	assert(value.type == Value(functionType));
-	assert(value.data.function);
-	
-	self = value.data.function;
-	
-	if (self->text.bytes == Text(nativeCode).bytes)
-		return sizeof("function () [native code]")-1 + (self->name? strlen(self->name): 0);
-	
-	return self->text.length;
-}
-
-uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
-{
-	struct Function *self;
-	
-	assert(value.type == Value(functionType));
-	assert(value.data.function);
-	
-	self = value.data.function;
-	
-	if (self->text.bytes == Text(nativeCode).bytes)
-		return sprintf(bytes, "function %s() [native code]", self->name? self->name: "");
-	
-	memcpy(bytes, self->text.bytes, self->text.length);
-	return self->text.length;
 }

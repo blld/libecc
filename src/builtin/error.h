@@ -48,9 +48,6 @@ Interface(Error,
 	(struct Error *, typeError ,(struct Text, const char *format, ...))
 	(struct Error *, uriError ,(struct Text, const char *format, ...))
 	(void, destroy ,(struct Error *))
-	
-	(uint16_t, toLength ,(struct Native(Context) * const, struct Value))
-	(uint16_t, toBytes ,(struct Native(Context) * const, struct Value, char *bytes))
 	,
 	{
 		struct Object object;

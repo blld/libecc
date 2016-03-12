@@ -17,66 +17,6 @@ const struct Value Value(true) = valueMake(trueType);
 const struct Value Value(false) = valueMake(falseType);
 const struct Value Value(null) = valueMake(nullType);
 
-static inline uint16_t textToBytes (struct Text text, char *bytes)
-{
-	memcpy(bytes, text.bytes, text.length);
-	return text.length;
-}
-
-static inline uint16_t binaryToBytes (double binary, int base, char *bytes)
-{
-	if (!base || base == 10)
-	{
-		if (binary <= -1e+21 || binary >= 1e+21)
-			return bytes?
-				sprintf(bytes, "%g", binary):
-				snprintf(NULL, 0, "%g", binary);
-		else
-		{
-			double dblDig10 = pow(10, DBL_DIG);
-			int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: 21;
-			
-			return bytes?
-				sprintf(bytes, "%.*g", precision, binary):
-				snprintf(NULL, 0, "%.*g", precision, binary);
-		}
-	}
-	else
-	{
-		int sign = signbit(binary);
-		unsigned long integer = sign? -binary: binary;
-		
-		if (base == 8 || base == 16)
-		{
-			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
-			
-			return bytes?
-				sprintf(bytes, format, integer):
-				snprintf(NULL, 0, format, integer);
-		}
-		else
-		{
-			static char const digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-			char buffer[1 + sizeof(integer) * CHAR_BIT];
-			char *p = buffer + sizeof(buffer);
-			uint16_t count;
-			
-			while (integer) {
-				*(--p) = digits[integer % base];
-				integer /= base;
-			}
-			if (sign)
-				*(--p) = '-';
-			
-			count = buffer + sizeof(buffer) - p;
-			if (bytes)
-				memcpy(bytes, p, count);
-			
-			return count;
-		}
-	}
-}
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -138,6 +78,7 @@ struct Value text (const struct Text *text)
 struct Value chars (struct Chars *chars)
 {
 	assert(chars);
+	assert(!(chars->flags & Chars(inAppend)));
 	
 	return (struct Value){
 		.data = { .chars = chars },
@@ -407,7 +348,6 @@ struct Value toInteger (struct Value value)
 
 struct Value binaryToString (double binary, int base)
 {
-	uint16_t length;
 	struct Chars *chars;
 	
 	if (binary == 0)
@@ -424,10 +364,9 @@ struct Value binaryToString (double binary, int base)
 			return text(&Text(infinity));
 	}
 	
-	length = binaryToBytes(binary, base, NULL);
-	chars = Chars.createSized(length);
-	binaryToBytes(binary, base, chars->bytes);
-	return Value.chars(chars);
+	chars = Chars.beginAppend();
+	chars = Chars.appendBinary(chars, binary, base);
+	return Value.chars(Chars.endAppend(chars));
 }
 
 struct Value toString (struct Native(Context) * const context, struct Value value)
@@ -479,128 +418,6 @@ struct Value toString (struct Native(Context) * const context, struct Value valu
 		case Value(referenceType):
 			break;
 	}
-	assert(0);
-	abort();
-}
-
-uint16_t toLength (struct Native(Context) * const context, struct Value value)
-{
-	switch ((enum Value(Type))value.type)
-	{
-		case Value(keyType):
-			return Key.textOf(value.data.key)->length;
-		
-		case Value(textType):
-			return value.data.text->length;
-		
-		case Value(stringType):
-			return value.data.string->value->length;
-		
-		case Value(charsType):
-			return value.data.chars->length;
-		
-		case Value(nullType):
-			return Text(null).length;
-		
-		case Value(undefinedType):
-			return Text(undefined).length;
-		
-		case Value(falseType):
-			return Text(false).length;
-		
-		case Value(trueType):
-			return Text(true).length;
-		
-		case Value(booleanType):
-			if (value.data.boolean->truth)
-				return Text(true).length;
-			else
-				return Text(false).length;
-		
-		case Value(integerType):
-			return binaryToBytes(value.data.integer, 10, NULL);
-		
-		case Value(numberType):
-			return binaryToBytes(value.data.number->value, 10, NULL);
-		
-		case Value(binaryType):
-			return binaryToBytes(value.data.binary, 10, NULL);
-		
-		case Value(objectType):
-		case Value(dateType):
-		case Value(functionType):
-		case Value(hostType):
-		case Value(errorType):
-		{
-			struct Object *object = value.data.object;
-			object->stringValue = toString(context, toPrimitive(context, value, &Text(empty), Value(hintString)));
-			return stringLength(object->stringValue);
-		}
-		
-		case Value(referenceType):
-			break;
-	}
-	
-	assert(0);
-	abort();
-}
-
-uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
-{
-	switch ((enum Value(Type))value.type)
-	{
-		case Value(keyType):
-			return textToBytes(*Key.textOf(value.data.key), bytes);
-		
-		case Value(textType):
-			return textToBytes(*value.data.text, bytes);
-		
-		case Value(stringType):
-			return textToBytes((struct Text){ value.data.string->value->bytes, value.data.string->value->length }, bytes);
-		
-		case Value(charsType):
-			return textToBytes((struct Text){ value.data.chars->bytes, value.data.chars->length }, bytes);
-		
-		case Value(nullType):
-			return textToBytes(Text(null), bytes);
-		
-		case Value(undefinedType):
-			return textToBytes(Text(undefined), bytes);
-		
-		case Value(falseType):
-			return textToBytes(Text(false), bytes);
-		
-		case Value(trueType):
-			return textToBytes(Text(true), bytes);
-		
-		case Value(booleanType):
-			return textToBytes(value.data.boolean->truth? Text(true): Text(false), bytes);
-		
-		case Value(integerType):
-			return binaryToBytes(value.data.integer, 10, bytes);
-		
-		case Value(numberType):
-			return binaryToBytes(value.data.number->value, 10, bytes);
-		
-		case Value(binaryType):
-			return binaryToBytes(value.data.binary, 10, bytes);
-		
-		case Value(objectType):
-		case Value(errorType):
-		case Value(dateType):
-		case Value(functionType):
-		case Value(hostType):
-		{
-			struct Object *object = value.data.object;
-			uint16_t length = stringLength(object->stringValue);
-			memcpy(bytes, stringBytes(object->stringValue), length);
-			return length;
-		}
-		
-		case Value(referenceType):
-			break;
-	}
-	
 	assert(0);
 	abort();
 }

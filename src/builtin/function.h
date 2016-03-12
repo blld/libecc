@@ -48,9 +48,6 @@ Interface(Function,
 	
 	(void, linkPrototype ,(struct Function *, struct Value prototype))
 	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Object(Type) *type))
-	
-	(uint16_t, toLength ,(struct Native(Context) * const, struct Value))
-	(uint16_t, toBytes ,(struct Native(Context) * const, struct Value, char *bytes))
 	,
 	{
 		struct Object object;
@@ -61,6 +58,7 @@ Interface(Function,
 		const char *name;
 		int parameterCount;
 		enum Function(Flags) flags;
+		struct Value primitiveValue;
 	}
 )
 

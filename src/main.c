@@ -978,6 +978,8 @@ static void testArray (void)
 	
 	test("var o = { toString: function(){ return ' world!' } }, a = [ 'hello', o ]; a", "hello, world!", NULL);
 	test("var a = [ 123, 456 ], a = [ 'hello', a ]; a.toString = function(){ return 'test' }; [ a ]", "test", NULL);
+	test("var o = [], c = 0, a = [o, o]; Object.defineProperty(o, '0', { get: function (){ return ++c } }); a", "1,2", NULL);
+	test("var o = {}, a = ['abc',123]; o[a] = 'test'; Object.getOwnPropertyNames(o)", "abc,123", NULL);
 }
 
 static void testBoolean (void)

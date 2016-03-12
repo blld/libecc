@@ -51,64 +51,41 @@ static struct Value isArray (struct Native(Context) * const context)
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
 }
 
-static uint16_t toSeparatedLength (struct Native(Context) * const context, struct Value this, struct Text separator)
+static struct Chars * toChars (struct Native(Context) * const context, struct Value this, struct Text separator)
 {
 	struct Value value;
-	uint16_t offset = 0;
 	struct Object *object = this.data.object;
 	uint32_t index, count = object->elementCount;
+	struct Chars *chars = Chars.beginAppend();
 	
 	for (index = 0; index < count; ++index)
 	{
-		if (index)
-			offset += separator.length;
-		
 		value = Object.getValue(context, &object->element[index].data.value, this);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toLength(context, value);
-	}
-	
-	return offset;
-}
-
-static uint16_t toSeparatedBytes (struct Native(Context) * const context, struct Value this, struct Text separator, char *bytes)
-{
-	struct Value value;
-	uint16_t offset = 0;
-	struct Object *object = this.data.object;
-	uint32_t index, count = object->elementCount;
-	
-	for (index = 0; index < count; ++index)
-	{
-		if (index)
 		{
-			memcpy(bytes + offset, separator.bytes, separator.length);
-			offset += separator.length;
+			value = Value.toString(context, value);
+			if (index)
+				chars = Chars.append(chars, "%.*s%.*s", separator.length, separator.bytes, Value.stringLength(value), Value.stringBytes(value));
+			else
+				chars = Chars.append(chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
 		}
-		
-		value = Object.getValue(context, &object->element[index].data.value, this);
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			offset += Value.toBytes(context, value, bytes + offset);
+		else if (index)
+			chars = Chars.append(chars, "%.*s", separator.length, separator.bytes);
 	}
 	
-	return offset;
+	return Chars.endAppend(chars);
 }
 
 static struct Value toString (struct Native(Context) * const context)
 {
 	struct Value object;
-	struct Chars *chars;
-	uint32_t length;
 	struct Text separator = (struct Text){ ",", 1 };
 	
 	Native.assertParameterCount(context, 0);
 	
 	object = Value.toObject(context, context->this, Native(thisIndex));
-	length = toSeparatedLength(context, object, separator);
-	chars = Chars.createSized(length);
-	toSeparatedBytes(context, object, separator, chars->bytes);
 	
-	return Value.chars(chars);
+	return Value.chars(toChars(context, object, separator));
 }
 
 static struct Value concat (struct Native(Context) * const context)
@@ -139,8 +116,6 @@ static struct Value join (struct Native(Context) * const context)
 	struct Value object;
 	struct Value value;
 	struct Text separator;
-	struct Chars *chars;
-	uint32_t length;
 	
 	Native.assertParameterCount(context, 1);
 	
@@ -154,11 +129,7 @@ static struct Value join (struct Native(Context) * const context)
 		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	}
 	
-	length = toSeparatedLength(context, object, separator);
-	chars = Chars.createSized(length);
-	toSeparatedBytes(context, object, separator, chars->bytes);
-	
-	return Value.chars(chars);
+	return Value.chars(toChars(context, object, separator));
 }
 
 static struct Value pop (struct Native(Context) * const context)
@@ -415,20 +386,4 @@ struct Object *createSized (uint32_t size)
 	Object.resizeElement(self, size);
 	
 	return self;
-}
-
-uint16_t toLength (struct Native(Context) * const context, struct Value value)
-{
-	assert(value.type == Value(objectType));
-	assert(value.data.object);
-	
-	return toSeparatedLength(context, value, (struct Text){ ",", 1 });
-}
-
-uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
-{
-	assert(value.type == Value(objectType));
-	assert(value.data.object);
-	
-	return toSeparatedBytes(context, value, (struct Text){ ",", 1 }, bytes);
 }

@@ -19,6 +19,7 @@
 enum Chars(Flags)
 {
 	Chars(mark) = 1 << 0,
+	Chars(inAppend) = 1 << 1,
 };
 
 
@@ -28,6 +29,12 @@ Interface(Chars,
 	(struct Chars *, create ,(const char *format, ...))
 	(struct Chars *, createSized ,(uint16_t size))
 	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
+	
+	(struct Chars *, beginAppend ,(void))
+	(struct Chars *, append ,(struct Chars *, const char *format, ...))
+	(struct Chars *, appendValue ,(struct Chars *, struct Native(Context) * const context, struct Value value))
+	(struct Chars *, appendBinary ,(struct Chars *, double binary, int base))
+	(struct Chars *, endAppend ,(struct Chars *))
 	
 	(void, destroy ,(struct Chars *))
 	,

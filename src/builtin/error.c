@@ -36,6 +36,40 @@ static struct Value messageValue (struct Value value)
 		return Value.toString(NULL, value);
 }
 
+static struct Chars * toChars (struct Native(Context) * const context, struct Value value)
+{
+	struct Value name, message;
+	struct Object *self;
+	struct Chars *chars;
+	
+	assert(value.type == Value(errorType));
+	assert(value.data.error);
+	
+	self = value.data.object;
+	
+	name = Object.get(self, Key(name));
+	if (name.type == Value(undefinedType))
+		name = Value.text(&Text(errorName));
+	else
+		name = Value.toString(context, name);
+	
+	message = Object.get(self, Key(message));
+	if (message.type == Value(undefinedType))
+		message = Value.text(&Text(empty));
+	else
+		message = Value.toString(context, message);
+	
+	chars = Chars.beginAppend();
+	chars = Chars.appendValue(chars, context, name);
+	
+	if (Value.stringLength(name) && Value.stringLength(message))
+		chars = Chars.append(chars, ": ");
+	
+	chars = Chars.appendValue(chars, context, message);
+	
+	return Chars.endAppend(chars);
+}
+
 static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
@@ -56,19 +90,12 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 
 static struct Value toString (struct Native(Context) * const context)
 {
-	struct Chars *chars;
-	uint16_t length;
-	
 	Native.assertParameterCount(context, 0);
 	
 	if (!Value.isObject(context->this))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
 	
-	length = toLength(context, context->this);
-	chars = Chars.createSized(length);
-	toBytes(context, context->this, chars->bytes);
-	
-	return Value.chars(chars);
+	return Value.chars(toChars(context, context->this));
 }
 
 static struct Value errorConstructor (struct Native(Context) * const context)
@@ -299,71 +326,4 @@ void destroy (struct Error *self)
 	Object.finalize(&self->object);
 	
 	free(self), self = NULL;
-}
-
-uint16_t toLength (struct Native(Context) * const context, struct Value value)
-{
-	struct Value name, message;
-	struct Object *self;
-	
-	assert(value.type == Value(errorType));
-	assert(value.data.error);
-	
-	self = value.data.object;
-	
-	name = Object.get(self, Key(name));
-	if (name.type == Value(undefinedType))
-		name = Value.text(&Text(errorName));
-	else
-		name = Value.toString(context, name);
-	
-	message = Object.get(self, Key(message));
-	if (message.type == Value(undefinedType))
-		message = Value.text(&Text(empty));
-	else
-		message = Value.toString(context, message);
-	
-	if (Value.stringLength(name) && Value.stringLength(message))
-		return sizeof(": ")-1 + Value.stringLength(name) + Value.stringLength(message);
-	else
-		return Value.stringLength(name) + Value.stringLength(message);
-}
-
-uint16_t toBytes (struct Native(Context) * const context, struct Value value, char *bytes)
-{
-	struct Value name, message;
-	uint16_t offset = 0;
-	struct Object *self;
-	
-	assert(value.type == Value(errorType));
-	assert(value.data.error);
-	
-	self = value.data.object;
-	
-	name = Object.get(self, Key(name));
-	if (name.type == Value(undefinedType))
-		name = Value.text(&Text(errorName));
-	else
-		name = Value.toString(context, name);
-	
-	message = Object.get(self, Key(message));
-	if (message.type == Value(undefinedType))
-		message = Value.text(&Text(empty));
-	else
-		message = Value.toString(context, message);
-	
-	memcpy(bytes, Value.stringBytes(name), Value.stringLength(name));
-	offset += Value.stringLength(name);
-	
-	if (Value.stringLength(name) && Value.stringLength(message))
-	{
-		const char separator[] = ": ";
-		memcpy(bytes + offset, separator, sizeof(separator)-1);
-		offset += sizeof(separator)-1;
-	}
-	
-	memcpy(bytes + offset, Value.stringBytes(message), Value.stringLength(message));
-	offset += Value.stringLength(message);
-	
-	return offset;
 }

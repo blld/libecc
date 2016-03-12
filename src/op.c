@@ -51,12 +51,10 @@ static struct Value addition (struct Native(Context) * const context, struct Val
 		
 		if (Value.isString(a) || Value.isString(b))
 		{
-			uint16_t lengthA = Value.toLength(context, a);
-			uint16_t lengthB = Value.toLength(context, b);
-			struct Chars *chars = Chars.createSized(lengthA + lengthB);
-			Value.toBytes(context, a, chars->bytes);
-			Value.toBytes(context, b, chars->bytes + lengthA);
-			return Value.chars(chars);
+			struct Chars *chars = Chars.beginAppend();
+			chars = Chars.appendValue(chars, context, a);
+			chars = Chars.appendValue(chars, context, b);
+			return Value.chars(Chars.endAppend(chars));
 		}
 		else
 			return Value.binary(Value.toBinary(a).data.binary + Value.toBinary(b).data.binary);

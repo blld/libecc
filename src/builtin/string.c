@@ -128,24 +128,18 @@ static struct Value charCodeAt (struct Native(Context) * const context)
 
 static struct Value concat (struct Native(Context) * const context)
 {
-	struct Chars *result;
-	int32_t length = 0, offset = 0, index, count;
+	struct Chars *chars;
+	int32_t index, count;
 	
 	Native.assertVariableParameter(context);
 	
 	count = Native.variableArgumentCount(context);
-	
-	length += Value.toLength(context, context->this);
+	chars = Chars.beginAppend();
+	chars = Chars.appendValue(chars, context, context->this);
 	for (index = 0; index < count; ++index)
-		length += Value.toLength(context, Native.variableArgument(context, index));
+		chars = Chars.appendValue(chars, context, Native.variableArgument(context, index));
 	
-	result = Chars.createSized(length);
-	
-	offset += Value.toBytes(context, context->this, result->bytes + offset);
-	for (index = 0; index < count; ++index)
-		offset += Value.toBytes(context, Native.variableArgument(context, index), result->bytes + offset);
-	
-	return Value.chars(result);
+	return Value.chars(Chars.endAppend(chars));
 }
 
 static struct Value indexOf (struct Native(Context) * const context)

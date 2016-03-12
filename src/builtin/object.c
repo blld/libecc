@@ -49,26 +49,11 @@ static inline int32_t getElementOrKey (struct Value property, struct Key *key)
 		
 		if (element < 0)
 		{
-			if (Value.isString(property))
-			{
-				struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
-				
-				if ((element = Lexer.parseElement(text)) < 0)
-					*key = Key.makeWithText(text, 1);
-			}
-			else
-			{
-				uint16_t length = Value.toLength(NULL, property);
-				{
-					char bytes[length + 1];
-					struct Text text = Text.make(bytes, length);
-					
-					Value.toBytes(NULL, property, bytes);
-					
-					if ((element = Lexer.parseElement(text)) < 0)
-						*key = Key.makeWithText(text, 1);
-				}
-			}
+			property = Value.toString(NULL, property);
+			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
+			
+			if ((element = Lexer.parseElement(text)) < 0)
+				*key = Key.makeWithText(text, 1);
 		}
 	}
 	
@@ -245,8 +230,18 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	{
 		struct Object *result = Object.create(Object(prototype));
 		
-		Object.add(result, Key(value), *ref, 0);
-		Object.add(result, Key(writable), Value.truth(!(ref->flags & Value(readonly))), 0);
+		if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+		{
+			Object.add(result, Key(get), *ref, 0);
+			if (ref->data.function->pair)
+				Object.add(result, Key(set), Value.function(ref->data.function->pair), 0);
+		}
+		else
+		{
+			Object.add(result, Key(value), *ref, 0);
+			Object.add(result, Key(writable), Value.truth(!(ref->flags & Value(readonly))), 0);
+		}
+		
 		Object.add(result, Key(enumerable), Value.truth(!(ref->flags & Value(hidden))), 0);
 		Object.add(result, Key(configurable), Value.truth(!(ref->flags & Value(sealed))), 0);
 		
