@@ -186,7 +186,6 @@ struct Value reference (struct Value *reference)
 	};
 }
 
-
 // check
 
 int isPrimitive (struct Value value)

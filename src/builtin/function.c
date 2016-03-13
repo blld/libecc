@@ -211,27 +211,6 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 	return self;
 }
 
-struct Function * createWithNativeAccessor (const Native(Function) getter, const Native(Function) setter)
-{
-	struct Function *self = NULL, *setterFunction = NULL;
-	if (setter)
-		setterFunction = createWithNative(setter, 1);
-	
-	if (getter)
-	{
-		self = createWithNative(getter, 0);
-		self->flags |= Function(isGetter);
-		if (setter)
-			self->pair = setterFunction;
-	}
-	else if (setter)
-	{
-		self = setterFunction;
-		self->flags |= Function(isSetter);
-	}
-	return self;
-}
-
 struct Function * copy (struct Function *original)
 {
 	struct Function *self = malloc(sizeof(*self));
@@ -319,4 +298,27 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 	
 	linkPrototype(function, prototypeValue);
 	*constructor = function;
+}
+
+struct Value accessor (const Native(Function) getter, const Native(Function) setter)
+{
+	struct Value value;
+	struct Function *getterFunction = NULL, *setterFunction = NULL;
+	if (setter)
+		setterFunction = Function.createWithNative(setter, 1);
+	
+	if (getter)
+	{
+		getterFunction = Function.createWithNative(getter, 0);
+		getterFunction->pair = setterFunction;
+		value = Value.function(getterFunction);
+		value.flags |= Value(getter);
+	}
+	else if (setter)
+	{
+		value = Value.function(setterFunction);
+		value.flags |= Value(setter);
+	}
+	
+	return value;
 }

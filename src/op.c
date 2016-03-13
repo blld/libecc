@@ -677,10 +677,13 @@ struct Value text (struct Native(Context) * const context)
 
 struct Value function (struct Native(Context) * const context)
 {
-	struct Function *function = Function.copy(opValue().data.function);
+	struct Value value = opValue(), result;
+	struct Function *function = Function.copy(value.data.function);
 	function->environment.prototype = context->environment;
 	++context->environment->referenceCount;
-	return Value.function(function);
+	result = Value.function(function);
+	result.flags = value.flags;
+	return result;
 }
 
 struct Value object (struct Native(Context) * const context)
@@ -694,9 +697,9 @@ struct Value object (struct Native(Context) * const context)
 		value = nextOp();
 		
 		if (value.type == Value(keyType))
-			Object.add(object, value.data.key, retain(nextOp()), 0);
+			Object.add(object, value.data.key, retain(nextOp()), value.flags);
 		else if (value.type == Value(integerType))
-			Object.addElementAtIndex(object, value.data.integer, retain(nextOp()), 0);
+			Object.addElementAtIndex(object, value.data.integer, retain(nextOp()), value.flags);
 	}
 	return Value.object(object);
 }

@@ -36,7 +36,7 @@ static struct Value setLength (struct Native(Context) * const context)
 void setup (void)
 {
 	Arguments(prototype) = Object.createTyped(&Arguments(type));
-	Object.add(Arguments(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
+	Object.add(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 }
 
 void teardown (void)

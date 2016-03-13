@@ -363,7 +363,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
-	Object.add(Array(prototype), Key(length), Value.function(Function.createWithNativeAccessor(getLength, setLength)), Value(hidden) | Value(sealed));
+	Object.add(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 	
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
 }

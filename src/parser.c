@@ -1391,6 +1391,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 
 static struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
 {
+	struct Value value;
 	struct Text text = self->lexer->text, textParameter;
 	
 	struct OpList *oplist = NULL;
@@ -1433,18 +1434,10 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	textParameter = self->lexer->text;
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
 	
-	if (isGetter)
-	{
-		function->flags |= Function(isGetter);
-		if (parameterCount != 0)
-			error(self, Error.syntaxError(Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), "getter functions must have no arguments"));
-	}
-	else if (isSetter)
-	{
-		function->flags |= Function(isSetter);
-		if (parameterCount != 1)
-			error(self, Error.syntaxError(self->lexer->text, "setter functions must have one argument"));
-	}
+	if (isGetter && parameterCount != 0)
+		error(self, Error.syntaxError(Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), "getter functions must have no arguments"));
+	else if (isSetter && parameterCount != 1)
+		error(self, Error.syntaxError(self->lexer->text, "setter functions must have one argument"));
 	
 	expectToken(self, ')');
 	expectToken(self, '{');
@@ -1459,15 +1452,22 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	
 	Object.add(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
 	
+	value = Value.function(function);
+	
 	if (isDeclaration)
 		Object.add(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
-		Object.add(&function->environment, identifierOp.value.data.key, Value.function(function), Value(hidden));
+		Object.add(&function->environment, identifierOp.value.data.key, value, Value(hidden));
+	
+	if (isGetter)
+		value.flags |= Value(getter);
+	else if (isSetter)
+		value.flags |= Value(setter);
 	
 	if (isDeclaration)
-		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, Value.function(function), text));
+		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, value, text));
 	else
-		return OpList.create(Op.function, Value.function(function), self->lexer->text);
+		return OpList.create(Op.function, value, self->lexer->text);
 }
 
 

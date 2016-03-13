@@ -230,11 +230,11 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	{
 		struct Object *result = Object.create(Object(prototype));
 		
-		if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+		if (ref->flags & Value(accessor))
 		{
-			Object.add(result, Key(get), *ref, 0);
+			Object.add(result, ref->flags & Value(getter)? Key(get): Key(set), Value.function(ref->data.function), 0);
 			if (ref->data.function->pair)
-				Object.add(result, Key(set), Value.function(ref->data.function->pair), 0);
+				Object.add(result, ref->flags & Value(getter)? Key(set): Key(get), Value.function(ref->data.function->pair), 0);
 		}
 		else
 		{
@@ -311,12 +311,12 @@ static struct Value defineProperty (struct Native(Context) * const context)
 			if (setter)
 				value.data.function->pair = setter->data.function;
 			
-			value.data.function->flags |= Function(isGetter);
+			value.flags |= Value(getter);
 		}
 		else
 		{
 			value = *setter;
-			value.data.function->flags |= Function(isSetter);
+			value.flags |= Value(setter);
 		}
 	}
 	else
@@ -793,13 +793,13 @@ struct Value * add (struct Object *self, struct Key key, struct Value value, enu
 		assert(slot < self->hashmapCount);
 	} while (++depth < 4);
 	
-	if (value.type == Value(functionType) && value.data.function->flags & Function(isAccessor))
-		if (self->hashmap[slot].data.value.check == 1 && self->hashmap[slot].data.value.type == Value(functionType) && self->hashmap[slot].data.value.data.function->flags & Function(isAccessor))
-			if ((self->hashmap[slot].data.value.data.function->flags & Function(isAccessor)) != (value.data.function->flags & Function(isAccessor)))
+	if (value.flags & Value(accessor))
+		if (self->hashmap[slot].data.value.check == 1 && self->hashmap[slot].data.value.flags & Value(accessor))
+			if ((self->hashmap[slot].data.value.flags & Value(accessor)) != (value.flags & Value(accessor)))
 				value.data.function->pair = self->hashmap[slot].data.value.data.function;
 	
 	self->hashmap[slot].data.value = value;
-	self->hashmap[slot].data.value.flags = flags;
+	self->hashmap[slot].data.value.flags |= flags;
 	
 	return &self->hashmap[slot].data.value;
 }
@@ -809,12 +809,12 @@ struct Value getValue (struct Native(Context) * const context, struct Value *ref
 	if (!ref)
 		return Value(undefined);
 	
-	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+	if (ref->flags & Value(accessor))
 	{
 		if (!context)
 			fatalError("cannot use getter outside context");
 		
-		if (ref->data.function->flags & Function(isGetter))
+		if (ref->flags & Value(getter))
 			return Op.callFunctionVA(context, 0, ref->data.function, this, 0);
 		else if (ref->data.function->pair)
 			return Op.callFunctionVA(context, 0, ref->data.function->pair, this, 0);
@@ -827,12 +827,12 @@ struct Value getValue (struct Native(Context) * const context, struct Value *ref
 
 struct Value putValue (struct Native(Context) * const context, struct Value *ref, struct Value this, struct Value value, const struct Text *text)
 {
-	if (ref->type == Value(functionType) && ref->data.function->flags & Function(isAccessor))
+	if (ref->flags & Value(accessor))
 	{
 		if (!context)
 			fatalError("cannot use setter outside context");
 		
-		if (ref->data.function->flags & Function(isSetter))
+		if (ref->flags & Value(setter))
 			Op.callFunctionVA(context, 0, ref->data.function, this, 1, value);
 		else if (ref->data.function->pair)
 			Op.callFunctionVA(context, 0, ref->data.function->pair, this, 1, value);
@@ -990,7 +990,7 @@ struct Value * addElementAtIndex (struct Object *self, uint32_t index, struct Va
 		self->elementCount = index + 1;
 	
 	self->element[index].data.value = value;
-	self->element[index].data.value.flags = flags;
+	self->element[index].data.value.flags |= flags;
 	
 	return &self->element[index].data.value;
 }

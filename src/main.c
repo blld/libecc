@@ -153,38 +153,27 @@ static void test (const char *func, int line, const char *test, const char *expe
 static void testLexer (void)
 {
 	test("/*hello", "SyntaxError: unterminated comment"
-	,    "^~~~~~~"
-	);
+	,    "^~~~~~~");
 	test("/*hello\n""world", "SyntaxError: unterminated comment"
-	,    "^~~~~~~~" "~~~~~"
-	);
+	,    "^~~~~~~~" "~~~~~");
 	test("'hello", "SyntaxError: unterminated string literal"
-	,    "^~~~~~"
-	);
+	,    "^~~~~~");
 	test("'hello\n""world'", "SyntaxError: unterminated string literal"
-	,    "^~~~~~~" "      "
-	);
+	,    "^~~~~~~" "      ");
 	test("0x", "SyntaxError: missing hexadecimal digits after '0x'"
-	,    "^~"
-	);
+	,    "^~");
 	test("0e+", "SyntaxError: missing exponent"
-	,    "^~~"
-	);
+	,    "^~~");
 	test("0a", "SyntaxError: identifier starts immediately after numeric literal"
-	,    " ^"
-	);
+	,    " ^");
 	test(".e+1", "SyntaxError: expected expression, got '.'"
-	,    "^   "
-	);
+	,    "^   ");
 	test("\\", "SyntaxError: invalid character '\\'"
-	,    "^"
-	);
+	,    "^");
 	test("'xxx\\""xrrabc'", "SyntaxError: malformed hexadecimal character escape sequence"
-	,    "    ^" "~~~    "
-	);
+	,    "    ^" "~~~    ");
 	test("'xxx\\""uabxyabc'", "SyntaxError: malformed Unicode character escape sequence"
-	,    "    ^" "~~~~~    "
-	);
+	,    "    ^" "~~~~~    ");
 	test("'\\a\\b\\f\\n\\r\\t\\v'", "\a\b\f\n\r\t\v", NULL);
 	test("'\\x44'", "D", NULL);
 	test("'\\u4F8B'", "例", NULL);
@@ -194,187 +183,127 @@ static void testLexer (void)
 static void testParser (void)
 {
 	test("debugger()", "SyntaxError: missing ; before statement"
-	,    "        ^ "
-	);
+	,    "        ^ ");
 	test("delete throw", "SyntaxError: expected expression, got 'throw'"
-	,    "       ^~~~~"
-	);
+	,    "       ^~~~~");
 	test("{", "SyntaxError: expected '}', got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("[", "SyntaxError: expected ']', got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("= 1", "SyntaxError: expected expression, got '='"
-	,    "^  "
-	);
+	,    "^  ");
 	test("+= 1", "SyntaxError: expected expression, got '+='"
-	,    "^~  "
-	);
+	,    "^~  ");
 	test("var 1.", "SyntaxError: expected identifier, got number"
-	,    "    ^~"
-	);
+	,    "    ^~");
 	test("var h = ;","SyntaxError: expected expression, got ';'"
-	,    "        ^"
-	);
+	,    "        ^");
 	test("function eval(){}", "SyntaxError: redefining eval is deprecated"
-	,    "         ^~~~    "
-	);
+	,    "         ^~~~    ");
 	test("function arguments(){}", "SyntaxError: redefining arguments is deprecated"
-	,    "         ^~~~~~~~~    "
-	);
+	,    "         ^~~~~~~~~    ");
 	test("function a(eval){}", "SyntaxError: redefining eval is deprecated"
-	,    "           ^~~~   "
-	);
+	,    "           ^~~~   ");
 	test("function a(arguments){}", "SyntaxError: redefining arguments is deprecated"
-	,    "           ^~~~~~~~~   "
-	);
+	,    "           ^~~~~~~~~   ");
 	test("var eval", "SyntaxError: redefining eval is deprecated"
-	,    "    ^~~~"
-	);
+	,    "    ^~~~");
 	test("var arguments", "SyntaxError: redefining arguments is deprecated"
-	,    "    ^~~~~~~~~"
-	);
+	,    "    ^~~~~~~~~");
 	test("eval = 123", "SyntaxError: can't assign to eval"
-	,    "     ^    "
-	);
+	,    "     ^    ");
 	test("arguments = 123", "SyntaxError: can't assign to arguments"
-	,    "          ^    "
-	);
+	,    "          ^    ");
 	test("eval++", "SyntaxError: invalid increment operand"
-	,    "^~~~  "
-	);
+	,    "^~~~  ");
 	test("arguments++", "SyntaxError: invalid increment operand"
-	,    "^~~~~~~~~  "
-	);
+	,    "^~~~~~~~~  ");
 	test("++eval", "SyntaxError: invalid increment operand"
-	,    "  ^~~~"
-	);
+	,    "  ^~~~");
 	test("++arguments", "SyntaxError: invalid increment operand"
-	,    "  ^~~~~~~~~"
-	);
+	,    "  ^~~~~~~~~");
 	test("eval += 1", "SyntaxError: invalid assignment left-hand side"
-	,    "^~~~     "
-	);
+	,    "^~~~     ");
 	test("arguments += 1", "SyntaxError: invalid assignment left-hand side"
-	,    "^~~~~~~~~     "
-	);
+	,    "^~~~~~~~~     ");
 	test("var a = { eval: 123 }", "undefined", NULL);
 	test("var a = { arguments: 123 }", "undefined", NULL);
 	test("a(==)", "SyntaxError: expected expression, got '=='"
-	,    "  ^~ "
-	);
+	,    "  ^~ ");
 	test("a(,1)", "SyntaxError: expected expression, got ','"
-	,    "  ^  "
-	);
+	,    "  ^  ");
 	test("return", "SyntaxError: return not in function"
-	,    "^~~~~~"
-	);
+	,    "^~~~~~");
 	test("* 1", "SyntaxError: expected expression, got '*'"
-	,    "^  "
-	);
+	,    "^  ");
 	test("% 1", "SyntaxError: expected expression, got '%'"
-	,    "^  "
-	);
+	,    "^  ");
 	test("& 1", "SyntaxError: expected expression, got '&'"
-	,    "^  "
-	);
+	,    "^  ");
 	test("^ 1", "SyntaxError: expected expression, got '^'"
-	,    "^  "
-	);
+	,    "^  ");
 	test("| 1", "SyntaxError: expected expression, got '|'"
-	,    "^  "
-	);
+	,    "^  ");
 	test("+", "SyntaxError: expected expression, got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("-", "SyntaxError: expected expression, got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("~", "SyntaxError: expected expression, got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("!", "SyntaxError: expected expression, got end of script"
-	,    " ^"
-	);
+	,    " ^");
 	test("1 *", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 /", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 %", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 +", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 -", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 &", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 ^", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 |", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("++", "SyntaxError: expected expression, got end of script"
-	,    "  ^"
-	);
+	,    "  ^");
 	test("--", "SyntaxError: expected expression, got end of script"
-	,    "  ^"
-	);
+	,    "  ^");
 	test("== 1", "SyntaxError: expected expression, got '=='"
-	,    "^~  "
-	);
+	,    "^~  ");
 	test("!= 1", "SyntaxError: expected expression, got '!='"
-	,    "^~  "
-	);
+	,    "^~  ");
 	test("=== 1", "SyntaxError: expected expression, got '==='"
-	,    "^~~  "
-	);
+	,    "^~~  ");
 	test("!== 1", "SyntaxError: expected expression, got '!=='"
-	,    "^~~  "
-	);
+	,    "^~~  ");
 	test("1 ==", "SyntaxError: expected expression, got end of script"
-	,    "    ^"
-	);
+	,    "    ^");
 	test("1 !=", "SyntaxError: expected expression, got end of script"
-	,    "    ^"
-	);
+	,    "    ^");
 	test("1 ===", "SyntaxError: expected expression, got end of script"
-	,    "     ^"
-	);
+	,    "     ^");
 	test("1 !==", "SyntaxError: expected expression, got end of script"
-	,    "     ^"
-	);
+	,    "     ^");
 	test("> 1", "SyntaxError: expected expression, got '>'"
-	,    "^  "
-	);
+	,    "^  ");
 	test(">= 1", "SyntaxError: expected expression, got '>='"
-	,    "^~  "
-	);
+	,    "^~  ");
 	test("< 1", "SyntaxError: expected expression, got '<'"
-	,    "^   "
-	);
+	,    "^   ");
 	test("<= 1", "SyntaxError: expected expression, got '<='"
-	,    "^~  "
-	);
+	,    "^~  ");
 	test("1 >", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 >=", "SyntaxError: expected expression, got end of script"
-	,    "    ^"
-	);
+	,    "    ^");
 	test("1 <", "SyntaxError: expected expression, got end of script"
-	,    "   ^"
-	);
+	,    "   ^");
 	test("1 <=", "SyntaxError: expected expression, got end of script"
-	,    "    ^"
-	);
+	,    "    ^");
 }
 
 static void testEval (void)
@@ -392,67 +321,52 @@ static void testEval (void)
 	test("var str = '(function a() {})'; typeof eval(str)", "function", NULL);
 	test("function a() { var n = 456; return eval('n') }; a()", "456", NULL);
 	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined"
-	,                                                        "^"
-	);
+	,                                                        "^");
 	test("var e = eval; function a() { var n = 456; return e('this.parseInt.length') }; a()", "2", NULL);
 	test("var a = { b: 'abc', c: function(){ return eval('this.b') } }; a.c()", "abc", NULL);
 	test("var e = eval, a = { b: 'abc', c: function(){ return eval('e.b') } }; a.c()", "undefined", NULL);
 	test("x", "ReferenceError: x is not defined"
-	,    "^"
-	);
+	,    "^");
 	test("x = 1", "ReferenceError: x is not defined"
-	,    "^    "
-	);
+	,    "^    ");
 	test("new eval('123')", "TypeError: eval is not a constructor"
-	,    "    ^~~~       "
-	);
+	,    "    ^~~~       ");
 	test("new eval.call('123')", "TypeError: eval.call is not a constructor"
-	,    "    ^~~~~~~~~       "
-	);
+	,    "    ^~~~~~~~~       ");
 	test("new eval.apply('123')", "TypeError: eval.apply is not a constructor"
-	,    "    ^~~~~~~~~~       "
-	);
+	,    "    ^~~~~~~~~~       ");
 	test("eval.call('123', 'this+456')", "[object Global]456", NULL);
 }
 
 static void testException (void)
 {
 	test("throw undefined", "undefined"
-	,    "      ^~~~~~~~~"
-	);
+	,    "      ^~~~~~~~~");
 	test("throw null", "null"
-	,    "      ^~~~"
-	);
+	,    "      ^~~~");
 	test("throw 123", "123"
-	,    "      ^~~"
-	);
+	,    "      ^~~");
 	test("throw 'hello'", "hello"
-	,    "       ^~~~~ "
-	);
+	,    "       ^~~~~ ");
 	test("throw [123, 456]", "123,456"
-	,    "      ^~~~~~~~~~"
-	);
+	,    "      ^~~~~~~~~~");
 	test("throw {123: 456}", "[object Object]"
-	,    "      ^~~~~~~~~~"
-	);
+	,    "      ^~~~~~~~~~");
 	test("try { throw 'a' } finally { 'b' }", "a"
-	,    "             ^                   "
-	);
+	,    "             ^                   ");
 	test("try { throw 'a' } catch(b){ 'b' }", "b", NULL);
 	test("try { throw 'a' } catch(b){ 'b' } 'c'", "c", NULL);
 	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' }", "c", NULL);
 	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' } 'd'", "d", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }})()", "abc"
-	,    "                                                                                                 ^~~~~~                   "
-	);
+	,    "                                                                                                 ^~~~~~                   ");
 	test("(function(){ try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' } })()", "b", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }})()", "c", NULL);
 	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f", NULL);
 	test("var a = 123; try { throw a + 'abc' } catch(b) { a + b }", "123123abc", NULL);
 	test("(function (){ try { return 'a'; } finally { return 'b'; } })()", "b", NULL);
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script"
-	,    "                 ^"
-	);
+	,    "                 ^");
 }
 
 static void testOperator (void)
@@ -535,11 +449,9 @@ static void testRelational (void)
 	test("3 <= 4", "true", NULL);
 	test("'toString' in {}", "true", NULL);
 	test("'toString' in null", "TypeError: invalid 'in' operand null"
-	,    "              ^~~~"
-	);
+	,    "              ^~~~");
 	test("var a; 'toString' in a", "TypeError: invalid 'in' operand a"
-	,    "                     ^"
-	);
+	,    "                     ^");
 	test("var a = { b: 1, c: 2 }; 'b' in a", "true", NULL);
 	test("var a = { b: 1, c: 2 }; 'd' in a", "false", NULL);
 	test("var a = [ 'b', 'c' ]; 0 in a", "true", NULL);
@@ -574,14 +486,12 @@ static void testSwitch (void)
 static void testDelete (void)
 {
 	test("delete b", "SyntaxError: delete of an unqualified identifier in strict mode"
-	,    "       ^"
-	);
+	,    "       ^");
 	test("var a = { b: 123, c: 'abc' }; a.b", "123", NULL);
 	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined", NULL);
 	
 	test("delete Object.prototype", "TypeError: property 'prototype' is non-configurable and can't be deleted"
-	,    "       ^~~~~~~~~~~~~~~~"
-	);
+	,    "       ^~~~~~~~~~~~~~~~");
 }
 
 static void testGlobal (void)
@@ -599,14 +509,11 @@ static void testGlobal (void)
 	test("decodeURI('abc%2fdef')", "abc%2fdef", NULL);
 	test("decodeURI('abc%2edef')", "abc.def", NULL);
 	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83')", "URIError: malformed URI"
-	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~  "
-	);
+	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~  ");
 	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%')", "URIError: malformed URI"
-	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~~  "
-	);
+	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~~  ");
 	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%B')", "URIError: malformed URI"
-	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~~~  "
-	);
+	,    "           ^~~~~~~~~~~~~~~~~~~~~~~~~~  ");
 	test("decodeURI('%E3%83%8F%E3%83%AD%E3%83%BC')", "ハロー", NULL);
 	test("decodeURI('%F0%A9%B8%BD')", "𩸽", NULL);
 	test("decodeURI('%C3%A7')", "ç", NULL);
@@ -617,11 +524,9 @@ static void testGlobal (void)
 static void testFunction (void)
 {
 	test("var a; a.prototype", "TypeError: can't convert undefined to object"
-	,    "       ^          "
-	);
+	,    "       ^          ");
 	test("var a = null; a.prototype", "TypeError: can't convert null to object"
-	,    "              ^          "
-	);
+	,    "              ^          ");
 	test("function a() {} a.prototype.toString.length", "0", NULL);
 	test("function a() {} a.prototype.toString()", "[object Object]", NULL);
 	test("function a() {} a.prototype.hasOwnProperty.length", "1", NULL);
@@ -637,8 +542,7 @@ static void testFunction (void)
 	test("var a = { a: function() { var n = this; function b(c) { return n + c + this } return b }}; a.a()(123)", "[object Object]123undefined", NULL);
 	test("typeof function(){}", "function", NULL);
 	test("function a(a, b){ return a + b } a.apply(null, 1, 2)", "TypeError: arguments is not an object"
-	,    "                                               ^    "
-	);
+	,    "                                               ^    ");
 	test("function a(a, b){ return this + a + b } a.apply(10, [1, 2])", "13", NULL);
 	test("function a(a, b){ return this + a + b } a.call(10, 1, 2)", "13", NULL);
 	test("function a(){ return arguments }; a()", "[object Arguments]", NULL);
@@ -657,32 +561,23 @@ static void testFunction (void)
 	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6", NULL);
 	test("function a(){ var b = { c: 123 }; function d() { return b.c }; return d; } for (var i = 0; !i; ++i){ var b = a(); } b()", "123", NULL);
 	test("123 .toFixed.call.apply([ 123 ], [ 'abc', 100 ])", "TypeError: not a function"
-	,    "                        ^~~~~~~                 "
-	);
+	,    "                        ^~~~~~~                 ");
 	test("123 .toFixed.call.call([ 123 ], 'abc', 100)", "TypeError: not a function"
-	,    "                       ^~~~~~~             "
-	);
+	,    "                       ^~~~~~~             ");
 	test("123 .toFixed.call.apply(123 .toFixed, [ 'abc', 100 ])", "TypeError: not a number"
-	,    "                                         ^~~         "
-	);
+	,    "                                         ^~~         ");
 	test("123 .toFixed.apply.call(123 .toFixed, 'abc', [ 100 ])", "TypeError: not a number"
-	,    "                                       ^~~           "
-	);
+	,    "                                       ^~~           ");
 	test("123 .toFixed.call.apply(123 .toFixed, [ 456, 100 ])", "RangeError: precision 100 out of range"
-	,    "                                             ^~~   "
-	);
+	,    "                                             ^~~   ");
 	test("123 .toFixed.apply.call(123 .toFixed, 456, [ 100 ])", "RangeError: precision 100 out of range"
-	,    "                                             ^~~   "
-	);
+	,    "                                             ^~~   ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, 100 ])", "TypeError: arguments is not an object"
-	,    "                                              ^~~   "
-	);
+	,    "                                              ^~~   ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 'abc', [ 100 ] ])", "TypeError: not a number"
-	,    "                                          ^~~             "
-	);
+	,    "                                          ^~~             ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range"
-	,    "                                                ^~~     "
-	);
+	,    "                                                ^~~     ");
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
 	,    "                                                                                     ^                                    ");
 }
@@ -754,57 +649,45 @@ static void testObject (void)
 	test("Object.prototype.toString.call(true)", "[object Boolean]", NULL);
 	test("Object.prototype.toString.call('abc')", "[object String]", NULL);
 	test("Object.prototype.toString.call(123)", "[object Number]", NULL);
+	test("Object.prototype.toString.call(function(){})", "[object Function]", NULL);
+	test("var o = {}; Object.defineProperty(o, 'p', { get:function(){ return 123 } }); o.p", "123", NULL);
+	test("var o = {}; Object.defineProperty(o, 'p', { get:function(){ return 123 } }); o.toString.call(Object.getOwnPropertyDescriptor(o, 'p').get)", "[object Function]", NULL);
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; ++a['b']", "2", NULL);
 	test("var a = {}; ++a.b", "NaN", NULL);
 	test("var o = {}; Object.defineProperty(o, 'a', { value: 123 }); var b = o.a; b += 123;", "246", NULL);
 	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: a is not extensible"
-	,    "                                ^~~"
-	);
+	,    "                                ^~~");
 	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: a is not extensible"
-	,    "                              ^~~     "
-	);
+	,    "                              ^~~     ");
 	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: a is not extensible"
-	,    "                              ^~~    "
-	);
+	,    "                              ^~~    ");
 	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: a is not extensible"
-	,    "                              ^~~~~~    "
-	);
+	,    "                              ^~~~~~    ");
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property"
-	,    "                                     ^~~"
-	);
+	,    "                                     ^~~");
 	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~     "
-	);
+	,    "                                   ^~~     ");
 	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~    "
-	);
+	,    "                                   ^~~    ");
 	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~~~~    "
-	);
+	,    "                                   ^~~~~~    ");
 	test("var a = { v: 1, get b() { return this.v }, set b(v) { this.v = v } }; ++a.b", "2", NULL);
 	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: 'b' is read-only accessor"
-	,    "                                               ^~~"
-	);
+	,    "                                               ^~~");
 	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~     "
-	);
+	,    "                                             ^~~     ");
 	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~    "
-	);
+	,    "                                             ^~~    ");
 	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~~~~    "
-	);
+	,    "                                             ^~~~~~    ");
 	test("var o = {}; Object.defineProperty(o, 'a', 123); o.a = 1;", "TypeError: not an object"
-	,    "                                          ^~~           "
-	);
+	,    "                                          ^~~           ");
 	test("var o = {}; Object.defineProperty(o, 'a', {}); o.a = 1;", "TypeError: 'a' is read-only property"
-	,    "                                               ^~~     "
-	);
+	,    "                                               ^~~     ");
 	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only property"
-	,    "                                             ^~~~     "
-	);
+	,    "                                             ^~~~     ");
 }
 
 static void testError (void)
@@ -827,46 +710,34 @@ static void testError (void)
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]", NULL);
 	
 	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number"
-	,    "                                 ^~~              "
-	);
+	,    "                                 ^~~              ");
 	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision 100 out of range"
-	,    "                                     ^~~        "
-	);
+	,    "                                     ^~~        ");
 	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision 100 out of range"
-	,    "                                        ^~~          "
-	);
+	,    "                                        ^~~          ");
 	test("''.toString.call(123)", "TypeError: not a string"
-	,    "                 ^~~ "
-	);
+	,    "                 ^~~ ");
 	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object"
-	,    "                            ^~~~~~~~~                 "
-	);
+	,    "                            ^~~~~~~~~                 ");
 	test("function a(){}; a.toString = function(){ return 'abc'; }; var b = 123; a + b", "abc123", NULL);
 	test("function a(){}; a.toString = function(){ return {}; }; var b = 123; a + b", "TypeError: cannot convert a to primitive"
-	,    "                                                                    ^    "
-	);
+	,    "                                                                    ^    ");
 	test("function a(){}; a.toString = function(){ throw Error('test'); }; a", "Error: test"
-	,    "                                               ^~~~~~~~~~~~~      "
-	);
+	,    "                                               ^~~~~~~~~~~~~      ");
 	test("function a(){}; a.toString = function(){ return {}; }; a", "TypeError: cannot convert a to primitive"
-	,    "                                                       ^"
-	);
+	,    "                                                       ^");
 }
 
 static void testAccessor (void)
 {
 	test("var a = { get () {} }", "SyntaxError: expected identifier, got '('"
-	,    "              ^      "
-	);
+	,    "              ^      ");
 	test("var a = { get a (b, c) {} }", "SyntaxError: getter functions must have no arguments"
-	,    "                 ^~~~      "
-	);
+	,    "                 ^~~~      ");
 	test("var a = { set () {} }", "SyntaxError: expected identifier, got '('"
-	,    "              ^      "
-	);
+	,    "              ^      ");
 	test("var a = { set a () {} }", "SyntaxError: setter functions must have one argument"
-	,    "                 ^     "
-	);
+	,    "                 ^     ");
 	test("var a = { get a() { return 123 } }; a.a", "123", NULL);
 	test("var a = { get a() { return 123 } }; a['a']", "123", NULL);
 	test("var a = { a: 'abc', set a(b) {}, get a() { return 123 } }; a.a", "123", NULL);
@@ -954,11 +825,9 @@ static void testArray (void)
 	test("var a = Array(); a.length", "0", NULL);
 	test("var a = Array(4); a.length", "4", NULL);
 	test("var a = Array(4.5); a.length", "RangeError: invalid array length"
-	,    "              ^~~           "
-	);
+	,    "              ^~~           ");
 	test("var a = Array(-4); a.length", "RangeError: invalid array length"
-	,    "              ^~           "
-	);
+	,    "              ^~           ");
 	test("var a = Array('abc'); a.length", "1", NULL);
 	test("var a = Array(123, 'abc'); a.length", "2", NULL);
 	
@@ -995,8 +864,7 @@ static void testBoolean (void)
 	test("var b = Boolean(); b.toString()", "false", NULL);
 	test("if (new Boolean(false)) 1; else 2;", "1", NULL);
 	test("Boolean.prototype.toString.call(123)", "TypeError: not a boolean"
-	,    "                                ^~~ "
-	);
+	,    "                                ^~~ ");
 	test("Boolean.prototype.toString.call(false)", "false", NULL);
 	test("Boolean.prototype.toString.call(new Boolean(0))", "false", NULL);
 	test("Boolean.prototype.toString.call(new Boolean(true))", "true", NULL);
@@ -1092,16 +960,12 @@ static void testString (void)
 	test("String.prototype", "", NULL);
 	
 	test("''.toString.call(123)", "TypeError: not a string"
-	,    "                 ^~~ "
-	);
+	,    "                 ^~~ ");
 	test("''.valueOf.call(123)", "TypeError: not a string"
-	,    "                ^~~ "
-	);
-	
+	,    "                ^~~ ");
 	test("'aべcaべc'.length", "6", NULL);
 	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
-	,    "                     べ  べ     ^~~~~~~~               "
-	);
+	,    "                     べ  べ     ^~~~~~~~               ");
 	
 	test("'abせd'.slice()", "abせd", NULL);
 	test("'abせd'.slice(1)", "bせd", NULL);

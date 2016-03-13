@@ -20,9 +20,6 @@
 enum Function(Flags) {
 	Function(needHeap)      = 1 << 1,
 	Function(needArguments) = 1 << 2,
-	Function(isGetter)      = 1 << 3,
-	Function(isSetter)      = 1 << 4,
-	Function(isAccessor)    = Function(isGetter) | Function(isSetter),
 };
 
 extern struct Object * Function(prototype);
@@ -38,7 +35,6 @@ Interface(Function,
 	(struct Function *, create ,(struct Object *environment))
 	(struct Function *, createSized ,(struct Object *environment, uint32_t size))
 	(struct Function *, createWithNative ,(const Native(Function) native, int parameterCount))
-	(struct Function *, createWithNativeAccessor ,(const Native(Function) getter, const Native(Function) setter))
 	(struct Function *, copy ,(struct Function * original))
 	(void, destroy ,(struct Function *))
 	
@@ -48,6 +44,8 @@ Interface(Function,
 	
 	(void, linkPrototype ,(struct Function *, struct Value prototype))
 	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Object(Type) *type))
+	
+	(struct Value, accessor ,(const Native(Function) getter, const Native(Function) setter))
 	,
 	{
 		struct Object object;
