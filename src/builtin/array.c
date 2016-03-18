@@ -36,7 +36,7 @@ static void valueAppendFromElement (struct Native(Context) * const context, stru
 	
 	if (valueIsArray(value))
 		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
-			object->element[(*element)++].data.value = Object.getValue(context, &value.data.object->element[index].data.value, value);
+			object->element[(*element)++].data.value = Object.getValue(value.data.object, &value.data.object->element[index].data.value, context);
 	else
 		object->element[(*element)++].data.value = value;
 }
@@ -60,7 +60,7 @@ static struct Chars * toChars (struct Native(Context) * const context, struct Va
 	
 	for (index = 0; index < count; ++index)
 	{
-		value = Object.getValue(context, &object->element[index].data.value, this);
+		value = Object.getValue(this.data.object, &object->element[index].data.value, context);
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 		{
 			value = Value.toString(context, value);
@@ -140,7 +140,7 @@ static struct Value pop (struct Native(Context) * const context)
 	
 	this = Value.toObject(context, context->this, Native(thisIndex));
 	value = this.data.object->elementCount?
-		Object.getValue(context, &this.data.object->element[this.data.object->elementCount - 1].data.value, this):
+		Object.getValue(this.data.object, &this.data.object->element[this.data.object->elementCount - 1].data.value, context):
 		Value(undefined);
 	
 	--this.data.object->elementCount;
@@ -189,9 +189,9 @@ static struct Value reverse (struct Native(Context) * const context)
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Object.getValue(context, &object->element[index].data.value, this);
-		Object.putValue(context, &object->element[index].data.value, this, Object.getValue(context, &object->element[last - index].data.value, this), &text);
-		Object.putValue(context, &object->element[last - index].data.value, this, temp, &text);
+		temp = Object.getValue(object, &object->element[index].data.value, context);
+		Object.putValue(object, &object->element[index].data.value, context, Object.getValue(object, &object->element[last - index].data.value, context), &text);
+		Object.putValue(object, &object->element[last - index].data.value, context, temp, &text);
 	}
 	
 	return this;
@@ -211,10 +211,10 @@ static struct Value shift (struct Native(Context) * const context)
 	
 	if (object->elementCount)
 	{
-		result = Object.getValue(context, &object->element[0].data.value, this);
+		result = Object.getValue(object, &object->element[0].data.value, context);
 		
 		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Object.putValue(context, &this.data.object->element[index].data.value, this, Object.getValue(context, &this.data.object->element[index + 1].data.value, this), &text);
+			Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index + 1].data.value, context), &text);
 		
 		--object->elementCount;
 	}
@@ -244,7 +244,7 @@ static struct Value unshift (struct Native(Context) * const context)
 		object->elementCount = length;
 	
 	for (index = count; index < length; ++index)
-		Object.putValue(context, &this.data.object->element[index].data.value, this, Object.getValue(context, &this.data.object->element[index - count].data.value, this), &text);
+		Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index - count].data.value, context), &text);
 	
 	for (index = 0; index < count; ++index)
 	{
@@ -291,7 +291,7 @@ static struct Value slice (struct Native(Context) * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			result->element[to].data.value = Object.getValue(context, &this.data.object->element[from].data.value, this);
+			result->element[to].data.value = Object.getValue(object, &this.data.object->element[from].data.value, context);
 	}
 	else
 		result = Array.createSized(0);
@@ -363,7 +363,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
-	Object.add(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
+	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 	
 	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
 }

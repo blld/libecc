@@ -50,24 +50,32 @@ Interface(Object,
 	(struct Object *, copy ,(const struct Object * original))
 	(void, destroy ,(struct Object *))
 	
-	(struct Value, get ,(struct Object *, struct Key))
-	(struct Value *, getOwnMember ,(struct Object *, struct Key))
-	(struct Value *, getMember ,(struct Object *, struct Key))
-	(struct Value *, getOwnProperty ,(struct Object *, struct Value))
-	(struct Value *, getProperty ,(struct Object *, struct Value))
-	(struct Value *, setProperty ,(struct Object *, struct Value, struct Value))
-	(struct Value *, add ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
+	(struct Value *, member ,(struct Object *, struct Key, int *own))
+	(struct Value *, element ,(struct Object *, uint32_t, int *own))
+	(struct Value *, property ,(struct Object *, struct Value, int *own))
 	
-	(struct Value, getValue ,(struct Native(Context) * const, struct Value *ref, struct Value this))
-	(struct Value, putValue ,(struct Native(Context) * const, struct Value *ref, struct Value this, struct Value value, const struct Text *text))
+	(struct Value, getValue ,(struct Object *, struct Value *, struct Native(Context) * const))
+	(struct Value, getMember ,(struct Object *, struct Key, struct Native(Context) * const))
+	(struct Value, getElement ,(struct Object *, uint32_t, struct Native(Context) * const))
+	(struct Value, getProperty ,(struct Object *, struct Value, struct Native(Context) * const))
 	
-	(int, delete ,(struct Object *, struct Key))
+	(struct Value *, putValue ,(struct Object *, struct Value *, struct Native(Context) * const, struct Value, const struct Text *))
+	(struct Value *, putMember ,(struct Object *, struct Key, struct Native(Context) * const, struct Value, const struct Text *))
+	(struct Value *, putElement ,(struct Object *, uint32_t, struct Native(Context) * const, struct Value, const struct Text *))
+	(struct Value *, putProperty ,(struct Object *, struct Value, struct Native(Context) * const, struct Value, const struct Text *))
+	
+	(struct Value *, addMember ,(struct Object *, struct Key member, struct Value, enum Value(Flags)))
+	(struct Value *, addElement ,(struct Object *, uint32_t element, struct Value, enum Value(Flags)))
+	(struct Value *, addProperty ,(struct Object *, struct Value property, struct Value, enum Value(Flags)))
+	
+	(int, deleteMember ,(struct Object *, struct Key))
+	(int, deleteElement ,(struct Object *, uint32_t))
 	(int, deleteProperty ,(struct Object *, struct Value))
+	
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
-	(struct Value *, addElementAtIndex ,(struct Object *, uint32_t index, struct Value, enum Value(Flags)))
 	(void, populateElementWithCList ,(struct Object *, int count, const char * list[]))
 	
 	(void, dumpTo ,(struct Object *, FILE *file))

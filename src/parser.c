@@ -966,7 +966,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	else if (Key.isEqual(value.data.key, Key(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
-	Object.add(&self->function->environment, value.data.key, Value(undefined), Value(hidden) | Value(sealed));
+	Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(hidden) | Value(sealed));
 	
 	if (acceptToken(self, '='))
 	{
@@ -1382,7 +1382,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
 					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
 				
-				Object.add(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
+				Object.addMember(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
 			}
 		} while (acceptToken(self, ','));
 	
@@ -1427,7 +1427,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function = Function.create(&self->function->environment);
 	Function.linkPrototype(function, Value.object(Object.create(Object(prototype))));
 	
-	Object.add(&function->environment, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
+	Object.addMember(&function->environment, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
 	
 	self->function = function;
 	expectToken(self, '(');
@@ -1450,14 +1450,14 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->text = text;
 	function->parameterCount = parameterCount;
 	
-	Object.add(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
+	Object.addMember(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
 	
 	value = Value.function(function);
 	
 	if (isDeclaration)
-		Object.add(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
+		Object.addMember(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
-		Object.add(&function->environment, identifierOp.value.data.key, value, Value(hidden));
+		Object.addMember(&function->environment, identifierOp.value.data.key, value, Value(hidden));
 	
 	if (isGetter)
 		value.flags |= Value(getter);

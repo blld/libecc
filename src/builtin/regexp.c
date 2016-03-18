@@ -34,8 +34,8 @@ void setup ()
 	RegExp(constructor) = Function.createWithNative(constructorFunction, 1);
 //	Function.addToObject(&numberConstructor->object, "fromCharCode", fromCharCode, -1, flags);
 	
-	Object.add(RegExp(prototype), Key(constructor), Value.function(RegExp(constructor)), 0);
-	Object.add(&RegExp(constructor)->object, Key(prototype), Value.object(RegExp(prototype)), 0);
+	Object.addMember(RegExp(prototype), Key(constructor), Value.function(RegExp(constructor)), 0);
+	Object.addMember(&RegExp(constructor)->object, Key(prototype), Value.object(RegExp(prototype)), 0);
 }
 
 void teardown (void)

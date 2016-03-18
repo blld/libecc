@@ -254,14 +254,14 @@ void setup ()
 	
 	Math(object) = Object.createTyped(&Math(type));
 	
-	Object.add(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
-	Object.add(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);
-	Object.add(Math(object), Key.makeWithCString("LN10"), Value.binary(2.30258509299404568402), flags);
-	Object.add(Math(object), Key.makeWithCString("LOG2E"), Value.binary(1.44269504088896340736), flags);
-	Object.add(Math(object), Key.makeWithCString("LOG10E"), Value.binary(0.434294481903251827651), flags);
-	Object.add(Math(object), Key.makeWithCString("PI"), Value.binary(3.14159265358979323846), flags);
-	Object.add(Math(object), Key.makeWithCString("SQRT1_2"), Value.binary(0.707106781186547524401), flags);
-	Object.add(Math(object), Key.makeWithCString("SQRT2"), Value.binary(1.41421356237309504880), flags);
+	Object.addMember(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
+	Object.addMember(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);
+	Object.addMember(Math(object), Key.makeWithCString("LN10"), Value.binary(2.30258509299404568402), flags);
+	Object.addMember(Math(object), Key.makeWithCString("LOG2E"), Value.binary(1.44269504088896340736), flags);
+	Object.addMember(Math(object), Key.makeWithCString("LOG10E"), Value.binary(0.434294481903251827651), flags);
+	Object.addMember(Math(object), Key.makeWithCString("PI"), Value.binary(3.14159265358979323846), flags);
+	Object.addMember(Math(object), Key.makeWithCString("SQRT1_2"), Value.binary(0.707106781186547524401), flags);
+	Object.addMember(Math(object), Key.makeWithCString("SQRT2"), Value.binary(1.41421356237309504880), flags);
 	
 	Function.addToObject(Math(object), "abs", mathAbs, 1, flags);
 	Function.addToObject(Math(object), "acos", mathACos, 1, flags);

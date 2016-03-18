@@ -105,7 +105,7 @@ Interface(Lexer,
 	
 	(struct Value, parseBinary ,(struct Text text))
 	(struct Value, parseInteger ,(struct Text text, int base))
-	(int32_t, parseElement ,(struct Text text))
+	(uint32_t, parseElement ,(struct Text text))
 	
 	(uint8_t, uint8Hex ,(char a, char b))
 	(uint16_t, uint16Hex ,(char a, char b, char c, char d))

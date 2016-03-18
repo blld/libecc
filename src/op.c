@@ -597,17 +597,23 @@ struct Value construct (struct Native(Context) * const context)
 {
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
-	struct Value value, object, function = nextOp();
+	struct Value value, *prototype, object, function = nextOp();
 	
 	if (function.type != Value(functionType))
 		goto error;
 	
-	value = Object.get(&function.data.function->object, Key(prototype));
-	if (!Value.isObject(value))
+	prototype = Object.member(&function.data.function->object, Key(prototype), NULL);
+	if (!prototype)
 		goto error;
 	
-	object = Value.object(Object.create(value.data.object));
-	++value.data.object->referenceCount;
+	if (Value.isObject(*prototype))
+	{
+		++prototype->data.object->referenceCount;
+		object = Value.object(Object.create(prototype->data.object));
+	}
+	else
+		object = Value.object(Object(prototype));
+	
 	value = callValue(context, function, object, argumentCount, 1, text);
 	
 	if (Value.isObject(value))
@@ -697,9 +703,9 @@ struct Value object (struct Native(Context) * const context)
 		value = nextOp();
 		
 		if (value.type == Value(keyType))
-			Object.add(object, value.data.key, retain(nextOp()), value.flags);
+			Object.addMember(object, value.data.key, retain(nextOp()), value.flags);
 		else if (value.type == Value(integerType))
-			Object.addElementAtIndex(object, value.data.integer, retain(nextOp()), value.flags);
+			Object.addElement(object, value.data.integer, retain(nextOp()), value.flags);
 	}
 	return Value.object(object);
 }
@@ -728,50 +734,38 @@ struct Value this (struct Native(Context) * const context)
 	return context->this;
 }
 
-struct Value getLocal (struct Native(Context) * const context)
-{
-	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(context->environment, key);
-	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
-	
-	return *ref;
-}
-
 struct Value getLocalRef (struct Native(Context) * const context)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(context->environment, key);
+	struct Value *ref = Object.member(context->environment, key, NULL);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
 	return Value.reference(ref);
 }
 
+struct Value getLocal (struct Native(Context) * const context)
+{
+	return *getLocalRef(context).data.reference;
+}
+
 struct Value setLocal (struct Native(Context) * const context)
 {
-	struct Key key = opValue().data.key;
-	struct Value *ref = Object.getMember(context->environment, key);
-	struct Value value;
-	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", context->ops->text.length, context->ops->text.bytes)));
-	
-	value = nextOp();
+	struct Value *ref = getLocalRef(context).data.reference;
+	struct Value value = nextOp();
 	value.flags = 0;
 	release(*ref);
 	return *ref = value;
 }
 
-struct Value getLocalSlot (struct Native(Context) * const context)
-{
-	int32_t slot = opValue().data.integer;
-	return context->environment->hashmap[slot].data.value;
-}
-
 struct Value getLocalSlotRef (struct Native(Context) * const context)
 {
-	int32_t slot = opValue().data.integer;
-	return Value.reference(&context->environment->hashmap[slot].data.value);
+	return Value.reference(&context->environment->hashmap[opValue().data.integer].data.value);
+}
+
+struct Value getLocalSlot (struct Native(Context) * const context)
+{
+	return context->environment->hashmap[opValue().data.integer].data.value;
 }
 
 struct Value setLocalSlot (struct Native(Context) * const context)
@@ -781,18 +775,6 @@ struct Value setLocalSlot (struct Native(Context) * const context)
 	value.flags = 0;
 	release(context->environment->hashmap[slot].data.value);
 	return context->environment->hashmap[slot].data.value = retain(value);
-}
-
-struct Value getParentSlot (struct Native(Context) * const context)
-{
-	int32_t slot = opValue().data.integer & 0xffff;
-	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = context->environment;
-	do
-		object = object->prototype;
-	while (--count);
-	
-	return object->hashmap[slot].data.value;
 }
 
 struct Value getParentSlotRef (struct Native(Context) * const context)
@@ -806,79 +788,67 @@ struct Value getParentSlotRef (struct Native(Context) * const context)
 	return Value.reference(&object->hashmap[slot].data.value);
 }
 
+struct Value getParentSlot (struct Native(Context) * const context)
+{
+	struct Value *ref = getParentSlotRef(context).data.reference;
+	return *ref;
+}
+
 struct Value setParentSlot (struct Native(Context) * const context)
 {
-	int32_t slot = opValue().data.integer & 0xffff;
-	int32_t count = opValue().data.integer >> 16;
-	struct Object *object = context->environment;
+	struct Value *ref = getParentSlotRef(context).data.reference;
 	struct Value value = nextOp();
-	value.flags = 0;
-	while (count--)
-		object = object->prototype;
+	release(*ref);
+	return *ref = retain(value);
+}
+
+struct Value getMemberRef (struct Native(Context) * const context)
+{
+	const struct Text *text = opText(0);
+	struct Key key = opValue().data.key;
+	struct Value object = nextOp();
+	struct Value *ref;
+	int own = 0;
 	
-	release(object->hashmap[slot].data.value);
-	return object->hashmap[slot].data.value = retain(value);
+	if (!Value.isObject(object))
+		object = Value.toObject(context, object, Native(noIndex));
+	
+	context->refObject = object.data.object;
+	ref = Object.member(object.data.object, key, &own);
+	
+	if (!ref || !own)
+	{
+		if (object.data.object->flags & Object(sealed))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+		
+		ref = Object.addMember(object.data.object, key, Value(undefined), 0);
+	}
+	
+	return Value.reference(ref);
 }
 
 struct Value getMember (struct Native(Context) * const context)
 {
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
-	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	ref = Object.getMember(object.data.object, key);
-	
-	return Object.getValue(context, ref, object);
-}
-
-struct Value getMemberRef (struct Native(Context) * const context)
-{
-	const struct Text *text = opText(0);
-	const struct Text *textObject = opText(1);
-	struct Key key = opValue().data.key;
-	struct Value object = nextOp();
-	struct Value *ref;
-	
-	if (!Value.isObject(object))
-		object = Value.toObject(context, object, Native(noIndex));
-	
-	context->refObject = object;
-	ref = Object.getMember(object.data.object, key);
-	
-	if (!ref)
-	{
-		if (object.data.object->flags & Object(sealed))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
-		
-		ref = Object.add(object.data.object, key, Value(undefined), 0);
-	}
-	
-	return Value.reference(ref);
+	return Object.getMember(object.data.object, key, context);
 }
 
 struct Value setMember (struct Native(Context) * const context)
 {
 	const struct Text *text = opText(0);
-	const struct Text *textObject = opText(1);
-	struct Value key = opValue();
+	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
 	struct Value value = retain(nextOp());
-	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	ref = Object.getOwnMember(object.data.object, key.data.key);
-	
-	if (ref)
-		return Object.putValue(context, ref, object, value, text);
-	else if (object.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
-	else
-		Object.add(object.data.object, key.data.key, value, 0);
+	Object.putMember(object.data.object, key, context, value, text);
 	
 	return value;
 }
@@ -889,14 +859,11 @@ struct Value callMember (struct Native(Context) * const context)
 	const struct Text *text = &(++context->ops)->text;
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
-	struct Value *ref;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	ref = Object.getMember(object.data.object, key);
-	
-	return callValue(context, Object.getValue(context, ref, object), object, argumentCount, 0, text);
+	return callValue(context, Object.getMember(object.data.object, key, context), object, argumentCount, 0, text);
 }
 
 struct Value deleteMember (struct Native(Context) * const context)
@@ -904,28 +871,11 @@ struct Value deleteMember (struct Native(Context) * const context)
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
 	struct Value object = Value.toObject(context, nextOp(), Native(noIndex));
-	int result = Object.delete(object.data.object, key);
+	int result = Object.deleteMember(object.data.object, key);
 	if (!result)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
 	return Value.truth(result);
-}
-
-struct Value getProperty (struct Native(Context) * const context)
-{
-	struct Value object = nextOp();
-	struct Value property = nextOp();
-	struct Value *ref;
-	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
-	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object, Native(noIndex));
-	
-	ref = Object.getProperty(object.data.object, property);
-	
-	return Object.getValue(context, ref, object);
 }
 
 struct Value getPropertyRef (struct Native(Context) * const context)
@@ -934,6 +884,7 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 	struct Value object = nextOp();
 	struct Value property = nextOp();
 	struct Value *ref;
+	int own = 0;
 	
 	if (Value.isObject(property))
 		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
@@ -941,23 +892,40 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	context->refObject = object;
-	ref = Object.getProperty(object.data.object, property);
+	context->refObject = object.data.object;
+	ref = Object.property(object.data.object, property, &own);
 	
-	if (!ref && !(ref = Object.setProperty(object.data.object, property, Value(undefined))))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(*text, "%.*s is not extensible", text->length, text->bytes)));
+	if (!ref || !own)
+	{
+		if (object.data.object->flags & Object(sealed))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+		
+		ref = Object.addProperty(object.data.object, property, Value(undefined), 0);
+	}
 	
 	return Value.reference(ref);
+}
+
+struct Value getProperty (struct Native(Context) * const context)
+{
+	struct Value object = nextOp();
+	struct Value property = nextOp();
+	
+	if (Value.isObject(property))
+		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
+	
+	if (Value.isPrimitive(object))
+		object = Value.toObject(context, object, Native(noIndex));
+	
+	return Object.getProperty(object.data.object, property, context);
 }
 
 struct Value setProperty (struct Native(Context) * const context)
 {
 	const struct Text *text = opText(0);
-	const struct Text *textObject = opText(1);
 	struct Value object = nextOp();
 	struct Value property = nextOp();
 	struct Value value = retain(nextOp());
-	struct Value *ref;
 	
 	if (Value.isObject(property))
 		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
@@ -965,14 +933,7 @@ struct Value setProperty (struct Native(Context) * const context)
 	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	ref = Object.getOwnProperty(object.data.object, property);
-	
-	if (ref)
-		return Object.putValue(context, ref, object, value, text);
-	else if (object.data.object->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not extensible", textObject->length, textObject->bytes)));
-	else
-		Object.setProperty(object.data.object, property, value);
+	Object.putProperty(object.data.object, property, context, value, text);
 	
 	return value;
 }
@@ -983,7 +944,6 @@ struct Value callProperty (struct Native(Context) * const context)
 	const struct Text *text = &(++context->ops)->text;
 	struct Value object = nextOp();
 	struct Value property = nextOp();
-	struct Value *ref;
 	
 	if (Value.isObject(property))
 		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
@@ -991,9 +951,7 @@ struct Value callProperty (struct Native(Context) * const context)
 	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
-	ref = Object.getProperty(object.data.object, property);
-	
-	return callValue(context, Object.getValue(context, ref, object), object, argumentCount, 0, text);
+	return callValue(context, Object.getProperty(object.data.object, property, context), object, argumentCount, 0, text);
 
 }
 
@@ -1013,7 +971,7 @@ struct Value deleteProperty (struct Native(Context) * const context)
 	if (!result)
 	{
 		struct Value string = Value.toString(NULL, property);
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Value.stringLength(string), Value.stringBytes(string))));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string))));
 	}
 	return Value.truth(result);
 }
@@ -1146,7 +1104,7 @@ struct Value instanceOf (struct Native(Context) * const context)
 	if (b.type != Value(functionType))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
 	
-	b = Object.get(b.data.object, Key(prototype));
+	b = Object.getMember(b.data.object, Key(prototype), context);
 	if (!Value.isObject(b))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s.prototype not an object", text->length, text->bytes)));
 	
@@ -1167,7 +1125,8 @@ struct Value in (struct Native(Context) * const context)
 	if (!Value.isObject(object))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "invalid 'in' operand %.*s", context->ops->text.length, context->ops->text.bytes)));
 	
-	ref = Object.getProperty(object.data.object, property);
+	ref = Object.property(object.data.object, property, NULL);
+	
 	return Value.truth(ref != NULL);
 }
 
@@ -1339,9 +1298,9 @@ static struct Value changeBinaryRef (struct Native(Context) * const context, dou
 	
 	if (ref->type != Value(binaryType) || ref->flags & Value(readonly))
 	{
-		struct Value value = Value.toBinary(Object.getValue(context, ref, context->refObject));
+		struct Value value = Value.toBinary(Object.getValue(context->refObject, ref, context));
 		double result = operationBinary(&value.data.binary);
-		Object.putValue(context, ref, context->refObject, value, text);
+		Object.putValue(context->refObject, ref, context, value, text);
 		return Value.binary(result);
 	}
 	return Value.binary(operationBinary(&ref->data.binary));
@@ -1373,15 +1332,15 @@ static struct Value operationAny (struct Native(Context) * const context, void (
 {
 	b = Value.toBinary(b);
 	
-	struct Value value = Value.toBinary(Object.getValue(context, a, context->refObject));
+	struct Value value = Value.toBinary(Object.getValue(context->refObject, a, context));
 	operationBinary(&value.data.binary, b.data.binary);
-	return Object.putValue(context, a, context->refObject, value, text);
+	return *Object.putValue(context->refObject, a, context, value, text);
 }
 
 static struct Value addAny (struct Native(Context) * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
 {
-	struct Value value = addition(context, Object.getValue(context, a, context->refObject), text, b, opText(0));
-	return Object.putValue(context, a, context->refObject, retain(value), text);
+	struct Value value = addition(context, Object.getValue(context->refObject, a, context), text, b, opText(0));
+	return *Object.putValue(context->refObject, a, context, retain(value), text);
 }
 
 static struct Value assignBinaryRef (struct Native(Context) * const context, void (*operationBinary)(double *, double), typeof (operationAny) operationAny)
@@ -1435,9 +1394,9 @@ static struct Value assignIntegerRef (struct Native(Context) * const context, vo
 	
 	if (ref->type != Value(integerType) || ref->flags & Value(readonly))
 	{
-		struct Value value = Value.toInteger(Object.getValue(context, ref, context->refObject));
+		struct Value value = Value.toInteger(Object.getValue(context->refObject, ref, context));
 		operationInteger(&value.data.integer, b.data.integer);
-		return Object.putValue(context, ref, context->refObject, value, text);
+		return *Object.putValue(context->refObject, ref, context, value, text);
 	}
 	operationInteger(&ref->data.integer, b.data.integer);
 	return *ref;
@@ -1501,7 +1460,7 @@ struct Value try (struct Native(Context) * const context)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
-				Object.add(context->environment, key, value, 0);
+				Object.addMember(context->environment, key, value, 0);
 				value = nextOp(); // execute until noop
 				rethrow = 0;
 			}

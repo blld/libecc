@@ -47,13 +47,13 @@ static struct Chars * toChars (struct Native(Context) * const context, struct Va
 	
 	self = value.data.object;
 	
-	name = Object.get(self, Key(name));
+	name = Object.getMember(self, Key(name), context);
 	if (name.type == Value(undefinedType))
 		name = Value.text(&Text(errorName));
 	else
 		name = Value.toString(context, name);
 	
-	message = Object.get(self, Key(message));
+	message = Object.getMember(self, Key(message), context);
 	if (message.type == Value(undefinedType))
 		message = Value.text(&Text(empty));
 	else
@@ -83,7 +83,7 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 	self->text = text;
 	
 	if (message)
-		Object.add(&self->object, Key(message), Value.chars(message), Value(hidden));
+		Object.addMember(&self->object, Key(message), Value.chars(message), Value(hidden));
 	
 	return self;
 }
@@ -161,7 +161,7 @@ static struct Value uriErrorConstructor (struct Native(Context) * const context)
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
 	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Error(type));
-	Object.add(*prototype, Key(name), Value.text(name), Value(hidden));
+	Object.addMember(*prototype, Key(name), Value.text(name), Value(hidden));
 }
 
 // MARK: - Static Members

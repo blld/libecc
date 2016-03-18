@@ -656,13 +656,13 @@ static void testObject (void)
 	test("var a = { b:1 }; ++a['b']", "2", NULL);
 	test("var a = {}; ++a.b", "NaN", NULL);
 	test("var o = {}; Object.defineProperty(o, 'a', { value: 123 }); var b = o.a; b += 123;", "246", NULL);
-	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: a is not extensible"
+	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: object is not extensible"
 	,    "                                ^~~");
-	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: a is not extensible"
+	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: object is not extensible"
 	,    "                              ^~~     ");
-	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: a is not extensible"
+	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: object is not extensible"
 	,    "                              ^~~    ");
-	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: a is not extensible"
+	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: object is not extensible"
 	,    "                              ^~~~~~    ");
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property"
@@ -950,6 +950,9 @@ static void testNumber (void)
 	test("Math.round(-2147483647.5)", "-2147483647", NULL);
 	test("Math.round(2147483647.5)", "2147483648", NULL);
 	test("Math.round(-2147483647.6)", "-2147483648", NULL);
+	
+	
+//	test("Number.prototype.toString = function(){ return this + 'abc' }; 123..toString()", "123abc", NULL);
 }
 
 static void testString (void)
@@ -1058,6 +1061,11 @@ static int runTest (int verbosity)
 	testBoolean();
 	testNumber();
 	testString();
+	
+//	test("var a = [1,2,3,4]; Object.defineProperty(a, 'length', {value:2}); a", "1,2", NULL);
+	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123 }); o = Object.create(p); o.p = 456", "", NULL);
+	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123, writable: true }); o = Object.create(p); Object.seal(o); o.p = 456;", "", NULL);
+	test("function F(){}; F.prototype = 123; new F", "", NULL);
 	
 	Env.newline();
 	

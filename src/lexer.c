@@ -665,29 +665,25 @@ struct Value parseInteger (struct Text text, int base)
 		return Value.integer((int32_t)integer);
 }
 
-int32_t parseElement (struct Text text)
+uint32_t parseElement (struct Text text)
 {
-	char c;
-	int hadDigit = 0;
-	uint32_t index;
 	struct Value value;
 	
-	for (index = 0; index < text.length; ++index)
-	{
-		c = text.bytes[index];
-		if (isdigit(c))
-			hadDigit = 1;
-		else if (isgraph(c))
-			return -1;
-	}
-	if (!hadDigit)
-		return -1;
+	if (!text.length)
+		return UINT32_MAX;
+	
+	for (uint16_t index = 0; index < text.length; ++index)
+		if (!isdigit(text.bytes[index]))
+			return UINT32_MAX;
 	
 	value = parseInteger(text, 0);
-	if (value.type != Value(integerType))
-		return -1;
 	
-	return value.data.integer;
+	if (value.type == Value(integerType))
+		return value.data.integer;
+	if (value.type == Value(binaryType) && value.data.binary >= 0 && value.data.binary < UINT32_MAX && value.data.binary == (uint32_t)value.data.binary)
+		return value.data.binary;
+	else
+		return UINT32_MAX;
 }
 
 static inline int8_t hexhigit(int c)

@@ -409,7 +409,7 @@ struct String * create (struct Chars *chars)
 	*self = String.identity;
 	Pool.addObject(&self->object);
 	Object.initialize(&self->object, String(prototype));
-	Object.add(&self->object, Key(length), Value.integer(indexPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
+	Object.addMember(&self->object, Key(length), Value.integer(indexPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
 	

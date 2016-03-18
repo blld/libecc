@@ -33,7 +33,7 @@ enum Native(Index) {
 struct Native(Context) {
 	const struct Op * ops;
 	struct Value this;
-	struct Value refObject;
+	struct Object *refObject;
 	int breaker;
 	int construct;
 	int argumentOffset;

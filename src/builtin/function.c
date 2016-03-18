@@ -206,7 +206,7 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
-	Object.add(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
+	Object.addMember(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
 	
 	return self;
 }
@@ -249,7 +249,7 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 	if (value.type == Value(functionType))
 		value.data.function->name = name;
 	
-	Object.add(&self->environment, Key.makeWithCString(name), value, flags);
+	Object.addMember(&self->environment, Key.makeWithCString(name), value, flags);
 }
 
 struct Function * addNative(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
@@ -268,7 +268,7 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	function = createWithNative(native, parameterCount);
 	function->name = name;
 	
-	Object.add(object, Key.makeWithCString(name), Value.function(function), flags);
+	Object.addMember(object, Key.makeWithCString(name), Value.function(function), flags);
 	
 	return function;
 }
@@ -277,8 +277,8 @@ void linkPrototype (struct Function *self, struct Value prototype)
 {
 	assert(self);
 	
-	Object.add(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
-	Object.add(&self->object, Key(prototype), prototype, Value(hidden) | Value(frozen));
+	Object.addMember(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
+	Object.addMember(&self->object, Key(prototype), prototype, Value(hidden) | Value(sealed));
 }
 
 void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Object(Type) *type)

@@ -30,26 +30,26 @@
 	_( array )\
 	_( this )\
 	\
-	_( getLocal )\
 	_( getLocalRef )\
+	_( getLocal )\
 	_( setLocal )\
 	\
-	_( getLocalSlot )\
 	_( getLocalSlotRef )\
+	_( getLocalSlot )\
 	_( setLocalSlot )\
 	\
-	_( getParentSlot )\
 	_( getParentSlotRef )\
+	_( getParentSlot )\
 	_( setParentSlot )\
 	\
-	_( getMember )\
 	_( getMemberRef )\
+	_( getMember )\
 	_( setMember )\
 	_( callMember )\
 	_( deleteMember )\
 	\
-	_( getProperty )\
 	_( getPropertyRef )\
+	_( getProperty )\
 	_( setProperty )\
 	_( callProperty )\
 	_( deleteProperty )\
