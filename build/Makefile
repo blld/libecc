@@ -1,6 +1,6 @@
 
 binary := ./bin/libecc
-sources := $(wildcard ../src/*.c) $(wildcard ../src/object/*.c)
+sources := $(wildcard ../src/*.c) $(wildcard ../src/builtin/*.c)
 objects := $(sources:../src/%.c=./object/%.o)
 
 #
@@ -24,7 +24,7 @@ CFLAGS += $(std) $(warn) $(opts) $(flto) $(debug)
 
 ##
 
-all: ./object/object ./bin $(binary)
+all: ./object/builtin ./bin $(binary)
 
 clean:
 	rm -rf ./bin ./object
@@ -32,7 +32,7 @@ clean:
 test: $(binary)
 	$(binary) --test
 
-./object/object ./bin:
+./object/builtin ./bin:
 	@mkdir -p $@
 
 $(binary): $(objects)
