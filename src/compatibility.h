@@ -60,14 +60,9 @@
 		#define longjmp _longjmp
 	#endif
 
-	#if __MSDOS__
-		#include <conio.h>
-	#endif
-
 	#if _WIN32 || _WIN64
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
-		#define strtod strtold /* supports hex */
+		/* supports hex */
+		#define strtod strtold
 	#endif
 
 #endif
