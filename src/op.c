@@ -849,7 +849,7 @@ struct Value equal (struct Native(Context) * const context)
 	struct Value a = nextOp();
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.equals(a, b, context, text, opText(0));
+	return Value.equals(context, a, b, text, opText(0));
 }
 
 struct Value notEqual (struct Native(Context) * const context)
@@ -857,7 +857,7 @@ struct Value notEqual (struct Native(Context) * const context)
 	struct Value a = nextOp();
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.truth(!Value.isTrue(Value.equals(a, b, context, text, opText(0))));
+	return Value.truth(!Value.isTrue(Value.equals(context, a, b, text, opText(0))));
 }
 
 struct Value identical (struct Native(Context) * const context)
@@ -865,7 +865,7 @@ struct Value identical (struct Native(Context) * const context)
 	struct Value a = nextOp();
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.same(a, b, context, text, opText(0));
+	return Value.same(context, a, b, text, opText(0));
 }
 
 struct Value notIdentical (struct Native(Context) * const context)
@@ -873,7 +873,7 @@ struct Value notIdentical (struct Native(Context) * const context)
 	struct Value a = nextOp();
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
-	return Value.truth(!Value.isTrue(Value.same(a, b, context, text, opText(0))));
+	return Value.truth(!Value.isTrue(Value.same(context, a, b, text, opText(0))));
 }
 
 struct Value less (struct Native(Context) * const context)
@@ -884,7 +884,7 @@ struct Value less (struct Native(Context) * const context)
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
 	else
-		return Value.less(a, b, context, text, opText(0));
+		return Value.less(context, a, b, text, opText(0));
 }
 
 struct Value lessOrEqual (struct Native(Context) * const context)
@@ -895,7 +895,7 @@ struct Value lessOrEqual (struct Native(Context) * const context)
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
 	else
-		return Value.lessOrEqual(a, b, context, text, opText(0));
+		return Value.lessOrEqual(context, a, b, text, opText(0));
 }
 
 struct Value more (struct Native(Context) * const context)
@@ -906,7 +906,7 @@ struct Value more (struct Native(Context) * const context)
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
 	else
-		return Value.more(a, b, context, text, opText(0));
+		return Value.more(context, a, b, text, opText(0));
 }
 
 struct Value moreOrEqual (struct Native(Context) * const context)
@@ -917,7 +917,7 @@ struct Value moreOrEqual (struct Native(Context) * const context)
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
 	else
-		return Value.moreOrEqual(a, b, context, text, opText(0));
+		return Value.moreOrEqual(context, a, b, text, opText(0));
 }
 
 struct Value instanceOf (struct Native(Context) * const context)
@@ -1006,7 +1006,7 @@ struct Value add (struct Native(Context) * const context)
 		return a;
 	}
 	else
-		return Value.add(a, b, context, text, opText(0));
+		return Value.add(context, a, b, text, opText(0));
 }
 
 struct Value minus (struct Native(Context) * const context)
@@ -1168,7 +1168,7 @@ static struct Value operationAny (struct Native(Context) * const context, void (
 
 static struct Value addAny (struct Native(Context) * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
 {
-	struct Value value = Value.add(Object.getValue(context->refObject, a, context), b, context, text, opText(0));
+	struct Value value = Value.add(context, Object.getValue(context->refObject, a, context), b, text, opText(0));
 	return *Object.putValue(context->refObject, a, context, retain(value), text);
 }
 
@@ -1440,7 +1440,7 @@ struct Value switchOp (struct Native(Context) * const context)
 	while (context->ops < nextOps)
 	{
 		b = nextOp();
-		if (Value.isTrue(Value.equals(a, b, context, text, opText(0))))
+		if (Value.isTrue(Value.equals(context, a, b, text, opText(0))))
 		{
 			nextOps += nextOp().data.integer + 1;
 			context->ops = nextOps;
@@ -1543,8 +1543,8 @@ static struct Value iterateIntegerRef (
 	}
 	
 deoptimize:
-	for (; Value.isTrue(compareValue(*indexRef, *countRef, context, indexText, countText))
-		 ; *indexRef = valueStep(*indexRef, stepValue, context, indexText, stepText)
+	for (; Value.isTrue(compareValue(context, *indexRef, *countRef, indexText, countText))
+		 ; *indexRef = valueStep(context, *indexRef, stepValue, indexText, stepText)
 		 )
 		stepIteration(value, nextOps);
 	

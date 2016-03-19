@@ -528,7 +528,7 @@ struct Value toType (struct Value value)
 	abort();
 }
 
-struct Value equals (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value equals (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
@@ -554,26 +554,26 @@ struct Value equals (struct Value a, struct Value b, struct Native(Context) * co
 	else if (a.type == Value(undefinedType) && b.type == Value(nullType))
 		return Value(true);
 	else if (isNumber(a) && isString(b))
-		return equals(a, toBinary(b), context, aText, bText);
+		return equals(context, a, toBinary(b), aText, bText);
 	else if (isString(a) && isNumber(b))
-		return equals(toBinary(a), b, context, aText, bText);
+		return equals(context, toBinary(a), b, aText, bText);
 	else if (isBoolean(a))
-		return equals(toBinary(a), b, context, aText, bText);
+		return equals(context, toBinary(a), b, aText, bText);
 	else if (isBoolean(b))
-		return equals(a, toBinary(b), context, aText, bText);
+		return equals(context, a, toBinary(b), aText, bText);
 	else if (((isString(a) || isNumber(a)) && isObject(b))
 		   || (isObject(a) && (isString(b) || isNumber(b)))
 		   )
 	{
 		a = toPrimitive(context, a, aText, Value(hintAuto));
 		b = toPrimitive(context, b, bText, Value(hintAuto));
-		return equals(a, b, context, aText, bText);
+		return equals(context, a, b, aText, bText);
 	}
 	
 	return Value(false);
 }
 
-struct Value same (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value same (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
@@ -598,7 +598,7 @@ struct Value same (struct Value a, struct Value b, struct Native(Context) * cons
 	return Value(false);
 }
 
-static struct Value add (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+static struct Value add (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return binary(a.data.binary + b.data.binary);
@@ -623,7 +623,7 @@ static struct Value add (struct Value a, struct Value b, struct Native(Context) 
 	}
 }
 
-static struct Value subtract (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+static struct Value subtract (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return binary(a.data.binary - b.data.binary);
@@ -633,7 +633,7 @@ static struct Value subtract (struct Value a, struct Value b, struct Native(Cont
 	return binary(toBinary(a).data.binary - toBinary(b).data.binary);
 }
 
-static struct Value compare (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+static struct Value compare (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
 	a = toPrimitive(context, a, aText, Value(hintNumber));
 	b = toPrimitive(context, b, bText, Value(hintNumber));
@@ -659,36 +659,36 @@ static struct Value compare (struct Value a, struct Value b, struct Native(Conte
 	}
 }
 
-struct Value less (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value less (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
-	a = compare(a, b, context, aText, bText);
+	a = compare(context, a, b, aText, bText);
 	if (a.type == Value(undefinedType))
 		return Value(false);
 	else
 		return a;
 }
 
-struct Value more (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value more (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
-	a = compare(b, a, context, bText, aText);
+	a = compare(context, b, a, bText, aText);
 	if (a.type == Value(undefinedType))
 		return Value(false);
 	else
 		return a;
 }
 
-struct Value lessOrEqual (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value lessOrEqual (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
-	a = compare(b, a, context, bText, aText);
+	a = compare(context, b, a, bText, aText);
 	if (a.type == Value(undefinedType) || a.type == Value(trueType))
 		return Value(false);
 	else
 		return Value(true);
 }
 
-struct Value moreOrEqual (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+struct Value moreOrEqual (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
 {
-	a = compare(a, b, context, aText, bText);
+	a = compare(context, a, b, aText, bText);
 	if (a.type == Value(undefinedType) || a.type == Value(trueType))
 		return Value(false);
 	else
