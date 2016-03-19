@@ -75,8 +75,8 @@ static const struct Value propertyTypeError(struct Native(Context) * const conte
 {
 	if (Value.isObject(this))
 	{
-		__typeof__(this.data.object->hashmap) hashmap = (__typeof__(hashmap))ref;
-		__typeof__(this.data.object->element) element = (__typeof__(element))ref;
+		typeof(this.data.object->hashmap) hashmap = (typeof(hashmap))ref;
+		typeof(this.data.object->element) element = (typeof(element))ref;
 		
 		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
 		{
@@ -285,14 +285,20 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	
 	if (getter || setter)
 	{
+		if (getter && getter->type == Value(undefinedType))
+			getter = NULL;
+		
+		if (setter && setter->type == Value(undefinedType))
+			setter = NULL;
+		
 		if (getter && getter->type != Value(functionType))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptor's getter field is neither undefined nor a function")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "getter is not a function")));
 		
 		if (setter && setter->type != Value(functionType))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptor's setter field is neither undefined nor a function")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "setter is not a function")));
 		
 		if (member(descriptor, Key(value)) || member(descriptor, Key(writable)))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptors must not specify a value or be writable when a getter or setter has been specified")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "value & writable forbidden when a getter or setter are set")));
 		
 		if (getter)
 		{
@@ -302,10 +308,15 @@ static struct Value defineProperty (struct Native(Context) * const context)
 			
 			value.flags |= Value(getter);
 		}
-		else
+		else if (setter)
 		{
 			value = *setter;
 			value.flags |= Value(setter);
+		}
+		else
+		{
+			value = Value.function(Function.createWithNative(Op.noop, 0));
+			value.flags |= Value(getter);
 		}
 	}
 	else

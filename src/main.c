@@ -650,6 +650,7 @@ static void testObject (void)
 	test("Object.prototype.toString.call('abc')", "[object String]", NULL);
 	test("Object.prototype.toString.call(123)", "[object Number]", NULL);
 	test("Object.prototype.toString.call(function(){})", "[object Function]", NULL);
+	test("var o = {}; Object.defineProperty(o, 'p', { get:undefined }); o.p", "undefined", NULL);
 	test("var o = {}; Object.defineProperty(o, 'p', { get:function(){ return 123 } }); o.p", "123", NULL);
 	test("var o = {}; Object.defineProperty(o, 'p', { get:function(){ return 123 } }); o.toString.call(Object.getOwnPropertyDescriptor(o, 'p').get)", "[object Function]", NULL);
 	test("var a = { b:1 }; ++a.b", "2", NULL);
@@ -696,8 +697,10 @@ static void testObject (void)
 	,    "                                               ^~~     ");
 	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only property"
 	,    "                                             ^~~~     ");
-	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: property descriptor's getter field is neither undefined nor a function"
+	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: getter is not a function"
 	,    "                                          ^~~~~~~~~~~~  ");
+	test("var o = {}; Object.defineProperty(o, 'p', { get: function(){}, value: 2 });", "TypeError: value & writable forbidden when a getter or setter are set"
+	,    "                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123 }); Object.defineProperty(o, 'p', { enumerable: true });", "TypeError: property is non-configurable"
 	,    "                                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { value: 1 });", "TypeError: property is non-configurable"
