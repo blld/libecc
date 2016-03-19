@@ -19,20 +19,17 @@ const struct Object(Type) Object(type) = {
 
 static const int defaultSize = 8;
 
-// NOTE: key.data.depth[x] are premultiplied to hashmap.slot size
-#define hashmapKeySlot(H, S) *((uint16_t *)((char *)(H.slot) + S))
-
-static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
+static inline uint16_t getSlot (const struct Object * const self, const struct Key key)
 {
 	return
-		hashmapKeySlot(self->hashmap[
-		hashmapKeySlot(self->hashmap[
-		hashmapKeySlot(self->hashmap[
-		hashmapKeySlot(self->hashmap[1]
-			, key.data.depth[0])]
-			, key.data.depth[1])]
-			, key.data.depth[2])]
-			, key.data.depth[3]);
+		self->hashmap[
+		self->hashmap[
+		self->hashmap[
+		self->hashmap[1]
+		.slot[key.data.depth[0]]]
+		.slot[key.data.depth[1]]]
+		.slot[key.data.depth[2]]]
+		.slot[key.data.depth[3]];
 }
 
 static inline uint32_t getElementOrKey (struct Value property, struct Key *key)
@@ -902,7 +899,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 	
 	do
 	{
-		if (!hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]))
+		if (!self->hashmap[slot].slot[key.data.depth[depth]])
 		{
 			int need = 4 - depth - (self->hashmapCapacity - self->hashmapCount);
 			if (need > 0)
@@ -916,7 +913,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 			do
 			{
 				assert(self->hashmapCount < UINT16_MAX);
-				slot = hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]) = self->hashmapCount++;
+				slot = self->hashmap[slot].slot[key.data.depth[depth]] = self->hashmapCount++;
 			} while (++depth < 4);
 			
 			self->hashmap[slot].data.key = key;
@@ -925,7 +922,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 		else
 			assert(self->hashmap[slot].data.value.check != 1);
 		
-		slot = hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]);
+		slot = self->hashmap[slot].slot[key.data.depth[depth]];
 		assert(slot != 1);
 		assert(slot < self->hashmapCount);
 	} while (++depth < 4);
