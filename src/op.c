@@ -431,7 +431,7 @@ struct Value construct (struct Native(Context) * const context)
 	if (function.type != Value(functionType))
 		goto error;
 	
-	prototype = Object.member(&function.data.function->object, Key(prototype), NULL);
+	prototype = Object.member(&function.data.function->object, Key(prototype));
 	if (!prototype)
 		goto error;
 	
@@ -566,7 +566,7 @@ struct Value this (struct Native(Context) * const context)
 struct Value getLocalRef (struct Native(Context) * const context)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.member(context->environment, key, NULL);
+	struct Value *ref = Object.member(context->environment, key);
 	if (!ref)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
@@ -637,15 +637,14 @@ struct Value getMemberRef (struct Native(Context) * const context)
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
 	struct Value *ref;
-	int own = 0;
 	
 	if (!Value.isObject(object))
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	context->refObject = object.data.object;
-	ref = Object.member(object.data.object, key, &own);
+	ref = Object.memberOwn(object.data.object, key);
 	
-	if (!ref || !own)
+	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
@@ -713,7 +712,6 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 	struct Value object = nextOp();
 	struct Value property = nextOp();
 	struct Value *ref;
-	int own = 0;
 	
 	if (Value.isObject(property))
 		property = Value.toPrimitive(context, property, opText(0), Value(hintAuto));
@@ -722,9 +720,9 @@ struct Value getPropertyRef (struct Native(Context) * const context)
 		object = Value.toObject(context, object, Native(noIndex));
 	
 	context->refObject = object.data.object;
-	ref = Object.property(object.data.object, property, &own);
+	ref = Object.propertyOwn(object.data.object, property);
 	
-	if (!ref || !own)
+	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
@@ -954,7 +952,7 @@ struct Value in (struct Native(Context) * const context)
 	if (!Value.isObject(object))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "invalid 'in' operand %.*s", context->ops->text.length, context->ops->text.bytes)));
 	
-	ref = Object.property(object.data.object, property, NULL);
+	ref = Object.property(object.data.object, property);
 	
 	return Value.truth(ref != NULL);
 }

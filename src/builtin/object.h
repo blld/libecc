@@ -50,9 +50,13 @@ Interface(Object,
 	(struct Object *, copy ,(const struct Object * original))
 	(void, destroy ,(struct Object *))
 	
-	(struct Value *, member ,(struct Object *, struct Key, int *own))
-	(struct Value *, element ,(struct Object *, uint32_t, int *own))
-	(struct Value *, property ,(struct Object *, struct Value, int *own))
+	(struct Value *, member ,(struct Object *, struct Key))
+	(struct Value *, element ,(struct Object *, uint32_t))
+	(struct Value *, property ,(struct Object *, struct Value))
+	
+	(struct Value *, memberOwn ,(struct Object *, struct Key))
+	(struct Value *, elementOwn ,(struct Object *, uint32_t))
+	(struct Value *, propertyOwn ,(struct Object *, struct Value))
 	
 	(struct Value, getValue ,(struct Object *, struct Value *, struct Native(Context) * const))
 	(struct Value, getMember ,(struct Object *, struct Key, struct Native(Context) * const))

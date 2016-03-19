@@ -166,13 +166,12 @@ static struct Value propertyIsEnumerable (struct Native(Context) * const context
 	struct Value value;
 	struct Object *object;
 	struct Value *ref;
-	int own = 1;
 	
 	Native.assertParameterCount(context, 1);
 	
 	value = Native.argument(context, 0);
 	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	ref = property(object, value, &own);
+	ref = propertyOwn(object, value);
 	
 	if (ref)
 		return Value.truth(!(ref->flags & Value(hidden)));
@@ -212,13 +211,12 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	struct Object *object;
 	struct Value value;
 	struct Value *ref;
-	int own = 1;
 	
 	Native.assertParameterCount(context, 2);
 	
 	object = checkObject(context, 0);
 	value = Native.argument(context, 1);
-	ref = property(object, value, &own);
+	ref = propertyOwn(object, value);
 	
 	if (ref)
 	{
@@ -274,17 +272,16 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	struct Text text = Native.textSeek(context, Native(callIndex));
 	struct Key key;
 	uint32_t element;
-	int own = 1;
 	
 	Native.assertParameterCount(context, 3);
 	
 	object = checkObject(context, 0);
 	property = Value.toString(context, Native.argument(context, 1));
 	descriptor = checkObject(context, 2);
-	current = Object.property(object, property, &own);
+	current = Object.propertyOwn(object, property);
 	
-	getter = member(descriptor, Key(get), NULL);
-	setter = member(descriptor, Key(set), NULL);
+	getter = member(descriptor, Key(get));
+	setter = member(descriptor, Key(set));
 	
 	if (getter || setter)
 	{
@@ -294,7 +291,7 @@ static struct Value defineProperty (struct Native(Context) * const context)
 		if (setter && setter->type != Value(functionType))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptor's setter field is neither undefined nor a function")));
 		
-		if (member(descriptor, Key(value), NULL) || member(descriptor, Key(writable), NULL))
+		if (member(descriptor, Key(value)) || member(descriptor, Key(writable)))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptors must not specify a value or be writable when a getter or setter has been specified")));
 		
 		if (getter)
@@ -712,66 +709,96 @@ void destroy (struct Object *self)
 	free(self), self = NULL;
 }
 
-struct Value getOwn (struct Object *self, struct Key key)
-{
-	assert(self);
-	
-	return self->hashmap[getSlot(self, key)].data.value;
-}
-
-struct Value * member (struct Object *self, struct Key member, int *own)
+struct Value * member (struct Object *self, struct Key member)
 {
 	struct Object *object = self;
-	const int searchPrototype = !own || !*own;
 	uint32_t slot;
 	
 	assert(object);
 	
 	do
 	{
-		if (( slot = getSlot(object, member) ) && object->hashmap[slot].data.value.check == 1)
+		if (( slot = getSlot(object, member) ))
 		{
-			if (own)
-				*own = object == self;
-			
-			return &object->hashmap[slot].data.value;
+			struct Value *ref = &object->hashmap[slot].data.value;
+			if (ref->check == 1)
+				return ref;
 		}
 	}
-	while (searchPrototype && (object = object->prototype));
+	while ((object = object->prototype));
 	
 	return NULL;
 }
 
-struct Value * element (struct Object *self, uint32_t element, int *own)
+struct Value * element (struct Object *self, uint32_t element)
 {
 	struct Object *object = self;
-	const int searchPrototype = !own || !*own;
 	
 	assert(object);
 	
 	do
 	{
-		if (element < object->elementCount && object->element[element].data.value.check == 1)
+		if (element < object->elementCount)
 		{
-			if (own)
-				*own = object == self;
-			
-			return &object->element[element].data.value;
+			struct Value *ref = &object->element[element].data.value;
+			if (ref->check == 1)
+				return ref;
 		}
-	} while (searchPrototype && (object = object->prototype));
+	} while ((object = object->prototype));
 	
 	return NULL;
 }
 
-struct Value * property (struct Object *self, struct Value property, int *own)
+struct Value * property (struct Object *self, struct Value property)
 {
 	struct Key key;
 	uint32_t index = getElementOrKey(property, &key);
 	
 	if (index < UINT32_MAX)
-		return element(self, index, own);
+		return element(self, index);
 	else
-		return member(self, key, own);
+		return member(self, key);
+}
+
+struct Value * memberOwn (struct Object *self, struct Key member)
+{
+	uint32_t slot;
+	
+	assert(self);
+	
+	if (( slot = getSlot(self, member) ))
+	{
+		struct Value *ref = &self->hashmap[slot].data.value;
+		if (ref->check == 1)
+			return ref;
+	}
+	
+	return NULL;
+}
+
+struct Value * elementOwn (struct Object *self, uint32_t element)
+{
+	assert(self);
+	
+	if (element < self->elementCount)
+	{
+		struct Value *ref = &self->element[element].data.value;
+		if (ref->check == 1)
+			return ref;
+	}
+	
+	return NULL;
+}
+
+struct Value * propertyOwn (struct Object *self, struct Value property)
+{
+	struct Key key;
+	uint32_t index = getElementOrKey(property, &key);
+	
+	if (index < UINT32_MAX)
+		return elementOwn(self, index);
+	else
+		return memberOwn(self, key);
 }
 
 struct Value getValue (struct Object *self, struct Value *ref, struct Native(Context) * const context)
@@ -797,12 +824,12 @@ struct Value getValue (struct Object *self, struct Value *ref, struct Native(Con
 
 struct Value getMember (struct Object *self, struct Key key, struct Native(Context) * const context)
 {
-	return getValue(self, member(self, key, NULL), context);
+	return getValue(self, member(self, key), context);
 }
 
 struct Value getElement (struct Object *self, uint32_t index, struct Native(Context) * const context)
 {
-	return getValue(self, element(self, index, NULL), context);
+	return getValue(self, element(self, index), context);
 }
 
 struct Value getProperty (struct Object *self, struct Value property, struct Native(Context) * const context)
@@ -851,15 +878,18 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Co
 
 struct Value *putMember (struct Object *self, struct Key key, struct Native(Context) * const context, struct Value value, const struct Text *text)
 {
-	int own = 0;
-	struct Value *ref = member(self, key, &own);
-	if (ref)
+	struct Value *ref;
+	
+	if (( ref = memberOwn(self, key) ))
+		return putValue(self, ref, context, value, text);
+	else if (( ref = member(self->prototype, key) ))
 	{
-		if (own || ref->flags & Value(accessor))
+		if (ref->flags & Value(accessor))
 			return putValue(self, ref, context, value, text);
 		else if (ref->flags & Value(readonly))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	}
+	
 	if (self->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
 	
@@ -868,11 +898,19 @@ struct Value *putMember (struct Object *self, struct Key key, struct Native(Cont
 
 struct Value *putElement (struct Object *self, uint32_t index, struct Native(Context) * const context, struct Value value, const struct Text *text)
 {
-	int own = 0;
-	struct Value *ref = element(self, index, &own);
-	if (own)
+	struct Value *ref;
+	
+	if (( ref = element(self, index) ))
 		return putValue(self, ref, context, value, text);
-	else if (self->flags & Object(sealed))
+	else if (( ref = element(self->prototype, index) ))
+	{
+		if (ref->flags & Value(accessor))
+			return putValue(self, ref, context, value, text);
+		else if (ref->flags & Value(readonly))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%d' is readonly", index)));
+	}
+	
+	if (self->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
 	
 	return addElement(self, index, value, 0);
