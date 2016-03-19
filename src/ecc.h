@@ -44,6 +44,7 @@ Interface(Ecc,
 	(void, printTextInput ,(struct Ecc *, struct Text text))
 	
 	(void, garbageCollect ,(struct Ecc *))
+	(void, fatal ,(const char *))
 	,
 	{
 		jmp_buf *envList;

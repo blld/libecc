@@ -71,13 +71,6 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
-static void fatalError (const char *message)
-{
-	static const char error[] = "Fatal";
-	Env.printError(sizeof(error)-1, error, message);
-	abort();
-}
-
 static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
 {
 	if (Value.isObject(this))
@@ -748,7 +741,7 @@ struct Value getValue (struct Object *self, struct Value *ref, struct Native(Con
 	if (ref->flags & Value(accessor))
 	{
 		if (!context)
-			fatalError("cannot use getter outside context");
+			Ecc.fatal("cannot use getter outside context");
 		
 		if (ref->flags & Value(getter))
 			return Op.callFunctionVA(context, 0, ref->data.function, Value.object(self), 0);
@@ -787,7 +780,7 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Co
 	if (ref->flags & Value(accessor))
 	{
 		if (!context)
-			fatalError("cannot use setter outside context");
+			Ecc.fatal("cannot use setter outside context");
 		
 		if (ref->flags & Value(setter))
 			Op.callFunctionVA(context, 0, ref->data.function, Value.object(self), 1, value);

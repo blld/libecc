@@ -228,7 +228,7 @@ static struct Value unshift (struct Native(Context) * const context)
 {
 	struct Value this;
 	struct Object *object;
-	uint32_t length = 0, index, count, base;
+	uint32_t length = 0, index, count;
 	Native.assertVariableParameter(context);
 	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
@@ -236,7 +236,6 @@ static struct Value unshift (struct Native(Context) * const context)
 	object = this.data.object;
 	count = Native.variableArgumentCount(context);
 	
-	base = object->elementCount;
 	length = object->elementCount + count;
 	if (length > object->elementCapacity)
 		Object.resizeElement(object, length);

@@ -236,3 +236,10 @@ void garbageCollect(struct Ecc *self)
 	Pool.markValue(Value.function(self->global));
 	Pool.collectUnmarked();
 }
+
+void fatal (const char *message)
+{
+	static const char error[] = "Fatal";
+	Env.printError(sizeof(error)-1, error, message);
+	abort();
+}
