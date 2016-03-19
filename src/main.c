@@ -699,15 +699,15 @@ static void testObject (void)
 	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: property descriptor's getter field is neither undefined nor a function"
 	,    "                                          ^~~~~~~~~~~~  ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123 }); Object.defineProperty(o, 'p', { enumerable: true });", "TypeError: property is non-configurable"
-	,    "                                                                                     ^                         ");
+	,    "                                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { value: 1 });", "TypeError: property is non-configurable"
-	,    "                                                                                            ^                 ");
+	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { get: function(){} });", "TypeError: property is non-configurable"
-	,    "                                                                                            ^                          ");
+	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { set: function(){} });", "TypeError: property is non-configurable"
-	,    "                                                                                            ^                          ");
+	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: false, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "TypeError: property is non-configurable"
-	,    "                                                                                                                           ^                       ");
+	,    "                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: true, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "[object Object]", NULL);
 	test("var o = []; Object.defineProperties(o, { 1: { value: 123 }, 3: { value: '!' } }); o", ",123,,!", NULL);
 	test("var o = []; Object.defineProperties(o, 123); o", "", NULL);

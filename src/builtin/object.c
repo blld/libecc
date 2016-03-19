@@ -374,7 +374,7 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	return Value(true);
 	
 sealedError:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 1), "property is non-configurable")));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(callIndex)), "property is non-configurable")));
 }
 
 static struct Value defineProperties (struct Native(Context) * const context)
