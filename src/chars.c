@@ -145,8 +145,7 @@ struct Chars * appendValue (struct Chars *self, struct Native(Context) * const c
 		case Value(errorType):
 		case Value(dateType):
 		case Value(hostType):
-			value = Value.toString(context, value);
-			return appendText(self, (struct Text){ Value.stringBytes(value), Value.stringLength(value) });
+			return appendValue(self, context, Value.toString(context, value));
 		
 		case Value(referenceType):
 			break;

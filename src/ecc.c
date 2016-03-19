@@ -79,7 +79,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
-	volatile int result = EXIT_SUCCESS, try = !self->envCount, catch = 0;
+	volatile int result = EXIT_SUCCESS, defaultTrap = !self->envCount, trap = defaultTrap || flags & Ecc(primitiveResult), catch = 0;
 	struct Native(Context) context = {
 		.environment = &self->global->environment,
 		.ecc = self,
@@ -88,38 +88,38 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	if (!input)
 		return EXIT_FAILURE;
 	
-	if (try)
+	if (trap)
 		catch = setjmp(*pushEnv(self));
 	
 	if (catch)
 	{
-		struct Value value;
-		struct Value name;
-		struct Value message;
-		
-		result = EXIT_FAILURE;
-		
-		value = self->result;
-		name = Value(undefined);
-		
-		if (value.type == Value(errorType))
+		if (defaultTrap)
 		{
-			name = Value.toString(&context, Object.getMember(value.data.object, Key(name), &context));
-			message = Value.toString(&context, Object.getMember(value.data.object, Key(message), &context));
+			struct Value value;
+			struct Value name;
+			struct Value message;
+			
+			result = EXIT_FAILURE;
+			
+			value = self->result;
+			name = Value(undefined);
+			
+			if (value.type == Value(errorType))
+			{
+				name = Value.toString(&context, Object.getMember(value.data.object, Key(name), &context));
+				message = Value.toString(&context, Object.getMember(value.data.object, Key(message), &context));
+			}
+			else
+				message = Value.toString(&context, value);
+			
+			if (name.type == Value(undefinedType))
+				name = Value.text(&Text(errorName));
+			
+			Env.newline();
+			Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
+			
+			printTextInput(self, self->text);
 		}
-		else
-			message = Value.toString(&context, value);
-		
-		if (name.type == Value(undefinedType))
-			name = Value.text(&Text(errorName));
-		
-		Env.newline();
-		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
-		
-		printTextInput(self, self->text);
-		
-		if (flags & ( Ecc(primitiveResult) | Ecc(stringResult) ))
-			self->result = Value.toString(&context, self->result);
 	}
 	else
 	{
@@ -127,16 +127,16 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 			context.this = Value.object(&self->global->environment);
 		
 		evalInputWithContext(self, input, &context);
-		
-		if (flags & ( Ecc(primitiveResult) | Ecc(stringResult) ))
-			self->result = Value.toPrimitive(&context, self->result, &(context.ops - 1)->text, Value(hintAuto));
-		
-		if (flags & Ecc(stringResult))
-			self->result = Value.toString(&context, self->result);
 	}
 	
-	if (try)
+	if (flags & Ecc(primitiveResult))
+		self->result = Value.toPrimitive(&context, self->result, &(context.ops - 1)->text, Value(hintAuto));
+	
+	if (trap)
 		popEnv(self);
+	
+	if (catch && !defaultTrap)
+		Ecc.jmpEnv(self, self->result);
 	
 	return result;
 }

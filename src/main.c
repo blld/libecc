@@ -69,7 +69,6 @@ static struct Value dumpTo (struct Native(Context) * const context, FILE *file)
 			putc(' ', file);
 		
 		value = Native.variableArgument(context, index);
-		value = Value.toPrimitive(context, value, &context->ops->text, Value(hintString));
 		Value.dumpTo(Value.toString(context, value), file);
 	}
 	putc('\n', file);
@@ -98,12 +97,12 @@ static void test (const char *func, int line, const char *test, const char *expe
 	uint16_t length;
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(stringResult));
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(primitiveResult));
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
 	
-	result = ecc->result;
+	result = Value.toString(NULL, ecc->result);
 	length = Value.stringLength(result);
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringBytes(result), length))
