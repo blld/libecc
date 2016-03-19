@@ -19,17 +19,20 @@ const struct Object(Type) Object(type) = {
 
 static const int defaultSize = 8;
 
+// NOTE: key.data.depth[x] are premultiplied to hashmap.slot size
+#define hashmapKeySlot(H, S) *((uint16_t *)((char *)(H.slot) + S))
+
 static inline uint32_t getSlot (const struct Object * const self, const struct Key key)
 {
 	return
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[
-		self->hashmap[1]
-		.slot[key.data.depth[0]]]
-		.slot[key.data.depth[1]]]
-		.slot[key.data.depth[2]]]
-		.slot[key.data.depth[3]];
+		hashmapKeySlot(self->hashmap[
+		hashmapKeySlot(self->hashmap[
+		hashmapKeySlot(self->hashmap[
+		hashmapKeySlot(self->hashmap[1]
+			, key.data.depth[0])]
+			, key.data.depth[1])]
+			, key.data.depth[2])]
+			, key.data.depth[3]);
 }
 
 static inline uint32_t getElementOrKey (struct Value property, struct Key *key)
@@ -722,7 +725,7 @@ struct Value getOwn (struct Object *self, struct Key key)
 struct Value * member (struct Object *self, struct Key member, int *own)
 {
 	struct Object *object = self;
-	const int searchOwn = !own || !*own;
+	const int searchPrototype = !own || !*own;
 	uint32_t slot;
 	
 	assert(object);
@@ -737,7 +740,7 @@ struct Value * member (struct Object *self, struct Key member, int *own)
 			return &object->hashmap[slot].data.value;
 		}
 	}
-	while (searchOwn && (object = object->prototype));
+	while (searchPrototype && (object = object->prototype));
 	
 	return NULL;
 }
@@ -745,7 +748,7 @@ struct Value * member (struct Object *self, struct Key member, int *own)
 struct Value * element (struct Object *self, uint32_t element, int *own)
 {
 	struct Object *object = self;
-	const int searchOwn = !own || !*own;
+	const int searchPrototype = !own || !*own;
 	
 	assert(object);
 	
@@ -758,7 +761,7 @@ struct Value * element (struct Object *self, uint32_t element, int *own)
 			
 			return &object->element[element].data.value;
 		}
-	} while (searchOwn && (object = object->prototype));
+	} while (searchPrototype && (object = object->prototype));
 	
 	return NULL;
 }
@@ -899,7 +902,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 	
 	do
 	{
-		if (!self->hashmap[slot].slot[key.data.depth[depth]])
+		if (!hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]))
 		{
 			int need = 4 - depth - (self->hashmapCapacity - self->hashmapCount);
 			if (need > 0)
@@ -913,7 +916,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 			do
 			{
 				assert(self->hashmapCount < UINT16_MAX);
-				slot = self->hashmap[slot].slot[key.data.depth[depth]] = self->hashmapCount++;
+				slot = hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]) = self->hashmapCount++;
 			} while (++depth < 4);
 			
 			self->hashmap[slot].data.key = key;
@@ -922,7 +925,7 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 		else
 			assert(self->hashmap[slot].data.value.check != 1);
 		
-		slot = self->hashmap[slot].slot[key.data.depth[depth]];
+		slot = hashmapKeySlot(self->hashmap[slot], key.data.depth[depth]);
 		assert(slot != 1);
 		assert(slot < self->hashmapCount);
 	} while (++depth < 4);
@@ -976,11 +979,9 @@ int deleteMember (struct Object *self, struct Key member)
 	assert(object);
 	assert(member.data.integer);
 	
-	do
-		slot = getSlot(object, member);
-	while (!slot && (object = object->prototype));
+	slot = getSlot(object, member);
 	
-	if (!object || !(object->hashmap[slot].data.value.check == 1))
+	if (!slot || !(object->hashmap[slot].data.value.check == 1))
 		return 1;
 	
 	if (object->hashmap[slot].data.value.flags & Value(sealed))

@@ -111,11 +111,12 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 		number = keyCount;
 	}
 	
+	// NOTE: premultiply depths
 	return (struct Key) {{{
-		number >> 12 & 0xf,
-		number >> 8 & 0xf,
-		number >> 4 & 0xf,
-		number >> 0 & 0xf,
+		(number >> 12 & 0xf) * sizeof(uint16_t),
+		(number >> 8 & 0xf) * sizeof(uint16_t),
+		(number >> 4 & 0xf) * sizeof(uint16_t),
+		(number >> 0 & 0xf) * sizeof(uint16_t),
 	}}};
 }
 
