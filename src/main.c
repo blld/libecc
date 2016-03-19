@@ -580,6 +580,7 @@ static void testFunction (void)
 	,    "                                                ^~~     ");
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
 	,    "                                                                                     ^                                    ");
+	test("function F(){}; F.prototype = 123; new F", "[object Object]", NULL);
 }
 
 static void testLoop (void)
@@ -656,6 +657,12 @@ static void testObject (void)
 	test("var a = { b:1 }; ++a['b']", "2", NULL);
 	test("var a = {}; ++a.b", "NaN", NULL);
 	test("var o = {}; Object.defineProperty(o, 'a', { value: 123 }); var b = o.a; b += 123;", "246", NULL);
+	test("var o = { get p(){ return this._p }, set p(v){ this._p = v; } }; o.p = 123; String(o.p) + o._p", "123123", NULL);
+	test("var o = { get p(){ return this._p }, set p(v){ this._p = v; } }; Object.defineProperty(o, 'p', { value: 123 }); String(o.p) + o._p", "123undefined", NULL);
+	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123 }); o = Object.create(p); o.p = 456", "TypeError: 'p' is readonly"
+	,    "                                                                                   ^~~      ");
+	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123, writable: true }); o = Object.create(p); Object.seal(o); o.p = 456", "TypeError: object is not extensible"
+	,    "                                                                                                                   ^~~      ");
 	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: object is not extensible"
 	,    "                                ^~~");
 	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: object is not extensible"
@@ -688,6 +695,19 @@ static void testObject (void)
 	,    "                                               ^~~     ");
 	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only property"
 	,    "                                             ^~~~     ");
+	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: property descriptor's getter field is neither undefined nor a function"
+	,    "                                          ^~~~~~~~~~~~  ");
+	test("var o = {}; Object.defineProperty(o, 'p', { value: 123 }); Object.defineProperty(o, 'p', { enumerable: true });", "TypeError: property is non-configurable"
+	,    "                                                                                     ^                         ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { value: 1 });", "TypeError: property is non-configurable"
+	,    "                                                                                            ^                 ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { get: function(){} });", "TypeError: property is non-configurable"
+	,    "                                                                                            ^                          ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { set: function(){} });", "TypeError: property is non-configurable"
+	,    "                                                                                            ^                          ");
+	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: false, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "TypeError: property is non-configurable"
+	,    "                                                                                                                           ^                       ");
+	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: true, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "[object Object]", NULL);
 }
 
 static void testError (void)
@@ -849,6 +869,8 @@ static void testArray (void)
 	test("var a = [ 123, 456 ], a = [ 'hello', a ]; a.toString = function(){ return 'test' }; [ a ]", "test", NULL);
 	test("var o = [], c = 0, a = [o, o]; Object.defineProperty(o, '0', { get: function (){ return ++c } }); a", "1,2", NULL);
 	test("var o = {}, a = ['abc',123]; o[a] = 'test'; Object.getOwnPropertyNames(o)", "abc,123", NULL);
+	
+	test("var a = [1,2,3,4]; Object.defineProperty(a, 'length', {value:2}); a", "1,2", NULL);
 }
 
 static void testBoolean (void)
@@ -1061,11 +1083,6 @@ static int runTest (int verbosity)
 	testBoolean();
 	testNumber();
 	testString();
-	
-//	test("var a = [1,2,3,4]; Object.defineProperty(a, 'length', {value:2}); a", "1,2", NULL);
-	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123 }); o = Object.create(p); o.p = 456", "", NULL);
-	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123, writable: true }); o = Object.create(p); Object.seal(o); o.p = 456;", "", NULL);
-	test("function F(){}; F.prototype = 123; new F", "", NULL);
 	
 	Env.newline();
 	

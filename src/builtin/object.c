@@ -277,7 +277,10 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context)
 static struct Value defineProperty (struct Native(Context) * const context)
 {
 	struct Object *object, *descriptor;
-	struct Value property, value, *getter, *setter;
+	struct Value property, value, *getter, *setter, *current;
+	struct Text text = Native.textSeek(context, Native(callIndex));
+	struct Key key;
+	uint32_t element;
 	int own = 1;
 	
 	Native.assertParameterCount(context, 3);
@@ -285,19 +288,20 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	object = checkObject(context, 0);
 	property = Value.toString(context, Native.argument(context, 1));
 	descriptor = checkObject(context, 2);
+	current = Object.property(object, property, &own);
 	
-	if (!Value.isTrue(getMember(descriptor, Key(enumerable), context)))
-		value.flags |= Value(hidden);
-	
-	if (!Value.isTrue(getMember(descriptor, Key(configurable), context)))
-		value.flags |= Value(sealed);
-	
-	getter = member(descriptor, Key(get), &own);
-	setter = member(descriptor, Key(set), &own);
+	getter = member(descriptor, Key(get), NULL);
+	setter = member(descriptor, Key(set), NULL);
 	
 	if (getter || setter)
 	{
-		if (member(descriptor, Key(value), &own) || member(descriptor, Key(writable), &own))
+		if (getter && getter->type != Value(functionType))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptor's getter field is neither undefined nor a function")));
+		
+		if (setter && setter->type != Value(functionType))
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptor's setter field is neither undefined nor a function")));
+		
+		if (member(descriptor, Key(value), NULL) || member(descriptor, Key(writable), NULL))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "property descriptors must not specify a value or be writable when a getter or setter has been specified")));
 		
 		if (getter)
@@ -322,13 +326,62 @@ static struct Value defineProperty (struct Native(Context) * const context)
 			value.flags |= Value(readonly);
 	}
 	
-//	setProperty(object, property, value);
-#warning TOOD
-	addProperty(object, property, value, 0);
-//	struct Text text = Native.textSeek(context, Native(callIndex));
-//	putProperty(object, property, context, value, &text);
+	if (!Value.isTrue(getMember(descriptor, Key(enumerable), context)))
+		value.flags |= Value(hidden);
 	
-	return Value(undefined);
+	if (!Value.isTrue(getMember(descriptor, Key(configurable), context)))
+		value.flags |= Value(sealed);
+	
+	element = getElementOrKey(property, &key);
+	
+	if (object->type == &Array(type) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
+	{
+		putProperty(object, property, context, value, &text);
+		return Value(true);
+	}
+	else if (!current)
+	{
+		addProperty(object, property, value, 0);
+		return Value(true);
+	}
+	else
+	{
+		if (current->flags & Value(sealed))
+		{
+			if (!(value.flags & Value(sealed)) || (value.flags & Value(hidden)) != (current->flags & Value(hidden)))
+				goto sealedError;
+			
+			if (current->flags & Value(accessor))
+			{
+				if (!(getter || setter))
+					goto sealedError;
+				else
+				{
+					struct Function *currentGetter = current->flags & Value(getter)? current->data.function: current->data.function->pair;
+					struct Function *currentSetter = current->flags & Value(getter)? current->data.function->pair: current->data.function;
+					
+					if (!getter != !currentGetter || !setter != !currentSetter)
+						goto sealedError;
+					else if (getter && getter->data.function->pair != currentGetter)
+						goto sealedError;
+					else if (setter && setter->data.function != currentSetter)
+						goto sealedError;
+				}
+			}
+			else
+			{
+				if (!Value.isTrue(Value.same(context, *current, value, &text, &text)))
+					goto sealedError;
+			}
+		}
+		
+		addProperty(object, property, value, 0);
+	}
+	
+	return Value(true);
+	
+sealedError:
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 1), "property is non-configurable")));
 }
 
 static struct Value defineProperties (struct Native(Context) * const context)
@@ -768,7 +821,7 @@ struct Value *putMember (struct Object *self, struct Key key, struct Native(Cont
 	struct Value *ref = member(self, key, &own);
 	if (ref)
 	{
-		if (own)
+		if (own || ref->flags & Value(accessor))
 			return putValue(self, ref, context, value, text);
 		else if (ref->flags & Value(readonly))
 			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes)));
