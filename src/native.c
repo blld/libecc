@@ -29,6 +29,11 @@ struct Value argument (struct Native(Context) * const context, int argumentIndex
 	return context->environment->hashmap[argumentIndex + 3].data.value;
 }
 
+void replaceArgument (struct Native(Context) * const context, int argumentIndex, struct Value value)
+{
+	context->environment->hashmap[argumentIndex + 3].data.value = value;
+}
+
 void assertVariableParameter (struct Native(Context) * const context)
 {
 	assert(context->environment->hashmap[2].data.value.type == Value(objectType));

@@ -379,8 +379,46 @@ sealedError:
 
 static struct Value defineProperties (struct Native(Context) * const context)
 {
-	Native.assertParameterCount(context, 1);
-	#warning TODO
+	typeof(context->environment->hashmap) originalHashmap = context->environment->hashmap;
+	uint16_t originalHashmapCount = context->environment->hashmapCount;
+	
+	uint16_t index, hashmapCount = 6;
+	struct Object *object, *properties;
+	typeof(*context->environment->hashmap) hashmap[hashmapCount];
+	
+	Native.assertParameterCount(context, 2);
+	
+	object = checkObject(context, 0);
+	properties = Value.toObject(context, Native.argument(context, 1), 1).data.object;
+	
+	context->environment->hashmap = hashmap;
+	context->environment->hashmapCount = hashmapCount;
+	
+	Native.replaceArgument(context, 0, Value.object(object));
+	
+	for (index = 0; index < properties->elementCount; ++index)
+	{
+		if (!properties->element[index].data.value.check)
+			continue;
+		
+		Native.replaceArgument(context, 1, Value.binary(index));
+		Native.replaceArgument(context, 2, properties->element[index].data.value);
+		defineProperty(context);
+	}
+	
+	for (index = 2; index < properties->hashmapCount; ++index)
+	{
+		if (!properties->hashmap[index].data.value.check)
+			continue;
+		
+		Native.replaceArgument(context, 1, Value.key(properties->hashmap[index].data.key));
+		Native.replaceArgument(context, 2, properties->hashmap[index].data.value);
+		defineProperty(context);
+	}
+	
+	context->environment->hashmap = originalHashmap;
+	context->environment->hashmapCount = originalHashmapCount;
+	
 	return Value(undefined);
 }
 

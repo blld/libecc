@@ -50,6 +50,7 @@ Interface(Native,
 	(void , assertParameterCount ,(struct Native(Context) * const, int parameterCount))
 	(int , argumentCount ,(struct Native(Context) * const))
 	(struct Value, argument ,(struct Native(Context) * const, int argumentIndex))
+	(void , replaceArgument ,(struct Native(Context) * const, int argumentIndex, struct Value value))
 	
 	(void , assertVariableParameter ,(struct Native(Context) * const))
 	(int , variableArgumentCount ,(struct Native(Context) * const))

@@ -707,6 +707,16 @@ static void testObject (void)
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: false, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "TypeError: property is non-configurable"
 	,    "                                                                                                                           ^                       ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: true, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "[object Object]", NULL);
+	test("var o = []; Object.defineProperties(o, { 1: { value: 123 }, 3: { value: '!' } }); o", ",123,,!", NULL);
+	test("var o = []; Object.defineProperties(o, 123); o", "", NULL);
+	test("var o = []; Object.defineProperties(o, null); o", "TypeError: can't convert null to object"
+	,    "                                       ^~~~    ");
+	test("var o = []; Object.defineProperties(o); o", "TypeError: can't convert undefined to object"
+	,    "                                     ^   ");
+	test("var o = []; Object.defineProperties(); o", "TypeError: not an object"
+	,    "                                    ^   ");
+	test("var o = []; Object.defineProperties(1); o", "TypeError: not an object"
+	,    "                                    ^    ");
 }
 
 static void testError (void)
