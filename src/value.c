@@ -528,6 +528,173 @@ struct Value toType (struct Value value)
 	abort();
 }
 
+struct Value equals (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return truth(a.data.binary == b.data.binary);
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
+		return truth(a.data.integer == b.data.integer);
+	else if (isNumber(a) && isNumber(b))
+		return truth(toBinary(a).data.binary == toBinary(b).data.binary);
+	else if (isString(a) && isString(b))
+	{
+		uint32_t aLength = stringLength(a);
+		uint32_t bLength = stringLength(b);
+		if (aLength != bLength)
+			return Value(false);
+		
+		return truth(!memcmp(stringBytes(a), stringBytes(b), aLength));
+	}
+	else if (isObject(a) && isObject(b))
+		return truth(a.data.object == b.data.object);
+	else if (a.type == b.type)
+		return Value(true);
+	else if (a.type == Value(nullType) && b.type == Value(undefinedType))
+		return Value(true);
+	else if (a.type == Value(undefinedType) && b.type == Value(nullType))
+		return Value(true);
+	else if (isNumber(a) && isString(b))
+		return equals(a, toBinary(b), context, aText, bText);
+	else if (isString(a) && isNumber(b))
+		return equals(toBinary(a), b, context, aText, bText);
+	else if (isBoolean(a))
+		return equals(toBinary(a), b, context, aText, bText);
+	else if (isBoolean(b))
+		return equals(a, toBinary(b), context, aText, bText);
+	else if (((isString(a) || isNumber(a)) && isObject(b))
+		   || (isObject(a) && (isString(b) || isNumber(b)))
+		   )
+	{
+		a = toPrimitive(context, a, aText, Value(hintAuto));
+		b = toPrimitive(context, b, bText, Value(hintAuto));
+		return equals(a, b, context, aText, bText);
+	}
+	
+	return Value(false);
+}
+
+struct Value same (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return truth(a.data.binary == b.data.binary);
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
+		return truth(a.data.integer == b.data.integer);
+	else if (isNumber(a) && isNumber(b))
+		return truth(toBinary(a).data.binary == toBinary(b).data.binary);
+	else if (isString(a) && isString(b))
+	{
+		uint32_t aLength = stringLength(a);
+		uint32_t bLength = stringLength(b);
+		if (aLength != bLength)
+			return Value(false);
+		
+		return truth(!memcmp(stringBytes(a), stringBytes(b), aLength));
+	}
+	else if (isObject(a) && isObject(b))
+		return truth(a.data.object == b.data.object);
+	else if (a.type == b.type)
+		return Value(true);
+	
+	return Value(false);
+}
+
+static struct Value add (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return binary(a.data.binary + b.data.binary);
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
+		return binary((double)a.data.integer + (double)b.data.integer);
+	else if (isNumber(a) && isNumber(b))
+		return binary(toBinary(a).data.binary + toBinary(b).data.binary);
+	else
+	{
+		a = toPrimitive(context, a, aText, Value(hintAuto));
+		b = toPrimitive(context, b, bText, Value(hintAuto));
+		
+		if (isString(a) || isString(b))
+		{
+			struct Chars *chars = Chars.beginAppend();
+			chars = Chars.appendValue(chars, context, a);
+			chars = Chars.appendValue(chars, context, b);
+			return Value.chars(Chars.endAppend(chars));
+		}
+		else
+			return binary(toBinary(a).data.binary + toBinary(b).data.binary);
+	}
+}
+
+static struct Value subtract (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return binary(a.data.binary - b.data.binary);
+	else if (a.type == Value(integerType) && b.type == Value(integerType))
+		return binary(a.data.integer - b.data.integer);
+	
+	return binary(toBinary(a).data.binary - toBinary(b).data.binary);
+}
+
+static struct Value compare (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	a = toPrimitive(context, a, aText, Value(hintNumber));
+	b = toPrimitive(context, b, bText, Value(hintNumber));
+	
+	if (isString(a) && isString(b))
+	{
+		uint32_t aLength = stringLength(a);
+		uint32_t bLength = stringLength(b);
+		if (aLength == bLength)
+			return truth(memcmp(stringBytes(a), stringBytes(b), aLength) < 0);
+		else
+			return truth(aLength < bLength);
+	}
+	else
+	{
+		a = toBinary(a);
+		b = toBinary(b);
+		
+		if (isnan(a.data.binary) || isnan(b.data.binary))
+			return Value(undefined);
+		
+		return truth(a.data.binary < b.data.binary);
+	}
+}
+
+struct Value less (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	a = compare(a, b, context, aText, bText);
+	if (a.type == Value(undefinedType))
+		return Value(false);
+	else
+		return a;
+}
+
+struct Value more (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	a = compare(b, a, context, bText, aText);
+	if (a.type == Value(undefinedType))
+		return Value(false);
+	else
+		return a;
+}
+
+struct Value lessOrEqual (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	a = compare(b, a, context, bText, aText);
+	if (a.type == Value(undefinedType) || a.type == Value(trueType))
+		return Value(false);
+	else
+		return Value(true);
+}
+
+struct Value moreOrEqual (struct Value a, struct Value b, struct Native(Context) * const context, const struct Text *aText, const struct Text *bText)
+{
+	a = compare(a, b, context, aText, bText);
+	if (a.type == Value(undefinedType) || a.type == Value(trueType))
+		return Value(false);
+	else
+		return Value(true);
+}
+
 void dumpTo (struct Value value, FILE *file)
 {
 	switch ((enum Value(Type))value.type)

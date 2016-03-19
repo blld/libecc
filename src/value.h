@@ -131,6 +131,16 @@ Interface(Value,
 	
 	(struct Value, toType ,(struct Value))
 	
+	(struct Value, equals ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, same ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, add ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, subtract ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, compare ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, less ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, more ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, lessOrEqual ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	(struct Value, moreOrEqual ,(struct Value, struct Value, struct Native(Context) * const, const struct Text *, const struct Text *))
+	
 	(void, dumpTo ,(struct Value, FILE *))
 	,
 	{
