@@ -433,7 +433,10 @@ static struct Value objectCreate (struct Native(Context) * const context)
 	
 	result = create(object);
 	if (properties.type != Value(undefinedType))
+	{
+		Native.replaceArgument(context, 0, Value.object(result));
 		defineProperties(context);
+	}
 	
 	return Value.object(result);
 }

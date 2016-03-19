@@ -662,6 +662,8 @@ static void testObject (void)
 	,    "                                                                                   ^~~      ");
 	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123, writable: true }); o = Object.create(p); Object.seal(o); o.p = 456", "TypeError: object is not extensible"
 	,    "                                                                                                                   ^~~      ");
+	test("var a = ['#'], b = Object.create(a); b[0]", "#", NULL);
+	test("var a = ['#'], b = Object.create(a, { '0': {value:'!'} }); b[0]", "!", NULL);
 	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: object is not extensible"
 	,    "                                ^~~");
 	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: object is not extensible"
