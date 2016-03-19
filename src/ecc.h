@@ -38,12 +38,12 @@ Interface(Ecc,
 	(jmp_buf *, pushEnv ,(struct Ecc *))
 	(void, popEnv ,(struct Ecc *))
 	(void, jmpEnv ,(struct Ecc *, struct Value value) noreturn)
+	(void, fatal ,(const char *) noreturn)
 	
 	(struct Input *, findInput ,(struct Ecc *self, struct Text text))
 	(void, printTextInput ,(struct Ecc *, struct Text text))
 	
 	(void, garbageCollect ,(struct Ecc *))
-	(void, fatal ,(const char *))
 	,
 	{
 		jmp_buf *envList;

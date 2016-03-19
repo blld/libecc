@@ -200,6 +200,13 @@ void jmpEnv (struct Ecc *self, struct Value value)
 	longjmp(self->envList[self->envCount - 1], 1);
 }
 
+void fatal (const char *message)
+{
+	static const char error[] = "Fatal";
+	Env.printError(sizeof(error)-1, error, message);
+	abort();
+}
+
 struct Input * findInput (struct Ecc *self, struct Text text)
 {
 	uint16_t i;
@@ -235,11 +242,4 @@ void garbageCollect(struct Ecc *self)
 	Pool.markValue(Value.object(Arguments(prototype)));
 	Pool.markValue(Value.function(self->global));
 	Pool.collectUnmarked();
-}
-
-void fatal (const char *message)
-{
-	static const char error[] = "Fatal";
-	Env.printError(sizeof(error)-1, error, message);
-	abort();
 }
