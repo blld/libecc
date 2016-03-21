@@ -35,6 +35,7 @@ struct Key Key(enumerable);
 struct Key Key(configurable);
 struct Key Key(get);
 struct Key Key(set);
+struct Key Key(join);
 
 // MARK: - Static Members
 
@@ -59,6 +60,7 @@ void setup (void)
 		Key(configurable) = makeWithCString("configurable");
 		Key(get) = makeWithCString("get");
 		Key(set) = makeWithCString("set");
+		Key(join) = makeWithCString("join");
 	}
 }
 

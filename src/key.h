@@ -32,6 +32,7 @@ extern struct Key Key(enumerable);
 extern struct Key Key(configurable);
 extern struct Key Key(get);
 extern struct Key Key(set);
+extern struct Key Key(join);
 
 
 Interface(Key,
