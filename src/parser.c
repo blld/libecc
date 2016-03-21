@@ -262,17 +262,19 @@ static struct OpList * object (struct Parser *self)
 	uint32_t count = 0;
 	struct Text text = self->lexer->text;
 	
-	nextToken(self);
-	
 	do
 	{
+		self->lexer->disallowKeyword = 1;
+		nextToken(self);
+		self->lexer->disallowKeyword = 0;
+		
 		if (previewToken(self) == '}')
 			break;
 		
 		++count;
 		oplist = OpList.join(oplist, propertyAssignment(self));
 	}
-	while (acceptToken(self, ','));
+	while (previewToken(self) == ',');
 	
 	text = Text.join(text, self->lexer->text);
 	expectToken(self, '}');
@@ -319,7 +321,10 @@ static struct OpList * primary (struct Parser *self)
 	else
 		return NULL;
 	
+	self->lexer->disallowRegex = 1;
 	nextToken(self);
+	self->lexer->disallowRegex = 0;
+	
 	return oplist;
 }
 
@@ -347,9 +352,15 @@ static struct OpList * member (struct Parser *self)
 	struct Text text;
 	while (1)
 	{
-		if (acceptToken(self, '.'))
+		if (previewToken(self) == '.')
 		{
-			struct Value value = self->lexer->value;
+			struct Value value;
+			
+			self->lexer->disallowKeyword = 1;
+			nextToken(self);
+			self->lexer->disallowKeyword = 0;
+			
+			value = self->lexer->value;
 			text = Text.join(OpList.text(oplist), self->lexer->text);
 			if (!expectToken(self, Lexer(identifierToken)))
 				return oplist;
@@ -408,7 +419,9 @@ static struct OpList * leftHandSide (struct Parser *self)
 			if (!oplist)
 				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 			
+			self->lexer->disallowKeyword = 1;
 			nextToken(self);
+			self->lexer->disallowKeyword = 0;
 			
 			value = self->lexer->value;
 			text = Text.join(OpList.text(oplist), self->lexer->text);
@@ -966,7 +979,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	else if (Key.isEqual(value.data.key, Key(arguments)))
 		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
 	
-	Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(hidden) | Value(sealed));
+	Object.addMember(&self->function->environment, value.data.key, Value(undefined), 0);
 	
 	if (acceptToken(self, '='))
 	{

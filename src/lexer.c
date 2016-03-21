@@ -90,16 +90,11 @@ void destroy (struct Lexer *self)
 
 enum Lexer(Token) nextToken (struct Lexer *self)
 {
-	int c, disallowRegex, disallowKeyword;
+	int c;
 	assert(self);
-	
-	disallowRegex = self->disallowRegex;
-	disallowKeyword = self->disallowKeyword;
 	
 	self->value = Value(undefined);
 	self->didLineBreak = 0;
-	self->disallowRegex = 0;
-	self->disallowKeyword = 0;
 	
 	retry:
 	self->text.bytes = self->input->bytes + self->offset;
@@ -138,7 +133,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					
 					return 0;
 				}
-				else if (!disallowRegex)
+				else if (!self->disallowRegex)
 				{
 					#warning TODO
 					Env.printWarning("TODO: regex or division");
@@ -245,11 +240,9 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			
 			case '.':
 				if (!isdigit(previewChar(self)))
-				{
-					self->disallowKeyword = 1;
 					return c;
-				}
-				/* fallthrough */
+				
+				/*vvv*/
 			case '0':
 			case '1':
 			case '2':
@@ -328,8 +321,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			case '}':
 			case ')':
 			case ']':
-				self->disallowRegex = 1;
-				/* fallthrought */
 			case '{':
 			case '(':
 			case '[':
@@ -521,7 +512,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
 						nextChar(self);
 					
-					if (!disallowKeyword)
+					if (!self->disallowKeyword)
 					{
 						for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
 							if (self->text.length == keywords[k].length && memcmp(self->text.bytes, keywords[k].name, keywords[k].length) == 0)
