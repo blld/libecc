@@ -419,7 +419,10 @@ static inline struct Value callValue (struct Native(Context) * const context, st
 	if (value.type != Value(functionType))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
 	
-	return callFunction(context, value.data.function, this, argumentCount, construct);
+	if (value.data.function->flags & Function(useBoundThis))
+		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
+	else
+		return callFunction(context, value.data.function, this, argumentCount, construct);
 }
 
 struct Value construct (struct Native(Context) * const context)
@@ -582,7 +585,10 @@ struct Value setLocal (struct Native(Context) * const context)
 {
 	struct Value *ref = getLocalRef(context).data.reference;
 	struct Value value = nextOp();
-	value.flags = 0;
+	if (ref->flags & Value(sealed))
+		return value;
+	
+	value.flags = ref->flags;
 	release(*ref);
 	return *ref = value;
 }
@@ -601,9 +607,13 @@ struct Value setLocalSlot (struct Native(Context) * const context)
 {
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
-	value.flags = 0;
-	release(context->environment->hashmap[slot].data.value);
-	return context->environment->hashmap[slot].data.value = retain(value);
+	struct Value *ref = &context->environment->hashmap[slot].data.value;
+	if (ref->flags & Value(sealed))
+		return value;
+	
+	value.flags = ref->flags;
+	release(*ref);
+	return *ref = retain(value);
 }
 
 struct Value getParentSlotRef (struct Native(Context) * const context)
@@ -627,6 +637,10 @@ struct Value setParentSlot (struct Native(Context) * const context)
 {
 	struct Value *ref = getParentSlotRef(context).data.reference;
 	struct Value value = nextOp();
+	if (ref->flags & Value(sealed))
+		return value;
+	
+	value.flags = ref->flags;
 	release(*ref);
 	return *ref = retain(value);
 }
@@ -929,11 +943,11 @@ struct Value instanceOf (struct Native(Context) * const context)
 		return Value(false);
 	
 	if (b.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' not a function", text->length, text->bytes)));
 	
 	b = Object.getMember(b.data.object, Key(prototype), context);
 	if (!Value.isObject(b))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s.prototype not an object", text->length, text->bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s'.prototype not an object", text->length, text->bytes)));
 	
 	object = a.data.object;
 	while (( object = object->prototype ))
@@ -950,7 +964,7 @@ struct Value in (struct Native(Context) * const context)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "invalid 'in' operand %.*s", context->ops->text.length, context->ops->text.bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "'%.*s' not an object", context->ops->text.length, context->ops->text.bytes)));
 	
 	ref = Object.property(object.data.object, property);
 	
@@ -1287,6 +1301,11 @@ struct Value try (struct Native(Context) * const context)
 			
 			if (!Key.isEqual(key, Key(none)))
 			{
+				if (value.type == Value(functionType))
+				{
+					value.data.function->flags |= Function(useBoundThis);
+					value.data.function->boundThis = Value.object(context->environment);
+				}
 				Object.addMember(context->environment, key, value, 0);
 				value = nextOp(); // execute until noop
 				rethrow = 0;

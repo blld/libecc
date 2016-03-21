@@ -20,6 +20,7 @@
 enum Function(Flags) {
 	Function(needHeap)      = 1 << 1,
 	Function(needArguments) = 1 << 2,
+	Function(useBoundThis)  = 1 << 3,
 };
 
 extern struct Object * Function(prototype);
@@ -52,11 +53,11 @@ Interface(Function,
 		struct Object environment;
 		struct OpList *oplist;
 		struct Function *pair;
+		struct Value boundThis;
 		struct Text text;
 		const char *name;
 		int parameterCount;
 		enum Function(Flags) flags;
-		struct Value primitiveValue;
 	}
 )
 

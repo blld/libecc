@@ -447,9 +447,9 @@ static void testRelational (void)
 	test("3 < 4", "true", NULL);
 	test("3 <= 4", "true", NULL);
 	test("'toString' in {}", "true", NULL);
-	test("'toString' in null", "TypeError: invalid 'in' operand null"
+	test("'toString' in null", "TypeError: 'null' not an object"
 	,    "              ^~~~");
-	test("var a; 'toString' in a", "TypeError: invalid 'in' operand a"
+	test("var a; 'toString' in a", "TypeError: 'a' not an object"
 	,    "                     ^");
 	test("var a = { b: 1, c: 2 }; 'b' in a", "true", NULL);
 	test("var a = { b: 1, c: 2 }; 'd' in a", "false", NULL);
@@ -580,6 +580,13 @@ static void testFunction (void)
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
 	,    "                                                                                     ^                                    ");
 	test("function F(){}; F.prototype = 123; new F", "[object Object]", NULL);
+	
+	test("var f = function(){ return this }.bind(undefined); f()", "undefined", NULL);
+	test("var f = function(){ return this }.bind(null); f()", "null", NULL);
+	test("var f = function(){ return this }.bind(123); f()", "123", NULL);
+	test("var f = function(a, b){ return arguments }.bind(123); [].join.call(f(1, 2))", "1,2", NULL);
+	test("var f = function(a, b){ return arguments }.bind(123, 1); [].join.call(f(2, 3))", "1,2,3", NULL);
+	test("var f = function(a, b){ return arguments }.bind(123, 1, 2, 3); [].join.call(f(4, 5))", "1,2,3,4,5", NULL);
 }
 
 static void testLoop (void)

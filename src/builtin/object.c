@@ -896,7 +896,7 @@ struct Value *putMember (struct Object *self, struct Key key, struct Native(Cont
 	
 	if (( ref = memberOwn(self, key) ))
 		return putValue(self, ref, context, value, text);
-	else if (( ref = member(self->prototype, key) ))
+	else if (self->prototype && ( ref = member(self->prototype, key) ))
 	{
 		if (ref->flags & Value(accessor))
 			return putValue(self, ref, context, value, text);
@@ -916,7 +916,7 @@ struct Value *putElement (struct Object *self, uint32_t index, struct Native(Con
 	
 	if (( ref = element(self, index) ))
 		return putValue(self, ref, context, value, text);
-	else if (( ref = element(self->prototype, index) ))
+	else if (self->prototype && ( ref = element(self->prototype, index) ))
 	{
 		if (ref->flags & Value(accessor))
 			return putValue(self, ref, context, value, text);

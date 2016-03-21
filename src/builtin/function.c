@@ -105,6 +105,57 @@ static struct Value call (struct Native(Context) * const context)
 		return Op.callFunctionVA(context, 1, context->this.data.function, Value(undefined), 0);
 }
 
+static struct Value bindCall (struct Native(Context) * const context)
+{
+	struct Function *function;
+	struct Object *arguments;
+	uint16_t count, length;
+	
+	Native.assertVariableParameter(context);
+	
+	if (context->this.type != Value(functionType))
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
+	
+	function = context->this.data.function;
+	
+	count = Native.variableArgumentCount(context);
+	length = (function->environment.elementCount - 1) + count;
+	arguments = Array.createSized(length);
+	
+	memcpy(arguments->element, function->environment.element + 1, sizeof(*arguments->element) * (function->environment.elementCount - 1));
+	memcpy(arguments->element + (function->environment.elementCount - 1), context->environment->hashmap[2].data.value.data.object->element, sizeof(*arguments->element) * (context->environment->hashmap[2].data.value.data.object->elementCount));
+	
+	return Op.callFunctionArguments(context, 0, context->this.data.function->pair, function->environment.element[0].data.value, arguments);
+}
+
+static struct Value bind (struct Native(Context) * const context)
+{
+	struct Function *function;
+	uint16_t index, count, parameterCount = 0;
+	
+	Native.assertVariableParameter(context);
+	
+	if (context->this.type != Value(functionType))
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
+	
+	count = Native.variableArgumentCount(context);
+	parameterCount = context->this.data.function->parameterCount - (count > 1? count - 1: 0);
+	function = Function.createWithNative(bindCall, parameterCount > 0? parameterCount: 0);
+	
+	Object.resizeElement(&function->environment, count? count: 1);
+	if (count)
+		for (index = 0; index < count; ++index)
+			function->environment.element[index].data.value = Native.variableArgument(context, index);
+	else
+		function->environment.element[0].data.value = Value(undefined);
+	
+	function->pair = context->this.data.function;
+	function->boundThis = Value.function(function);
+	function->flags |= Function(needArguments) | Function(useBoundThis);
+	
+	return Value.function(function);
+}
+
 static struct Value prototypeConstructor (struct Native(Context) * const context)
 {
 	return Value(undefined);
@@ -159,6 +210,7 @@ void setup ()
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
 	Function.addToObject(Function(prototype), "call", call, -1, 0);
+	Function.addToObject(Function(prototype), "bind", bind, -1, 0);
 }
 
 void teardown (void)
@@ -194,7 +246,6 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 	{
 		self = createSized(NULL, 3);
 		self->flags |= Function(needArguments);
-		self->object.hashmap[2].data.key = Key(arguments);
 	}
 	else
 	{
