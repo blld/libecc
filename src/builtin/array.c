@@ -53,14 +53,18 @@ static struct Value isArray (struct Native(Context) * const context)
 
 static struct Chars * toChars (struct Native(Context) * const context, struct Value this, struct Text separator)
 {
-	struct Value value;
 	struct Object *object = this.data.object;
-	uint32_t index, count = object->elementCount;
+	struct Value value, length = Object.getMember(object, Key(length), context);
+	uint32_t index, count = Value.toBinary(length).data.binary;
 	struct Chars *chars = Chars.beginAppend();
 	
 	for (index = 0; index < count; ++index)
 	{
-		value = Object.getValue(this.data.object, &object->element[index].data.value, context);
+		if (index < object->elementCount)
+			value = Object.getValue(this.data.object, &object->element[index].data.value, context);
+		else
+			value = Value(undefined);
+		
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
 		{
 			value = Value.toString(context, value);
@@ -78,14 +82,17 @@ static struct Chars * toChars (struct Native(Context) * const context, struct Va
 
 static struct Value toString (struct Native(Context) * const context)
 {
-	struct Value object;
-	struct Text separator = (struct Text){ ",", 1 };
+	struct Value function;
 	
 	Native.assertParameterCount(context, 0);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex));
+	context->this = Value.toObject(context, context->this, Native(thisIndex));
+	function = Object.getMember(context->this.data.object, Key(join), context);
 	
-	return Value.chars(toChars(context, object, separator));
+	if (function.type == Value(functionType))
+		return Op.callFunctionVA(context, 0, function.data.function, context->this, 0);
+	else
+		return Object(type).toString(context);
 }
 
 static struct Value concat (struct Native(Context) * const context)

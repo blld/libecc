@@ -885,6 +885,11 @@ static void testArray (void)
 	test("var o = {}, a = ['abc',123]; o[a] = 'test'; Object.getOwnPropertyNames(o)", "abc,123", NULL);
 	
 	test("var a = [1,2,3,4]; Object.defineProperty(a, 'length', {value:2}); a", "1,2", NULL);
+	
+	test("[].join.call({1:'@'})", "", NULL);
+	test("[].join.call({1:'@', length:2})", ",@", NULL);
+	test("[].join.call({1:'@', length:12})", ",@,,,,,,,,,,", NULL);
+	test("[].toString.call({1:'@'})", "[object Object]", NULL);
 }
 
 static void testBoolean (void)

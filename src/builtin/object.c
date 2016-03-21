@@ -10,11 +10,14 @@
 
 // MARK: - Private
 
+static struct Value toString (struct Native(Context) * const context);
+
 struct Object * Object(prototype) = NULL;
 struct Function * Object(constructor) = NULL;
 
 const struct Object(Type) Object(type) = {
 	.text = &Text(objectType),
+	.toString = toString,
 };
 
 static const int defaultSize = 8;

@@ -23,6 +23,7 @@ struct Object(Type)
 	const struct Text *text;
 	
 	void (*finalize)(struct Object *);
+	typeof(struct Value) (*toString)(struct Native(Context) * const context);
 };
 
 enum Object(Flags)
