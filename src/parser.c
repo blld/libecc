@@ -315,7 +315,9 @@ static struct OpList * primary (struct Parser *self)
 	else if (acceptToken(self, '('))
 	{
 		oplist = expression(self, 0);
+		self->lexer->disallowRegex = 1;
 		expectToken(self, ')');
+		self->lexer->disallowRegex = 0;
 		return oplist;
 	}
 	else

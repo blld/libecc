@@ -107,19 +107,14 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	if (bytes == end)
 		goto done;
 	else if (*bytes == '/')
-	{
-		iso = 0;
-		s1 = '/';
-		s2 = ' ';
-		offsetHour = localOffset;
-	}
+		iso = 0, s1 = '/', s2 = ' ', offsetHour = localOffset;
 	
 	if (bytes + 3 <= end && *bytes == s1 && sscanf(bytes + 1, "%02d", &month) == 1)
 		bytes += 3;
 	else
 		goto error;
 	
-	if (bytes == end)
+	if (iso && bytes == end)
 		goto done;
 	else if (bytes + 3 <= end && *bytes == s1 && sscanf(bytes + 1,"%02d", &day) == 1)
 		bytes += 3;
@@ -139,9 +134,7 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	{
 		bytes += 3;
 		
-		if (bytes == end)
-			goto done;
-		else if (iso && bytes + 4 <= end && sscanf(bytes,".%03d", &ms) == 1)
+		if (iso && bytes + 4 <= end && sscanf(bytes,".%03d", &ms) == 1)
 			bytes += 4;
 	}
 	
@@ -151,6 +144,8 @@ static double msFromBytes (const char *bytes, uint16_t length)
 			bytes += 1;
 		else if (bytes + 6 <= end && (*bytes == '+' || *bytes == '-') && sscanf(bytes,"%03d:%02d", &offsetHour, &offsetMinute) == 2)
 			bytes += 6;
+		else
+			goto error;
 		
 		if (bytes == end)
 			goto done;
@@ -178,7 +173,7 @@ done:
 		+ h * msPerHour
 		+ m * msPerMinute
 		+ s * msPerSecond
-		+ ms / 1000.
+		+ ms
 		- (offsetHour * 60 + offsetMinute) * msPerMinute
 		;
 	
@@ -213,7 +208,7 @@ static struct Chars *msToChars (double ms, double offset)
 	if (isnan(ms))
 		return Chars.create("Invalid Date");
 	
-	ms = msToDate(ms + offset * msPerHour, &year, &month, &day);
+	ms = msToDate(msClip(ms + offset * msPerHour), &year, &month, &day);
 	
 	return Chars.create("%04d/%02d/%02d %02d:%02d:%02d %+03d%02d"
 		, year
@@ -345,6 +340,13 @@ static struct Value valueOf (struct Native(Context) * const context)
 	return Value.binary(context->this.data.date->ms);
 }
 
+static struct Value getTimezoneOffset (struct Native(Context) * const context)
+{
+	Native.assertParameterCount(context, 0);
+	
+	return Value.binary(-localOffset * 60);
+}
+
 static struct Value now (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
@@ -418,6 +420,8 @@ void setup (void)
 	Function.addToObject(Date(prototype), "toDateString", toDateString, 0, flags);
 	Function.addToObject(Date(prototype), "toTimeString", toTimeString, 0, flags);
 	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, flags);
+	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, flags);
+	
 	
 	Function.addToObject(&Date(constructor)->object, "now", now, 0, flags);
 	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);
