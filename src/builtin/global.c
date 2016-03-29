@@ -225,7 +225,7 @@ struct Function * create (void)
 	Function.addValue(self, "String", Value.function(String(constructor)), flags);
 	Function.addValue(self, "Boolean", Value.function(Boolean(constructor)), flags);
 	Function.addValue(self, "Number", Value.function(Number(constructor)), flags);
-	#warning Date
+	Function.addValue(self, "Date", Value.function(Date(constructor)), flags);
 	Function.addValue(self, "RegExp", Value.function(RegExp(constructor)), flags);
 	Function.addValue(self, "Error", Value.function(Error(constructor)), flags);
 	Function.addValue(self, "RangeError", Value.function(Error(rangeConstructor)), flags);

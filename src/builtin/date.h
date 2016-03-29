@@ -26,11 +26,11 @@ Interface(Date,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct Object *, prototype ,(void))
-//	(struct Function *, constructor ,(void))
+	(struct Date *, create ,(double))
 	,
 	{
-		char empty;
+		struct Object object;
+		double ms;
 	}
 )
 

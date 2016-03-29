@@ -1082,6 +1082,33 @@ static void testString (void)
 	test("''.lastIndexOf.length", "1", NULL);
 }
 
+static void testDate (void)
+{
+	test("Date", "function Date() [native code]", NULL);
+	test("Object.prototype.toString.call(Date.prototype)", "[object Date]", NULL);
+	test("Date.prototype.constructor", "function Date() [native code]", NULL);
+	test("Date.prototype", "Invalid Date", NULL);
+	
+	test("(new Date(0)).toISOString()", "1970-01-01T00:00:00.000Z", NULL);
+	test("(new Date(951782400000)).toISOString()", "2000-02-29T00:00:00.000Z", NULL);
+	test("(new Date(951868800000)).toISOString()", "2000-03-01T00:00:00.000Z", NULL);
+	test("(new Date(8640000000000000)).toISOString()", "+275760-09-13T00:00:00.000Z", NULL);
+	test("(new Date(-8640000000000000)).toISOString()", "-271821-04-20T00:00:00.000Z", NULL);
+	
+	test("var x = new Date(0); x.valueOf() == Date.parse(x.toString())", "true", NULL);
+	test("var x = new Date(0); x.valueOf() == Date.parse(x.toUTCString())", "true", NULL);
+	test("var x = new Date(0); x.valueOf() == Date.parse(x.toISOString())", "true", NULL);
+	test("var x = new Date(951782400000); x.valueOf() == Date.parse(x.toString())", "true", NULL);
+	test("var x = new Date(951868800000); x.valueOf() == Date.parse(x.toUTCString())", "true", NULL);
+	test("var x = new Date(8640000000000000); x.valueOf() == Date.parse(x.toISOString())", "true", NULL);
+	
+	test("new Date('1970-01-01').toISOString()", "1970-01-01T00:00:00.000Z", NULL);
+	test("new Date('1970/01/01 12:34:56 +0900').toISOString()", "1970-01-01T03:34:56.000Z", NULL);
+	
+	test("Date.UTC(70, 00, 01)", "0", NULL);
+	test("Date.UTC(70, 01, 01)", "2678400000", NULL);
+}
+
 static int runTest (int verbosity)
 {
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->environment), 0);
@@ -1109,6 +1136,7 @@ static int runTest (int verbosity)
 	testBoolean();
 	testNumber();
 	testString();
+	testDate();
 	
 	Env.newline();
 	
