@@ -50,7 +50,7 @@ static double msFromDate (int32_t year, int32_t month, int32_t day)
     doy = (153 * (month + (month > 2? -3: 9)) + 2) / 5 + day - 1; // [0, 365]
     doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;                  // [0, 146096]
 	
-    return msClip((double)(era * 146097 + (int32_t)(doe) - 719468) * msPerDay);
+    return (double)(era * 146097 + (int32_t)(doe) - 719468) * msPerDay;
 }
 
 static double msFromArguments (struct Native(Context) * const context)
@@ -87,7 +87,7 @@ static double msFromArguments (struct Native(Context) * const context)
 			;
 	}
 	
-	return msClip(time);
+	return time;
 }
 
 static double msFromBytes (const char *bytes, uint16_t length)
@@ -173,14 +173,14 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	}
 	
 done:
-	return msClip(
+	return
 		msFromDate(year, month, day)
 		+ h * msPerHour
 		+ m * msPerMinute
 		+ s * msPerSecond
 		+ ms / 1000.
 		- (offsetHour * 60 + offsetMinute) * msPerMinute
-		);
+		;
 	
 error:
 	return NAN;
@@ -349,7 +349,7 @@ static struct Value now (struct Native(Context) * const context)
 {
 	Native.assertParameterCount(context, 0);
 	
-	return Value.date(create(currentTime()));
+	return Value.binary(msClip(currentTime()));
 }
 
 static struct Value parse (struct Native(Context) * const context)
@@ -360,7 +360,7 @@ static struct Value parse (struct Native(Context) * const context)
 	
 	value = Value.toString(context, Native.argument(context, 0));
 	
-	return Value.binary(msFromBytes(Value.stringBytes(value), Value.stringLength(value)));
+	return Value.binary(msClip(msFromBytes(Value.stringBytes(value), Value.stringLength(value))));
 }
 
 static struct Value UTC (struct Native(Context) * const context)
@@ -368,7 +368,7 @@ static struct Value UTC (struct Native(Context) * const context)
 	Native.assertVariableParameter(context);
 	
 	if (Native.variableArgumentCount(context) > 1)
-		return Value.binary(msFromArguments(context));
+		return Value.binary(msClip(msFromArguments(context)));
 	
 	return Value.binary(NAN);
 }
