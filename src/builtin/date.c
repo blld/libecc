@@ -98,7 +98,6 @@ static double msFromArguments (struct Native(Context) * const context)
 static double msFromBytes (const char *bytes, uint16_t length)
 {
 	char buffer[length + 1];
-	char *format;
 	int n = 0, nOffset = 0, i = 0;
 	int year, month = 1, day = 1, h = 0, m = 0, s = 0, ms = 0, hOffset = 0, mOffset = 0;
 	
@@ -108,8 +107,10 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	memcpy(buffer, bytes, length);
 	buffer[length] = '\0';
 	
-	format = issign(buffer[0])? "%07d%n-%02d%n-%02d%nT%02d:%02d%n:%02d%n.%03d%n": "%04d%n-%02d%n-%02d%nT%02d:%02d%n:%02d%n.%03d%n";
-	n = 0, i = sscanf(buffer, format, &year, &n, &month, &n, &day, &n, &h, &m, &n, &s, &n, &ms, &n);
+	n = 0, i = sscanf(buffer, issign(buffer[0])
+	                          ? "%07d""%n""-%02d""%n""-%02d%n""T%02d:%02d%n"":%02d%n"".%03d%n"
+	                          : "%04d""%n""-%02d""%n""-%02d%n""T%02d:%02d%n"":%02d%n"".%03d%n",
+	                             &year,&n, &month,&n, &day,&n, &h,  &m,  &n, &s,  &n, &ms, &n);
 	
 	if (i <= 3)
 	{
@@ -131,7 +132,8 @@ static double msFromBytes (const char *bytes, uint16_t length)
 		return NAN;
 	
 	hOffset = localOffset;
-	n = 0, i = sscanf(buffer, "%04d/%02d/%02d%n %02d:%02d%n:%02d%n", &year, &month, &day, &n, &h, &m, &n, &s, &n);
+	n = 0, i = sscanf(buffer, "%04d" "/%02d" "/%02d%n"" %02d:%02d%n"":%02d%n",
+	                           &year, &month, &day,&n,  &h,  &m, &n, &s,  &n);
 	
 	if (n == length)
 		goto done;
