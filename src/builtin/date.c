@@ -29,6 +29,11 @@ static const double msPerMinute = 60000;
 static const double msPerHour = 3600000;
 static const double msPerDay = 86400000;
 
+static int issign(int c)
+{
+	return c == '+' || c == '-';
+}
+
 static double msClip (double ms)
 {
 	if (!isfinite(ms) || fabs(ms) > 8.64 * pow(10, 15))
@@ -92,93 +97,64 @@ static double msFromArguments (struct Native(Context) * const context)
 
 static double msFromBytes (const char *bytes, uint16_t length)
 {
-	int iso = 1, s1 = '-', s2 = 'T';
+	char buffer[length + 1];
+	char *format;
+	int n = 0, nOffset = 0, i = 0;
+	int year, month = 1, day = 1, h = 0, m = 0, s = 0, ms = 0, hOffset = 0, mOffset = 0;
 	
-	const char *end = bytes + length;
-	int32_t year, month = 1, day = 1, h = 0, m = 0, s = 0, ms = 0, offsetHour = 0, offsetMinute = 0;
+	if (!length)
+		return NAN;
 	
-	if (bytes + 7 <= end && (*bytes == '+' || *bytes == '-') && sscanf(bytes,"%07d", &year) == 1)
-		bytes += 7;
-	else if (bytes + 4 <= end && isdigit(*bytes) && sscanf(bytes,"%04d", &year) == 1)
-		bytes += 4;
-	else
-		goto error;
+	memcpy(buffer, bytes, length);
+	buffer[length] = '\0';
 	
-	if (bytes == end)
-		goto done;
-	else if (*bytes == '/')
-		iso = 0, s1 = '/', s2 = ' ', offsetHour = localOffset;
+	format = issign(buffer[0])? "%07d%n-%02d%n-%02d%nT%02d:%02d%n:%02d%n.%03d%n": "%04d%n-%02d%n-%02d%nT%02d:%02d%n:%02d%n.%03d%n";
+	n = 0, i = sscanf(buffer, format, &year, &n, &month, &n, &day, &n, &h, &m, &n, &s, &n, &ms, &n);
 	
-	if (bytes + 3 <= end && *bytes == s1 && sscanf(bytes + 1, "%02d", &month) == 1)
-		bytes += 3;
-	else
-		goto error;
-	
-	if (iso && bytes == end)
-		goto done;
-	else if (bytes + 3 <= end && *bytes == s1 && sscanf(bytes + 1,"%02d", &day) == 1)
-		bytes += 3;
-	else
-		goto error;
-	
-	if (bytes == end)
-		goto done;
-	else if (bytes + 6 <= end && *bytes == s2 && sscanf(bytes + 1,"%02d:%02d", &h, &m) == 2)
-		bytes += 6;
-	else
-		goto error;
-	
-	if (!iso && bytes == end)
-		goto done;
-	else if (bytes + 3 <= end && sscanf(bytes,":%02d", &s) == 1)
+	if (i <= 3)
 	{
-		bytes += 3;
+		if (n == length)
+			goto done;
 		
-		if (iso && bytes + 4 <= end && sscanf(bytes,".%03d", &ms) == 1)
-			bytes += 4;
+		/*vvv*/
 	}
-	
-	if (iso)
+	else if (i >= 5)
 	{
-		if (bytes + 1 <= end && *bytes == 'Z')
-			bytes += 1;
-		else if (bytes + 6 <= end && (*bytes == '+' || *bytes == '-') && sscanf(bytes,"%03d:%02d", &offsetHour, &offsetMinute) == 2)
-			bytes += 6;
-		else
-			goto error;
-		
-		if (bytes == end)
+		if (buffer[n] == 'Z' && n + 1 == length)
+			goto done;
+		else if (issign(buffer[n]) && sscanf(buffer + n, "%03d:%02d%n", &hOffset, &mOffset, &nOffset) == 2 && n + nOffset == length)
 			goto done;
 		else
-			goto error;
+			return NAN;
 	}
 	else
-	{
-		if (bytes == end)
-			goto done;
-		else if (bytes + 1 <= end && *bytes == ' ')
-			bytes += 1;
-		else
-			goto error;
-		
-		if (bytes + 5 <= end && (*bytes == '+' || *bytes == '-') && sscanf(bytes,"%03d%02d", &offsetHour, &offsetMinute) == 2)
-			bytes += 5;
-		else
-			goto error;
-	}
+		return NAN;
+	
+	hOffset = localOffset;
+	n = 0, i = sscanf(buffer, "%04d/%02d/%02d%n %02d:%02d%n:%02d%n", &year, &month, &day, &n, &h, &m, &n, &s, &n);
+	
+	if (n == length)
+		goto done;
+	else if (i >= 5 && buffer[n++] == ' ' && issign(buffer[n]) && sscanf(buffer + n, "%03d%02d%n", &hOffset, &mOffset, &nOffset) == 2 && n + nOffset == length)
+		goto done;
+	else
+		return NAN;
 	
 done:
+	if (month <= 0 || day <= 0 || h < 0 || m < 0 || s < 0 || ms < 0 || hOffset < -12 || mOffset < 0)
+		return NAN;
+	
+	if (month > 12 || day > 31 || h > 23 || m > 59 || s > 59 || ms > 999 || hOffset > 14 || mOffset > 59)
+		return NAN;
+	
 	return
 		msFromDate(year, month, day)
 		+ h * msPerHour
 		+ m * msPerMinute
 		+ s * msPerSecond
 		+ ms
-		- (offsetHour * 60 + offsetMinute) * msPerMinute
+		- (hOffset * 60 + mOffset) * msPerMinute
 		;
-	
-error:
-	return NAN;
 }
 
 static double msToDate (double ms, int32_t *year, int32_t *month, int32_t *day)

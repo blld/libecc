@@ -1124,12 +1124,12 @@ static void testDate (void)
 	test("Date.parse('1984/08/31 01:23:45 +0000')", "462763425000", NULL);
 	test("(Date.parse('1984/08/31') - Date.parse('1984-08-31')) / 60000 == new Date().getTimezoneOffset()", "true", NULL);
 	
-	// NOTE: iso format without time offset is not supported: ES5 & ES6 are contradictory and hence not portable.
+	// NOTE: iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
 	test("Date.parse('1984-08-31T01:23')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23:45')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23:45.678')", "NaN", NULL);
 	
-	// NOTE: iso format only support time offset '+hh:mm', non-iso only ' +hhmm'
+	// NOTE: iso format only support time offset '+hh:mm', implementation format only ' +hhmm'
 	test("Date.parse('1984-08-31T01:23+1234')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23 +12:34')", "NaN", NULL);
 	
