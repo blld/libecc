@@ -396,11 +396,13 @@ void setup (void)
 	//
 	
 	struct tm tm = {
-		.tm_mday = 1,
+		.tm_mday = 2,
 		.tm_year = 70,
+		.tm_wday = 5,
+		.tm_isdst = -1,
 	};
 	time_t time = mktime(&tm);
-	localOffset = difftime(0, time) / 3600;
+	localOffset = difftime(86400, time) / 3600;
 }
 
 void teardown (void)
