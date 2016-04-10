@@ -33,7 +33,7 @@ Interface(Ecc,
 	(void, addValue ,(struct Ecc *, const char *name, struct Value value, enum Value(Flags)))
 	
 	(int, evalInput ,(struct Ecc *, struct Input *, enum Ecc(EvalFlags)))
-	(void, evalInputWithContext ,(struct Ecc *, struct Input *, struct Native(Context) *context))
+	(void, evalInputWithContext ,(struct Ecc *, struct Input *, struct Context *context))
 	
 	(jmp_buf *, pushEnv ,(struct Ecc *))
 	(void, popEnv ,(struct Ecc *))

@@ -238,7 +238,7 @@ int isTrue (struct Value value)
 
 // convert
 
-struct Value toPrimitive (struct Native(Context) * const context, struct Value value, const struct Text *text, enum Value(hintPrimitive) hint)
+struct Value toPrimitive (struct Context * const context, struct Value value, enum Value(hintPrimitive) hint)
 {
 	struct Object *object;
 	struct Key aKey;
@@ -246,6 +246,7 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Value v
 	struct Value aFunction;
 	struct Value bFunction;
 	struct Value result;
+	struct Text text;
 	
 	if (value.type < Value(objectType))
 		return value;
@@ -274,7 +275,8 @@ struct Value toPrimitive (struct Native(Context) * const context, struct Value v
 			return result;
 	}
 	
-	Ecc.jmpEnv(context->ecc, error(Error.typeError(text? *text: Text(empty), "cannot convert %.*s%sto primitive", text? text->length: 0, text? text->bytes: "", text? " ": "")));
+	text = Context.textSeek(context);
+	Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert %.*s%sto primitive", text.length, text.bytes, text.length? " ": "")));
 }
 
 struct Value toBinary (struct Value value)
@@ -369,7 +371,7 @@ struct Value binaryToString (double binary, int base)
 	return Value.chars(Chars.endAppend(chars));
 }
 
-struct Value toString (struct Native(Context) * const context, struct Value value)
+struct Value toString (struct Context * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
@@ -413,7 +415,7 @@ struct Value toString (struct Native(Context) * const context, struct Value valu
 		case Value(functionType):
 		case Value(errorType):
 		case Value(hostType):
-			return toString(context, toPrimitive(context, value, &Text(empty), Value(hintString)));
+			return toString(context, toPrimitive(context, value, Value(hintString)));
 		
 		case Value(referenceType):
 			break;
@@ -446,7 +448,7 @@ const char * stringBytes (struct Value value)
 		return NULL;
 }
 
-struct Value toObject (struct Native(Context) * const context, struct Value value, enum Native(Index) argumentIndex)
+struct Value toObject (struct Context * const context, struct Value value)
 {
 	if (value.type >= Value(objectType))
 		return value;
@@ -468,10 +470,10 @@ struct Value toObject (struct Native(Context) * const context, struct Value valu
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(context->ecc, error(Error.typeError(Native.textSeek(context, argumentIndex), "can't convert null to object")));
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(Context.textSeek(context), "can't convert null to object")));
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(context->ecc, error(Error.typeError(Native.textSeek(context, argumentIndex), "can't convert undefined to object")));
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(Context.textSeek(context), "can't convert undefined to object")));
 		
 		case Value(keyType):
 		case Value(referenceType):
@@ -529,7 +531,7 @@ struct Value toType (struct Value value)
 	abort();
 }
 
-struct Value equals (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value equals (struct Context * const context, struct Value a, struct Value b)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
@@ -555,26 +557,28 @@ struct Value equals (struct Native(Context) * const context, struct Value a, str
 	else if (a.type == Value(undefinedType) && b.type == Value(nullType))
 		return Value(true);
 	else if (isNumber(a) && isString(b))
-		return equals(context, a, toBinary(b), aText, bText);
+		return equals(context, a, toBinary(b));
 	else if (isString(a) && isNumber(b))
-		return equals(context, toBinary(a), b, aText, bText);
+		return equals(context, toBinary(a), b);
 	else if (isBoolean(a))
-		return equals(context, toBinary(a), b, aText, bText);
+		return equals(context, toBinary(a), b);
 	else if (isBoolean(b))
-		return equals(context, a, toBinary(b), aText, bText);
+		return equals(context, a, toBinary(b));
 	else if (((isString(a) || isNumber(a)) && isObject(b))
 		   || (isObject(a) && (isString(b) || isNumber(b)))
 		   )
 	{
-		a = toPrimitive(context, a, aText, Value(hintAuto));
-		b = toPrimitive(context, b, bText, Value(hintAuto));
-		return equals(context, a, b, aText, bText);
+		a = toPrimitive(context, a, Value(hintAuto));
+		Context.setTextIndex(context, Context(noIndex));
+		b = toPrimitive(context, b, Value(hintAuto));
+		
+		return equals(context, a, b);
 	}
 	
 	return Value(false);
 }
 
-struct Value same (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value same (struct Context * const context, struct Value a, struct Value b)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
@@ -599,7 +603,7 @@ struct Value same (struct Native(Context) * const context, struct Value a, struc
 	return Value(false);
 }
 
-static struct Value add (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+static struct Value add (struct Context * const context, struct Value a, struct Value b)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return binary(a.data.binary + b.data.binary);
@@ -609,8 +613,9 @@ static struct Value add (struct Native(Context) * const context, struct Value a,
 		return binary(toBinary(a).data.binary + toBinary(b).data.binary);
 	else
 	{
-		a = toPrimitive(context, a, aText, Value(hintAuto));
-		b = toPrimitive(context, b, bText, Value(hintAuto));
+		a = toPrimitive(context, a, Value(hintAuto));
+		Context.setTextIndex(context, Context(noIndex));
+		b = toPrimitive(context, b, Value(hintAuto));
 		
 		if (isString(a) || isString(b))
 		{
@@ -624,7 +629,7 @@ static struct Value add (struct Native(Context) * const context, struct Value a,
 	}
 }
 
-static struct Value subtract (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+static struct Value subtract (struct Context * const context, struct Value a, struct Value b)
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return binary(a.data.binary - b.data.binary);
@@ -634,10 +639,11 @@ static struct Value subtract (struct Native(Context) * const context, struct Val
 	return binary(toBinary(a).data.binary - toBinary(b).data.binary);
 }
 
-static struct Value compare (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+static struct Value compare (struct Context * const context, struct Value a, struct Value b)
 {
-	a = toPrimitive(context, a, aText, Value(hintNumber));
-	b = toPrimitive(context, b, bText, Value(hintNumber));
+	a = toPrimitive(context, a, Value(hintNumber));
+	Context.setTextIndex(context, Context(noIndex));
+	b = toPrimitive(context, b, Value(hintNumber));
 	
 	if (isString(a) && isString(b))
 	{
@@ -660,40 +666,113 @@ static struct Value compare (struct Native(Context) * const context, struct Valu
 	}
 }
 
-struct Value less (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value less (struct Context * const context, struct Value a, struct Value b)
 {
-	a = compare(context, a, b, aText, bText);
+	a = compare(context, a, b);
 	if (a.type == Value(undefinedType))
 		return Value(false);
 	else
 		return a;
 }
 
-struct Value more (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value more (struct Context * const context, struct Value a, struct Value b)
 {
-	a = compare(context, b, a, bText, aText);
+	a = compare(context, b, a);
 	if (a.type == Value(undefinedType))
 		return Value(false);
 	else
 		return a;
 }
 
-struct Value lessOrEqual (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value lessOrEqual (struct Context * const context, struct Value a, struct Value b)
 {
-	a = compare(context, b, a, bText, aText);
+	a = compare(context, b, a);
 	if (a.type == Value(undefinedType) || a.type == Value(trueType))
 		return Value(false);
 	else
 		return Value(true);
 }
 
-struct Value moreOrEqual (struct Native(Context) * const context, struct Value a, struct Value b, const struct Text *aText, const struct Text *bText)
+struct Value moreOrEqual (struct Context * const context, struct Value a, struct Value b)
 {
-	a = compare(context, a, b, aText, bText);
+	a = compare(context, a, b);
 	if (a.type == Value(undefinedType) || a.type == Value(trueType))
 		return Value(false);
 	else
 		return Value(true);
+}
+
+const char * typeName (enum Value(Type) type)
+{
+	switch (type)
+	{
+		case Value(nullType):
+			return "null";
+		
+		case Value(undefinedType):
+			return "undefined";
+		
+		case Value(falseType):
+		case Value(trueType):
+			return "boolean";
+		
+		case Value(integerType):
+		case Value(binaryType):
+			return "number";
+		
+		case Value(keyType):
+		case Value(textType):
+		case Value(charsType):
+			return "string";
+		
+		case Value(objectType):
+		case Value(hostType):
+			return "object";
+		
+		case Value(errorType):
+			return "error";
+		
+		case Value(functionType):
+			return "function";
+		
+		case Value(dateType):
+			return "date";
+		
+		case Value(numberType):
+			return "number";
+		
+		case Value(stringType):
+			return "string";
+		
+		case Value(booleanType):
+			return "boolean";
+		
+		case Value(referenceType):
+			break;
+	}
+	assert(0);
+	abort();
+}
+
+const char * maskName (enum Value(Mask) mask)
+{
+	switch (mask)
+	{
+		case Value(numberMask):
+			return "number";
+		
+		case Value(stringMask):
+			return "string";
+		
+		case Value(booleanMask):
+			return "boolean";
+		
+		case Value(objectMask):
+			return "object";
+		
+		case Value(dynamicMask):
+			return "dynamic";
+	}
 }
 
 void dumpTo (struct Value value, FILE *file)

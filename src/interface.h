@@ -47,11 +47,11 @@
 	#define io_libecc_interface_I_odd(R, N, P) io_libecc_interface_Unwrap io_libecc_interface_I(R, N, P) io_libecc_interface_I_even
 	#define io_libecc_interface_I_even_end
 	#define io_libecc_interface_I_odd_end
-	#define io_libecc_interface_I(R, N, P) (N,)
+	#define io_libecc_interface_I(R, N, P) (N)
 
 	#define io_libecc_interface__CAT(last, entries) entries ## last
 	#define io_libecc_interface_CAT(last, entries) io_libecc_interface__CAT(last, entries)
 
-	#define io_libecc_interface_Unwrap(x,y) x,
+	#define io_libecc_interface_Unwrap(x) x,
 
 #endif

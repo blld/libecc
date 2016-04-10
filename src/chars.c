@@ -100,7 +100,7 @@ struct Chars * append (struct Chars *self, const char *format, ...)
 	return self;
 }
 
-struct Chars * appendValue (struct Chars *self, struct Native(Context) * const context, struct Value value)
+struct Chars * appendValue (struct Chars *self, struct Context * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{

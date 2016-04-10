@@ -30,7 +30,7 @@ static uint32_t valueArrayLength(struct Value value)
 	return 1;
 }
 
-static void valueAppendFromElement (struct Native(Context) * const context, struct Value value, struct Object *object, uint32_t *element)
+static void valueAppendFromElement (struct Context * const context, struct Value value, struct Object *object, uint32_t *element)
 {
 	uint32_t index, count;
 	
@@ -41,22 +41,24 @@ static void valueAppendFromElement (struct Native(Context) * const context, stru
 		object->element[(*element)++].data.value = value;
 }
 
-static struct Value isArray (struct Native(Context) * const context)
+static struct Value isArray (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
-	value = Native.argument(context, 0);
+	Context.assertParameterCount(context, 1);
+	value = Context.argument(context, 0);
 	
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
 }
 
-static struct Chars * toChars (struct Native(Context) * const context, struct Value this, struct Text separator)
+static struct Chars * toChars (struct Context * const context, struct Value this, struct Text separator)
 {
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(object, Key(length), context);
 	uint32_t index, count = Value.toBinary(length).data.binary;
 	struct Chars *chars = Chars.beginAppend();
+	
+	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = 0; index < count; ++index)
 	{
@@ -80,13 +82,13 @@ static struct Chars * toChars (struct Native(Context) * const context, struct Va
 	return Chars.endAppend(chars);
 }
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
 	struct Value function;
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
-	context->this = Value.toObject(context, context->this, Native(thisIndex));
+	context->this = Value.toObject(context, Context.this(context));
 	function = Object.getMember(context->this.data.object, Key(join), context);
 	
 	if (function.type == Value(functionType))
@@ -95,39 +97,40 @@ static struct Value toString (struct Native(Context) * const context)
 		return Object(type).toString(context);
 }
 
-static struct Value concat (struct Native(Context) * const context)
+static struct Value concat (struct Context * const context)
 {
 	struct Value value;
 	uint32_t element = 0, length = 0, index, count;
 	struct Object *array = NULL;
-	Native.assertVariableParameter(context);
 	
-	value = Value.toObject(context, context->this, Native(thisIndex));
-	count = Native.variableArgumentCount(context);
+	Context.assertVariableParameter(context);
+	
+	value = Value.toObject(context, Context.this(context));
+	count = Context.variableArgumentCount(context);
 	
 	length += valueArrayLength(value);
 	for (index = 0; index < count; ++index)
-		length += valueArrayLength(Native.variableArgument(context, index));
+		length += valueArrayLength(Context.variableArgument(context, index));
 	
 	array = Array.createSized(length);
 	
 	valueAppendFromElement(context, value, array, &element);
 	for (index = 0; index < count; ++index)
-		valueAppendFromElement(context, Native.variableArgument(context, index), array, &element);
+		valueAppendFromElement(context, Context.variableArgument(context, index), array, &element);
 	
 	return Value.object(array);
 }
 
-static struct Value join (struct Native(Context) * const context)
+static struct Value join (struct Context * const context)
 {
 	struct Value object;
 	struct Value value;
 	struct Text separator;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex));
-	value = Native.argument(context, 0);
+	object = Value.toObject(context, Context.this(context));
+	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		separator = (struct Text){ ",", 1 };
 	else
@@ -139,13 +142,13 @@ static struct Value join (struct Native(Context) * const context)
 	return Value.chars(toChars(context, object, separator));
 }
 
-static struct Value pop (struct Native(Context) * const context)
+static struct Value pop (struct Context * const context)
 {
 	struct Value this, value;
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, context->this, Native(thisIndex));
+	this = Value.toObject(context, Context.this(context));
 	value = this.data.object->elementCount?
 		Object.getValue(this.data.object, &this.data.object->element[this.data.object->elementCount - 1].data.value, context):
 		Value(undefined);
@@ -155,14 +158,15 @@ static struct Value pop (struct Native(Context) * const context)
 	return value;
 }
 
-static struct Value push (struct Native(Context) * const context)
+static struct Value push (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t length = 0, index, count, base;
-	Native.assertVariableParameter(context);
 	
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
-	count = Native.variableArgumentCount(context);
+	Context.assertVariableParameter(context);
+	
+	object = Value.toObject(context, Context.this(context)).data.object;
+	count = Context.variableArgumentCount(context);
 	
 	base = object->elementCount;
 	length = object->elementCount + count;
@@ -173,55 +177,57 @@ static struct Value push (struct Native(Context) * const context)
 	
 	for (index = 0; index < count; ++index)
 	{
-		object->element[index + base].data.value = Native.variableArgument(context, index);
+		object->element[index + base].data.value = Context.variableArgument(context, index);
 		object->element[index + base].data.value.flags = 0;
 	}
 	
 	return Value.binary(length);
 }
 
-static struct Value reverse (struct Native(Context) * const context)
+static struct Value reverse (struct Context * const context)
 {
 	struct Value this, temp;
 	struct Object *object;
 	uint32_t index, half, last;
-	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, context->this, Native(thisIndex));
+	this = Value.toObject(context, Context.this(context));
 	object = this.data.object;
 	last = object->elementCount - 1;
 	half = object->elementCount / 2;
 	
+	Context.setTextIndex(context, Context(callIndex));
+	
 	for (index = 0; index < half; ++index)
 	{
 		temp = Object.getValue(object, &object->element[index].data.value, context);
-		Object.putValue(object, &object->element[index].data.value, context, Object.getValue(object, &object->element[last - index].data.value, context), &text);
-		Object.putValue(object, &object->element[last - index].data.value, context, temp, &text);
+		Object.putValue(object, &object->element[index].data.value, context, Object.getValue(object, &object->element[last - index].data.value, context));
+		Object.putValue(object, &object->element[last - index].data.value, context, temp);
 	}
 	
 	return this;
 }
 
-static struct Value shift (struct Native(Context) * const context)
+static struct Value shift (struct Context * const context)
 {
 	struct Value this, result;
 	struct Object *object;
 	uint32_t index, count;
-	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, context->this, Native(thisIndex));
+	this = Value.toObject(context, Context.this(context));
 	object = this.data.object;
+	
+	Context.setTextIndex(context, Context(callIndex));
 	
 	if (object->elementCount)
 	{
 		result = Object.getValue(object, &object->element[0].data.value, context);
 		
 		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index + 1].data.value, context), &text);
+			Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index + 1].data.value, context));
 		
 		--object->elementCount;
 	}
@@ -231,17 +237,17 @@ static struct Value shift (struct Native(Context) * const context)
 	return result;
 }
 
-static struct Value unshift (struct Native(Context) * const context)
+static struct Value unshift (struct Context * const context)
 {
 	struct Value this;
 	struct Object *object;
 	uint32_t length = 0, index, count;
-	Native.assertVariableParameter(context);
-	const struct Text text = Native.textSeek(context, Native(callIndex));
 	
-	this = Value.toObject(context, context->this, Native(thisIndex));
+	Context.assertVariableParameter(context);
+	
+	this = Value.toObject(context, Context.this(context));
 	object = this.data.object;
-	count = Native.variableArgumentCount(context);
+	count = Context.variableArgumentCount(context);
 	
 	length = object->elementCount + count;
 	if (length > object->elementCapacity)
@@ -249,31 +255,33 @@ static struct Value unshift (struct Native(Context) * const context)
 	else
 		object->elementCount = length;
 	
+	Context.setTextIndex(context, Context(callIndex));
+	
 	for (index = count; index < length; ++index)
-		Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index - count].data.value, context), &text);
+		Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index - count].data.value, context));
 	
 	for (index = 0; index < count; ++index)
 	{
-		object->element[index].data.value = Native.variableArgument(context, index);
+		object->element[index].data.value = Context.variableArgument(context, index);
 		object->element[index].data.value.flags = 0;
 	}
 	
 	return Value.binary(length);
 }
 
-static struct Value slice (struct Native(Context) * const context)
+static struct Value slice (struct Context * const context)
 {
 	struct Object *object, *result;
 	struct Value this, start, end;
 	uint32_t from, to, length;
 	double binary;
 	
-	Native.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 2);
 	
-	this = Value.toObject(context, context->this, Native(thisIndex));
+	this = Value.toObject(context, Context.this(context));
 	object = this.data.object;
 	
-	start = Native.argument(context, 0);
+	start = Context.argument(context, 0);
 	binary = Value.toBinary(start).data.binary;
 	if (start.type == Value(undefinedType))
 		from = 0;
@@ -282,7 +290,7 @@ static struct Value slice (struct Native(Context) * const context)
 	else
 		from = binary + object->elementCount >= 0? object->elementCount + binary: 0;
 	
-	end = Native.argument(context, 1);
+	end = Context.argument(context, 1);
 	binary = Value.toBinary(end).data.binary;
 	if (end.type == Value(undefinedType))
 		to = object->elementCount;
@@ -290,6 +298,8 @@ static struct Value slice (struct Native(Context) * const context)
 		to = binary + object->elementCount >= 0? object->elementCount + binary: 0;
 	else
 		to = binary < object->elementCount? binary: object->elementCount;
+	
+	Context.setTextIndex(context, Context(callIndex));
 	
 	if (to > from)
 	{
@@ -305,45 +315,45 @@ static struct Value slice (struct Native(Context) * const context)
 	return Value.object(result);
 }
 
-static struct Value getLength (struct Native(Context) * const context)
+static struct Value getLength (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
 	return Value.binary(context->this.data.object->elementCount);
 }
 
-static struct Value setLength (struct Native(Context) * const context)
+static struct Value setLength (struct Context * const context)
 {
-	Native.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(Native.argument(context, 0)).data.binary);
+	Context.assertParameterCount(context, 1);
+	Object.resizeElement(context->this.data.object, Value.toBinary(Context.argument(context, 0)).data.binary);
 	
 	return Value(undefined);
 }
 
-static struct Value arrayConstructor (struct Native(Context) * const context)
+static struct Value arrayConstructor (struct Context * const context)
 {
 	uint32_t index, count, length;
 	struct Object *array;
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
-	length = count = Native.variableArgumentCount(context);
-	if (count == 1 && Value.isNumber(Native.variableArgument(context, 0)))
+	length = count = Context.variableArgumentCount(context);
+	if (count == 1 && Value.isNumber(Context.variableArgument(context, 0)))
 	{
-		double binary = Value.toBinary(Native.variableArgument(context, 0)).data.binary;
+		double binary = Value.toBinary(Context.variableArgument(context, 0)).data.binary;
 		if (binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
 		{
 			length = binary;
 			count = 0;
 		}
 		else
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "invalid array length")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "invalid array length")));
 	}
 	
 	array = Array.createSized(length);
 	
 	for (index = 0; index < count; ++index)
 	{
-		array->element[index].data.value = Native.variableArgument(context, index);
+		array->element[index].data.value = Context.variableArgument(context, index);
 		array->element[index].data.value.flags = 0;
 	}
 	

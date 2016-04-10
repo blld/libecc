@@ -10,7 +10,7 @@
 
 // MARK: - Private
 
-static struct Value toString (struct Native(Context) * const context);
+static struct Value toString (struct Context * const context);
 
 struct Object * Object(prototype) = NULL;
 struct Function * Object(constructor) = NULL;
@@ -74,7 +74,7 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
-static const struct Value propertyTypeError(struct Native(Context) * const context, struct Value *ref, struct Value this, const char *description, const struct Text text)
+static const struct Value propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const struct Text text, const char *description)
 {
 	if (Value.isObject(this))
 	{
@@ -94,18 +94,18 @@ static const struct Value propertyTypeError(struct Native(Context) * const conte
 
 //
 
-static struct Object *checkObject (struct Native(Context) * const context, int argument)
+static struct Object *checkObject (struct Context * const context, int argument)
 {
-	struct Value value = Native.argument(context, argument);
+	struct Value value = Context.argument(context, argument);
 	if (!Value.isObject(value))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, argument), "not an object")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "not an object")));
 	
 	return value.data.object;
 }
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
 	if (context->this.type == Value(nullType))
 		return Value.text(&Text(nullType));
@@ -125,36 +125,36 @@ static struct Value toString (struct Native(Context) * const context)
 	return Value(undefined);
 }
 
-static struct Value valueOf (struct Native(Context) * const context)
+static struct Value valueOf (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
-	return Value.toObject(context, context->this, Native(thisIndex));
+	return Value.toObject(context, Context.this(context));
 }
 
-static struct Value hasOwnProperty (struct Native(Context) * const context)
+static struct Value hasOwnProperty (struct Context * const context)
 {
 	struct Value v;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	v = Value.toString(context, Native.argument(context, 0));
-	context->this = Value.toObject(context, context->this, Native(thisIndex));
+	v = Value.toString(context, Context.argument(context, 0));
+	context->this = Value.toObject(context, Context.this(context));
 	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringBytes(v), Value.stringLength(v) }, 0)));
 }
 
-static struct Value isPrototypeOf (struct Native(Context) * const context)
+static struct Value isPrototypeOf (struct Context * const context)
 {
 	struct Value arg0;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	arg0 = Native.argument(context, 0);
+	arg0 = Context.argument(context, 0);
 	
 	if (Value.isObject(arg0))
 	{
 		struct Object *v = arg0.data.object;
-		struct Object *o = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+		struct Object *o = Value.toObject(context, Context.this(context)).data.object;
 		
 		while (( v = v->prototype ))
 			if (v == o)
@@ -164,16 +164,16 @@ static struct Value isPrototypeOf (struct Native(Context) * const context)
 	return Value(false);
 }
 
-static struct Value propertyIsEnumerable (struct Native(Context) * const context)
+static struct Value propertyIsEnumerable (struct Context * const context)
 {
 	struct Value value;
 	struct Object *object;
 	struct Value *ref;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Native.argument(context, 0);
-	object = Value.toObject(context, context->this, Native(thisIndex)).data.object;
+	value = Context.argument(context, 0);
+	object = Value.toObject(context, Context.this(context)).data.object;
 	ref = propertyOwn(object, value);
 	
 	if (ref)
@@ -182,43 +182,43 @@ static struct Value propertyIsEnumerable (struct Native(Context) * const context
 		return Value(false);
 }
 
-static struct Value objectConstructor (struct Native(Context) * const context)
+static struct Value objectConstructor (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Native.argument(context, 0);
+	value = Context.argument(context, 0);
 	
 	if (value.type == Value(nullType) || value.type == Value(undefinedType))
 		return Value.object(create(Object(prototype)));
 	else if (context->construct && Value.isObject(value))
 		return value;
 	else
-		return Value.toObject(context, context->this, Native(thisIndex));
+		return Value.toObject(context, Context.this(context));
 }
 
-static struct Value getPrototypeOf (struct Native(Context) * const context)
+static struct Value getPrototypeOf (struct Context * const context)
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	
 	return object->prototype? Value.object(object->prototype): Value(undefined);
 }
 
-static struct Value getOwnPropertyDescriptor (struct Native(Context) * const context)
+static struct Value getOwnPropertyDescriptor (struct Context * const context)
 {
 	struct Object *object;
 	struct Value value;
 	struct Value *ref;
 	
-	Native.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 2);
 	
 	object = checkObject(context, 0);
-	value = Native.argument(context, 1);
+	value = Context.argument(context, 1);
 	ref = propertyOwn(object, value);
 	
 	if (ref)
@@ -245,13 +245,13 @@ static struct Value getOwnPropertyDescriptor (struct Native(Context) * const con
 	return Value(undefined);
 }
 
-static struct Value getOwnPropertyNames (struct Native(Context) * const context)
+static struct Value getOwnPropertyNames (struct Context * const context)
 {
 	struct Object *object;
 	struct Object *result;
 	uint32_t index, length;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	result = Array.create();
@@ -268,20 +268,19 @@ static struct Value getOwnPropertyNames (struct Native(Context) * const context)
 	return Value.object(result);
 }
 
-static struct Value defineProperty (struct Native(Context) * const context)
+static struct Value defineProperty (struct Context * const context)
 {
 	struct Object *object, *descriptor;
 	struct Value property, value, *getter, *setter, *current;
-	struct Text text = Native.textSeek(context, Native(callIndex));
 	struct Key key;
 	uint32_t element;
 	
-	Native.assertParameterCount(context, 3);
+	Context.assertParameterCount(context, 3);
 	
 	object = checkObject(context, 0);
-	property = Value.toString(context, Native.argument(context, 1));
-	descriptor = checkObject(context, 2);
+	property = Value.toString(context, Context.argument(context, 1));
 	current = Object.propertyOwn(object, property);
+	descriptor = checkObject(context, 2);
 	
 	getter = member(descriptor, Key(get));
 	setter = member(descriptor, Key(set));
@@ -295,13 +294,13 @@ static struct Value defineProperty (struct Native(Context) * const context)
 			setter = NULL;
 		
 		if (getter && getter->type != Value(functionType))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "getter is not a function")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "getter is not a function")));
 		
 		if (setter && setter->type != Value(functionType))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "setter is not a function")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "setter is not a function")));
 		
 		if (member(descriptor, Key(value)) || member(descriptor, Key(writable)))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 2), "value & writable forbidden when a getter or setter are set")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "value & writable forbidden when a getter or setter are set")));
 		
 		if (getter)
 		{
@@ -340,7 +339,8 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	
 	if (object->type == &Array(type) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
 	{
-		putProperty(object, property, context, value, &text);
+		context->text = &context->ops->text;
+		putProperty(object, property, context, value);
 		return Value(true);
 	}
 	else if (!current)
@@ -374,7 +374,7 @@ static struct Value defineProperty (struct Native(Context) * const context)
 			}
 			else
 			{
-				if (!Value.isTrue(Value.same(context, *current, value, &text, &text)))
+				if (!Value.isTrue(Value.same(context, *current, value)))
 					goto sealedError;
 			}
 		}
@@ -385,10 +385,11 @@ static struct Value defineProperty (struct Native(Context) * const context)
 	return Value(true);
 	
 sealedError:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(callIndex)), "property is non-configurable")));
+	Context.setTextIndex(context, Context(callIndex));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "property is non-configurable")));
 }
 
-static struct Value defineProperties (struct Native(Context) * const context)
+static struct Value defineProperties (struct Context * const context)
 {
 	typeof(context->environment->hashmap) originalHashmap = context->environment->hashmap;
 	uint16_t originalHashmapCount = context->environment->hashmapCount;
@@ -397,23 +398,23 @@ static struct Value defineProperties (struct Native(Context) * const context)
 	struct Object *object, *properties;
 	typeof(*context->environment->hashmap) hashmap[hashmapCount];
 	
-	Native.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 2);
 	
 	object = checkObject(context, 0);
-	properties = Value.toObject(context, Native.argument(context, 1), 1).data.object;
+	properties = Value.toObject(context, Context.argument(context, 1)).data.object;
 	
 	context->environment->hashmap = hashmap;
 	context->environment->hashmapCount = hashmapCount;
 	
-	Native.replaceArgument(context, 0, Value.object(object));
+	Context.replaceArgument(context, 0, Value.object(object));
 	
 	for (index = 0; index < properties->elementCount; ++index)
 	{
 		if (!properties->element[index].data.value.check)
 			continue;
 		
-		Native.replaceArgument(context, 1, Value.binary(index));
-		Native.replaceArgument(context, 2, properties->element[index].data.value);
+		Context.replaceArgument(context, 1, Value.binary(index));
+		Context.replaceArgument(context, 2, properties->element[index].data.value);
 		defineProperty(context);
 	}
 	
@@ -422,8 +423,8 @@ static struct Value defineProperties (struct Native(Context) * const context)
 		if (!properties->hashmap[index].data.value.check)
 			continue;
 		
-		Native.replaceArgument(context, 1, Value.key(properties->hashmap[index].data.key));
-		Native.replaceArgument(context, 2, properties->hashmap[index].data.value);
+		Context.replaceArgument(context, 1, Value.key(properties->hashmap[index].data.key));
+		Context.replaceArgument(context, 2, properties->hashmap[index].data.value);
 		defineProperty(context);
 	}
 	
@@ -433,31 +434,32 @@ static struct Value defineProperties (struct Native(Context) * const context)
 	return Value(undefined);
 }
 
-static struct Value objectCreate (struct Native(Context) * const context)
+static struct Value objectCreate (struct Context * const context)
 {
 	struct Object *object, *result;
 	struct Value properties;
-	Native.assertParameterCount(context, 2);
+	
+	Context.assertParameterCount(context, 2);
 	
 	object = checkObject(context, 0);
-	properties = Native.argument(context, 1);
+	properties = Context.argument(context, 1);
 	
 	result = create(object);
 	if (properties.type != Value(undefinedType))
 	{
-		Native.replaceArgument(context, 0, Value.object(result));
+		Context.replaceArgument(context, 0, Value.object(result));
 		defineProperties(context);
 	}
 	
 	return Value.object(result);
 }
 
-static struct Value seal (struct Native(Context) * const context)
+static struct Value seal (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
@@ -473,12 +475,12 @@ static struct Value seal (struct Native(Context) * const context)
 	return Value.object(object);
 }
 
-static struct Value freeze (struct Native(Context) * const context)
+static struct Value freeze (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
@@ -494,11 +496,11 @@ static struct Value freeze (struct Native(Context) * const context)
 	return Value.object(object);
 }
 
-static struct Value preventExtensions (struct Native(Context) * const context)
+static struct Value preventExtensions (struct Context * const context)
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
@@ -506,12 +508,12 @@ static struct Value preventExtensions (struct Native(Context) * const context)
 	return Value.object(object);
 }
 
-static struct Value isSealed (struct Native(Context) * const context)
+static struct Value isSealed (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
@@ -528,12 +530,12 @@ static struct Value isSealed (struct Native(Context) * const context)
 	return Value(true);
 }
 
-static struct Value isFrozen (struct Native(Context) * const context)
+static struct Value isFrozen (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
@@ -550,23 +552,23 @@ static struct Value isFrozen (struct Native(Context) * const context)
 	return Value(true);
 }
 
-static struct Value isExtensible (struct Native(Context) * const context)
+static struct Value isExtensible (struct Context * const context)
 {
 	struct Object *object;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	return Value.truth(!(object->flags & Object(sealed)));
 }
 
-static struct Value keys (struct Native(Context) * const context)
+static struct Value keys (struct Context * const context)
 {
 	struct Object *object;
 	struct Object *result;
 	uint32_t index, length;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	result = Array.create();
@@ -815,7 +817,7 @@ struct Value * propertyOwn (struct Object *self, struct Value property)
 		return memberOwn(self, key);
 }
 
-struct Value getValue (struct Object *self, struct Value *ref, struct Native(Context) * const context)
+struct Value getValue (struct Object *self, struct Value *ref, struct Context * const context)
 {
 	if (!ref)
 		return Value(undefined);
@@ -836,17 +838,17 @@ struct Value getValue (struct Object *self, struct Value *ref, struct Native(Con
 	return *ref;
 }
 
-struct Value getMember (struct Object *self, struct Key key, struct Native(Context) * const context)
+struct Value getMember (struct Object *self, struct Key key, struct Context * const context)
 {
 	return getValue(self, member(self, key), context);
 }
 
-struct Value getElement (struct Object *self, uint32_t index, struct Native(Context) * const context)
+struct Value getElement (struct Object *self, uint32_t index, struct Context * const context)
 {
 	return getValue(self, element(self, index), context);
 }
 
-struct Value getProperty (struct Object *self, struct Value property, struct Native(Context) * const context)
+struct Value getProperty (struct Object *self, struct Value property, struct Context * const context)
 {
 	struct Key key;
 	uint32_t element = getElementOrKey(property, &key);
@@ -857,7 +859,7 @@ struct Value getProperty (struct Object *self, struct Value property, struct Nat
 		return getMember(self, key, context);
 }
 
-struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Context) * const context, struct Value value, const struct Text *text)
+struct Value *putValue (struct Object *self, struct Value *ref, struct Context * const context, struct Value value)
 {
 	if (ref->flags & Value(accessor))
 	{
@@ -869,7 +871,7 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Co
 		else if (ref->data.function->pair)
 			Op.callFunctionVA(context, 0, ref->data.function->pair, Value.object(self), 1, value);
 		else
-			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), "is read-only accessor", *text));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only accessor"));
 		
 		return ref;
 	}
@@ -877,12 +879,12 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Co
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), "is read-only property", *text));
+			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only property"));
 		
 		value.flags = ref->flags;
 	}
 	else if (self->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "object is not extensible")));
 	else
 		value.flags = 0;
 	
@@ -890,55 +892,55 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Native(Co
 	return ref;
 }
 
-struct Value *putMember (struct Object *self, struct Key key, struct Native(Context) * const context, struct Value value, const struct Text *text)
+struct Value *putMember (struct Object *self, struct Key key, struct Context * const context, struct Value value)
 {
 	struct Value *ref;
 	
 	if (( ref = memberOwn(self, key) ))
-		return putValue(self, ref, context, value, text);
+		return putValue(self, ref, context, value);
 	else if (self->prototype && ( ref = member(self->prototype, key) ))
 	{
 		if (ref->flags & Value(accessor))
-			return putValue(self, ref, context, value, text);
+			return putValue(self, ref, context, value);
 		else if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	}
 	
 	if (self->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "object is not extensible")));
 	
 	return addMember(self, key, value, 0);
 }
 
-struct Value *putElement (struct Object *self, uint32_t index, struct Native(Context) * const context, struct Value value, const struct Text *text)
+struct Value *putElement (struct Object *self, uint32_t index, struct Context * const context, struct Value value)
 {
 	struct Value *ref;
 	
 	if (( ref = element(self, index) ))
-		return putValue(self, ref, context, value, text);
+		return putValue(self, ref, context, value);
 	else if (self->prototype && ( ref = element(self->prototype, index) ))
 	{
 		if (ref->flags & Value(accessor))
-			return putValue(self, ref, context, value, text);
+			return putValue(self, ref, context, value);
 		else if (ref->flags & Value(readonly))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%d' is readonly", index)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "'%d' is readonly", index)));
 	}
 	
 	if (self->flags & Object(sealed))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "object is not extensible")));
 	
 	return addElement(self, index, value, 0);
 }
 
-struct Value *putProperty (struct Object *self, struct Value property, struct Native(Context) * const context, struct Value value, const struct Text *text)
+struct Value *putProperty (struct Object *self, struct Value property, struct Context * const context, struct Value value)
 {
 	struct Key key;
 	uint32_t element = getElementOrKey(property, &key);
 	
 	if (element < UINT32_MAX)
-		return putElement(self, element, context, value, text);
+		return putElement(self, element, context, value);
 	else
-		return putMember(self, key, context, value, text);
+		return putMember(self, key, context, value);
 }
 
 struct Value * addMember (struct Object *self, struct Key key, struct Value value, enum Value(Flags) flags)

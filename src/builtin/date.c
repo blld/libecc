@@ -58,23 +58,23 @@ static double msFromDate (int32_t year, int32_t month, int32_t day)
     return (double)(era * 146097 + (int32_t)(doe) - 719468) * msPerDay;
 }
 
-static double msFromArguments (struct Native(Context) * const context)
+static double msFromArguments (struct Context * const context)
 {
 	double time;
 	uint16_t count;
 	
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
-	count = Native.variableArgumentCount(context);
+	count = Context.variableArgumentCount(context);
 	
 	double
-		year = Value.toBinary(Native.variableArgument(context, 0)).data.binary,
-		month = Value.toBinary(Native.variableArgument(context, 1)).data.binary,
-		day = count > 2? Value.toBinary(Native.variableArgument(context, 2)).data.binary: 1,
-		h = count > 3? Value.toBinary(Native.variableArgument(context, 3)).data.binary: 0,
-		m = count > 4? Value.toBinary(Native.variableArgument(context, 4)).data.binary: 0,
-		s = count > 5? Value.toBinary(Native.variableArgument(context, 5)).data.binary: 0,
-		ms = count > 6? Value.toBinary(Native.variableArgument(context, 6)).data.binary: 0;
+		year = Value.toBinary(Context.variableArgument(context, 0)).data.binary,
+		month = Value.toBinary(Context.variableArgument(context, 1)).data.binary,
+		day = count > 2? Value.toBinary(Context.variableArgument(context, 2)).data.binary: 1,
+		h = count > 3? Value.toBinary(Context.variableArgument(context, 3)).data.binary: 0,
+		m = count > 4? Value.toBinary(Context.variableArgument(context, 4)).data.binary: 0,
+		s = count > 5? Value.toBinary(Context.variableArgument(context, 5)).data.binary: 0,
+		ms = count > 6? Value.toBinary(Context.variableArgument(context, 6)).data.binary: 0;
 	
 	if (isnan(year) || isnan(month) || isnan(day) || isnan(h) || isnan(m) || isnan(s) || isnan(ms))
 		time = NAN;
@@ -212,39 +212,33 @@ static double currentTime ()
 
 //
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	return Value.chars(msToChars(context->this.data.date->ms, localOffset));
 }
 
-static struct Value toUTCString (struct Native(Context) * const context)
+static struct Value toUTCString (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	return Value.chars(msToChars(context->this.data.date->ms, 0));
 }
 
-static struct Value toISOString (struct Native(Context) * const context)
+static struct Value toISOString (struct Context * const context)
 {
 	const char *format;
 	double ms;
 	int32_t year, month, day;
 	
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	if (isnan(context->this.data.date->ms))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, Native(thisIndex)), "invalid date")));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "invalid date")));
 	
 	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
 	
@@ -263,14 +257,12 @@ static struct Value toISOString (struct Native(Context) * const context)
 		));
 }
 
-static struct Value toDateString (struct Native(Context) * const context)
+static struct Value toDateString (struct Context * const context)
 {
 	int32_t year, month, day;
 	
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	if (isnan(context->this.data.date->ms))
 		return Value.chars(Chars.create("Invalid Date"));
@@ -284,15 +276,13 @@ static struct Value toDateString (struct Native(Context) * const context)
 		));
 }
 
-static struct Value toTimeString (struct Native(Context) * const context)
+static struct Value toTimeString (struct Context * const context)
 {
 	double ms;
 	int32_t year, month, day;
 	
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	if (isnan(context->this.data.date->ms))
 		return Value.chars(Chars.create("Invalid Date"));
@@ -308,68 +298,66 @@ static struct Value toTimeString (struct Native(Context) * const context)
 		));
 }
 
-static struct Value valueOf (struct Native(Context) * const context)
+static struct Value valueOf (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(dateType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a date")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
 	
 	return Value.binary(context->this.data.date->ms);
 }
 
-static struct Value getTimezoneOffset (struct Native(Context) * const context)
+static struct Value getTimezoneOffset (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
 	return Value.binary(-localOffset * 60);
 }
 
-static struct Value now (struct Native(Context) * const context)
+static struct Value now (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	
 	return Value.binary(msClip(currentTime()));
 }
 
-static struct Value parse (struct Native(Context) * const context)
+static struct Value parse (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toString(context, Native.argument(context, 0));
+	value = Value.toString(context, Context.argument(context, 0));
 	
 	return Value.binary(msClip(msFromBytes(Value.stringBytes(value), Value.stringLength(value))));
 }
 
-static struct Value UTC (struct Native(Context) * const context)
+static struct Value UTC (struct Context * const context)
 {
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
-	if (Native.variableArgumentCount(context) > 1)
+	if (Context.variableArgumentCount(context) > 1)
 		return Value.binary(msClip(msFromArguments(context)));
 	
 	return Value.binary(NAN);
 }
 
-static struct Value dateConstructor (struct Native(Context) * const context)
+static struct Value dateConstructor (struct Context * const context)
 {
 	double time;
 	uint16_t count;
 	
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
 	if (!context->construct)
 		return Value.chars(msToChars(currentTime(), localOffset));
 	
-	count = Native.variableArgumentCount(context);
+	count = Context.variableArgumentCount(context);
 	
 	if (count > 1)
 		time = msFromArguments(context) - localOffset * msPerHour;
 	else if (count)
 	{
-		struct Value value = Value.toPrimitive(context, Native.variableArgument(context, 0), &Text(empty), Value(hintAuto));
+		struct Value value = Value.toPrimitive(context, Context.variableArgument(context, 0), Value(hintAuto));
 		
 		if (Value.isString(value))
 			time = msFromBytes(Value.stringBytes(value), Value.stringLength(value));

@@ -80,7 +80,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	volatile int result = EXIT_SUCCESS, defaultTrap = !self->envCount, trap = defaultTrap || flags & Ecc(primitiveResult), catch = 0;
-	struct Native(Context) context = {
+	struct Context context = {
 		.environment = &self->global->environment,
 		.ecc = self,
 	};
@@ -130,7 +130,10 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	
 	if (flags & Ecc(primitiveResult))
-		self->result = Value.toPrimitive(&context, self->result, &(context.ops - 1)->text, Value(hintAuto));
+	{
+		Context.setTextIndex(&context, Context(noIndex));
+		self->result = Value.toPrimitive(&context, self->result, Value(hintAuto));
+	}
 	
 	if (trap)
 		popEnv(self);
@@ -141,7 +144,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	return result;
 }
 
-void evalInputWithContext (struct Ecc *self, struct Input *input, struct Native(Context) *context)
+void evalInputWithContext (struct Ecc *self, struct Input *input, struct Context *context)
 {
 	struct Lexer *lexer;
 	struct Parser *parser;

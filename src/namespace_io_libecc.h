@@ -51,6 +51,10 @@
 #define             io_libecc_Native(X) \
                     io_libecc_native_## X
 
+#define Context     io_libecc_Context
+#define             io_libecc_Context(X) \
+                    io_libecc_context_## X
+
 #define Pool        io_libecc_Pool
 #define             io_libecc_Pool(X) \
                     io_libecc_pool_## X

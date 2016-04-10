@@ -13,6 +13,7 @@
 
 #include "object.h"
 #include "native.h"
+#include "context.h"
 
 #include "interface.h"
 

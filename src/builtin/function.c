@@ -17,7 +17,7 @@ const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
 };
 
-static struct Chars * toChars (struct Native(Context) * const context, struct Value value)
+static struct Chars * toChars (struct Context * const context, struct Value value)
 {
 	struct Function *self;
 	struct Chars *chars;
@@ -36,12 +36,10 @@ static struct Chars * toChars (struct Native(Context) * const context, struct Va
 	return Chars.endAppend(chars);
 }
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
-	
-	if (context->this.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(functionType));
 	
 	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
 	{
@@ -51,37 +49,33 @@ static struct Value toString (struct Native(Context) * const context)
 		return Value.text(&context->this.data.function->text);
 }
 
-static struct Value apply (struct Native(Context) * const context)
+static struct Value apply (struct Context * const context)
 {
 	struct Value this, arguments;
 	
-	Native.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(functionType));
 	
-	if (context->this.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
-	
-	this = Native.argument(context, 0);
-	arguments = Native.argument(context, 1);
+	this = Context.argument(context, 0);
+	arguments = Context.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
 		return Op.callFunctionVA(context, 2, context->this.data.function, this, 0);
 	else
 	{
 		if (!Value.isObject(arguments))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, 1), "arguments is not an object")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "arguments is not an object")));
 		
 		return Op.callFunctionArguments(context, 2, context->this.data.function, this, arguments.data.object);
 	}
 }
 
-static struct Value call (struct Native(Context) * const context)
+static struct Value call (struct Context * const context)
 {
 	struct Object *object;
 	
-	Native.assertVariableParameter(context);
-	
-	if (context->this.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
+	Context.assertVariableParameter(context);
+	Context.assertThisType(context, Value(functionType));
 	
 	object = context->environment->hashmap[2].data.value.data.object;
 	
@@ -105,20 +99,18 @@ static struct Value call (struct Native(Context) * const context)
 		return Op.callFunctionVA(context, 1, context->this.data.function, Value(undefined), 0);
 }
 
-static struct Value bindCall (struct Native(Context) * const context)
+static struct Value bindCall (struct Context * const context)
 {
 	struct Function *function;
 	struct Object *arguments;
 	uint16_t count, length;
 	
-	Native.assertVariableParameter(context);
-	
-	if (context->this.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
+	Context.assertVariableParameter(context);
+	Context.assertThisType(context, Value(functionType));
 	
 	function = context->this.data.function;
 	
-	count = Native.variableArgumentCount(context);
+	count = Context.variableArgumentCount(context);
 	length = (function->environment.elementCount - 1) + count;
 	arguments = Array.createSized(length);
 	
@@ -128,24 +120,23 @@ static struct Value bindCall (struct Native(Context) * const context)
 	return Op.callFunctionArguments(context, 0, context->this.data.function->pair, function->environment.element[0].data.value, arguments);
 }
 
-static struct Value bind (struct Native(Context) * const context)
+static struct Value bind (struct Context * const context)
 {
 	struct Function *function;
-	uint16_t index, count, parameterCount = 0;
+	uint16_t index, count;
+	int parameterCount = 0;
 	
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
+	Context.assertThisType(context, Value(functionType));
 	
-	if (context->this.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a function")));
-	
-	count = Native.variableArgumentCount(context);
+	count = Context.variableArgumentCount(context);
 	parameterCount = context->this.data.function->parameterCount - (count > 1? count - 1: 0);
-	function = Function.createWithNative(bindCall, parameterCount > 0? parameterCount: 0);
+	function = createWithNative(bindCall, parameterCount > 0? parameterCount: 0);
 	
 	Object.resizeElement(&function->environment, count? count: 1);
 	if (count)
 		for (index = 0; index < count; ++index)
-			function->environment.element[index].data.value = Native.variableArgument(context, index);
+			function->environment.element[index].data.value = Context.variableArgument(context, index);
 	else
 		function->environment.element[0].data.value = Value(undefined);
 	
@@ -156,18 +147,18 @@ static struct Value bind (struct Native(Context) * const context)
 	return Value.function(function);
 }
 
-static struct Value prototypeConstructor (struct Native(Context) * const context)
+static struct Value prototypeConstructor (struct Context * const context)
 {
 	return Value(undefined);
 }
 
-static struct Value functionConstructor (struct Native(Context) * const context)
+static struct Value functionConstructor (struct Context * const context)
 {
 	int argumentCount;
 	
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
-	argumentCount = Native.variableArgumentCount(context);
+	argumentCount = Context.variableArgumentCount(context);
 	
 	if (argumentCount)
 	{
@@ -180,7 +171,7 @@ static struct Value functionConstructor (struct Native(Context) * const context)
 			if (index == argumentCount - 1)
 				chars = Chars.append(chars, ") {");
 			
-			value = Value.toString(context, Native.variableArgument(context, index));
+			value = Value.toString(context, Context.variableArgument(context, index));
 			chars = Chars.append(chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
 			
 			if (index < argumentCount - 2)

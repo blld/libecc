@@ -14,20 +14,20 @@ const struct Object(Type) Global(type) = {
 	.text = &Text(globalType),
 };
 
-static struct Value eval (struct Native(Context) * const context)
+static struct Value eval (struct Context * const context)
 {
 	struct Value value;
 	struct Input *input;
-	struct Native(Context) subContext = {
+	struct Context subContext = {
 		.parent = context,
 		.this = Value.object(&context->ecc->global->environment),
 		.environment = &context->ecc->global->environment,
 		.ecc = context->ecc,
 	};
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toString(context, Native.argument(context, 0));
+	value = Value.toString(context, Context.argument(context, 0));
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
@@ -35,16 +35,16 @@ static struct Value eval (struct Native(Context) * const context)
 	return context->ecc->result;
 }
 
-static struct Value parseInt (struct Native(Context) * const context)
+static struct Value parseInt (struct Context * const context)
 {
 	struct Value value;
 	struct Text text;
 	int32_t base;
 	
-	Native.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 2);
 	
-	value = Value.toString(context, Native.argument(context, 0));
-	base = Value.toInteger(Native.argument(context, 1)).data.integer;
+	value = Value.toString(context, Context.argument(context, 0));
+	base = Value.toInteger(Context.argument(context, 1)).data.integer;
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	
@@ -64,40 +64,40 @@ static struct Value parseInt (struct Native(Context) * const context)
 	return Lexer.parseInteger(text, base);
 }
 
-static struct Value parseFloat (struct Native(Context) * const context)
+static struct Value parseFloat (struct Context * const context)
 {
 	struct Value value;
 	struct Text text;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toString(context, Native.argument(context, 0));
+	value = Value.toString(context, Context.argument(context, 0));
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	return Lexer.parseBinary(text);
 }
 
-static struct Value isFinite (struct Native(Context) * const context)
+static struct Value isFinite (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Native.argument(context, 0));
+	value = Value.toBinary(Context.argument(context, 0));
 	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
 
-static struct Value isNaN (struct Native(Context) * const context)
+static struct Value isNaN (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Native.argument(context, 0));
+	value = Value.toBinary(Context.argument(context, 0));
 	return Value.truth(isnan(value.data.binary));
 }
 
-static struct Value decodeURIExcept (struct Native(Context) * const context, const char *exclude)
+static struct Value decodeURIExcept (struct Context * const context, const char *exclude)
 {
 	struct Value value;
 	const char *bytes;
@@ -105,9 +105,9 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 	struct Chars *chars;
 	int c;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Value.toString(context, Native.argument(context, 0));
+	value = Value.toString(context, Context.argument(context, 0));
 	bytes = Value.stringBytes(value);
 	count = Value.stringLength(value);
 	chars = Chars.createSized(count);
@@ -151,15 +151,15 @@ static struct Value decodeURIExcept (struct Native(Context) * const context, con
 	return Value.chars(chars);
 	
 	error:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.uriError(Native.textSeek(context, 0), "malformed URI")));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.uriError(Context.textSeek(context), "malformed URI")));
 }
 
-static struct Value decodeURI (struct Native(Context) * const context)
+static struct Value decodeURI (struct Context * const context)
 {
 	return decodeURIExcept(context, ";/?:@&=+$,#");
 }
 
-static struct Value decodeURIComponent (struct Native(Context) * const context)
+static struct Value decodeURIComponent (struct Context * const context)
 {
 	return decodeURIExcept(context, NULL);
 }

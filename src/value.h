@@ -13,7 +13,7 @@
 struct Function;
 struct Ecc;
 struct Op;
-struct Native(Context);
+struct Context;
 
 #include "key.h"
 
@@ -117,29 +117,32 @@ Interface(Value,
 	(int, isDynamic ,(struct Value))
 	(int, isTrue ,(struct Value))
 	
-	(struct Value, toPrimitive ,(struct Native(Context) * const, struct Value, const struct Text *, enum Value(hintPrimitive)))
+	(struct Value, toPrimitive ,(struct Context * const, struct Value, enum Value(hintPrimitive)))
 	
 	(struct Value, toBinary ,(struct Value))
 	(struct Value, toInteger ,(struct Value))
 	(struct Value, binaryToString ,(double binary, int base))
 	
-	(struct Value, toString ,(struct Native(Context) * const, struct Value))
+	(struct Value, toString ,(struct Context * const, struct Value))
 	(uint16_t, stringLength ,(struct Value))
 	(const char *, stringBytes ,(struct Value))
 	
-	(struct Value, toObject ,(struct Native(Context) * const, struct Value, int argumentIndex))
+	(struct Value, toObject ,(struct Context * const, struct Value))
 	
 	(struct Value, toType ,(struct Value))
 	
-	(struct Value, equals ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, same ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, add ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, subtract ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, compare ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, less ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, more ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, lessOrEqual ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
-	(struct Value, moreOrEqual ,(struct Native(Context) * const, struct Value, struct Value, const struct Text *, const struct Text *))
+	(struct Value, equals ,(struct Context * const, struct Value, struct Value))
+	(struct Value, same ,(struct Context * const, struct Value, struct Value))
+	(struct Value, add ,(struct Context * const, struct Value, struct Value))
+	(struct Value, subtract ,(struct Context * const, struct Value, struct Value))
+	(struct Value, compare ,(struct Context * const, struct Value, struct Value))
+	(struct Value, less ,(struct Context * const, struct Value, struct Value))
+	(struct Value, more ,(struct Context * const, struct Value, struct Value))
+	(struct Value, lessOrEqual ,(struct Context * const, struct Value, struct Value))
+	(struct Value, moreOrEqual ,(struct Context * const, struct Value, struct Value))
+	
+	(const char *, typeName ,(enum Value(Type)))
+	(const char *, maskName ,(enum Value(Mask)))
 	
 	(void, dumpTo ,(struct Value, FILE *))
 	,
@@ -173,7 +176,7 @@ Interface(Value,
 // import object (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
-#include "native.h"
+#include "context.h"
 #include "builtin/function.h"
 #include "builtin/object.h"
 #include "builtin/string.h"

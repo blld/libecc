@@ -32,7 +32,7 @@ Interface(Chars,
 	
 	(struct Chars *, beginAppend ,(void))
 	(struct Chars *, append ,(struct Chars *, const char *format, ...))
-	(struct Chars *, appendValue ,(struct Chars *, struct Native(Context) * const context, struct Value value))
+	(struct Chars *, appendValue ,(struct Chars *, struct Context * const context, struct Value value))
 	(struct Chars *, appendBinary ,(struct Chars *, double binary, int base))
 	(struct Chars *, endAppend ,(struct Chars *))
 	

@@ -9,8 +9,8 @@
 #include "main.h"
 
 static int printUsage (void);
-static struct Value print (struct Native(Context) * const context);
-static struct Value alert (struct Native(Context) * const context);
+static struct Value print (struct Context * const context);
+static struct Value alert (struct Context * const context);
 static int runTest (int verbosity);
 
 static struct Ecc *ecc = NULL;
@@ -56,19 +56,19 @@ static int printUsage (void)
 
 //
 
-static struct Value dumpTo (struct Native(Context) * const context, FILE *file)
+static struct Value dumpTo (struct Context * const context, FILE *file)
 {
 	int index, count;
 	struct Value value;
 	
-	Native.assertVariableParameter(context);
+	Context.assertVariableParameter(context);
 	
-	for (index = 0, count = Native.variableArgumentCount(context); index < count; ++index)
+	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
 	{
 		if (index)
 			putc(' ', file);
 		
-		value = Native.variableArgument(context, index);
+		value = Context.variableArgument(context, index);
 		Value.dumpTo(Value.toString(context, value), file);
 	}
 	putc('\n', file);
@@ -76,12 +76,12 @@ static struct Value dumpTo (struct Native(Context) * const context, FILE *file)
 	return Value(undefined);
 }
 
-static struct Value print (struct Native(Context) * const context)
+static struct Value print (struct Context * const context)
 {
 	return dumpTo(context, stdout);
 }
 
-static struct Value alert (struct Native(Context) * const context)
+static struct Value alert (struct Context * const context)
 {
 	return dumpTo(context, stderr);
 }
@@ -1104,10 +1104,15 @@ static void testDate (void)
 	
 	test("new Date('1970-01-01').toISOString()", "1970-01-01T00:00:00.000Z", NULL);
 	test("new Date('1970/01/01 12:34:56 +0900').toISOString()", "1970-01-01T03:34:56.000Z", NULL);
+	test("new Date(1984, 07, 31, 01, 23, 45, 678).valueOf()", "462731025678", NULL);
 	
 	test("Date.UTC(70, 00, 01)", "0", NULL);
 	test("Date.UTC(70, 01, 01)", "2678400000", NULL);
+	test("Date.UTC(1984, 07, 31, 01, 23, 45, 678)", "462763425678", NULL);
 	
+	test("(Date.parse('1984/08/31') - Date.parse('1984-08-31')) / 60000 == new Date().getTimezoneOffset()", "true", NULL);
+	
+	// iso format
 	test("Date.parse('1984')", "441763200000", NULL);
 	test("Date.parse('1984-08')", "460166400000", NULL);
 	test("Date.parse('1984-08-31')", "462758400000", NULL);
@@ -1120,22 +1125,23 @@ static void testDate (void)
 	test("Date.parse('1984-08-31T01:23:45+12:34')", "462718185000", NULL);
 	test("Date.parse('1984-08-31T01:23:45.678+12:34')", "462718185678", NULL);
 	
+	// implementation format
 	test("Date.parse('1984/08/31 01:23 +0000')", "462763380000", NULL);
 	test("Date.parse('1984/08/31 01:23:45 +0000')", "462763425000", NULL);
-	test("(Date.parse('1984/08/31') - Date.parse('1984-08-31')) / 60000 == new Date().getTimezoneOffset()", "true", NULL);
 	
-	// NOTE: iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
+	// iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
 	test("Date.parse('1984-08-31T01:23')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23:45')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23:45.678')", "NaN", NULL);
 	
-	// NOTE: iso format only support time offset '+hh:mm', implementation format only ' +hhmm'
+	// iso format only support time offset '+hh:mm', implementation format only ' +hhmm'
 	test("Date.parse('1984-08-31T01:23+1234')", "NaN", NULL);
 	test("Date.parse('1984-08-31T01:23 +12:34')", "NaN", NULL);
 	
 	test("Date.parse('1984/08')", "NaN", NULL);
 	test("Date.parse('1984/08/31 01:23:45+0000')", "NaN", NULL);
 	test("Date.parse('1984/08/31 01:23:45 +00:00')", "NaN", NULL);
+	test("Date.parse('1984/08/31 01:23:45  +0000')", "NaN", NULL);
 }
 
 static int runTest (int verbosity)

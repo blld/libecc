@@ -23,7 +23,7 @@ struct Object(Type)
 	const struct Text *text;
 	
 	void (*finalize)(struct Object *);
-	typeof(struct Value) (*toString)(struct Native(Context) * const context);
+	typeof(struct Value) (*toString)(struct Context * const context);
 };
 
 enum Object(Flags)
@@ -59,15 +59,15 @@ Interface(Object,
 	(struct Value *, elementOwn ,(struct Object *, uint32_t))
 	(struct Value *, propertyOwn ,(struct Object *, struct Value))
 	
-	(struct Value, getValue ,(struct Object *, struct Value *, struct Native(Context) * const))
-	(struct Value, getMember ,(struct Object *, struct Key, struct Native(Context) * const))
-	(struct Value, getElement ,(struct Object *, uint32_t, struct Native(Context) * const))
-	(struct Value, getProperty ,(struct Object *, struct Value, struct Native(Context) * const))
+	(struct Value, getValue ,(struct Object *, struct Value *, struct Context * const))
+	(struct Value, getMember ,(struct Object *, struct Key, struct Context * const))
+	(struct Value, getElement ,(struct Object *, uint32_t, struct Context * const))
+	(struct Value, getProperty ,(struct Object *, struct Value, struct Context * const))
 	
-	(struct Value *, putValue ,(struct Object *, struct Value *, struct Native(Context) * const, struct Value, const struct Text *))
-	(struct Value *, putMember ,(struct Object *, struct Key, struct Native(Context) * const, struct Value, const struct Text *))
-	(struct Value *, putElement ,(struct Object *, uint32_t, struct Native(Context) * const, struct Value, const struct Text *))
-	(struct Value *, putProperty ,(struct Object *, struct Value, struct Native(Context) * const, struct Value, const struct Text *))
+	(struct Value *, putValue ,(struct Object *, struct Value *, struct Context * const, struct Value))
+	(struct Value *, putMember ,(struct Object *, struct Key, struct Context * const, struct Value))
+	(struct Value *, putElement ,(struct Object *, uint32_t, struct Context * const, struct Value))
+	(struct Value *, putProperty ,(struct Object *, struct Value, struct Context * const, struct Value))
 	
 	(struct Value *, addMember ,(struct Object *, struct Key member, struct Value, enum Value(Flags)))
 	(struct Value *, addElement ,(struct Object *, uint32_t element, struct Value, enum Value(Flags)))

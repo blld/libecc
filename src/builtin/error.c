@@ -28,7 +28,7 @@ const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
 };
 
-static struct Value messageValue (struct Value value)
+static struct Value messageValue (struct Context * const context, struct Value value)
 {
 	if (value.type == Value(undefinedType))
 		return value;
@@ -36,7 +36,7 @@ static struct Value messageValue (struct Value value)
 		return Value.toString(NULL, value);
 }
 
-static struct Chars * toChars (struct Native(Context) * const context, struct Value value)
+static struct Chars * toChars (struct Context * const context, struct Value value)
 {
 	struct Value name, message;
 	struct Object *self;
@@ -88,74 +88,78 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 	return self;
 }
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
-	
-	if (!Value.isObject(context->this))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not an object")));
+	Context.assertParameterCount(context, 0);
+	Context.assertThisMask(context, Value(objectMask));
 	
 	return Value.chars(toChars(context, context->this));
 }
 
-static struct Value errorConstructor (struct Native(Context) * const context)
+static struct Value errorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(error(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(error(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
-static struct Value rangeErrorConstructor (struct Native(Context) * const context)
+static struct Value rangeErrorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(rangeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(rangeError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
-static struct Value referenceErrorConstructor (struct Native(Context) * const context)
+static struct Value referenceErrorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(referenceError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(referenceError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
-static struct Value syntaxErrorConstructor (struct Native(Context) * const context)
+static struct Value syntaxErrorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(syntaxError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(syntaxError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
-static struct Value typeErrorConstructor (struct Native(Context) * const context)
+static struct Value typeErrorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(typeError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(typeError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
-static struct Value uriErrorConstructor (struct Native(Context) * const context)
+static struct Value uriErrorConstructor (struct Context * const context)
 {
 	struct Value message;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	message = messageValue(Native.argument(context, 0));
-	return Value.error(uriError(Native.textSeek(context, Native(callIndex)), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(uriError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
 }
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)

@@ -16,16 +16,16 @@ const struct Object(Type) Arguments(type) = {
 	.text = &Text(argumentsType),
 };
 
-static struct Value getLength (struct Native(Context) * const context)
+static struct Value getLength (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
 	return Value.binary(context->this.data.object->elementCount);
 }
 
-static struct Value setLength (struct Native(Context) * const context)
+static struct Value setLength (struct Context * const context)
 {
-	Native.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(Native.argument(context, 0)).data.binary);
+	Context.assertParameterCount(context, 1);
+	Object.resizeElement(context->this.data.object, Value.toBinary(Context.argument(context, 0)).data.binary);
 	return Value(undefined);
 }
 

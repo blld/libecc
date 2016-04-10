@@ -14,53 +14,8 @@
 struct Op;
 struct Ecc;
 struct Value;
-struct Native(Context);
+struct Context;
 
-typedef typeof(struct Value) (* Native(Function)) (struct Native(Context) * const context);
-
-enum Native(Index) {
-	Native(noIndex) = -4,
-	Native(callIndex) = -3,
-	Native(funcIndex) = -2,
-	Native(thisIndex) = -1,
-};
-
-#include "value.h"
-
-#include "interface.h"
-
-
-struct Native(Context) {
-	const struct Op * ops;
-	struct Value this;
-	struct Object *refObject;
-	int breaker;
-	int construct;
-	int argumentOffset;
-	int depth;
-	
-	struct Ecc * ecc;
-	struct Object * environment;
-	struct Native(Context) * parent;
-};
-
-
-Interface(Native,
-	
-	(void , assertParameterCount ,(struct Native(Context) * const, int parameterCount))
-	(int , argumentCount ,(struct Native(Context) * const))
-	(struct Value, argument ,(struct Native(Context) * const, int argumentIndex))
-	(void , replaceArgument ,(struct Native(Context) * const, int argumentIndex, struct Value value))
-	
-	(void , assertVariableParameter ,(struct Native(Context) * const))
-	(int , variableArgumentCount ,(struct Native(Context) * const))
-	(struct Value, variableArgument ,(struct Native(Context) * const, int argumentIndex))
-	
-	(struct Text, textSeek ,(struct Native(Context) * const, enum Native(Index) argumentIndex))
-	,
-	{
-		char dummy;
-	}
-)
+typedef typeof(struct Value) (* Native(Function)) (struct Context * const context);
 
 #endif

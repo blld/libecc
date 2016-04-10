@@ -17,43 +17,39 @@ const struct Object(Type) Boolean(type) = {
 	.text = &Text(booleanType),
 };
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
 	int truth;
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
+	Context.assertThisMask(context, Value(booleanMask));
 	
-	if (Value.isBoolean(context->this))
-		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a boolean")));
+	truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
 	
 	return Value.text(truth? &Text(true): &Text(false));
 }
 
-static struct Value valueOf (struct Native(Context) * const context)
+static struct Value valueOf (struct Context * const context)
 {
 	int truth;
 	
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
+	Context.assertThisMask(context, Value(booleanMask));
 	
-	if (Value.isBoolean(context->this))
-		truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a boolean")));
+	truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
 	
 	return Value.truth(truth);
 }
 
 // MARK: - Static Members
 
-static struct Value booleanConstructor (struct Native(Context) * const context)
+static struct Value booleanConstructor (struct Context * const context)
 {
 	char truth;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	truth = Value.isTrue(Native.argument(context, 0));
+	truth = Value.isTrue(Context.argument(context, 0));
 	if (context->construct)
 		return Value.boolean(Boolean.create(truth));
 	else

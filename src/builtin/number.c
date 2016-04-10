@@ -17,123 +17,111 @@ const struct Object(Type) Number(type) = {
 	.text = &Text(numberType),
 };
 
-static struct Value toExponential (struct Native(Context) * const context)
+static struct Value toExponential (struct Context * const context)
 {
 	struct Value value;
+	double binary;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
+	Context.assertThisMask(context, Value(numberMask));
 	
-	if (Value.isNumber(context->this))
-		context->this = Value.toBinary(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
-	
-	value = Native.argument(context, 0);
+	binary = Value.toBinary(context->this).data.binary;
+	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*e", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*e", precision, binary));
 	}
 	else
-		return Value.chars(Chars.create("%e", context->this.data.binary));
+		return Value.chars(Chars.create("%e", binary));
 }
 
-static struct Value toFixed (struct Native(Context) * const context)
+static struct Value toFixed (struct Context * const context)
 {
 	struct Value value;
+	double binary;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
+	Context.assertThisMask(context, Value(numberMask));
 	
-	if (Value.isNumber(context->this))
-		context->this = Value.toBinary(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
-	
-	value = Native.argument(context, 0);
+	binary = Value.toBinary(context->this).data.binary;
+	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*f", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*f", precision, binary));
 	}
 	else
-		return Value.chars(Chars.create("%f", context->this.data.binary));
+		return Value.chars(Chars.create("%f", binary));
 }
 
-static struct Value toPrecision (struct Native(Context) * const context)
+static struct Value toPrecision (struct Context * const context)
 {
 	struct Value value;
+	double binary;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
+	Context.assertThisMask(context, Value(numberMask));
 	
-	if (Value.isNumber(context->this))
-		context->this = Value.toBinary(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
-	
-	value = Native.argument(context, 0);
+	binary = Value.toBinary(context->this).data.binary;
+	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 100)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "precision %d out of range", precision)));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*g", precision, context->this.data.binary));
+		return Value.chars(Chars.create("%.*g", precision, binary));
 	}
 	else
-		return Value.binaryToString(context->this.data.binary, 10);
+		return Value.binaryToString(binary, 10);
 }
 
-static struct Value toString (struct Native(Context) * const context)
+static struct Value toString (struct Context * const context)
 {
 	struct Value value;
 	int32_t radix = 10;
+	double binary;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
+	Context.assertThisMask(context, Value(numberMask));
 	
-	if (Value.isNumber(context->this))
-		context->this = Value.toBinary(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
-	
-	value = Native.argument(context, 0);
+	binary = Value.toBinary(context->this).data.binary;
+	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
 		radix = Value.toInteger(value).data.integer;
 		if (radix < 2 || radix > 36)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Native.textSeek(context, 0), "radix must be an integer at least 2 and no greater than 36")));
+			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "radix must be an integer at least 2 and no greater than 36")));
 		
-		if (radix != 10 && (context->this.data.binary < LONG_MIN || context->this.data.binary > LONG_MAX))
-			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", context->this.data.binary, radix);
+		if (radix != 10 && (binary < LONG_MIN || binary > LONG_MAX))
+			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", binary, radix);
 	}
 	
-	return Value.binaryToString(context->this.data.binary, radix);
+	return Value.binaryToString(binary, radix);
 }
 
-static struct Value valueOf (struct Native(Context) * const context)
+static struct Value valueOf (struct Context * const context)
 {
-	Native.assertParameterCount(context, 0);
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(numberType));
 	
-	if (Value.isNumber(context->this))
-		context->this = Value.toBinary(context->this);
-	else
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Native.textSeek(context, Native(thisIndex)), "not a number")));
-	
-	return context->this;
+	return Value.binary(context->this.data.number->value);
 }
 
-static struct Value numberConstructor (struct Native(Context) * const context)
+static struct Value numberConstructor (struct Context * const context)
 {
 	struct Value value;
 	
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
-	value = Native.argument(context, 0);
+	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		value = Value.binary(0);
 	else

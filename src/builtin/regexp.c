@@ -15,9 +15,9 @@ struct Function * RegExp(constructor) = NULL;
 
 // MARK: - Static Members
 
-static struct Value constructorFunction (struct Native(Context) * const context)
+static struct Value constructorFunction (struct Context * const context)
 {
-	Native.assertParameterCount(context, 1);
+	Context.assertParameterCount(context, 1);
 	
 #warning TODO
 	return Value(null);
