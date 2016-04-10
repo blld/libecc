@@ -11,6 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
+#include "string.h"
 #include "pool.h"
 
 #include "interface.h"

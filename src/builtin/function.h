@@ -12,8 +12,8 @@
 #include "namespace_io_libecc.h"
 
 #include "object.h"
-#include "native.h"
-#include "context.h"
+#include "../context.h"
+#include "../chars.h"
 
 #include "interface.h"
 

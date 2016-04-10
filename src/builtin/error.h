@@ -11,10 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "text.h"
-#include "chars.h"
 #include "object.h"
-#include "../op.h"
 
 #include "interface.h"
 

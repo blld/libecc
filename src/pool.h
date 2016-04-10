@@ -10,11 +10,8 @@
 #define io_libecc_pool_h
 
 #include "namespace_io_libecc.h"
-struct Chars;
-struct Object;
-struct Function;
 
-#include "value.h"
+#include "function.h"
 
 #include "interface.h"
 

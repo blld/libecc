@@ -11,9 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "value.h"
-#include "key.h"
-#include "pool.h"
+#include "../value.h"
 
 #include "interface.h"
 
@@ -114,10 +112,9 @@ Interface(Object,
 	}
 )
 
+
 #ifndef io_libecc_lexer_h
-#include "ecc.h"
-#include "string.h"
-#include "array.h"
+#include "../ecc.h"
 #endif
 
 #endif

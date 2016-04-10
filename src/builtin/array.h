@@ -11,7 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "value.h"
+#include "object.h"
 
 #include "interface.h"
 

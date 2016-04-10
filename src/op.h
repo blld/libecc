@@ -12,8 +12,7 @@
 #include "namespace_io_libecc.h"
 
 #include "native.h"
-#include "value.h"
-#include "builtin/function.h"
+#include "builtin/array.h"
 
 #include "interface.h"
 

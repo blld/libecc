@@ -10,9 +10,7 @@
 #define io_libecc_value_h
 
 #include "namespace_io_libecc.h"
-struct Function;
-struct Ecc;
-struct Op;
+
 struct Context;
 
 #include "key.h"
@@ -173,22 +171,10 @@ Interface(Value,
 )
 
 
-// import object (cyclic dependency)
 #ifndef io_libecc_object_h
 #ifndef io_libecc_lexer_h
-#include "context.h"
-#include "builtin/function.h"
-#include "builtin/object.h"
-#include "builtin/string.h"
-#include "builtin/boolean.h"
-#include "builtin/number.h"
-#include "builtin/array.h"
-#include "builtin/arguments.h"
-#include "builtin/date.h"
-#include "builtin/error.h"
 #include "ecc.h"
 #endif
-
 #endif
 
 #endif

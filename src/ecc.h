@@ -11,7 +11,6 @@
 
 #include "namespace_io_libecc.h"
 
-#include "value.h"
 #include "parser.h"
 #include "builtin/global.h"
 
