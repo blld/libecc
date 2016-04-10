@@ -645,15 +645,25 @@ struct Value setParentSlot (struct Context * const context)
 	return *ref = retain(value);
 }
 
+static void prepareObject (struct Context * const context, struct Value *object)
+{
+	const struct Text *textObject = opText(1);
+	*object = nextOp();
+	
+	if (Value.isPrimitive(*object))
+	{
+		Context.setText(context, textObject);
+		*object = Value.toObject(context, *object);
+	}
+}
+
 struct Value getMemberRef (struct Context * const context)
 {
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
-	struct Value object = nextOp();
-	struct Value *ref;
+	struct Value object, *ref;
 	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObject(context, &object);
 	
 	context->refObject = object.data.object;
 	ref = Object.memberOwn(object.data.object, key);
@@ -672,10 +682,9 @@ struct Value getMemberRef (struct Context * const context)
 struct Value getMember (struct Context * const context)
 {
 	struct Key key = opValue().data.key;
-	struct Value object = nextOp();
+	struct Value object;
 	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObject(context, &object);
 	
 	return Object.getMember(object.data.object, key, context);
 }
@@ -684,11 +693,10 @@ struct Value setMember (struct Context * const context)
 {
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
-	struct Value object = nextOp();
-	struct Value value = retain(nextOp());
+	struct Value object, value;
 	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObject(context, &object);
+	value = retain(nextOp());
 	
 	Context.setText(context, text);
 	Object.putMember(object.data.object, key, context, value);
@@ -701,14 +709,9 @@ struct Value callMember (struct Context * const context)
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
 	struct Key key = opValue().data.key;
-	const struct Text *textObject = opText(1);
-	struct Value object = nextOp();
+	struct Value object;
 	
-	if (Value.isPrimitive(object))
-	{
-		Context.setText(context, textObject);
-		object = Value.toObject(context, object);
-	}
+	prepareObject(context, &object);
 	
 	return callValue(context, Object.getMember(object.data.object, key, context), object, argumentCount, 0, text);
 }
@@ -717,26 +720,41 @@ struct Value deleteMember (struct Context * const context)
 {
 	const struct Text *text = opText(0);
 	struct Key key = opValue().data.key;
-	struct Value object = Value.toObject(context, nextOp());
-	int result = Object.deleteMember(object.data.object, key);
+	struct Value object;
+	int result;
+	
+	prepareObject(context, &object);
+	
+	result = Object.deleteMember(object.data.object, key);
 	if (!result)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
 	return Value.truth(result);
 }
 
+static void prepareObjectProperty (struct Context * const context, struct Value *object, struct Value *property)
+{
+	const struct Text *textProperty;
+	
+	prepareObject(context, object);
+	
+	textProperty = opText(1);
+	*property = nextOp();
+	
+	if (Value.isObject(*property))
+	{
+		Context.setText(context, textProperty);
+		*property = Value.toPrimitive(context, *property, Value(hintAuto));
+	}
+}
+
 struct Value getPropertyRef (struct Context * const context)
 {
 	const struct Text *text = opText(1);
-	struct Value object = nextOp();
-	struct Value property = nextOp();
+	struct Value object, property;
 	struct Value *ref;
 	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, Value(hintAuto));
-	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObjectProperty(context, &object, &property);
 	
 	context->refObject = object.data.object;
 	ref = Object.propertyOwn(object.data.object, property);
@@ -754,14 +772,9 @@ struct Value getPropertyRef (struct Context * const context)
 
 struct Value getProperty (struct Context * const context)
 {
-	struct Value object = nextOp();
-	struct Value property = nextOp();
+	struct Value object, property;
 	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, Value(hintAuto));
-	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObjectProperty(context, &object, &property);
 	
 	return Object.getProperty(object.data.object, property, context);
 }
@@ -769,15 +782,11 @@ struct Value getProperty (struct Context * const context)
 struct Value setProperty (struct Context * const context)
 {
 	const struct Text *text = opText(0);
-	struct Value object = nextOp();
-	struct Value property = nextOp();
-	struct Value value = retain(nextOp());
+	struct Value object, property, value;
 	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, Value(hintAuto));
+	prepareObjectProperty(context, &object, &property);
 	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	value = retain(nextOp());
 	
 	Context.setText(context, text);
 	Object.putProperty(object.data.object, property, context, value);
@@ -789,33 +798,19 @@ struct Value callProperty (struct Context * const context)
 {
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
-	const struct Text *textObject = opText(1);
-	struct Value object = nextOp();
-	struct Value property = nextOp();
+	struct Value object, property;
 	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, Value(hintAuto));
+	prepareObjectProperty(context, &object, &property);
 	
-	if (Value.isPrimitive(object))
-	{
-		Context.setText(context, textObject);
-		object = Value.toObject(context, object);
-	}
 	return callValue(context, Object.getProperty(object.data.object, property, context), object, argumentCount, 0, text);
-
 }
 
 struct Value deleteProperty (struct Context * const context)
 {
 	const struct Text *text = opText(0);
-	struct Value object = nextOp();
-	struct Value property =  nextOp();
+	struct Value object, property;
 	
-	if (Value.isObject(property))
-		property = Value.toPrimitive(context, property, Value(hintAuto));
-	
-	if (Value.isPrimitive(object))
-		object = Value.toObject(context, object);
+	prepareObjectProperty(context, &object, &property);
 	
 	int result = Object.deleteProperty(object.data.object, property);
 	if (!result)

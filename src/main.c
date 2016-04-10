@@ -345,8 +345,10 @@ static void testConvertion (void)
 	,    "                                                               ^");
 	test("var a = { toString: function () { return this } }; switch(a){ case 'b': }", "TypeError: cannot convert 'a' to primitive"
 	,    "                                                          ^              ");
-	test("var a = { toString: function () { return this } }, b = ''; b.join[a](b)", "TypeError: cannot convert 'a' to primitive"
+	test("var a = { toString: function () { return this } }, b = []; b.join[a](b)", "TypeError: cannot convert 'a' to primitive"
 	,    "                                                                  ^    ");
+	test("var a = { toString: function () { return this } }, b = [], c = [a]; b.join[c[0]](b)", "TypeError: cannot convert 'c[0]' to primitive"
+	,    "                                                                           ^~~~    ");
 	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join()", "TypeError: cannot convert value to primitive"
 	,    "                                                                ^~~~~~~~");
 	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join.call(b)", "TypeError: cannot convert value to primitive"
@@ -359,6 +361,8 @@ static void testConvertion (void)
 	,    "            ^~~~~~      ");
 	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
 	,    "            ^~~~~~      ");
+	test("var a = { toString: function () { return this } }, b = ''; b.join[a](b)", "TypeError: cannot convert 'b.join' to object"
+	,    "                                                           ^~~~~~      ");
 }
 
 static void testException (void)
@@ -776,7 +780,6 @@ static void testError (void)
 	test("Object.prototype.toString.call(RangeError())", "[object Error]", NULL);
 	
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]", NULL);
-	
 	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number"
 	,    "                                 ^~~              ");
 	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision 100 out of range"

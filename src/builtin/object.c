@@ -316,7 +316,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 	if (object->type == &Array(type) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
 	{
-		context->text = &context->ops->text;
+		Context.setTextIndex(context, Context(callIndex));
 		putProperty(object, property, context, value);
 		return Value(true);
 	}
