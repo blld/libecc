@@ -26,7 +26,7 @@ static struct Value mathAbs (struct Context * const context)
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	return Value.binary(abs(value.data.binary));
+	return Value.binary(fabs(value.data.binary));
 }
 
 static struct Value mathACos (struct Context * const context)
