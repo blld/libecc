@@ -1452,7 +1452,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	if (isGetter && parameterCount != 0)
 		error(self, Error.syntaxError(Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), "getter functions must have no arguments"));
 	else if (isSetter && parameterCount != 1)
-		error(self, Error.syntaxError(self->lexer->text, "setter functions must have one argument"));
+		error(self, Error.syntaxError(Text.make(self->lexer->text.bytes, 0), "setter functions must have one argument"));
 	
 	expectToken(self, ')');
 	expectToken(self, '{');

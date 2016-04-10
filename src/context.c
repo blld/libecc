@@ -146,7 +146,7 @@ struct Text textSeek (struct Context * const self)
 		while (index-- > Context(callIndex))
 		{
 			if (!argumentCount--)
-				return Text.make(callText.bytes + callText.length - 1, 1);
+				return Text.make(callText.bytes + callText.length - 1, 0);
 			
 			bytes = seek.ops->text.bytes + seek.ops->text.length;
 			while (bytes > seek.ops->text.bytes && seek.ops->text.bytes)

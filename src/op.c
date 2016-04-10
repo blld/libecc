@@ -417,7 +417,7 @@ static inline struct Value callFunction (struct Context * const context, struct 
 static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
 {
 	if (value.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s not a function", text->length, text->bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not a function", text->length, text->bytes)));
 	
 	if (value.data.function->flags & Function(useBoundThis))
 		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
@@ -454,7 +454,7 @@ struct Value construct (struct Context * const context)
 		return object;
 	
 error:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "%.*s is not a constructor", text->length, text->bytes)));
+	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not a constructor", text->length, text->bytes)));
 }
 
 struct Value call (struct Context * const context)
@@ -571,7 +571,7 @@ struct Value getLocalRef (struct Context * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.member(context->environment, key);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "%.*s is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes)));
+		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes)));
 	
 	return Value.reference(ref);
 }
@@ -652,7 +652,7 @@ struct Value getMemberRef (struct Context * const context)
 	struct Value object = nextOp();
 	struct Value *ref;
 	
-	if (!Value.isObject(object))
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object);
 	
 	context->refObject = object.data.object;
@@ -674,7 +674,7 @@ struct Value getMember (struct Context * const context)
 	struct Key key = opValue().data.key;
 	struct Value object = nextOp();
 	
-	if (!Value.isObject(object))
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object);
 	
 	return Object.getMember(object.data.object, key, context);
@@ -687,7 +687,7 @@ struct Value setMember (struct Context * const context)
 	struct Value object = nextOp();
 	struct Value value = retain(nextOp());
 	
-	if (!Value.isObject(object))
+	if (Value.isPrimitive(object))
 		object = Value.toObject(context, object);
 	
 	Context.setText(context, text);
@@ -701,10 +701,14 @@ struct Value callMember (struct Context * const context)
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
 	struct Key key = opValue().data.key;
+	const struct Text *textObject = opText(1);
 	struct Value object = nextOp();
 	
-	if (!Value.isObject(object))
+	if (Value.isPrimitive(object))
+	{
+		Context.setText(context, textObject);
 		object = Value.toObject(context, object);
+	}
 	
 	return callValue(context, Object.getMember(object.data.object, key, context), object, argumentCount, 0, text);
 }
@@ -785,6 +789,7 @@ struct Value callProperty (struct Context * const context)
 {
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
+	const struct Text *textObject = opText(1);
 	struct Value object = nextOp();
 	struct Value property = nextOp();
 	
@@ -792,8 +797,10 @@ struct Value callProperty (struct Context * const context)
 		property = Value.toPrimitive(context, property, Value(hintAuto));
 	
 	if (Value.isPrimitive(object))
+	{
+		Context.setText(context, textObject);
 		object = Value.toObject(context, object);
-	
+	}
 	return callValue(context, Object.getProperty(object.data.object, property, context), object, argumentCount, 0, text);
 
 }

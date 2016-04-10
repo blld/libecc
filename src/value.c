@@ -276,7 +276,10 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	}
 	
 	text = Context.textSeek(context);
-	Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert %.*s%sto primitive", text.length, text.bytes, text.length? " ": "")));
+	if (context->textIndex != Context(callIndex) && text.length)
+		Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert '%.*s' to primitive", text.length, text.bytes)));
+	else
+		Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert value to primitive")));
 }
 
 struct Value toBinary (struct Value value)
@@ -470,10 +473,10 @@ struct Value toObject (struct Context * const context, struct Value value)
 			return boolean(Boolean.create(value.type == Value(trueType)));
 		
 		case Value(nullType):
-			Ecc.jmpEnv(context->ecc, error(Error.typeError(Context.textSeek(context), "can't convert null to object")));
+			goto error;
 		
 		case Value(undefinedType):
-			Ecc.jmpEnv(context->ecc, error(Error.typeError(Context.textSeek(context), "can't convert undefined to object")));
+			goto error;
 		
 		case Value(keyType):
 		case Value(referenceType):
@@ -489,6 +492,16 @@ struct Value toObject (struct Context * const context, struct Value value)
 	}
 	assert(0);
 	abort();
+	
+error:
+	{
+		struct Text text = Context.textSeek(context);
+		
+		if (context->textIndex != Context(callIndex) && text.length)
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert '%.*s' to object", text.length, text.bytes)));
+		else
+			Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert %s to object", typeName(value.type))));
+	}
 }
 
 struct Value toType (struct Value value)

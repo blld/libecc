@@ -123,7 +123,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 		
 		assert(textStart >= 0);
 		
-		if (input->length - textStart == 0 && textLength == 1)
+		if ((input->length - textStart == 0 || input->bytes[textStart] == ')') && textLength == 1)
 			textLength = 0;
 		
 		if (ecc->text.bytes - input->bytes != textStart || ecc->text.length != textLength)
@@ -319,22 +319,46 @@ static void testEval (void)
 	test("var str = 'function a() {}'; typeof eval(str)", "undefined", NULL);
 	test("var str = '(function a() {})'; typeof eval(str)", "function", NULL);
 	test("function a() { var n = 456; return eval('n') }; a()", "456", NULL);
-	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: n is not defined"
+	test("var e = eval; function a() { var n = 456; return e('n') }; a()", "ReferenceError: 'n' is not defined"
 	,                                                        "^");
 	test("var e = eval; function a() { var n = 456; return e('this.parseInt.length') }; a()", "2", NULL);
 	test("var a = { b: 'abc', c: function(){ return eval('this.b') } }; a.c()", "abc", NULL);
 	test("var e = eval, a = { b: 'abc', c: function(){ return eval('e.b') } }; a.c()", "undefined", NULL);
-	test("x", "ReferenceError: x is not defined"
+	test("x", "ReferenceError: 'x' is not defined"
 	,    "^");
-	test("x = 1", "ReferenceError: x is not defined"
+	test("x = 1", "ReferenceError: 'x' is not defined"
 	,    "^    ");
-	test("new eval('123')", "TypeError: eval is not a constructor"
+	test("new eval('123')", "TypeError: 'eval' is not a constructor"
 	,    "    ^~~~       ");
-	test("new eval.call('123')", "TypeError: eval.call is not a constructor"
+	test("new eval.call('123')", "TypeError: 'eval.call' is not a constructor"
 	,    "    ^~~~~~~~~       ");
-	test("new eval.apply('123')", "TypeError: eval.apply is not a constructor"
+	test("new eval.apply('123')", "TypeError: 'eval.apply' is not a constructor"
 	,    "    ^~~~~~~~~~       ");
 	test("eval.call('123', 'this+456')", "[object Global]456", NULL);
+}
+
+static void testConvertion (void)
+{
+	test("var a = { toString: function () { return this } }, b = ''; a + b", "TypeError: cannot convert 'a' to primitive"
+	,    "                                                           ^    ");
+	test("var a = { toString: function () { return this } }, b = ''; b + a", "TypeError: cannot convert 'a' to primitive"
+	,    "                                                               ^");
+	test("var a = { toString: function () { return this } }; switch(a){ case 'b': }", "TypeError: cannot convert 'a' to primitive"
+	,    "                                                          ^              ");
+	test("var a = { toString: function () { return this } }, b = ''; b.join[a](b)", "TypeError: cannot convert 'a' to primitive"
+	,    "                                                                  ^    ");
+	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join()", "TypeError: cannot convert value to primitive"
+	,    "                                                                ^~~~~~~~");
+	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join.call(b)", "TypeError: cannot convert value to primitive"
+	,    "                                                                ^~~~~~~~~~~~~~");
+	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: cannot convert 'undefined' to object"
+	,    "                            ^~~~~~~~~                 ");
+	test("var b = []; b.call.join(b)", "TypeError: cannot convert 'b.call' to object"
+	,    "            ^~~~~~        ");
+	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
+	,    "            ^~~~~~      ");
+	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
+	,    "            ^~~~~~      ");
 }
 
 static void testException (void)
@@ -377,6 +401,9 @@ static void testOperator (void)
 	test("10 * 2", "20", NULL);
 	test("10 / 2", "5", NULL);
 	test("10 % 8", "2", NULL);
+	test("10 % -8", "2", NULL);
+	test("-10 % 8", "-2", NULL);
+	test("-10 % -8", "-2", NULL);
 	test("10 + 1", "11", NULL);
 	test("10 - 1", "9", NULL);
 	test("10 & 3", "2", NULL);
@@ -522,9 +549,9 @@ static void testGlobal (void)
 
 static void testFunction (void)
 {
-	test("var a; a.prototype", "TypeError: can't convert undefined to object"
+	test("var a; a.prototype", "TypeError: cannot convert 'a' to object"
 	,    "       ^          ");
-	test("var a = null; a.prototype", "TypeError: can't convert null to object"
+	test("var a = null; a.prototype", "TypeError: cannot convert 'a' to object"
 	,    "              ^          ");
 	test("function a() {} a.prototype.toString.length", "0", NULL);
 	test("function a() {} a.prototype.toString()", "[object Object]", NULL);
@@ -604,7 +631,7 @@ static void testLoop (void)
 	test("var a = [1], r = ''; for (var i = 0; i < a[0]; ++i){ r += i; } r += 'a';", "0a", NULL);
 	test("var a = { 'a': 123 }, b; for (b in a) a[b];", "123", NULL);
 	test("var a = { 'a': 123 }; for (var b in a) a[b];", "123", NULL);
-	test("var a = { 'a': 123 }; for (b in a) ;", "ReferenceError: b is not defined"
+	test("var a = { 'a': 123 }; for (b in a) ;", "ReferenceError: 'b' is not defined"
 	,    "                           ^        "
 	);
 	test("var a = [ 'a', 123 ], b; for (b in a) b + ':' + a[b];", "1:123", NULL);
@@ -721,9 +748,9 @@ static void testObject (void)
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: true, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "[object Object]", NULL);
 	test("var o = []; Object.defineProperties(o, { 1: { value: 123 }, 3: { value: '!' } }); o", ",123,,!", NULL);
 	test("var o = []; Object.defineProperties(o, 123); o", "", NULL);
-	test("var o = []; Object.defineProperties(o, null); o", "TypeError: can't convert null to object"
+	test("var o = []; Object.defineProperties(o, null); o", "TypeError: cannot convert 'null' to object"
 	,    "                                       ^~~~    ");
-	test("var o = []; Object.defineProperties(o); o", "TypeError: can't convert undefined to object"
+	test("var o = []; Object.defineProperties(o); o", "TypeError: cannot convert undefined to object"
 	,    "                                     ^   ");
 	test("var o = []; Object.defineProperties(); o", "TypeError: not an object"
 	,    "                                    ^   ");
@@ -758,14 +785,10 @@ static void testError (void)
 	,    "                                        ^~~          ");
 	test("''.toString.call(123)", "TypeError: not a string"
 	,    "                 ^~~ ");
-	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object"
-	,    "                            ^~~~~~~~~                 ");
 	test("function a(){}; a.toString = function(){ return 'abc'; }; var b = 123; a + b", "abc123", NULL);
-	test("function a(){}; a.toString = function(){ return {}; }; var b = 123; a + b", "TypeError: cannot convert a to primitive"
-	,    "                                                                    ^    ");
 	test("function a(){}; a.toString = function(){ throw Error('test'); }; a", "Error: test"
 	,    "                                               ^~~~~~~~~~~~~      ");
-	test("function a(){}; a.toString = function(){ return {}; }; a", "TypeError: cannot convert a to primitive"
+	test("function a(){}; a.toString = function(){ return {}; }; a", "TypeError: cannot convert 'a' to primitive"
 	,    "                                                       ^");
 }
 
@@ -825,7 +848,6 @@ static void testArray (void)
 	test("Array.isArray({})", "false", NULL);
 	test("Array.isArray(Array.prototype)", "true", NULL);
 	test("var alpha = ['a', 'b', 'c'], numeric = [1, 2, 3]; alpha.concat(numeric).toString()", "a,b,c,1,2,3", NULL);
-	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: can't convert undefined to object", NULL);
 	test("Array.prototype.concat.call(123, 'abc', [{}, 456]).toString()", "123,abc,[object Object],456", NULL);
 	
 	test("var a = [1, 2]; a.length", "2", NULL);
@@ -1153,6 +1175,7 @@ static int runTest (int verbosity)
 	testLexer();
 	testParser();
 	testEval();
+	testConvertion();
 	testException();
 	testOperator();
 	testEquality();

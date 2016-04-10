@@ -11,8 +11,6 @@
 
 #include "namespace_io_libecc.h"
 
-struct Op;
-struct Ecc;
 struct Value;
 struct Context;
 
