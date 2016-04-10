@@ -94,7 +94,7 @@ static struct Value toString (struct Context * const context)
 	if (function.type == Value(functionType))
 		return Op.callFunctionVA(context, 0, function.data.function, context->this, 0);
 	else
-		return Object(type).toString(context);
+		return Object.toString(context);
 }
 
 static struct Value concat (struct Context * const context)

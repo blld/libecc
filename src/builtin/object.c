@@ -17,7 +17,6 @@ struct Function * Object(constructor) = NULL;
 
 const struct Object(Type) Object(type) = {
 	.text = &Text(objectType),
-	.toString = toString,
 };
 
 static const int defaultSize = 8;
@@ -101,28 +100,6 @@ static struct Object *checkObject (struct Context * const context, int argument)
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "not an object")));
 	
 	return value.data.object;
-}
-
-static struct Value toString (struct Context * const context)
-{
-	Context.assertParameterCount(context, 0);
-	
-	if (context->this.type == Value(nullType))
-		return Value.text(&Text(nullType));
-	else if (context->this.type == Value(undefinedType))
-		return Value.text(&Text(undefinedType));
-	else if (Value.isString(context->this))
-		return Value.text(&Text(stringType));
-	else if (Value.isNumber(context->this))
-		return Value.text(&Text(numberType));
-	else if (Value.isBoolean(context->this))
-		return Value.text(&Text(booleanType));
-	else if (Value.isObject(context->this))
-		return Value.text(context->this.data.object->type->text);
-	else
-		assert(0);
-	
-	return Value(undefined);
 }
 
 static struct Value valueOf (struct Context * const context)
@@ -1168,6 +1145,28 @@ void populateElementWithCList (struct Object *self, int count, const char * list
 			self->element[index].data.value.flags = 0;
 		}
 	}
+}
+
+struct Value toString (struct Context * const context)
+{
+	Context.assertParameterCount(context, 0);
+	
+	if (context->this.type == Value(nullType))
+		return Value.text(&Text(nullType));
+	else if (context->this.type == Value(undefinedType))
+		return Value.text(&Text(undefinedType));
+	else if (Value.isString(context->this))
+		return Value.text(&Text(stringType));
+	else if (Value.isNumber(context->this))
+		return Value.text(&Text(numberType));
+	else if (Value.isBoolean(context->this))
+		return Value.text(&Text(booleanType));
+	else if (Value.isObject(context->this))
+		return Value.text(context->this.data.object->type->text);
+	else
+		assert(0);
+	
+	return Value(undefined);
 }
 
 void dumpTo(struct Object *self, FILE *file)

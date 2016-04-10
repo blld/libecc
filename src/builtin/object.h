@@ -23,7 +23,6 @@ struct Object(Type)
 	const struct Text *text;
 	
 	void (*finalize)(struct Object *);
-	typeof(struct Value) (*toString)(struct Context * const context);
 };
 
 enum Object(Flags)
@@ -83,6 +82,7 @@ Interface(Object,
 	(void, resizeElement ,(struct Object *, uint32_t size))
 	(void, populateElementWithCList ,(struct Object *, int count, const char * list[]))
 	
+	(struct Value, toString ,(struct Context * const context))
 	(void, dumpTo ,(struct Object *, FILE *file))
 	,
 	{
