@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0D130C7B1C60E856001B6FF4 /* native.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D130C7A1C60E856001B6FF4 /* native.c */; };
 		0D15F2DD1B3F893E00AD290E /* op.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D15F2DB1B3F893E00AD290E /* op.c */; };
 		0D25FB061B5C77FE0075F035 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D25FB041B5C77FE0075F035 /* array.c */; };
 		0D25FB0F1B5C89A70075F035 /* chars.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D25FB0D1B5C89A70075F035 /* chars.c */; };
@@ -49,7 +48,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0D130C7A1C60E856001B6FF4 /* native.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = native.c; sourceTree = "<group>"; };
 		0D15F2DB1B3F893E00AD290E /* op.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = op.c; sourceTree = "<group>"; };
 		0D15F2DC1B3F893E00AD290E /* op.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = op.h; sourceTree = "<group>"; };
 		0D25FB041B5C77FE0075F035 /* array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = array.c; sourceTree = "<group>"; };
@@ -152,7 +150,6 @@
 				0D15F2DC1B3F893E00AD290E /* op.h */,
 				0D25FB171B63B9C30075F035 /* oplist.c */,
 				0D25FB181B63B9C30075F035 /* oplist.h */,
-				0D130C7A1C60E856001B6FF4 /* native.c */,
 				0D25FB151B633AA90075F035 /* native.h */,
 				0D93F5901CB9D2AB007A39EA /* context.c */,
 				0D93F5911CB9D2AB007A39EA /* context.h */,
@@ -268,7 +265,6 @@
 				0D93F5921CB9D2AB007A39EA /* context.c in Sources */,
 				0D8DF2981C6A41A30076627D /* global.c in Sources */,
 				0D718DE01B47B2FD004C3350 /* key.c in Sources */,
-				0D130C7B1C60E856001B6FF4 /* native.c in Sources */,
 				0D2FF3F01B5680C500B4B40B /* function.c in Sources */,
 				0DF2CDC71C4B2885007AD940 /* arguments.c in Sources */,
 				0D663C6E1BDC48F0004E4D08 /* boolean.c in Sources */,
