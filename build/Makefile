@@ -5,22 +5,13 @@ objects := $(sources:../src/%.c=./object/%.o)
 
 #
 
-ifeq ($(std),)
-	std := -std=c99
-	warn ?= -Wall -pedantic
-else
-	warn ?= -Wall
-endif
+warn  ?= -Wall
+opts  ?= -Os -fstrict-aliasing
+lto   ?= $(shell echo "main(){}" | gcc -E -flto - >/dev/null 2>&1 && echo "-flto")
+debug ?= -DNDEBUG=1
+libs  ?= -lm
 
-opts ?= -Os -fstrict-aliasing
-flto ?= -flto
-libs ?= -lm
-
-ifeq ($(debug),)
-debug += -DNDEBUG=1
-endif
-
-CFLAGS += $(std) $(warn) $(opts) $(flto) $(debug)
+CFLAGS += $(warn) $(opts) $(lto) $(debug)
 
 ##
 

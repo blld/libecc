@@ -150,9 +150,7 @@ struct Chars * appendValue (struct Chars *self, struct Context * const context, 
 		case Value(referenceType):
 			break;
 	}
-	
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
 struct Chars * appendBinary (struct Chars * chars, double binary, int base)

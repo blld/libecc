@@ -203,10 +203,25 @@ void jmpEnv (struct Ecc *self, struct Value value)
 	longjmp(self->envList[self->envCount - 1], 1);
 }
 
-void fatal (const char *message)
+void fatal (const char *format, ...)
 {
-	static const char error[] = "Fatal";
-	Env.printError(sizeof(error)-1, error, message);
+	int16_t length;
+	va_list ap;
+	
+	va_start(ap, format);
+	length = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
+	{
+		const char type[] = "Fatal";
+		char buffer[length + 1];
+		
+		va_start(ap, format);
+		vsprintf(buffer, format, ap);
+		va_end(ap);
+		
+		Env.printError(sizeof(type)-1, type, "%s", buffer);
+	}
+	
 	abort();
 }
 

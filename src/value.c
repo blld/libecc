@@ -231,8 +231,7 @@ int isTrue (struct Value value)
 	else if (isString(value))
 		return stringLength(value) > 0;
 	
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
 
@@ -337,8 +336,7 @@ struct Value toBinary (struct Value value)
 		case Value(referenceType):
 			break;
 	}
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
 struct Value toInteger (struct Value value)
@@ -423,8 +421,7 @@ struct Value toString (struct Context * const context, struct Value value)
 		case Value(referenceType):
 			break;
 	}
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
 uint16_t stringLength (struct Value value)
@@ -490,8 +487,7 @@ struct Value toObject (struct Context * const context, struct Value value)
 		case Value(hostType):
 			break;
 	}
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 	
 error:
 	{
@@ -540,8 +536,7 @@ struct Value toType (struct Value value)
 		case Value(referenceType):
 			break;
 	}
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
 struct Value equals (struct Context * const context, struct Value a, struct Value b)
@@ -763,8 +758,7 @@ const char * typeName (enum Value(Type) type)
 		case Value(referenceType):
 			break;
 	}
-	assert(0);
-	abort();
+	Ecc.fatal("Invalid Value(Type) : %u", type);
 }
 
 const char * maskName (enum Value(Mask) mask)
@@ -786,6 +780,7 @@ const char * maskName (enum Value(Mask) mask)
 		case Value(dynamicMask):
 			return "dynamic";
 	}
+	Ecc.fatal("Invalid Value(Mask) : %u", mask);
 }
 
 void dumpTo (struct Value value, FILE *file)

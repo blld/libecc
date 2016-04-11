@@ -1407,8 +1407,7 @@ struct Value discardN (struct Context * const context)
 	switch (opValue().data.integer)
 	{
 		default:
-			assert(0);
-			abort();
+			Ecc.fatal("Invalid discardN : %d", opValue().data.integer);
 		
 		case 16:
 			nextOp();
