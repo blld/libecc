@@ -659,11 +659,12 @@ struct Value parseInteger (struct Text text, int base)
 uint32_t parseElement (struct Text text)
 {
 	struct Value value;
+	uint16_t index;
 	
 	if (!text.length)
 		return UINT32_MAX;
 	
-	for (uint16_t index = 0; index < text.length; ++index)
+	for (index = 0; index < text.length; ++index)
 		if (!isdigit(text.bytes[index]))
 			return UINT32_MAX;
 	
