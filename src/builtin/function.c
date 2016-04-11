@@ -361,6 +361,8 @@ struct Value accessor (const Native(Function) getter, const Native(Function) set
 		value = Value.function(setterFunction);
 		value.flags |= Value(setter);
 	}
+	else
+		value = Value(undefined);
 	
 	return value;
 }
