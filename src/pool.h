@@ -11,7 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "function.h"
+#include "builtin/function.h"
 
 #include "interface.h"
 
@@ -47,5 +47,7 @@ Interface(Pool,
 		uint32_t charsCapacity;
 	}
 )
+
+#include "chars.h"
 
 #endif

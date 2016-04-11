@@ -11,8 +11,7 @@
 
 #include "namespace_io_libecc.h"
 
-#include "string.h"
-#include "pool.h"
+#include "builtin/string.h"
 
 #include "interface.h"
 
@@ -46,5 +45,8 @@ Interface(Chars,
 		char bytes[1];
 	}
 )
+
+#include "value.h"
+#include "pool.h"
 
 #endif
