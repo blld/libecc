@@ -196,7 +196,7 @@ static struct Chars *msToChars (double ms, double offset)
 		, (int)fmod(floor(ms / msPerMinute), 60)
 		, (int)fmod(floor(ms / msPerSecond), 60)
 		, (int)offset
-		, abs(fmod(offset * 60, 60))
+		, (int)fmod(fabs(offset) * 60, 60)
 		);
 }
 
@@ -294,7 +294,7 @@ static struct Value toTimeString (struct Context * const context)
 		, (int)fmod(floor(ms / msPerMinute), 60)
 		, (int)fmod(floor(ms / msPerSecond), 60)
 		, (int)localOffset
-		, abs(fmod(localOffset * 60, 60))
+		, (int)fmod(fabs(localOffset) * 60, 60)
 		));
 }
 
