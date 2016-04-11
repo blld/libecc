@@ -6,17 +6,21 @@ objects := $(sources:../src/%.c=./object/%.o)
 #
 
 warn  ?= -Wall
-opts  ?= -Os -fstrict-aliasing
 lto   ?= $(shell echo "main(){}" | gcc -E -flto - >/dev/null 2>&1 && echo "-flto")
+optim ?= -Os -fstrict-aliasing
 debug ?= -DNDEBUG=1
 libs  ?= -lm
 
-CFLAGS += $(warn) $(opts) $(lto) $(debug)
+.PHONY: debug
+debug : debug := -DDEBUG=1
+debug : optim := -O0
+
+CFLAGS += $(warn) $(lto) $(optim) $(debug)
 
 ##
 
 all: ./object/builtin ./bin $(binary)
-
+debug: all
 clean:
 	rm -rf ./bin ./object
 
