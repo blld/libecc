@@ -82,10 +82,10 @@ struct Chars * beginAppend (void)
 
 struct Chars * append (struct Chars *self, const char *format, ...)
 {
-	assert(self);
-	
 	uint16_t length;
 	va_list ap;
+	
+	assert(self);
 	
 	va_start(ap, format);
 	length = vsnprintf(NULL, 0, format, ap);

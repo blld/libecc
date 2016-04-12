@@ -257,13 +257,8 @@ static inline void populateEnvironmentVA (struct Object *environment, int parame
 		for (; index < argumentCount; ++index)
 			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
 	else
-	{
 		for (; index < parameterCount; ++index)
 			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
-		
-		for (; index < argumentCount; ++index)
-			va_arg(ap, struct Value);
-	}
 }
 
 static inline void populateEnvironment (struct Context * const context, struct Object *environment, int parameterCount, int argumentCount)
@@ -809,10 +804,11 @@ struct Value deleteProperty (struct Context * const context)
 {
 	const struct Text *text = opText(0);
 	struct Value object, property;
+	int result;
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	int result = Object.deleteProperty(object.data.object, property);
+	result = Object.deleteProperty(object.data.object, property);
 	if (!result)
 	{
 		struct Value string = Value.toString(NULL, property);
@@ -1194,9 +1190,10 @@ struct Value postDecrementRef (struct Context * const context)
 
 static struct Value operationAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
 {
-	b = Value.toBinary(b);
+	struct Value value;
 	
-	struct Value value = Value.toBinary(Object.getValue(context->refObject, a, context));
+	b = Value.toBinary(b);
+	value = Value.toBinary(Object.getValue(context->refObject, a, context));
 	operationBinary(&value.data.binary, b.data.binary);
 	return *Object.putValue(context->refObject, a, context, value);
 }

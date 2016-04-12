@@ -34,6 +34,18 @@ static int issign(int c)
 	return c == '+' || c == '-';
 }
 
+static void setupLocalOffset (void)
+{
+	struct tm tm = {
+		.tm_mday = 2,
+		.tm_year = 70,
+		.tm_wday = 5,
+		.tm_isdst = -1,
+	};
+	time_t time = mktime(&tm);
+	localOffset = difftime(86400, time) / 3600.;
+}
+
 static double msClip (double ms)
 {
 	if (!isfinite(ms) || fabs(ms) > 8.64 * pow(10, 15))
@@ -62,19 +74,19 @@ static double msFromArguments (struct Context * const context)
 {
 	double time;
 	uint16_t count;
+	double year, month, day, h, m, s, ms;
 	
 	Context.assertVariableParameter(context);
 	
 	count = Context.variableArgumentCount(context);
 	
-	double
-		year = Value.toBinary(Context.variableArgument(context, 0)).data.binary,
-		month = Value.toBinary(Context.variableArgument(context, 1)).data.binary,
-		day = count > 2? Value.toBinary(Context.variableArgument(context, 2)).data.binary: 1,
-		h = count > 3? Value.toBinary(Context.variableArgument(context, 3)).data.binary: 0,
-		m = count > 4? Value.toBinary(Context.variableArgument(context, 4)).data.binary: 0,
-		s = count > 5? Value.toBinary(Context.variableArgument(context, 5)).data.binary: 0,
-		ms = count > 6? Value.toBinary(Context.variableArgument(context, 6)).data.binary: 0;
+	year = Value.toBinary(Context.variableArgument(context, 0)).data.binary,
+	month = Value.toBinary(Context.variableArgument(context, 1)).data.binary,
+	day = count > 2? Value.toBinary(Context.variableArgument(context, 2)).data.binary: 1,
+	h = count > 3? Value.toBinary(Context.variableArgument(context, 3)).data.binary: 0,
+	m = count > 4? Value.toBinary(Context.variableArgument(context, 4)).data.binary: 0,
+	s = count > 5? Value.toBinary(Context.variableArgument(context, 5)).data.binary: 0,
+	ms = count > 6? Value.toBinary(Context.variableArgument(context, 6)).data.binary: 0;
 	
 	if (isnan(year) || isnan(month) || isnan(day) || isnan(h) || isnan(m) || isnan(s) || isnan(ms))
 		time = NAN;
@@ -393,16 +405,7 @@ void setup (void)
 	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);
 	Function.addToObject(&Date(constructor)->object, "UTC", UTC, -7, flags);
 	
-	//
-	
-	struct tm tm = {
-		.tm_mday = 2,
-		.tm_year = 70,
-		.tm_wday = 5,
-		.tm_isdst = -1,
-	};
-	time_t time = mktime(&tm);
-	localOffset = difftime(86400, time) / 3600;
+	setupLocalOffset();
 }
 
 void teardown (void)
