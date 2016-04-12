@@ -38,7 +38,7 @@ struct Ecc *create (void)
 	*self = Ecc.identity;
 	
 	self->global = Global.create();
-	self->maximumCallDepth = 1024;
+	self->maximumCallDepth = 512;
 	
 	return self;
 }
