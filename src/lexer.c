@@ -104,9 +104,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 	{
 		switch (c)
 		{
-			case '\0':
-				return error(self, Error.syntaxError(self->text, "NUL character before end of script"));
-			
 			case '\n':
 			case '\r':
 			case '\t':
