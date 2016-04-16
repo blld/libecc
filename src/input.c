@@ -146,7 +146,7 @@ void printText (struct Input *self, struct Text text)
 			long index = 0;
 			
 			for (; index < text.bytes - bytes; ++index)
-				if (isgraph(bytes[index]))
+				if (isprint(bytes[index]))
 					mark[index] = ' ';
 				else
 					mark[index] = bytes[index];
@@ -154,7 +154,10 @@ void printText (struct Input *self, struct Text text)
 			mark[index] = '^';
 			
 			while (++index < text.bytes - bytes + text.length && index <= length)
-				mark[index] = '~';
+				if (isprint(bytes[index]))
+					mark[index] = '~';
+				else
+					mark[index] = bytes[index];
 			
 			mark[index] = '\0';
 			
