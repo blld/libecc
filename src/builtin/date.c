@@ -6,7 +6,8 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
-#if __MSDOS__ || _WIN32 || _WIN64
+#if _WIN32
+#include <sys/timeb.h>
 #else
 #include <sys/time.h>
 #endif
@@ -47,7 +48,10 @@ static void setupLocalOffset (void)
 		.tm_isdst = -1,
 	};
 	time_t time = mktime(&tm);
-	localOffset = difftime(86400, time) / 3600.;
+	if (time < 0)
+		localOffset = -0.;
+	else
+		localOffset = difftime(86400, time) / 3600.;
 }
 
 static double msClip (double ms)
@@ -218,7 +222,10 @@ static struct Chars *msToChars (double ms, double offset)
 
 static double currentTime ()
 {
-#if __MSDOS__ || _WIN32 || _WIN64
+#if _WIN32
+	struct _timeb timebuffer;
+	_ftime (&timebuffer);
+	return timebuffer.time * 1000 + timebuffer.millitm;
 #else
 	struct timeval time;
 	gettimeofday(&time, NULL);
