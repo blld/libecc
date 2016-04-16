@@ -7,23 +7,28 @@
 //
 
 #ifndef io_libecc__global_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc__global_h
 
-#include "namespace_io_libecc.h"
+	#include "object.h"
+	#include "array.h"
+	#include "function.h"
+	#include "boolean.h"
+	#include "date.h"
+	#include "arguments.h"
+	#include "math.h"
+	#include "number.h"
+	#include "regexp.h"
+	#include "error.h"
 
-#include "object.h"
-#include "function.h"
-#include "boolean.h"
-#include "date.h"
-#include "arguments.h"
-#include "math.h"
-#include "number.h"
-#include "regexp.h"
+	extern const struct Object(Type) Global(type);
 
-#include "interface.h"
-
-
-extern const struct Object(Type) Global(type);
+#endif
 
 
 Interface(Global,

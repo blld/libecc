@@ -7,14 +7,13 @@
 //
 
 #if __MSDOS__
-	#include <conio.h>
+#include <conio.h>
+#elif _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
-#if _WIN32 || _WIN64
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-#endif
-
+#define Implementation
 #include "env.h"
 
 // MARK: - Private
@@ -22,7 +21,7 @@
 struct EnvInternal {
 #if __MSDOS__
 	int defaultAttribute;
-#elif _WIN32 || _WIN64
+#elif _WIN32
 	HANDLE console;
 	int defaultAttribute;
 	int defaultOutputCP;
@@ -40,7 +39,7 @@ extern int _putenv(const char *);
 
 static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 {
-	#if __MSDOS__ || _WIN32 || _WIN64
+	#if __MSDOS__ || _WIN32
 	int c = color - 30;
 	
 	if (attribute == Env(invisible))
@@ -54,7 +53,7 @@ static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 	
 	#if __MSDOS__
 	textcolor(c);
-	#elif _WIN32 || _WIN64
+	#elif _WIN32
 	SetConsoleTextAttribute(self->internal->console, c | (self->internal->defaultAttribute & 0xf0));
 	#endif
 	
@@ -92,7 +91,7 @@ static inline void printVA(uint16_t length, const char *format, va_list ap)
 	}
 	cprintf("%s", buffer + offset);
 }
-#elif _WIN32 || _WIN64
+#elif _WIN32
 static inline void printVA(uint16_t length, const char *format, va_list ap)
 {
 	char buffer[length + 1];
@@ -121,7 +120,7 @@ void setup (void)
 	struct text_info textInfo;
 	gettextinfo(&textInfo);
 	self->internal->defaultAttribute = textInfo.normattr;
-	#elif _WIN32 || _WIN64
+	#elif _WIN32
 	self->internal->console = GetStdHandle(STD_ERROR_HANDLE);
 	self->internal->defaultOutputCP = GetConsoleOutputCP();
 	SetConsoleOutputCP(CP_UTF8);
@@ -149,7 +148,7 @@ void teardown (void)
 	
 	#if __MSDOS__
 	textcolor(self->internal->defaultAttribute);
-	#elif _WIN32 || _WIN64
+	#elif _WIN32
 	SetConsoleOutputCP(self->internal->defaultOutputCP);
 	SetConsoleTextAttribute(self->internal->console, self->internal->defaultAttribute);
 	
@@ -169,7 +168,7 @@ void print (const char *format, ...)
 {
 	va_list ap;
 	
-	#if __MSDOS__ || _WIN32 || _WIN64
+	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
 		va_start(ap, format);
@@ -191,7 +190,7 @@ void printColor (enum Env(Color) color, enum Env(Attribute) attribute, const cha
 	va_list ap;
 	
 	setTextColor(color, attribute);
-	#if __MSDOS__ || _WIN32 || _WIN64
+	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
 		va_start(ap, format);
@@ -217,7 +216,7 @@ void printError (int typeLength, const char *type, const char *format, ...)
 	print(": ");
 	
 	setTextColor(0, Env(bold));
-	#if __MSDOS__ || _WIN32 || _WIN64
+	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
 		va_start(ap, format);
@@ -245,7 +244,7 @@ void printWarning (const char *format, ...)
 	print(": ");
 	
 	setTextColor(0, Env(bold));
-	#if __MSDOS__ || _WIN32 || _WIN64
+	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
 		va_start(ap, format);

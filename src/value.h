@@ -7,85 +7,88 @@
 //
 
 #ifndef io_libecc_value_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_value_h
 
-#include "namespace_io_libecc.h"
+	struct Context;
 
-struct Context;
+	#include "key.h"
 
-#include "key.h"
+	enum Value(Type) {
+		
+		/* Primitive */
+		
+		/* false */
+		
+		/* 1000 0110 */ Value(nullType) = -1 & ~0x79,
+		/* 1010 0110 */ Value(falseType) = -1 & ~0x59,
+		/* 0000 0000 */ Value(undefinedType) = 0x00,
+		
+		/* computed truth */
+		
+		/* 0000 1000 */ Value(integerType) = 0x08,
+		/* 0000 1010 */ Value(binaryType) = 0x0a,
+		
+		/* 0001 0000 */ Value(keyType) = 0x10,
+		/* 0001 0010 */ Value(textType) = 0x12,
+		/* 0001 0011 */ Value(charsType) = 0x13,
+		
+		/* true */
+		
+		/* 0010 0000 */ Value(trueType) = 0x20,
+		
+		/* Objects */
+		
+		/* 0100 0000 */ Value(objectType) = 0x40,
+		/* 0100 0001 */ Value(errorType) = 0x41,
+		/* 0100 0010 */ Value(functionType) = 0x42,
+		/* 0100 0100 */ Value(dateType) = 0x44,
+		/* 0100 1000 */ Value(numberType) = 0x48,
+		/* 0101 0000 */ Value(stringType) = 0x50,
+		/* 0110 0000 */ Value(booleanType) = 0x60,
+		
+		/* 0100 0110 */ Value(hostType) = 0x46,
+		/* 0100 0111 */ Value(referenceType) = 0x47,
+	};
 
-#include "interface.h"
+	enum Value(Mask) {
+		/* 0000 1000 */ Value(numberMask) = 0x08,
+		/* 0001 0000 */ Value(stringMask) = 0x10,
+		/* 0010 0000 */ Value(booleanMask) = 0x20,
+		/* 0100 0000 */ Value(objectMask) = 0x40,
+		/* 0100 0001 */ Value(dynamicMask) = 0x41,
+	};
 
+	enum Value(Flags)
+	{
+		Value(readonly) = 1 << 0,
+		Value(hidden) = 1 << 1,
+		Value(sealed) = 1 << 2,
+		Value(getter) = 1 << 3,
+		Value(setter) = 1 << 4,
+		
+		Value(frozen) = Value(readonly) | Value(sealed),
+		Value(accessor) = Value(getter) | Value(setter),
+	};
 
-enum Value(Type) {
-	
-	/* Primitive */
-	
-	/* false */
-	
-	/* 1000 0110 */ Value(nullType) = -1 & ~0x79,
-	/* 1010 0110 */ Value(falseType) = -1 & ~0x59,
-	/* 0000 0000 */ Value(undefinedType) = 0x00,
-	
-	/* computed truth */
-	
-	/* 0000 1000 */ Value(integerType) = 0x08,
-	/* 0000 1010 */ Value(binaryType) = 0x0a,
-	
-	/* 0001 0000 */ Value(keyType) = 0x10,
-	/* 0001 0010 */ Value(textType) = 0x12,
-	/* 0001 0011 */ Value(charsType) = 0x13,
-	
-	/* true */
-	
-	/* 0010 0000 */ Value(trueType) = 0x20,
-	
-	/* Objects */
-	
-	/* 0100 0000 */ Value(objectType) = 0x40,
-	/* 0100 0001 */ Value(errorType) = 0x41,
-	/* 0100 0010 */ Value(functionType) = 0x42,
-	/* 0100 0100 */ Value(dateType) = 0x44,
-	/* 0100 1000 */ Value(numberType) = 0x48,
-	/* 0101 0000 */ Value(stringType) = 0x50,
-	/* 0110 0000 */ Value(booleanType) = 0x60,
-	
-	/* 0100 0110 */ Value(hostType) = 0x46,
-	/* 0100 0111 */ Value(referenceType) = 0x47,
-};
+	enum Value(hintPrimitive)
+	{
+		Value(hintAuto) = 0,
+		Value(hintString) = 1,
+		Value(hintNumber) = -1,
+	};
 
-enum Value(Mask) {
-	/* 0000 1000 */ Value(numberMask) = 0x08,
-	/* 0001 0000 */ Value(stringMask) = 0x10,
-	/* 0010 0000 */ Value(booleanMask) = 0x20,
-	/* 0100 0000 */ Value(objectMask) = 0x40,
-	/* 0100 0001 */ Value(dynamicMask) = 0x41,
-};
+	extern const struct Value Value(undefined);
+	extern const struct Value Value(true);
+	extern const struct Value Value(false);
+	extern const struct Value Value(null);
 
-enum Value(Flags)
-{
-	Value(readonly) = 1 << 0,
-	Value(hidden) = 1 << 1,
-	Value(sealed) = 1 << 2,
-	Value(getter) = 1 << 3,
-	Value(setter) = 1 << 4,
-	
-	Value(frozen) = Value(readonly) | Value(sealed),
-	Value(accessor) = Value(getter) | Value(setter),
-};
-
-enum Value(hintPrimitive)
-{
-	Value(hintAuto) = 0,
-	Value(hintString) = 1,
-	Value(hintNumber) = -1,
-};
-
-extern const struct Value Value(undefined);
-extern const struct Value Value(true);
-extern const struct Value Value(false);
-extern const struct Value Value(null);
+#endif
 
 
 Interface(Value,
@@ -169,12 +172,5 @@ Interface(Value,
 		uint16_t check;
 	}
 )
-
-
-#ifndef io_libecc_object_h
-#ifndef io_libecc_lexer_h
-#include "ecc.h"
-#endif
-#endif
 
 #endif

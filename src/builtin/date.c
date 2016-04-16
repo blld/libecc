@@ -11,7 +11,11 @@
 #include <sys/time.h>
 #endif
 
+#define Implementation
 #include "date.h"
+
+#include "../ecc.h"
+#include "../pool.h"
 
 // MARK: - Private
 

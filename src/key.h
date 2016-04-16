@@ -7,32 +7,35 @@
 //
 
 #ifndef monade_key_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define monade_key_h
 
-#include "namespace_io_libecc.h"
+	#include "text.h"
 
-#include "text.h"
+	extern struct Key Key(none);
+	extern struct Key Key(prototype);
+	extern struct Key Key(constructor);
+	extern struct Key Key(length);
+	extern struct Key Key(arguments);
+	extern struct Key Key(name);
+	extern struct Key Key(message);
+	extern struct Key Key(toString);
+	extern struct Key Key(valueOf);
+	extern struct Key Key(eval);
+	extern struct Key Key(value);
+	extern struct Key Key(writable);
+	extern struct Key Key(enumerable);
+	extern struct Key Key(configurable);
+	extern struct Key Key(get);
+	extern struct Key Key(set);
+	extern struct Key Key(join);
 
-#include "interface.h"
-
-
-extern struct Key Key(none);
-extern struct Key Key(prototype);
-extern struct Key Key(constructor);
-extern struct Key Key(length);
-extern struct Key Key(arguments);
-extern struct Key Key(name);
-extern struct Key Key(message);
-extern struct Key Key(toString);
-extern struct Key Key(valueOf);
-extern struct Key Key(eval);
-extern struct Key Key(value);
-extern struct Key Key(writable);
-extern struct Key Key(enumerable);
-extern struct Key Key(configurable);
-extern struct Key Key(get);
-extern struct Key Key(set);
-extern struct Key Key(join);
+#endif
 
 
 Interface(Key,

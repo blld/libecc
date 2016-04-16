@@ -7,13 +7,17 @@
 //
 
 #ifndef io_libecc_oplist_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_oplist_h
 
-#include "namespace_io_libecc.h"
+	#include "op.h"
 
-#include "op.h"
-
-#include "interface.h"
+#endif
 
 
 Interface(OpList,

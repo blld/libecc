@@ -7,17 +7,21 @@
 //
 
 #ifndef io_libecc_array_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_array_h
 
-#include "namespace_io_libecc.h"
+	#include "global.h"
 
-#include "object.h"
+	extern struct Object * Array(prototype);
+	extern struct Function * Array(constructor);
+	extern const struct Object(Type) Array(type);
 
-#include "interface.h"
-
-extern struct Object * Array(prototype);
-extern struct Function * Array(constructor);
-extern const struct Object(Type) Array(type);
+#endif
 
 
 Interface(Array,

@@ -7,26 +7,30 @@
 //
 
 #ifndef io_libecc_function_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_function_h
 
-#include "namespace_io_libecc.h"
+	#include "global.h"
+	#include "../context.h"
+	#include "../native.h"
+	#include "../chars.h"
 
-#include "object.h"
-#include "../context.h"
-#include "../chars.h"
+	enum Function(Flags) {
+		Function(needHeap)      = 1 << 1,
+		Function(needArguments) = 1 << 2,
+		Function(useBoundThis)  = 1 << 3,
+	};
 
-#include "interface.h"
+	extern struct Object * Function(prototype);
+	extern struct Function * Function(constructor);
+	extern const struct Object(Type) Function(type);
 
-
-enum Function(Flags) {
-	Function(needHeap)      = 1 << 1,
-	Function(needArguments) = 1 << 2,
-	Function(useBoundThis)  = 1 << 3,
-};
-
-extern struct Object * Function(prototype);
-extern struct Function * Function(constructor);
-extern const struct Object(Type) Function(type);
+#endif
 
 
 Interface(Function,

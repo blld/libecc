@@ -7,18 +7,21 @@
 //
 
 #ifndef io_libecc_boolean_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_boolean_h
 
-#include "namespace_io_libecc.h"
+	#include "global.h"
 
-#include "object.h"
+	extern struct Object * Boolean(prototype);
+	extern struct Function * Boolean(constructor);
+	extern const struct Object(Type) Boolean(type);
 
-#include "interface.h"
-
-
-extern struct Object * Boolean(prototype);
-extern struct Function * Boolean(constructor);
-extern const struct Object(Type) Boolean(type);
+#endif
 
 
 Interface(Boolean,

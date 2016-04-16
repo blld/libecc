@@ -6,7 +6,10 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
+#define Implementation
 #include "error.h"
+
+#include "../pool.h"
 
 // MARK: - Private
 

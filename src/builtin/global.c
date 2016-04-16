@@ -6,7 +6,11 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
+#define Implementation
 #include "global.h"
+
+#include "../ecc.h"
+#include "../lexer.h"
 
 // MARK: - Private
 

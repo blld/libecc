@@ -7,21 +7,25 @@
 //
 
 #ifndef io_libecc_context_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_context_h
 
-#include "namespace_io_libecc.h"
+	#include "value.h"
+	
+	enum Context(Index) {
+		Context(savedIndex) = -1,
+		Context(noIndex) = 0,
+		Context(callIndex) = 1,
+		Context(funcIndex) = 2,
+		Context(thisIndex) = 3,
+	};
 
-enum Context(Index) {
-	Context(savedIndex) = -1,
-	Context(noIndex) = 0,
-	Context(callIndex) = 1,
-	Context(funcIndex) = 2,
-	Context(thisIndex) = 3,
-};
-
-#include "value.h"
-
-#include "interface.h"
+#endif
 
 
 Interface(Context,

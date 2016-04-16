@@ -7,30 +7,33 @@
 //
 
 #ifndef io_libecc_error_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_error_h
 
-#include "namespace_io_libecc.h"
+	#include "global.h"
 
-#include "object.h"
+	extern struct Object * Error(prototype);
+	extern struct Object * Error(rangePrototype);
+	extern struct Object * Error(referencePrototype);
+	extern struct Object * Error(syntaxPrototype);
+	extern struct Object * Error(typePrototype);
+	extern struct Object * Error(uriPrototype);
 
-#include "interface.h"
+	extern struct Function * Error(constructor);
+	extern struct Function * Error(rangeConstructor);
+	extern struct Function * Error(referenceConstructor);
+	extern struct Function * Error(syntaxConstructor);
+	extern struct Function * Error(typeConstructor);
+	extern struct Function * Error(uriConstructor);
 
+	extern const struct Object(Type) Error(type);
 
-extern struct Object * Error(prototype);
-extern struct Object * Error(rangePrototype);
-extern struct Object * Error(referencePrototype);
-extern struct Object * Error(syntaxPrototype);
-extern struct Object * Error(typePrototype);
-extern struct Object * Error(uriPrototype);
-
-extern struct Function * Error(constructor);
-extern struct Function * Error(rangeConstructor);
-extern struct Function * Error(referenceConstructor);
-extern struct Function * Error(syntaxConstructor);
-extern struct Function * Error(typeConstructor);
-extern struct Function * Error(uriConstructor);
-
-extern const struct Object(Type) Error(type);
+#endif
 
 
 Interface(Error,

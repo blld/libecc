@@ -7,13 +7,17 @@
 //
 
 #ifndef io_libecc_pool_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_pool_h
 
-#include "namespace_io_libecc.h"
+	#include "builtin/function.h"
 
-#include "builtin/function.h"
-
-#include "interface.h"
+#endif
 
 
 Interface(Pool,
@@ -47,7 +51,5 @@ Interface(Pool,
 		uint32_t charsCapacity;
 	}
 )
-
-#include "chars.h"
 
 #endif

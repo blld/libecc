@@ -6,7 +6,12 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
+#define Implementation
 #include "ecc.h"
+
+#include "parser.h"
+#include "oplist.h"
+#include "pool.h"
 
 // MARK: - Private
 

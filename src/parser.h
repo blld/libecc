@@ -7,15 +7,17 @@
 //
 
 #ifndef io_libecc_parser_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_parser_h
 
-#include "namespace_io_libecc.h"
+	#include "lexer.h"
 
-#include "lexer.h"
-#include "op.h"
-#include "builtin/function.h"
-
-#include "interface.h"
+#endif
 
 
 Interface(Parser,

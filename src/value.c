@@ -6,7 +6,12 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
+#define Implementation
 #include "value.h"
+
+#include "ecc.h"
+#include "op.h"
+#include "lexer.h"
 
 // MARK: - Private
 

@@ -6,6 +6,7 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
+#define Implementation
 #include "math.h"
 
 // MARK: - Private

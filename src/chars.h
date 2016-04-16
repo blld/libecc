@@ -7,20 +7,23 @@
 //
 
 #ifndef io_libecc_chars_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_chars_h
 
-#include "namespace_io_libecc.h"
+	#include "builtin/string.h"
 
-#include "builtin/string.h"
+	enum Chars(Flags)
+	{
+		Chars(mark) = 1 << 0,
+		Chars(inAppend) = 1 << 1,
+	};
 
-#include "interface.h"
-
-
-enum Chars(Flags)
-{
-	Chars(mark) = 1 << 0,
-	Chars(inAppend) = 1 << 1,
-};
+#endif
 
 
 Interface(Chars,
@@ -45,8 +48,5 @@ Interface(Chars,
 		char bytes[1];
 	}
 )
-
-#include "value.h"
-#include "pool.h"
 
 #endif

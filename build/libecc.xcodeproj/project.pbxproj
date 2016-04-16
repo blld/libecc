@@ -79,12 +79,12 @@
 		0DA9C77B1B648C060081A906 /* pool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pool.c; sourceTree = "<group>"; };
 		0DA9C77C1B648C060081A906 /* pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pool.h; sourceTree = "<group>"; };
 		0DCB570B1BA4FA7700E2324D /* compatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compatibility.h; sourceTree = "<group>"; };
+		0DD2B8301CBF9CDD0081C1AD /* implementation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = implementation.h; sourceTree = "<group>"; };
 		0DD57DBF1B2D542A00CD8119 /* libecc */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libecc; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DD57DC21B2D542A00CD8119 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		0DD57DCA1B2D543E00CD8119 /* interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = interface.h; sourceTree = "<group>"; };
 		0DD57DCB1B2D545D00CD8119 /* input.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = input.c; sourceTree = "<group>"; };
 		0DD57DCC1B2D545D00CD8119 /* input.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = input.h; sourceTree = "<group>"; };
-		0DD57DCE1B2EF3B900CD8119 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 		0DD57DD01B2F042000CD8119 /* lexer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lexer.c; sourceTree = "<group>"; };
 		0DD57DD11B2F042000CD8119 /* lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lexer.h; sourceTree = "<group>"; };
 		0DD57DD31B2F073B00CD8119 /* parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parser.c; sourceTree = "<group>"; };
@@ -139,7 +139,6 @@
 			children = (
 				0DD57DDF1B3689C900CD8119 /* builtin */,
 				0DD57DC21B2D542A00CD8119 /* main.c */,
-				0DD57DCE1B2EF3B900CD8119 /* main.h */,
 				0DD57DCB1B2D545D00CD8119 /* input.c */,
 				0DD57DCC1B2D545D00CD8119 /* input.h */,
 				0DD57DD01B2F042000CD8119 /* lexer.c */,
@@ -168,6 +167,7 @@
 				0D25FB0D1B5C89A70075F035 /* chars.c */,
 				0D25FB0E1B5C89A70075F035 /* chars.h */,
 				0DD57DCA1B2D543E00CD8119 /* interface.h */,
+				0DD2B8301CBF9CDD0081C1AD /* implementation.h */,
 				0D25FB131B6334CF0075F035 /* namespace_io_libecc.h */,
 				0DCB570B1BA4FA7700E2324D /* compatibility.h */,
 			);

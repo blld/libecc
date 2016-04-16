@@ -7,17 +7,20 @@
 //
 
 #ifndef io_libecc_regexp_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_regexp_h
 
-#include "namespace_io_libecc.h"
+	#include "global.h"
 
-#include "object.h"
+	extern struct Object * RegExp(prototype);
+	extern struct Function * RegExp(constructor);
 
-#include "interface.h"
-
-
-extern struct Object * RegExp(prototype);
-extern struct Function * RegExp(constructor);
+#endif
 
 
 Interface(RegExp,

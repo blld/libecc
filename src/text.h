@@ -7,51 +7,54 @@
 //
 
 #ifndef io_libecc_text_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_text_h
 
-#include "namespace_io_libecc.h"
+	extern const struct Text Text(undefined);
+	extern const struct Text Text(null);
+	extern const struct Text Text(false);
+	extern const struct Text Text(true);
+	extern const struct Text Text(boolean);
+	extern const struct Text Text(number);
+	extern const struct Text Text(string);
+	extern const struct Text Text(object);
+	extern const struct Text Text(function);
+	extern const struct Text Text(zero);
+	extern const struct Text Text(one);
+	extern const struct Text Text(nan);
+	extern const struct Text Text(infinity);
+	extern const struct Text Text(negativeInfinity);
+	extern const struct Text Text(nativeCode);
+	extern const struct Text Text(empty);
 
-#include "interface.h"
+	extern const struct Text Text(nullType);
+	extern const struct Text Text(undefinedType);
+	extern const struct Text Text(objectType);
+	extern const struct Text Text(errorType);
+	extern const struct Text Text(arrayType);
+	extern const struct Text Text(stringType);
+	extern const struct Text Text(numberType);
+	extern const struct Text Text(booleanType);
+	extern const struct Text Text(dateType);
+	extern const struct Text Text(functionType);
+	extern const struct Text Text(argumentsType);
+	extern const struct Text Text(mathType);
+	extern const struct Text Text(globalType);
 
+	extern const struct Text Text(errorName);
+	extern const struct Text Text(rangeErrorName);
+	extern const struct Text Text(referenceErrorName);
+	extern const struct Text Text(syntaxErrorName);
+	extern const struct Text Text(typeErrorName);
+	extern const struct Text Text(uriErrorName);
+	extern const struct Text Text(inputErrorName);
 
-extern const struct Text Text(undefined);
-extern const struct Text Text(null);
-extern const struct Text Text(false);
-extern const struct Text Text(true);
-extern const struct Text Text(boolean);
-extern const struct Text Text(number);
-extern const struct Text Text(string);
-extern const struct Text Text(object);
-extern const struct Text Text(function);
-extern const struct Text Text(zero);
-extern const struct Text Text(one);
-extern const struct Text Text(nan);
-extern const struct Text Text(infinity);
-extern const struct Text Text(negativeInfinity);
-extern const struct Text Text(nativeCode);
-extern const struct Text Text(empty);
-
-extern const struct Text Text(nullType);
-extern const struct Text Text(undefinedType);
-extern const struct Text Text(objectType);
-extern const struct Text Text(errorType);
-extern const struct Text Text(arrayType);
-extern const struct Text Text(stringType);
-extern const struct Text Text(numberType);
-extern const struct Text Text(booleanType);
-extern const struct Text Text(dateType);
-extern const struct Text Text(functionType);
-extern const struct Text Text(argumentsType);
-extern const struct Text Text(mathType);
-extern const struct Text Text(globalType);
-
-extern const struct Text Text(errorName);
-extern const struct Text Text(rangeErrorName);
-extern const struct Text Text(referenceErrorName);
-extern const struct Text Text(syntaxErrorName);
-extern const struct Text Text(typeErrorName);
-extern const struct Text Text(uriErrorName);
-extern const struct Text Text(inputErrorName);
+#endif
 
 
 Interface(Text,

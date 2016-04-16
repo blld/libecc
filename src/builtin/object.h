@@ -7,31 +7,34 @@
 //
 
 #ifndef io_libecc_object_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_object_h
 
-#include "namespace_io_libecc.h"
+	#include "../value.h"
 
-#include "../value.h"
+	struct Object(Type)
+	{
+		const struct Text *text;
+		
+		void (*finalize)(struct Object *);
+	};
 
-#include "interface.h"
+	enum Object(Flags)
+	{
+		Object(mark) = 1 << 0,
+		Object(sealed) = 1 << 1,
+	};
 
+	extern struct Object * Object(prototype);
+	extern struct Function * Object(constructor);
+	extern const struct Object(Type) Object(type);
 
-struct Object(Type)
-{
-	const struct Text *text;
-	
-	void (*finalize)(struct Object *);
-};
-
-enum Object(Flags)
-{
-	Object(mark) = 1 << 0,
-	Object(sealed) = 1 << 1,
-};
-
-extern struct Object * Object(prototype);
-extern struct Function * Object(constructor);
-extern const struct Object(Type) Object(type);
+#endif
 
 
 Interface(Object,
@@ -111,10 +114,5 @@ Interface(Object,
 		uint8_t flags;
 	}
 )
-
-
-#ifndef io_libecc_lexer_h
-#include "../ecc.h"
-#endif
 
 #endif

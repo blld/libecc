@@ -7,126 +7,128 @@
 //
 
 #ifndef io_libecc_op_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_op_h
 
-#include "namespace_io_libecc.h"
+	#include "builtin/function.h"
 
-#include "native.h"
-#include "builtin/array.h"
+	#define io_libecc_op_List \
+		\
+		/* expression */\
+		_( noop )\
+		_( value )\
+		_( valueConstRef )\
+		_( text )\
+		_( function )\
+		_( object )\
+		_( array )\
+		_( this )\
+		\
+		_( getLocalRef )\
+		_( getLocal )\
+		_( setLocal )\
+		\
+		_( getLocalSlotRef )\
+		_( getLocalSlot )\
+		_( setLocalSlot )\
+		\
+		_( getParentSlotRef )\
+		_( getParentSlot )\
+		_( setParentSlot )\
+		\
+		_( getMemberRef )\
+		_( getMember )\
+		_( setMember )\
+		_( callMember )\
+		_( deleteMember )\
+		\
+		_( getPropertyRef )\
+		_( getProperty )\
+		_( setProperty )\
+		_( callProperty )\
+		_( deleteProperty )\
+		\
+		_( pushEnvironment )\
+		_( popEnvironment )\
+		_( exchange )\
+		_( typeOf )\
+		_( equal )\
+		_( notEqual )\
+		_( identical )\
+		_( notIdentical )\
+		_( less )\
+		_( lessOrEqual )\
+		_( more )\
+		_( moreOrEqual )\
+		_( instanceOf )\
+		_( in )\
+		_( multiply )\
+		_( divide )\
+		_( modulo )\
+		_( add )\
+		_( minus )\
+		_( leftShift )\
+		_( rightShift )\
+		_( unsignedRightShift )\
+		_( bitwiseAnd )\
+		_( bitwiseXor )\
+		_( bitwiseOr )\
+		_( logicalAnd )\
+		_( logicalOr )\
+		_( positive )\
+		_( negative )\
+		_( invert )\
+		_( not )\
+		_( construct )\
+		_( call )\
+		_( eval )\
+		\
+		/* assignement expression */\
+		_( incrementRef )\
+		_( decrementRef )\
+		_( postIncrementRef )\
+		_( postDecrementRef )\
+		_( multiplyAssignRef )\
+		_( divideAssignRef )\
+		_( moduloAssignRef )\
+		_( addAssignRef )\
+		_( minusAssignRef )\
+		_( leftShiftAssignRef )\
+		_( rightShiftAssignRef )\
+		_( unsignedRightShiftAssignRef )\
+		_( bitAndAssignRef )\
+		_( bitXorAssignRef )\
+		_( bitOrAssignRef )\
+		\
+		/* statement */\
+		_( debug )\
+		_( try )\
+		_( throw )\
+		_( next )\
+		_( nextIf )\
+		_( expression )\
+		_( discard )\
+		_( discardN )\
+		_( jump )\
+		_( jumpIf )\
+		_( jumpIfNot )\
+		_( result )\
+		_( resultVoid )\
+		_( switchOp )\
+		_( breaker )\
+		_( iterate )\
+		_( iterateLessRef )\
+		_( iterateMoreRef )\
+		_( iterateLessOrEqualRef )\
+		_( iterateMoreOrEqualRef )\
+		_( iterateInRef )\
 
-#include "interface.h"
-
-
-#define io_libecc_op_List \
-	\
-	/* expression */\
-	_( noop )\
-	_( value )\
-	_( valueConstRef )\
-	_( text )\
-	_( function )\
-	_( object )\
-	_( array )\
-	_( this )\
-	\
-	_( getLocalRef )\
-	_( getLocal )\
-	_( setLocal )\
-	\
-	_( getLocalSlotRef )\
-	_( getLocalSlot )\
-	_( setLocalSlot )\
-	\
-	_( getParentSlotRef )\
-	_( getParentSlot )\
-	_( setParentSlot )\
-	\
-	_( getMemberRef )\
-	_( getMember )\
-	_( setMember )\
-	_( callMember )\
-	_( deleteMember )\
-	\
-	_( getPropertyRef )\
-	_( getProperty )\
-	_( setProperty )\
-	_( callProperty )\
-	_( deleteProperty )\
-	\
-	_( result )\
-	_( resultValue )\
-	_( pushEnvironment )\
-	_( popEnvironment )\
-	_( exchange )\
-	_( typeOf )\
-	_( equal )\
-	_( notEqual )\
-	_( identical )\
-	_( notIdentical )\
-	_( less )\
-	_( lessOrEqual )\
-	_( more )\
-	_( moreOrEqual )\
-	_( instanceOf )\
-	_( in )\
-	_( multiply )\
-	_( divide )\
-	_( modulo )\
-	_( add )\
-	_( minus )\
-	_( leftShift )\
-	_( rightShift )\
-	_( unsignedRightShift )\
-	_( bitwiseAnd )\
-	_( bitwiseXor )\
-	_( bitwiseOr )\
-	_( logicalAnd )\
-	_( logicalOr )\
-	_( positive )\
-	_( negative )\
-	_( invert )\
-	_( not )\
-	_( construct )\
-	_( call )\
-	_( eval )\
-	\
-	/* assignement expression */\
-	_( incrementRef )\
-	_( decrementRef )\
-	_( postIncrementRef )\
-	_( postDecrementRef )\
-	_( multiplyAssignRef )\
-	_( divideAssignRef )\
-	_( moduloAssignRef )\
-	_( addAssignRef )\
-	_( minusAssignRef )\
-	_( leftShiftAssignRef )\
-	_( rightShiftAssignRef )\
-	_( unsignedRightShiftAssignRef )\
-	_( bitAndAssignRef )\
-	_( bitXorAssignRef )\
-	_( bitOrAssignRef )\
-	\
-	/* statement */\
-	_( try )\
-	_( throw )\
-	_( debug )\
-	_( next )\
-	_( nextIf )\
-	_( expression )\
-	_( discard )\
-	_( discardN )\
-	_( jump )\
-	_( jumpIf )\
-	_( jumpIfNot )\
-	_( switchOp )\
-	_( breaker )\
-	_( iterate )\
-	_( iterateLessRef )\
-	_( iterateMoreRef )\
-	_( iterateLessOrEqualRef )\
-	_( iterateMoreOrEqualRef )\
-	_( iterateInRef )\
+#endif
 
 
 #define _(X) (struct Value, X , (struct Context * const))
@@ -147,7 +149,5 @@ Interface(Op,
 	}
 )
 #undef _
-
-#include "oplist.h"
 
 #endif

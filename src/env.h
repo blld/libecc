@@ -7,29 +7,32 @@
 //
 
 #ifndef io_libecc_env_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_env_h
 
-#include "namespace_io_libecc.h"
+	enum Env(Color) {
+		Env(black) = 30,
+		Env(red) = 31,
+		Env(green) = 32,
+		Env(yellow) = 33,
+		Env(blue) = 34,
+		Env(magenta) = 35,
+		Env(cyan) = 36,
+		Env(white) = 37,
+	};
 
-#include "interface.h"
+	enum Env(Attribute) {
+		Env(bold) = 1,
+		Env(dim) = 2,
+		Env(invisible) = 8,
+	};
 
-
-enum Env(Color) {
-	Env(black) = 30,
-	Env(red) = 31,
-	Env(green) = 32,
-	Env(yellow) = 33,
-	Env(blue) = 34,
-	Env(magenta) = 35,
-	Env(cyan) = 36,
-	Env(white) = 37,
-};
-
-enum Env(Attribute) {
-	Env(bold) = 1,
-	Env(dim) = 2,
-	Env(invisible) = 8,
-};
+#endif
 
 
 Interface(Env,

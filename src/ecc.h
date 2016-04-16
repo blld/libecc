@@ -7,20 +7,23 @@
 //
 
 #ifndef io_libecc_ecc_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_ecc_h
 
-#include "namespace_io_libecc.h"
+	#include "builtin/global.h"
+	#include "input.h"
 
-#include "parser.h"
-#include "builtin/global.h"
+	enum Ecc(EvalFlags) {
+		Ecc(globalThis) = 1 << 0,
+		Ecc(primitiveResult) = 1 << 1,
+	};
 
-#include "interface.h"
-
-
-enum Ecc(EvalFlags) {
-	Ecc(globalThis) = 1 << 0,
-	Ecc(primitiveResult) = 1 << 1,
-};
+#endif
 
 
 Interface(Ecc,

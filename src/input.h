@@ -7,14 +7,18 @@
 //
 
 #ifndef io_libecc_input_h
+#ifdef Implementation
+#undef Implementation
+#include __FILE__
+#include "implementation.h"
+#else
+#include "interface.h"
 #define io_libecc_input_h
 
-#include "namespace_io_libecc.h"
+	#include "text.h"
+	#include "env.h"
 
-#include "text.h"
-#include "env.h"
-
-#include "interface.h"
+#endif
 
 
 Interface(Input,

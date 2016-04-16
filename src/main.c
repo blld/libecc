@@ -6,7 +6,7 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
-#include "main.h"
+#include "ecc.h"
 
 static int printUsage (void);
 static struct Value print (struct Context * const context);

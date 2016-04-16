@@ -14,6 +14,6 @@
 struct Value;
 struct Context;
 
-typedef typeof(struct Value) (* Native(Function)) (struct Context * const context);
+typedef struct Value io_libecc_interface_Unwrap ((* Native(Function))) (struct Context * const context);
 
 #endif
