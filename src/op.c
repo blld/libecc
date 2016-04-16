@@ -19,6 +19,56 @@
 #define opValue() (context->ops)->value
 #define opText(O) &(context->ops + O)->text
 
+#if DEBUG
+
+	#if _MSC_VER
+		#define trap() __debugbreak()
+	#elif __APPLE__
+		#include <sys/syscall.h>
+		#if __ARM64__
+			#define trap() __asm__ __volatile__ ("mov w0,%w0\n mov w1,%w1\n mov w16,%w2\n svc #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "x0", "x1", "x16", "cc")
+		#elif __ARM__
+			#define trap() __asm__ __volatile__ ("mov r0, %0\n mov r1, %1\n mov r12, %2\n swi #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "r0", "r1", "r12", "cc")
+		#elif __i386__ || __x86_64__
+			#define trap() __asm__ ("int $3")
+		#else
+			#define trap() raise(SIGTRAP)
+		#endif
+	#elif __unix__ || __linux__
+		#define trap() raise(SIGTRAP)
+	#else
+		#error
+		#define trap() raise(SIGINT)
+	#endif
+
+	static int debugTrace = 0;
+	struct Value trapOp(struct Context *context, int offset)
+	{
+		const struct Text *text = opText(offset);
+		if (debugTrace && text->bytes && text->length) {
+			Ecc.printTextInput(context->ecc, (context->ops + offset)->text);
+			
+			/*	XXX: debugger commands
+				
+				step over:
+					(lldb) continue
+					(gdb)  continue
+				
+				resume:
+					(lldb) expr debugTrace = 0
+					(lldb) continue
+					(gdb)  set debugTrace = 0
+					(gdb)  continue
+			*/
+			trap();
+		}
+		return nextOp();
+	}
+
+#else
+	#define trapOp(context, offset) nextOp()
+#endif
+
 //
 
 static struct Value retain(struct Value value)
@@ -822,20 +872,6 @@ struct Value deleteProperty (struct Context * const context)
 	return Value.truth(result);
 }
 
-struct Value result (struct Context * const context)
-{
-	struct Value result = nextOp();
-	context->breaker = -1;
-	return result;
-}
-
-struct Value resultValue (struct Context * const context)
-{
-	struct Value result = opValue();
-	context->breaker = -1;
-	return result;
-}
-
 struct Value pushEnvironment (struct Context * const context)
 {
 	context->environment = Object.create(context->environment);
@@ -1157,7 +1193,7 @@ struct Value not (struct Context * const context)
 
 static struct Value changeBinaryRef (struct Context * const context, double (*operationBinary)(double *))
 {
-	const struct Text *text = opText(1);
+	const struct Text *text = opText(0);
 	struct Value *ref = nextOp().data.reference;
 	
 	if (ref->type != Value(binaryType) || ref->flags & Value(readonly))
@@ -1304,6 +1340,14 @@ struct Value bitOrAssignRef (struct Context * const context)
 
 // MARK: Statement
 
+struct Value debug (struct Context * const context)
+{
+	#if DEBUG
+	debugTrace = 1;
+	#endif
+	return trapOp(context, 0);
+}
+
 struct Value try (struct Context * const context)
 {
 	const struct Op *end = context->ops + opValue().data.integer;
@@ -1368,13 +1412,7 @@ noreturn
 struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
-	Ecc.jmpEnv(context->ecc, retain(nextOp()));
-}
-
-struct Value debug (struct Context * const context)
-{
-	__asm__("int3");
-	return nextOp();
+	Ecc.jmpEnv(context->ecc, retain(trapOp(context, 0)));
 }
 
 struct Value next (struct Context * const context)
@@ -1385,7 +1423,8 @@ struct Value next (struct Context * const context)
 struct Value nextIf (struct Context * const context)
 {
 	struct Value value = opValue();
-	if (!Value.isTrue(nextOp()))
+	
+	if (!Value.isTrue(trapOp(context, 1)))
 		return value;
 	
 	return nextOp();
@@ -1394,13 +1433,13 @@ struct Value nextIf (struct Context * const context)
 struct Value expression (struct Context * const context)
 {
 	release(context->ecc->result);
-	context->ecc->result = retain(nextOp());
+	context->ecc->result = retain(trapOp(context, 1));
 	return nextOp();
 }
 
 struct Value discard (struct Context * const context)
 {
-	nextOp();
+	trapOp(context, 1);
 	return nextOp();
 }
 
@@ -1412,37 +1451,37 @@ struct Value discardN (struct Context * const context)
 			Ecc.fatal("Invalid discardN : %d", opValue().data.integer);
 		
 		case 16:
-			nextOp();
+			trapOp(context, 1);
 		case 15:
-			nextOp();
+			trapOp(context, 1);
 		case 14:
-			nextOp();
+			trapOp(context, 1);
 		case 13:
-			nextOp();
+			trapOp(context, 1);
 		case 12:
-			nextOp();
+			trapOp(context, 1);
 		case 11:
-			nextOp();
+			trapOp(context, 1);
 		case 10:
-			nextOp();
+			trapOp(context, 1);
 		case 9:
-			nextOp();
+			trapOp(context, 1);
 		case 8:
-			nextOp();
+			trapOp(context, 1);
 		case 7:
-			nextOp();
+			trapOp(context, 1);
 		case 6:
-			nextOp();
+			trapOp(context, 1);
 		case 5:
-			nextOp();
+			trapOp(context, 1);
 		case 4:
-			nextOp();
+			trapOp(context, 1);
 		case 3:
-			nextOp();
+			trapOp(context, 1);
 		case 2:
-			nextOp();
+			trapOp(context, 1);
 		case 1:
-			nextOp();
+			trapOp(context, 1);
 	}
 	return nextOp();
 }
@@ -1457,7 +1496,9 @@ struct Value jump (struct Context * const context)
 struct Value jumpIf (struct Context * const context)
 {
 	int32_t offset = opValue().data.integer;
-	struct Value value = nextOp();
+	struct Value value;
+	
+	value = trapOp(context, 1);
 	if (Value.isTrue(value))
 		context->ops += offset;
 	
@@ -1467,19 +1508,37 @@ struct Value jumpIf (struct Context * const context)
 struct Value jumpIfNot (struct Context * const context)
 {
 	int32_t offset = opValue().data.integer;
-	struct Value value = nextOp();
+	struct Value value;
+	
+	value = trapOp(context, 1);
 	if (!Value.isTrue(value))
 		context->ops += offset;
 	
 	return nextOp();
 }
 
+struct Value result (struct Context * const context)
+{
+	struct Value result = trapOp(context, 0);
+	context->breaker = -1;
+	return result;
+}
+
+struct Value resultVoid (struct Context * const context)
+{
+	struct Value result = Value(undefined);
+	context->breaker = -1;
+	return result;
+}
+
 struct Value switchOp (struct Context * const context)
 {
 	int32_t offset = opValue().data.integer;
 	const struct Op *nextOps = context->ops + offset;
-	struct Value a = nextOp(), b;
-	const struct Text *text = opText(0);
+	struct Value a, b;
+	const struct Text *text = opText(1);
+	
+	a = trapOp(context, 1);
 	
 	while (context->ops < nextOps)
 	{
@@ -1535,7 +1594,7 @@ struct Value iterate (struct Context * const context)
 	
 	Pool.getCounts(counts);
 	
-	while (Value.isTrue(nextOp()))
+	for (; Value.isTrue(nextOp()); nextOp())
 		stepIteration(value, nextOps);
 	
 	context->ops = endOps;

@@ -212,17 +212,17 @@ normal:
 	{
 		int skipOpCount;
 		
-		if (step && step->ops[0].native != Op.discard)
-			step = OpList.unshift(Op.make(Op.discard, Value(undefined), text(step)), step);
-		
 		if (!condition)
-			condition = OpList.create(Op.value, Value.truth(1), OpList.text(body));
+			condition = OpList.create(Op.value, Value.truth(1), Text(empty));
+		
+		if (!step)
+			step = OpList.appendNoop(NULL);
 		
 		skipOpCount = reverseCondition? condition->opCount - 1: 0;
 		body = OpList.appendNoop(OpList.join(condition, body));
-		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->opCount + (step? step->opCount: 0)), text(step)), step);
+		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->opCount + (step? step->opCount: 0)), Text(empty)), step);
 		skipOpCount += step->opCount;
-		initial = OpList.append(initial, Op.make(Op.iterate, Value.integer(skipOpCount), text(initial)));
+		initial = OpList.append(initial, Op.make(Op.iterate, Value.integer(skipOpCount), Text(empty)));
 		return OpList.join(OpList.join(initial, step), body);
 	}
 }
@@ -299,17 +299,17 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
 
 void dumpTo (struct OpList *self, FILE *file)
 {
-	int i;
+	uint32_t i;
 	
 	assert(self);
 	
-	fprintf(file, "\n");
+	fputc('\n', stderr);
 	if (!self)
 		return;
 	
 	for (i = 0; i < self->opCount; ++i)
 	{
-		fprintf(file, "[%03d] %s ", i, Op.toChars(self->ops[i].native));
+		fprintf(file, "[%p] %s ", self->ops + i, Op.toChars(self->ops[i].native));
 		
 		if (self->ops[i].native == Op.function)
 		{
@@ -319,13 +319,16 @@ void dumpTo (struct OpList *self, FILE *file)
 		}
 		else if (self->ops[i].native == Op.getParentSlot || self->ops[i].native == Op.getParentSlotRef || self->ops[i].native == Op.setParentSlot)
 			fprintf(file, "[-%d] %d", self->ops[i].value.data.integer >> 16, self->ops[i].value.data.integer & 0xffff);
-		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange || self->ops[i].native == Op.resultValue)
+		else if (self->ops[i].value.type != Value(undefinedType) || self->ops[i].native == Op.value || self->ops[i].native == Op.exchange)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)
 			fprintf(file, "'%.*s'", self->ops[i].text.length, self->ops[i].text.bytes);
 		
-		fprintf(file, "  `%.*s`\n", self->ops[i].text.length, self->ops[i].text.bytes);
+		if (self->ops[i].text.length)
+			fprintf(file, "  `%.*s`", self->ops[i].text.length, self->ops[i].text.bytes);
+		
+		fputc('\n', stderr);
 	}
 }
 

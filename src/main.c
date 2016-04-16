@@ -222,9 +222,9 @@ static void testParser (void)
 	test("++arguments", "SyntaxError: invalid increment operand"
 	,    "  ^~~~~~~~~");
 	test("eval += 1", "SyntaxError: invalid assignment left-hand side"
-	,    "^~~~     ");
+	,    "^~~~~~~~~");
 	test("arguments += 1", "SyntaxError: invalid assignment left-hand side"
-	,    "^~~~~~~~~     ");
+	,    "^~~~~~~~~~~~~~");
 	test("var a = { eval: 123 }", "undefined", NULL);
 	test("var a = { arguments: 123 }", "undefined", NULL);
 	test("a(==)", "SyntaxError: expected expression, got '=='"
@@ -311,6 +311,7 @@ static void testEval (void)
 	test("1;;;;;", "1", NULL);
 	test("1;{}", "1", NULL);
 	test("1;var a;", "1", NULL);
+	test("var a, b = 2; b", "2", NULL);
 	test("var x = 2; var y = 39; eval('x + y + 1')", "42", NULL);
 	test("var z = '42'; eval(z)", "42", NULL);
 	test("var x = 5, z, str = 'if (x == 5) { z = 42; } else z = 0; z'; eval(str)", "42", NULL);
@@ -327,7 +328,7 @@ static void testEval (void)
 	test("x", "ReferenceError: 'x' is not defined"
 	,    "^");
 	test("x = 1", "ReferenceError: 'x' is not defined"
-	,    "^    ");
+	,    "^~~~~");
 	test("new eval('123')", "TypeError: 'eval' is not a constructor"
 	,    "    ^~~~       ");
 	test("new eval.call('123')", "TypeError: 'eval.call' is not a constructor"
@@ -389,7 +390,7 @@ static void testException (void)
 	,    "                                                                                                 ^~~~~~                   ");
 	test("(function(){ try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' } })()", "b", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }})()", "c", NULL);
-	test("var a = 0; try { for (;;) { if(++a > 100) throw a; } } catch (e) { e } finally { a + 'f' }", "101f", NULL);
+	test("var a = 0; try { for (;;) { if(++a > 10) throw a; } } catch (e) { e } finally { a + 'f' }", "11f", NULL);
 	test("var a = 123; try { throw a + 'abc' } catch(b) { a + b }", "123123abc", NULL);
 	test("(function (){ try { return 'a'; } finally { return 'b'; } })()", "b", NULL);
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script"
@@ -622,16 +623,15 @@ static void testFunction (void)
 
 static void testLoop (void)
 {
-	test("var a, b = 2; b", "2", NULL);
-	test("var a = 0; for (;;) if (++a > 100) break; a", "101", NULL);
-	test("var a; for (a = 0;;) if (++a > 100) break; a", "101", NULL);
-	test("for (var a = 0;;) if (++a > 100) break; a", "101", NULL);
-	test("for (var a = 0; a <= 100;) ++a; a", "101", NULL);
-	test("for (var a = 0; a <= 100; ++a); a", "101", NULL);
-	test("for (var a = 0, b = 0; a <= 100; ++a) ++b; b", "101", NULL);
+	test("var a = 0; for (;;) if (++a > 10) break; a", "11", NULL);
+	test("var a; for (a = 0;;) if (++a > 10) break; a", "11", NULL);
+	test("for (var a = 0;;) if (++a > 10) break; a", "11", NULL);
+	test("for (var a = 0; a <= 10;) ++a; a", "11", NULL);
+	test("for (var a = 0; a <= 10; ++a); a", "11", NULL);
+	test("for (var a = 0, b = 0; a <= 10; ++a) ++b; b", "11", NULL);
 	test("var a = 123; for (var i = 10; i >= 0; i--) --a; (a + a)", "224", NULL);
-	test("var a = 100, b = 0; while (a--) ++b;", "100", NULL);
-	test("var a = 100, b = 0; do ++b; while (a--)", "101", NULL);
+	test("var a = 10, b = 0; while (a--) ++b;", "10", NULL);
+	test("var a = 10, b = 0; do ++b; while (a--)", "11", NULL);
 	test("var a = [1], r = ''; for (var i = 0; i < a[0]; ++i){ r += i; } r += 'a';", "0a", NULL);
 	test("var a = { 'a': 123 }, b; for (b in a) a[b];", "123", NULL);
 	test("var a = { 'a': 123 }; for (var b in a) a[b];", "123", NULL);
@@ -698,43 +698,43 @@ static void testObject (void)
 	test("var o = { get p(){ return this._p }, set p(v){ this._p = v; } }; o.p = 123; String(o.p) + o._p", "123123", NULL);
 	test("var o = { get p(){ return this._p }, set p(v){ this._p = v; } }; Object.defineProperty(o, 'p', { value: 123 }); String(o.p) + o._p", "123undefined", NULL);
 	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123 }); o = Object.create(p); o.p = 456", "TypeError: 'p' is readonly"
-	,    "                                                                                   ^~~      ");
+	,    "                                                                                   ^~~~~~~~~");
 	test("var p = {}, o; Object.defineProperty(p, 'p', { value:123, writable: true }); o = Object.create(p); Object.seal(o); o.p = 456", "TypeError: object is not extensible"
-	,    "                                                                                                                   ^~~      ");
+	,    "                                                                                                                   ^~~~~~~~~");
 	test("var a = ['#'], b = Object.create(a); b[0]", "#", NULL);
 	test("var a = ['#'], b = Object.create(a, { '0': {value:'!'} }); b[0]", "!", NULL);
 	test("var a = {}; Object.freeze(a); ++a.b", "TypeError: object is not extensible"
 	,    "                                ^~~");
 	test("var a = {}; Object.freeze(a); a.b += 2", "TypeError: object is not extensible"
-	,    "                              ^~~     ");
+	,    "                              ^~~~~~~~");
 	test("var a = {}; Object.freeze(a); a.b = 2", "TypeError: object is not extensible"
-	,    "                              ^~~    ");
+	,    "                              ^~~~~~~");
 	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: object is not extensible"
-	,    "                              ^~~~~~    ");
+	,    "                              ^~~~~~~~~~");
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property"
-	,    "                                     ^~~");
+	,    "                                   ^~~~~");
 	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~     ");
+	,    "                                   ^~~~~~~~");
 	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~    ");
+	,    "                                   ^~~~~~~");
 	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: 'b' is read-only property"
-	,    "                                   ^~~~~~    ");
+	,    "                                   ^~~~~~~~~~");
 	test("var a = { v: 1, get b() { return this.v }, set b(v) { this.v = v } }; ++a.b", "2", NULL);
 	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: 'b' is read-only accessor"
-	,    "                                               ^~~");
+	,    "                                             ^~~~~");
 	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~     ");
+	,    "                                             ^~~~~~~~");
 	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~    ");
+	,    "                                             ^~~~~~~");
 	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: 'b' is read-only accessor"
-	,    "                                             ^~~~~~    ");
+	,    "                                             ^~~~~~~~~~");
 	test("var o = {}; Object.defineProperty(o, 'a', 123); o.a = 1;", "TypeError: not an object"
 	,    "                                          ^~~           ");
 	test("var o = {}; Object.defineProperty(o, 'a', {}); o.a = 1;", "TypeError: 'a' is read-only property"
-	,    "                                               ^~~     ");
+	,    "                                               ^~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only property"
-	,    "                                             ^~~~     ");
+	,    "                                             ^~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: getter is not a function"
 	,    "                                          ^~~~~~~~~~~~  ");
 	test("var o = {}; Object.defineProperty(o, 'p', { get: function(){}, value: 2 });", "TypeError: value & writable forbidden when a getter or setter are set"
@@ -1041,7 +1041,7 @@ static void testString (void)
 	,    "                ^~~ ");
 	test("'aべcaべc'.length", "6", NULL);
 	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
-	,    "                     べ  べ     ^~~~~~~~               ");
+	,    "                     べ  べ     ^~~~~~~~~~~~~          ");
 	
 	test("'abせd'.slice()", "abせd", NULL);
 	test("'abせd'.slice(1)", "bせd", NULL);

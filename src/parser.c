@@ -479,11 +479,12 @@ static struct OpList * leftHandSide (struct Parser *self)
 static struct OpList * postfix (struct Parser *self)
 {
 	struct OpList *oplist = leftHandSide(self);
+	struct Text text = self->lexer->text;
 	
 	if (!self->lexer->didLineBreak && acceptToken(self, Lexer(incrementToken)))
-		oplist = OpList.unshift(Op.make(Op.postIncrementRef, Value(undefined), self->lexer->text), expressionRef(self, oplist, "invalid increment operand"));
+		oplist = OpList.unshift(Op.make(Op.postIncrementRef, Value(undefined), Text.join(oplist->ops->text, text)), expressionRef(self, oplist, "invalid increment operand"));
 	if (!self->lexer->didLineBreak && acceptToken(self, Lexer(decrementToken)))
-		oplist = OpList.unshift(Op.make(Op.postDecrementRef, Value(undefined), self->lexer->text), expressionRef(self, oplist, "invalid decrement operand"));
+		oplist = OpList.unshift(Op.make(Op.postDecrementRef, Value(undefined), Text.join(oplist->ops->text, text)), expressionRef(self, oplist, "invalid decrement operand"));
 	
 	return oplist;
 }
@@ -533,7 +534,7 @@ static struct OpList * unary (struct Parser *self)
 	if (!alt)
 		return expectationError(self, "expression");
 	
-	oplist = OpList.unshift(Op.make(native, Value(undefined), text), alt);
+	oplist = OpList.unshift(Op.make(native, Value(undefined), Text.join(text, alt->ops->text)), alt);
 	
 	if (oplist->ops[1].native == Op.value)
 		return foldConstant(oplist);
@@ -562,8 +563,8 @@ static struct OpList * multiplicative (struct Parser *self)
 			nextToken(self);
 			if ((alt = unary(self)))
 			{
-				oplist = OpList.join(oplist, alt);
-				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
 					oplist = foldConstant(oplist);
@@ -595,8 +596,8 @@ static struct OpList * additive (struct Parser *self)
 			nextToken(self);
 			if ((alt = multiplicative(self)))
 			{
-				oplist = OpList.join(oplist, alt);
-				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
 					oplist = foldConstant(oplist);
@@ -630,8 +631,8 @@ static struct OpList * shift (struct Parser *self)
 			nextToken(self);
 			if ((alt = additive(self)))
 			{
-				oplist = OpList.join(oplist, alt);
-				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
 					oplist = foldConstant(oplist);
@@ -671,8 +672,8 @@ static struct OpList * relational (struct Parser *self, int noIn)
 			nextToken(self);
 			if ((alt = shift(self)))
 			{
-				oplist = OpList.join(oplist, alt);
-				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				continue;
 			}
@@ -705,8 +706,8 @@ static struct OpList * equality (struct Parser *self, int noIn)
 			nextToken(self);
 			if ((alt = relational(self, noIn)))
 			{
-				oplist = OpList.join(oplist, alt);
-				oplist = OpList.unshift(Op.make(native, Value(undefined), OpList.text(oplist)), oplist);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				continue;
 			}
@@ -726,7 +727,8 @@ static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 			nextToken(self);
 			if ((alt = equality(self, noIn)))
 			{
-				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseAnd, Value(undefined), OpList.text(oplist)), oplist, alt);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseAnd, Value(undefined), text), oplist, alt);
 				
 				continue;
 			}
@@ -747,7 +749,8 @@ static struct OpList * bitwiseXor (struct Parser *self, int noIn)
 			nextToken(self);
 			if ((alt = bitwiseAnd(self, noIn)))
 			{
-				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseXor, Value(undefined), OpList.text(oplist)), oplist, alt);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseXor, Value(undefined), text), oplist, alt);
 				
 				continue;
 			}
@@ -768,7 +771,8 @@ static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 			nextToken(self);
 			if ((alt = bitwiseXor(self, noIn)))
 			{
-				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseOr, Value(undefined), OpList.text(oplist)), oplist, alt);
+				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
+				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseOr, Value(undefined), text), oplist, alt);
 				
 				continue;
 			}
@@ -867,7 +871,9 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		else
 			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
 		
-		if (!( opassign = assignment(self, noIn) ))
+		if (( opassign = assignment(self, noIn) ))
+			oplist->ops->text = Text.join(oplist->ops->text, opassign->ops->text);
+		else
 			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.join(oplist, opassign);
@@ -899,10 +905,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 	
 	if (oplist)
 	{
-		if (!( opassign = assignment(self, noIn) ))
+		if (( opassign = assignment(self, noIn) ))
+			oplist->ops->text = Text.join(oplist->ops->text, opassign->ops->text);
+		else
 			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
-		return OpList.unshiftJoin(Op.make(native, Value(undefined), text), expressionRef(self, oplist, "invalid assignment left-hand side"), opassign);
+		return OpList.unshiftJoin(Op.make(native, Value(undefined), oplist->ops->text), expressionRef(self, oplist, "invalid assignment left-hand side"), opassign);
 	}
 	
 	error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
@@ -914,7 +922,7 @@ static struct OpList * expression (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = assignment(self, noIn);
 	while (acceptToken(self, ','))
-		oplist = OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), self->lexer->text), oplist, assignment(self, noIn));
+		oplist = OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), Text(empty)), oplist, assignment(self, noIn));
 	
 	return oplist;
 }
@@ -989,10 +997,11 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	if (acceptToken(self, '='))
 	{
 		struct OpList *opassign = assignment(self, noIn);
-		if (!opassign)
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		if (opassign)
+			return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), Text(empty)), OpList.create(Op.setLocal, value, Text.join(text, opassign->ops->text)), opassign);
 		
-		return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), self->lexer->text), OpList.create(Op.setLocal, value, text), opassign);
+		error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		return NULL;
 	}
 	else
 		return OpList.create(Op.next, value, text);
@@ -1104,9 +1113,7 @@ static struct OpList * forStatement (struct Parser *self)
 		body = statement(self);
 		popDepth(self);
 		
-		if (!body)
-			return oplist;
-		
+		body = OpList.appendNoop(body);
 		return OpList.join(OpList.append(oplist, Op.make(Op.value, Value.integer(body->opCount), self->lexer->text)), body);
 	}
 	else
@@ -1203,9 +1210,9 @@ static struct OpList * returnStatement (struct Parser *self, struct Text text)
 	semicolon(self);
 	
 	if (!oplist)
-		oplist = OpList.create(Op.value, Value(undefined), self->lexer->text);
+		oplist = OpList.create(Op.value, Value(undefined), Text.join(text, self->lexer->text));
 	
-	oplist = OpList.unshift(Op.make(Op.result, Value(undefined), text), oplist);
+	oplist = OpList.unshift(Op.make(Op.result, Value(undefined), Text.join(text, oplist->ops->text)), oplist);
 	return oplist;
 }
 
@@ -1228,7 +1235,7 @@ static struct OpList * switchStatement (struct Parser *self)
 		if (acceptToken(self, Lexer(caseToken)))
 		{
 			conditionOps = OpList.join(conditionOps, expression(self, 0));
-			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->opCount: 0), text));
+			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->opCount: 0), Text(empty)));
 			++conditionCount;
 			expectToken(self, ':');
 			oplist = OpList.join(oplist, statementList(self));
@@ -1251,7 +1258,7 @@ static struct OpList * switchStatement (struct Parser *self)
 	if (!defaultOps && oplist)
 		defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->opCount: 0), text);
 	
-	conditionOps = OpList.unshiftJoin(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->opCount: 0), OpList.text(conditionOps)), conditionOps, defaultOps);
+	conditionOps = OpList.unshiftJoin(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->opCount: 0), Text(empty)), conditionOps, defaultOps);
 	oplist = OpList.join(conditionOps, oplist);
 	
 	popDepth(self);
@@ -1339,7 +1346,7 @@ static struct OpList * statement (struct Parser *self)
 			}
 		}
 		else
-			oplist = OpList.append(OpList.append(oplist, Op.make(Op.jump, Value.integer(1), text)), Op.make(Op.next, Value(undefined), text));
+			oplist = OpList.append(OpList.append(oplist, Op.make(Op.jump, Value.integer(1), text)), Op.make(Op.noop, Value(undefined), text));
 		
 		if (acceptToken(self, Lexer(finallyToken)))
 			oplist = OpList.join(oplist, block(self));
@@ -1376,7 +1383,7 @@ static struct OpList * statement (struct Parser *self)
 		}
 		
 		semicolon(self);
-		return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.expression: Op.discard, Value(undefined), OpList.text(oplist)), oplist);
+		return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.expression: Op.discard, Value(undefined), Text(empty)), oplist);
 	}
 }
 
@@ -1483,9 +1490,9 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 		value.flags |= Value(setter);
 	
 	if (isDeclaration)
-		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, text), Op.make(Op.function, value, text));
+		return OpList.append(OpList.create(Op.setLocal, identifierOp.value, Text(empty)), Op.make(Op.function, value, text));
 	else
-		return OpList.create(Op.function, value, self->lexer->text);
+		return OpList.create(Op.function, value, text);
 }
 
 
@@ -1548,7 +1555,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 		if (self->sourceDepth <= 1)
 			last = OpList.appendNoop(last);
 		else
-			last = OpList.append(last, Op.make(Op.resultValue, Value(undefined), Text(empty)));
+			last = OpList.append(last, Op.make(Op.resultVoid, Value(undefined), Text(empty)));
 	}
 	
 	oplist = OpList.join(init, oplist);
