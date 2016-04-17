@@ -1205,7 +1205,7 @@ static struct Value changeBinaryRef (struct Context * const context, double (*op
 	const struct Text *text = opText(0);
 	struct Value *ref = nextOp().data.reference;
 	
-	if (ref->type != Value(binaryType) || ref->flags & Value(readonly))
+	if (ref->flags & (Value(readonly) | Value(accessor)))
 	{
 		struct Value value = Value.toBinary(Object.getValue(context->refObject, ref, context));
 		double result = operationBinary(&value.data.binary);
@@ -1213,6 +1213,9 @@ static struct Value changeBinaryRef (struct Context * const context, double (*op
 		Object.putValue(context->refObject, ref, context, value);
 		return Value.binary(result);
 	}
+	else if (ref->type != Value(binaryType))
+		*ref = Value.toBinary(*ref);
+	
 	return Value.binary(operationBinary(&ref->data.binary));
 }
 
@@ -1238,20 +1241,38 @@ struct Value postDecrementRef (struct Context * const context)
 
 //
 
-static struct Value operationAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
+static struct Value operationAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *ref, struct Value b, const struct Text *text)
 {
-	struct Value value;
-	
 	b = Value.toBinary(b);
-	value = Value.toBinary(Object.getValue(context->refObject, a, context));
-	operationBinary(&value.data.binary, b.data.binary);
-	return *Object.putValue(context->refObject, a, context, value);
+	
+	if (ref->flags & (Value(readonly) | Value(accessor)))
+	{
+		struct Value value = Value.toBinary(Object.getValue(context->refObject, ref, context));
+		operationBinary(&value.data.binary, b.data.binary);
+		return *Object.putValue(context->refObject, ref, context, value);
+	}
+	else if (ref->type != Value(binaryType))
+		*ref = Value.toBinary(*ref);
+	
+	operationBinary(&ref->data.binary, b.data.binary);
+	return *ref;
 }
 
-static struct Value addAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *a, struct Value b, const struct Text *text)
+static struct Value addAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *ref, struct Value b, const struct Text *text)
 {
-	struct Value value = Value.add(context, Object.getValue(context->refObject, a, context), b);
-	return *Object.putValue(context->refObject, a, context, retain(value));
+	if (ref->flags & (Value(readonly) | Value(accessor)))
+	{
+		Context.setText(context, text);
+		struct Value value = Value.add(context, Object.getValue(context->refObject, ref, context), b);
+		return *Object.putValue(context->refObject, ref, context, retain(value));
+	}
+	else if (ref->type != Value(binaryType) || b.type != Value(binaryType))
+	{
+		Context.setText(context, text);
+		return *ref = Value.add(context, *ref, b);
+	}
+	operationBinary(&ref->data.binary, b.data.binary);
+	return *ref;
 }
 
 static struct Value assignBinaryRef (struct Context * const context, void (*operationBinary)(double *, double), typeof (operationAny) operationAny)
@@ -1260,12 +1281,7 @@ static struct Value assignBinaryRef (struct Context * const context, void (*oper
 	struct Value *ref = nextOp().data.reference;
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
-	if (ref->type != Value(binaryType) || b.type != Value(binaryType) || ref->flags & Value(readonly))
-		return operationAny(context, operationBinary, ref, b, text);
-	
-	operationBinary(&ref->data.binary, b.data.binary);
-	return *ref;
+	return operationAny(context, operationBinary, ref, b, text);
 }
 
 struct Value multiplyAssignRef (struct Context * const context)
