@@ -81,7 +81,7 @@ Interface(Object,
 	(void, stripMap ,(struct Object *))
 	
 	(void, resizeElement ,(struct Object *, uint32_t size))
-	(void, populateElementWithCList ,(struct Object *, int count, const char * list[]))
+	(void, populateElementWithCList ,(struct Object *, uint32_t count, const char * list[]))
 	
 	(struct Value, toString ,(struct Context * const context))
 	(void, dumpTo ,(struct Object *, FILE *file))

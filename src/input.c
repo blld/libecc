@@ -121,7 +121,8 @@ void printText (struct Input *self, struct Text text)
 	if (line >= 0)
 	{
 		const char *bytes;
-		size_t start, length = 0;
+		ptrdiff_t length = 0;
+		uint32_t start;
 		
 		Env.printColor(0, Env(bold), " line:%d", line);
 		Env.newline();

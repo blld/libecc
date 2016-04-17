@@ -249,9 +249,9 @@ static inline struct Value callOpsRelease (struct Context * const context, struc
 	return result;
 }
 
-static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int parameterCount)
+static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int32_t parameterCount)
 {
-	uint32_t index = 0;
+	int32_t index = 0;
 	int argumentCount = arguments->elementCount;
 	
 	environment->hashmap[2].data.value = Value.object(arguments);
@@ -266,9 +266,9 @@ static inline void populateEnvironmentWithArguments (struct Object *environment,
 	}
 }
 
-static inline void populateEnvironmentWithArgumentsVA (struct Object *environment, int parameterCount, int argumentCount, va_list ap)
+static inline void populateEnvironmentWithArgumentsVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
 {
-	uint32_t index = 0;
+	int32_t index = 0;
 	
 	struct Object *arguments = Arguments.createSized(argumentCount);
 	environment->hashmap[2].data.value = Value.object(arguments);
@@ -286,9 +286,9 @@ static inline void populateEnvironmentWithArgumentsVA (struct Object *environmen
 	}
 }
 
-static inline void populateEnvironmentWithArgumentsOps (struct Context * const context, struct Object *environment, struct Object *arguments, int parameterCount, int argumentCount)
+static inline void populateEnvironmentWithArgumentsOps (struct Context * const context, struct Object *environment, struct Object *arguments, int32_t parameterCount, int32_t argumentCount)
 {
-	uint32_t index = 0;
+	int32_t index = 0;
 	
 	environment->hashmap[2].data.value = Value.object(arguments);
 	
@@ -305,9 +305,9 @@ static inline void populateEnvironmentWithArgumentsOps (struct Context * const c
 	}
 }
 
-static inline void populateEnvironmentVA (struct Object *environment, int parameterCount, int argumentCount, va_list ap)
+static inline void populateEnvironmentVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
 {
-	uint32_t index = 0;
+	int32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
@@ -316,9 +316,9 @@ static inline void populateEnvironmentVA (struct Object *environment, int parame
 			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
 }
 
-static inline void populateEnvironment (struct Context * const context, struct Object *environment, int parameterCount, int argumentCount)
+static inline void populateEnvironment (struct Context * const context, struct Object *environment, int32_t parameterCount, int32_t argumentCount)
 {
-	uint32_t index = 0;
+	int32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
 			environment->hashmap[index + 3].data.value = retain(nextOp());

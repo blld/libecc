@@ -75,7 +75,7 @@ void teardown (void)
 
 struct Key makeWithCString (const char *cString)
 {
-	return makeWithText(Text.make(cString, strlen(cString)), 0);
+	return makeWithText(Text.make(cString, (uint16_t)strlen(cString)), 0);
 }
 
 struct Key makeWithText (const struct Text text, int copyOnCreate)

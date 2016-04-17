@@ -1124,7 +1124,7 @@ void resizeElement (struct Object *self, uint32_t size)
 	self->elementCount = size;
 }
 
-void populateElementWithCList (struct Object *self, int count, const char * list[])
+void populateElementWithCList (struct Object *self, uint32_t count, const char * list[])
 {
 	double binary;
 	char *end;
