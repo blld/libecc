@@ -1,39 +1,49 @@
 
-binary := ./bin/libecc
+machine ?= $(shell $(CC) -dumpmachine)
+
+root := .$(machine:%=/%)
 sources := $(wildcard ../src/*.c) $(wildcard ../src/builtin/*.c)
-objects := $(sources:../src/%.c=./object/%.o)
+objects := $(sources:../src/%.c=$(root)/object/%.o)
+library := $(root)/lib/libecc.a
+binary := $(root)/bin/ecc
 
 #
 
+.PHONY: debug paths
+debug : debug += -DDEBUG=1
+debug : optim += -O0 -g
+
 warn  ?= -Wall
-lto   ?= $(shell echo "main(){}" | gcc -E -flto - >/dev/null 2>&1 && echo "-flto")
 optim ?= -Os -fstrict-aliasing
 debug ?= -DNDEBUG=1
-libs  ?= -lm
+lto   ?= $(shell echo "main(){}" | $(CC) -flto -o/dev/null -xc - >/dev/null 2>&1 && echo "-flto")
+libs  ?= $(shell echo "main(){}" | $(CC) -lm -o/dev/null -xc - >/dev/null 2>&1 && echo "-lm")
 
-.PHONY: debug
-debug : debug := -DDEBUG=1
-debug : optim := -O0
-
-CFLAGS += $(warn) $(lto) $(optim) $(debug)
+CFLAGS += $(warn) $(optim) $(debug) $(lto)
+LDFLAGS += $(whole)
 
 ##
 
-all: ./object/builtin ./bin $(binary)
+all: $(root)/bin $(root)/lib $(root)/object/builtin $(library) $(binary)
 debug: all
 clean:
-	rm -rf ./bin ./object
+	@rm -rfv $(root)/bin $(root)/lib $(root)/object
+	@$(machine:%=rm -rfv ./%)
 
-test: $(binary)
+$(root)/bin $(root)/lib $(root)/object/builtin:
+	@mkdir -p $@
+
+test: all
 	$(binary) --test
 
-./object/builtin ./bin:
-	@mkdir -p $@
+$(library): $(objects)
+	@echo "   [AR] $@"
+	@$(AR) rcs $@ $(filter-out $(root)/object/main.o,$^)
 
 $(binary): $(objects)
 	@echo "   [LD] $@"
 	@$(CC) $(CFLAGS) $(LDFLAGS) $(libs) $^ -o $@
 
-./object/%.o: ../src/%.c
+$(root)/object/%.o: ../src/%.c
 	@echo "   [CC] $@"
 	@$(CC) $(CFLAGS) -I../src/ -c $< -o $@
