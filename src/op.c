@@ -505,6 +505,7 @@ struct Value construct (struct Context * const context)
 	
 error:
 	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not a constructor", text->length, text->bytes)));
+	exit(1);
 }
 
 struct Value call (struct Context * const context)
@@ -1398,6 +1399,7 @@ struct Value try (struct Context * const context)
 	{
 		context->ops = rethrowOps;
 		Ecc.jmpEnv(context->ecc, retain(value));
+		exit(1);
 	}
 	else if (breaker)
 	{
@@ -1413,6 +1415,7 @@ struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
 	Ecc.jmpEnv(context->ecc, retain(trapOp(context, 0)));
+	exit(1);
 }
 
 struct Value next (struct Context * const context)

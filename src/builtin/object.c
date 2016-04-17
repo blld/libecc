@@ -370,6 +370,7 @@ static struct Value defineProperty (struct Context * const context)
 sealedError:
 	Context.setTextIndex(context, Context(callIndex));
 	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "property is non-configurable")));
+	exit(1);
 }
 
 static struct Value defineProperties (struct Context * const context)

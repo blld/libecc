@@ -9,7 +9,7 @@
 #ifndef libecc_compatibility_h
 #define libecc_compatibility_h
 
-#if __STDC__
+#if __STDC__ || _MSC_EXTENSIONS
 
 	#include <assert.h>
 	#include <ctype.h>
@@ -30,9 +30,6 @@
 	#if __GNUC__
 		#define noreturn __attribute__((noreturn))
 		#define typeof __typeof__
-	#elif _MSC_VER
-		#define noreturn __declspec(noreturn)
-		#define typeof __typeof
 	#else
 		#define noreturn
 		#define typeof __typeof__
@@ -42,9 +39,6 @@
 		#ifdef __GNUC__
 			#define inline __inline__
 			#define restrict __restrict__
-		#elif _MSC_VER
-			#define inline __inline
-			#define restrict __restrict
 		#else
 			#define inline static
 			#define restrict
@@ -60,7 +54,7 @@
 		#define longjmp _longjmp
 	#endif
 
-	#if _WIN32 || _WIN64
+	#if _WIN32
 		/* supports hex */
 		#define strtod strtold
 	#endif

@@ -155,6 +155,7 @@ struct Chars * appendValue (struct Chars *self, struct Context * const context, 
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
+	exit(1);
 }
 
 struct Chars * appendBinary (struct Chars * chars, double binary, int base)

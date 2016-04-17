@@ -237,6 +237,7 @@ int isTrue (struct Value value)
 		return stringLength(value) > 0;
 	
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
+	exit(1);
 }
 
 
@@ -284,6 +285,8 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 		Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert '%.*s' to primitive", text.length, text.bytes)));
 	else
 		Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert value to primitive")));
+	
+	exit(1);
 }
 
 struct Value toBinary (struct Value value)
@@ -342,6 +345,7 @@ struct Value toBinary (struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
+	exit(1);
 }
 
 struct Value toInteger (struct Value value)
@@ -427,6 +431,7 @@ struct Value toString (struct Context * const context, struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
+	exit(1);
 }
 
 uint16_t stringLength (struct Value value)
@@ -503,6 +508,7 @@ error:
 		else
 			Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert %s to object", typeName(value.type))));
 	}
+	exit(1);
 }
 
 struct Value toType (struct Value value)
@@ -542,6 +548,7 @@ struct Value toType (struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
+	exit(1);
 }
 
 struct Value equals (struct Context * const context, struct Value a, struct Value b)
@@ -764,6 +771,7 @@ const char * typeName (enum Value(Type) type)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", type);
+	exit(1);
 }
 
 const char * maskName (enum Value(Mask) mask)
