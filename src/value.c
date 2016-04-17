@@ -350,12 +350,20 @@ struct Value toBinary (struct Value value)
 
 struct Value toInteger (struct Value value)
 {
+	const double modulus = (double)UINT32_MAX + 1;
 	double binary = toBinary(value).data.binary;
 	
-	if (isnan(binary) || isinf(binary))
+	if (!binary || !isfinite(binary))
 		return integer(0);
-	else
-		return integer((uint32_t)binary);
+	
+	binary = fmod(binary, modulus);
+	if (binary < 0)
+		binary = ceil(binary) + modulus;
+	
+	if (binary > INT32_MAX)
+		return integer(binary - modulus);
+	
+	return integer(binary);
 }
 
 struct Value binaryToString (double binary, int base)
