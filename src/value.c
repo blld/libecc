@@ -473,7 +473,7 @@ struct Value toObject (struct Context * const context, struct Value value)
 		
 		case Value(textType):
 		case Value(charsType):
-			return string(String.create(Chars.create("%.*s", stringLength(value), stringBytes(value))));
+			return string(String.create(Chars.createWithBytes(stringLength(value), stringBytes(value))));
 		
 		case Value(falseType):
 		case Value(trueType):
