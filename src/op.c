@@ -25,9 +25,10 @@
 		#define trap() __debugbreak()
 	#elif __APPLE__
 		#include <sys/syscall.h>
-		#if __ARM64__
+		#include <unistd.h>
+		#if __arm64__
 			#define trap() __asm__ __volatile__ ("mov w0,%w0\n mov w1,%w1\n mov w16,%w2\n svc #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "x0", "x1", "x16", "cc")
-		#elif __ARM__
+		#elif __arm__
 			#define trap() __asm__ __volatile__ ("mov r0, %0\n mov r1, %1\n mov r12, %2\n swi #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "r0", "r1", "r12", "cc")
 		#elif __i386__ || __x86_64__
 			#define trap() __asm__ ("int $3")
