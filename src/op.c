@@ -38,7 +38,6 @@
 	#elif __unix__ || __linux__
 		#define trap() raise(SIGTRAP)
 	#else
-		#error
 		#define trap() raise(SIGINT)
 	#endif
 

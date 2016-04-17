@@ -802,6 +802,7 @@ const char * maskName (enum Value(Mask) mask)
 			return "dynamic";
 	}
 	Ecc.fatal("Invalid Value(Mask) : %u", mask);
+	exit(1);
 }
 
 void dumpTo (struct Value value, FILE *file)
