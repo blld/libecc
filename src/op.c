@@ -24,19 +24,14 @@
 	#if _MSC_VER
 		#define trap() __debugbreak()
 	#elif __GNUC__
-		#if _WIN32
+		#if __i386__ || __x86_64__
 			#define trap() __asm__ ("int $3")
 		#elif __APPLE__
 			#include <sys/syscall.h>
-			#include <unistd.h>
 			#if __arm64__
 				#define trap() __asm__ __volatile__ ("mov w0,%w0\n mov w1,%w1\n mov w16,%w2\n svc #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "x0", "x1", "x16", "cc")
 			#elif __arm__
 				#define trap() __asm__ __volatile__ ("mov r0, %0\n mov r1, %1\n mov r12, %2\n swi #128":: "r"(getpid()), "r"(SIGTRAP), "r"(SYS_kill): "r0", "r1", "r12", "cc")
-			#elif __i386__ || __x86_64__
-				#define trap() __asm__ ("int $3")
-			#else
-				#define trap() raise(SIGTRAP)
 			#endif
 		#endif
 	#endif
@@ -49,29 +44,30 @@
 		#endif
 	#endif
 
-	static int debugTrace = 0;
-	struct Value trapOp(struct Context *context, int offset)
-	{
-		const struct Text *text = opText(offset);
-		if (debugTrace && text->bytes && text->length) {
-			Ecc.printTextInput(context->ecc, (context->ops + offset)->text);
-			
-			/*	XXX: debugger commands
-				
-				step over:
-					(lldb) continue
-					(gdb)  continue
-				
-				resume:
-					(lldb) expr debugTrace = 0
-					(lldb) continue
-					(gdb)  set debugTrace = 0
-					(gdb)  continue
-			*/
-			trap();
-		}
-		return nextOp();
+static int debug = 0;
+
+void printUsage(void)
+{
+	Env.printColor(Env(white), Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
+	Env.printColor(Env(green), Env(bold), "\tstep-in\n");
+	fprintf(stderr, "\t  c\n");
+	Env.printColor(Env(green), Env(bold), "\tcontinue\n");
+	fprintf(stderr, "\t  p debug=0\n");
+	fprintf(stderr, "\t  c\n\n");
+}
+
+struct Value trapOp(struct Context *context, int offset)
+{
+	void (*usage)(void);
+	const struct Text *text = opText(offset);
+	
+	if (debug && text->bytes && text->length) {
+		usage = printUsage;
+		Ecc.printTextInput(context->ecc, (context->ops + offset)->text);
+		trap();
 	}
+/* gdb/lldb infos: p usage() */    return nextOp();
+}
 
 #else
 	#define trapOp(context, offset) nextOp()
@@ -1365,10 +1361,10 @@ struct Value bitOrAssignRef (struct Context * const context)
 
 // MARK: Statement
 
-struct Value debug (struct Context * const context)
+struct Value debugger (struct Context * const context)
 {
 	#if DEBUG
-	debugTrace = 1;
+	debug = 1;
 	#endif
 	return trapOp(context, 0);
 }

@@ -1356,7 +1356,7 @@ static struct OpList * statement (struct Parser *self)
 	else if (acceptToken(self, Lexer(debuggerToken)))
 	{
 		semicolon(self);
-		return OpList.create(Op.debug, Value(undefined), text);
+		return OpList.create(Op.debugger, Value(undefined), text);
 	}
 	else
 	{

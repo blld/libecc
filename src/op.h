@@ -106,7 +106,7 @@
 		_( bitOrAssignRef )\
 		\
 		/* statement */\
-		_( debug )\
+		_( debugger )\
 		_( try )\
 		_( throw )\
 		_( next )\
