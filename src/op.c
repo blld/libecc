@@ -46,7 +46,7 @@
 
 static int debug = 0;
 
-void printUsage(void)
+static void printUsage(void)
 {
 	Env.printColor(Env(white), Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
 	Env.printColor(Env(green), Env(bold), "\tstep-in\n");
@@ -56,7 +56,7 @@ void printUsage(void)
 	fprintf(stderr, "\t  c\n\n");
 }
 
-struct Value trapOp(struct Context *context, int offset)
+static struct Value trapOp(struct Context *context, int offset)
 {
 	void (*usage)(void);
 	const struct Text *text = opText(offset);
