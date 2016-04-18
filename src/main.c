@@ -1153,6 +1153,10 @@ static void testDate (void)
 	// implementation format
 	test("Date.parse('1984/08/31 01:23 +0000')", "462763380000", NULL);
 	test("Date.parse('1984/08/31 01:23:45 +0000')", "462763425000", NULL);
+	test("Date.parse('100/08/31 01:23:45 +0000')", "-58990545375000", NULL);
+	
+	// implementation format years < 100 are not supported
+	test("Date.parse('99/08/31 01:23:45 +0000')", "NaN", NULL);
 	
 	// iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
 	test("Date.parse('1984-08-31T01:23')", "NaN", NULL);
