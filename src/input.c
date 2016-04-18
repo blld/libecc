@@ -152,7 +152,14 @@ void printText (struct Input *self, struct Text text)
 				else
 					mark[index] = bytes[index];
 			
-			mark[index] = '^';
+			if (isprint(bytes[index]))
+				mark[index] = '^';
+			else
+			{
+				mark[index] = bytes[index];
+				if (index > 0)
+					mark[index - 1] = '^';
+			}
 			
 			while (++index < text.bytes - bytes + text.length && index <= length)
 				if (isprint(bytes[index]))
