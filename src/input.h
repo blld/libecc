@@ -27,7 +27,7 @@ Interface(Input,
 	(struct Input *, createFromBytes ,(const char *bytes, uint32_t length, const char *name, ...))
 	(void, destroy ,(struct Input *))
 	
-	(void, printText, (struct Input *, struct Text text))
+	(void, printText, (struct Input *, struct Text text, int fullLine))
 	(int32_t, findLine, (struct Input *, struct Text text))
 	
 	(void, addEscapedText, (struct Input *, struct Text escapedText))

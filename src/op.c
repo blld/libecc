@@ -56,18 +56,41 @@ static void printUsage(void)
 	fprintf(stderr, "\t  c\n\n");
 }
 
+static void printBacktrace(struct Context * const context)
+{
+	int depth = context->depth, count;
+	struct Context frame;
+	
+	while (depth)
+	{
+		count = depth--;
+		frame = *context;
+		while (count--)
+			frame = *frame.parent;
+		
+		if (frame.text)
+			Ecc.printTextInput(frame.ecc, *frame.text, 0);
+	}
+}
+
 static struct Value trapOp(struct Context *context, int offset)
 {
 	void (*usage)(void);
 	const struct Text *text = opText(offset);
 	
+	context->text = text;
 	if (debug && text->bytes && text->length) {
 		usage = printUsage;
-		Ecc.printTextInput(context->ecc, (context->ops + offset)->text);
+		
+		Env.newline();
+		printBacktrace(context);
+		Ecc.printTextInput(context->ecc, *context->text, 1);
+		
 		trap();
 	}
 /* gdb/lldb infos: p usage() */    return nextOp();
 }
+
 
 #else
 	#define trapOp(context, offset) nextOp()
@@ -530,6 +553,7 @@ struct Value eval (struct Context * const context)
 		.this = context->this,
 		.environment = context->environment,
 		.ecc = context->ecc,
+		.depth = context->depth + 1,
 	};
 	
 	if (!argumentCount)

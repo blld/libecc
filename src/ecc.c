@@ -123,7 +123,7 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
 			
-			printTextInput(self, self->text);
+			printTextInput(self, self->text, 1);
 		}
 	}
 	else
@@ -241,22 +241,11 @@ struct Input * findInput (struct Ecc *self, struct Text text)
 	return NULL;
 }
 
-void printTextInput (struct Ecc *self, struct Text text)
+void printTextInput (struct Ecc *self, struct Text text, int fullLine)
 {
-	struct Input *input;
-	
 	assert(self);
 	
-	input = findInput(self, text);
-	if (input)
-		Input.printText(input, text);
-	else
-	{
-		Env.printColor(0, Env(dim), "(unknown input)\n");
-		Env.print("%.*s", text.length, text.bytes);
-		Env.newline();
-		Env.newline();
-	}
+	Input.printText(findInput(self, text), text, fullLine);
 }
 
 void garbageCollect(struct Ecc *self)

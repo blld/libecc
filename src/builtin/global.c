@@ -27,6 +27,7 @@ static struct Value eval (struct Context * const context)
 		.this = Value.object(&context->ecc->global->environment),
 		.environment = &context->ecc->global->environment,
 		.ecc = context->ecc,
+		.depth = context->depth + 1,
 	};
 	
 	Context.assertParameterCount(context, 1);

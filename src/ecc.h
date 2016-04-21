@@ -43,7 +43,7 @@ Interface(Ecc,
 	(void, fatal ,(const char *format, ...))
 	
 	(struct Input *, findInput ,(struct Ecc *self, struct Text text))
-	(void, printTextInput ,(struct Ecc *, struct Text text))
+	(void, printTextInput ,(struct Ecc *, struct Text text, int fullLine))
 	
 	(void, garbageCollect ,(struct Ecc *))
 	,

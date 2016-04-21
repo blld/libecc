@@ -105,18 +105,25 @@ void destroy (struct Input *self)
 	free(self), self = NULL;
 }
 
-void printText (struct Input *self, struct Text text)
+void printText (struct Input *self, struct Text text, int fullLine)
 {
-	int32_t line;
+	int32_t line = -1;
 	
-	assert(self);
-	
-	line = findLine(self, text);
-	
-	if (self->name[0] == '(')
-		Env.printColor(0, Env(dim), "%s", self->name);
+	if (!self)
+	{
+		Env.printColor(0, Env(dim), "(unknown input)");
+		Env.newline();
+		Env.print("%.*s", text.length, text.bytes);
+	}
 	else
-		Env.printColor(0, Env(bold), "%s", self->name, line);
+	{
+		line = findLine(self, text);
+		
+		if (self->name[0] == '(')
+			Env.printColor(0, Env(dim), "%s", self->name);
+		else
+			Env.printColor(0, Env(bold), "%s", self->name, line);
+	}
 	
 	if (line >= 0)
 	{
@@ -125,6 +132,13 @@ void printText (struct Input *self, struct Text text)
 		uint32_t start;
 		
 		Env.printColor(0, Env(bold), " line:%d", line);
+		
+		if (!fullLine)
+		{
+			Env.printColor(0, 0, " %.*s", text.length, text.bytes);
+			Env.newline();
+			return;
+		}
 		Env.newline();
 		
 		start = self->lines[line];
