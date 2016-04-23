@@ -155,6 +155,9 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	n = 0, i = sscanf(buffer, "%d"   "/%02d" "/%02d%n"" %02d:%02d%n"":%02d%n",
 	                           &year, &month, &day,&n,  &h,  &m, &n, &s,  &n);
 	
+	if (year < 100)
+		return NAN;
+	
 	if (n == length)
 		goto done;
 	else if (i >= 5 && buffer[n++] == ' ' && issign(buffer[n]) && sscanf(buffer + n, "%03d%02d%n", &hOffset, &mOffset, &nOffset) == 2 && n + nOffset == length)
@@ -163,7 +166,7 @@ static double msFromBytes (const char *bytes, uint16_t length)
 		return NAN;
 	
 done:
-	if (year < 100 || month <= 0 || day <= 0 || h < 0 || m < 0 || s < 0 || ms < 0 || hOffset < -12 || mOffset < 0)
+	if (month <= 0 || day <= 0 || h < 0 || m < 0 || s < 0 || ms < 0 || hOffset < -12 || mOffset < 0)
 		return NAN;
 	
 	if (month > 12 || day > 31 || h > 23 || m > 59 || s > 59 || ms > 999 || hOffset > 14 || mOffset > 59)
