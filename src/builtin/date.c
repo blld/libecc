@@ -8,7 +8,7 @@
 
 #if _WIN32
 #include <sys/timeb.h>
-#else
+#elif _DEFAULT_SOURCE || __APPLE__
 #include <sys/time.h>
 #endif
 
@@ -205,13 +205,19 @@ static double msToDate (double ms, int32_t *year, int32_t *month, int32_t *day)
 static struct Chars *msToChars (double ms, double offset)
 {
 	int32_t year, month, day;
+	const char *format;
 	
 	if (isnan(ms))
 		return Chars.create("Invalid Date");
 	
 	ms = msToDate(msClip(ms + offset * msPerHour), &year, &month, &day);
 	
-	return Chars.create("%04d/%02d/%02d %02d:%02d:%02d %+03d%02d"
+	if (year >= 100 && year <= 9999)
+		format = "%04d/%02d/%02d %02d:%02d:%02d %+03d%02d";
+	else
+		format = "%+06d-%02d-%02dT%02d:%02d:%02d%+03d:%02d";
+	
+	return Chars.create(format
 		, year
 		, month
 		, day
@@ -229,10 +235,12 @@ static double currentTime ()
 	struct _timeb timebuffer;
 	_ftime (&timebuffer);
 	return timebuffer.time * 1000 + timebuffer.millitm;
-#else
+#elif _DEFAULT_SOURCE || __APPLE__
 	struct timeval time;
 	gettimeofday(&time, NULL);
 	return time.tv_sec * 1000 + time.tv_usec / 1000;
+#else
+	return time(NULL) * 1000;
 #endif
 }
 
