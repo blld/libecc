@@ -204,7 +204,7 @@ void collectUnmarked (void)
 	
 	index = self->functionCount;
 	while (index--)
-		if (!(self->functionList[index]->object.flags & Object(mark)))
+		if (!(self->functionList[index]->object.flags & Object(mark)) && !(self->functionList[index]->environment.flags & Object(mark)))
 		{
 			Function.destroy(self->functionList[index]);
 			self->functionList[index] = self->functionList[--self->functionCount];
@@ -231,9 +231,6 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 {
 	uint32_t index;
 	
-	if (indices[1] >= self->objectCount || indices[2] >= self->charsCount)
-		return;
-	
 	index = self->objectCount;
 	while (index-- > indices[1])
 		if (self->objectList[index]->referenceCount <= 0)
@@ -241,13 +238,13 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 	
 	//
 	
-//	index = self->functionCount;
-//	while (index-- > counts[0])
-//		if (!self->functionList[index]->object.referenceCount)
-//		{
-//			Function.destroy(self->functionList[index]);
-//			self->functionList[index] = self->functionList[--self->functionCount];
-//		}
+	index = self->functionCount;
+	while (index-- > indices[0])
+		if (!self->functionList[index]->object.referenceCount && !self->functionList[index]->environment.referenceCount)
+		{
+			Function.destroy(self->functionList[index]);
+			self->functionList[index] = self->functionList[--self->functionCount];
+		}
 	
 	index = self->objectCount;
 	while (index-- > indices[1])
@@ -264,8 +261,6 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 			Chars.destroy(self->charsList[index]);
 			self->charsList[index] = self->charsList[--self->charsCount];
 		}
-	
-	getCounts(indices);
 }
 
 void getCounts (uint32_t counts[3])

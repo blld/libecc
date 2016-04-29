@@ -86,7 +86,10 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 	self->text = text;
 	
 	if (message)
+	{
 		Object.addMember(&self->object, Key(message), Value.chars(message), Value(hidden));
+		++message->referenceCount;
+	}
 	
 	return self;
 }

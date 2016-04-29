@@ -1360,6 +1360,8 @@ static struct OpList * statement (struct Parser *self)
 	}
 	else
 	{
+		uint32_t index;
+		
 		oplist = expression(self, 0);
 		if (!oplist)
 			return NULL;
@@ -1383,6 +1385,12 @@ static struct OpList * statement (struct Parser *self)
 		}
 		
 		semicolon(self);
+		
+		index = oplist->opCount;
+		while (index--)
+			if (oplist->ops[index].native == Op.call)
+				return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.autorelease: Op.autoreleaseDiscard, Value(undefined), Text(empty)), oplist);
+		
 		return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.expression: Op.discard, Value(undefined), Text(empty)), oplist);
 	}
 }

@@ -281,7 +281,7 @@ static inline void populateEnvironmentWithArguments (struct Object *environment,
 	int32_t index = 0;
 	int argumentCount = arguments->elementCount;
 	
-	environment->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -298,7 +298,7 @@ static inline void populateEnvironmentWithArgumentsVA (struct Object *environmen
 	int32_t index = 0;
 	
 	struct Object *arguments = Arguments.createSized(argumentCount);
-	environment->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -317,7 +317,7 @@ static inline void populateEnvironmentWithArgumentsOps (struct Context * const c
 {
 	int32_t index = 0;
 	
-	environment->hashmap[2].data.value = Value.object(arguments);
+	environment->hashmap[2].data.value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -597,6 +597,7 @@ struct Value function (struct Context * const context)
 	struct Value value = opValue(), result;
 	struct Function *function = Function.copy(value.data.function);
 	function->environment.prototype = context->environment;
+//	++((struct Function *)((char *)context->environment - offsetof(struct Function, environment)))->object.referenceCount;
 	++context->environment->referenceCount;
 	result = Value.function(function);
 	result.flags = value.flags;
@@ -1484,6 +1485,27 @@ struct Value expression (struct Context * const context)
 	return nextOp();
 }
 
+struct Value autorelease (struct Context * const context)
+{
+	uint32_t counts[3];
+	
+	Pool.getCounts(counts);
+	release(context->ecc->result);
+	context->ecc->result = retain(trapOp(context, 1));
+	Pool.collectUnreferencedFromIndices(counts);
+	return nextOp();
+}
+
+struct Value autoreleaseDiscard (struct Context * const context)
+{
+	uint32_t counts[3];
+	
+	Pool.getCounts(counts);
+	trapOp(context, 1);
+	Pool.collectUnreferencedFromIndices(counts);
+	return nextOp();
+}
+
 struct Value discard (struct Context * const context)
 {
 	trapOp(context, 1);
@@ -1619,8 +1641,6 @@ struct Value switchOp (struct Context * const context)
 		} \
 		else \
 			context->ops = nextOps; \
-		 \
-		Pool.collectUnreferencedFromIndices(counts); \
 	}
 
 struct Value breaker (struct Context * const context)
@@ -1635,11 +1655,8 @@ struct Value iterate (struct Context * const context)
 	const struct Op *endOps = startOps;
 	const struct Op *nextOps = startOps + 1;
 	struct Value value;
-	uint32_t counts[3];
 	
 	context->ops += opValue().data.integer;
-	
-	Pool.getCounts(counts);
 	
 	for (; Value.isTrue(nextOp()); nextOp())
 		stepIteration(value, nextOps);
@@ -1661,9 +1678,6 @@ static struct Value iterateIntegerRef (
 	struct Value *countRef = nextOp().data.reference;
 	const struct Op *nextOps = context->ops;
 	struct Value value;
-	uint32_t counts[3];
-	
-	Pool.getCounts(counts);
 	
 	if (indexRef->type == Value(binaryType) && indexRef->data.binary >= INT32_MIN && indexRef->data.binary <= INT32_MAX)
 	{
@@ -1730,9 +1744,6 @@ struct Value iterateInRef (struct Context * const context)
 	struct Value value = nextOp();
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
-	uint32_t counts[3];
-	
-	Pool.getCounts(counts);
 	
 	if (Value.isObject(object))
 	{

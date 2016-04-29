@@ -1024,8 +1024,7 @@ static void testNumber (void)
 	test("Math.round(2147483647.5)", "2147483648", NULL);
 	test("Math.round(-2147483647.6)", "-2147483648", NULL);
 	
-	
-//	test("Number.prototype.toString = function(){ return this + 'abc' }; 123..toString()", "123abc", NULL);
+	test("var orig = Number.prototype.toString; Number.prototype.toString = function(){ return this + 'abc' }; var r = 123..toString(); Number.prototype.toString = orig; r", "123abc", NULL);
 }
 
 static void testString (void)

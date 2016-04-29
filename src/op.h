@@ -112,6 +112,8 @@
 		_( next )\
 		_( nextIf )\
 		_( expression )\
+		_( autorelease )\
+		_( autoreleaseDiscard )\
 		_( discard )\
 		_( discardN )\
 		_( jump )\

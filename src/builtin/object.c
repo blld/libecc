@@ -1194,7 +1194,11 @@ void dumpTo(struct Object *self, FILE *file)
 		
 		if (self->element[index].data.value.check == 1)
 		{
-			Value.dumpTo(self->element[index].data.value, file);
+			if (self->element[index].data.value.type == Value(objectType) && self->element[index].data.value.data.object == self)
+				fprintf(file, "this");
+			else
+				Value.dumpTo(self->element[index].data.value, file);
+			
 			fprintf(file, ", ");
 		}
 	}
@@ -1208,7 +1212,11 @@ void dumpTo(struct Object *self, FILE *file)
 				fprintf(stderr, "'");
 				Key.dumpTo(self->hashmap[index].data.key, file);
 				fprintf(file, "': ");
-				Value.dumpTo(self->hashmap[index].data.value, file);
+				if (self->hashmap[index].data.value.type == Value(objectType) && self->hashmap[index].data.value.data.object == self)
+					fprintf(file, "this");
+				else
+					Value.dumpTo(self->hashmap[index].data.value, file);
+				
 				fprintf(file, ", ");
 			}
 //			else
