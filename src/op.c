@@ -910,7 +910,6 @@ struct Value pushEnvironment (struct Context * const context)
 
 struct Value popEnvironment (struct Context * const context)
 {
-	context->environment = context->environment->prototype;
 	return opValue();
 }
 
@@ -1403,6 +1402,7 @@ struct Value try (struct Context * const context)
 	volatile int rethrow = 0, breaker = 0;
 	volatile struct Value value = Value(undefined);
 	struct Value finallyValue;
+	struct Object * environment;
 	
 	if (!setjmp(*Ecc.pushEnv(context->ecc))) // try
 		value = nextOp();
@@ -1432,6 +1432,10 @@ struct Value try (struct Context * const context)
 	}
 	
 	Ecc.popEnv(context->ecc);
+	
+	environment = context->environment;
+	context->environment = context->environment->prototype;
+	environment->prototype = NULL;
 	
 	breaker = context->breaker;
 	context->breaker = 0;
