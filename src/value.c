@@ -15,7 +15,7 @@
 
 // MARK: - Private
 
-#define valueMake(T) { { 0 }, Value(T), 0, 1 }
+#define valueMake(T) { .type = Value(T), .check = 1 }
 
 const struct Value Value(undefined) = valueMake(undefinedType);
 const struct Value Value(true) = valueMake(trueType);
