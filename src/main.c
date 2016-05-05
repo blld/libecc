@@ -512,6 +512,10 @@ static void testSwitch (void)
 	test("switch (123) { default: case 1: 123; break; case 2: 'abc'; }", "123", NULL);
 	test("switch (123) { case 1: 123; break; default: case 2: 'abc'; }", "abc", NULL);
 	test("switch (123) { case 1: 123; break; case 2: 'abc'; break; default: ({}) }", "[object Object]", NULL);
+	test("switch (123) { default: default: ; }", "SyntaxError: more than one switch default"
+	,    "                        ^~~~~~~     ");
+	test("switch (123) { abc: ; }", "SyntaxError: invalid switch statement"
+	,    "               ^~~     ");
 }
 
 static void testDelete (void)
@@ -640,6 +644,14 @@ static void testLoop (void)
 	);
 	test("var a = [ 'a', 123 ], b; for (b in a) b + ':' + a[b];", "1:123", NULL);
 	test("var a = [ 'a', 123 ], b; for (b in a) typeof b;", "string", NULL);
+	test("continue abc;", "SyntaxError: continue must be inside loop"
+	,    "^~~~~~~~     ");
+	test("while (1) continue abc;", "SyntaxError: label not found"
+	,    "                   ^~~ ");
+	test("break abc;", "SyntaxError: break must be inside loop or switch"
+	,    "^~~~~     ");
+	test("while (1) break abc;", "SyntaxError: label not found"
+	,    "                ^~~ ");
 }
 
 static void testThis (void)
