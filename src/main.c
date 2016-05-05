@@ -1148,6 +1148,9 @@ static void testDate (void)
 	
 	test("(Date.parse('1984/08/31') - Date.parse('1984-08-31')) / 60000 == new Date().getTimezoneOffset()", "true", NULL);
 	
+	test("var date = new Date('1995/12/25 23:59:00'); date.getDate()", "25", NULL);
+	test("var date = new Date('1995/12/25 00:00:00'); date.getDate()", "25", NULL);
+	
 	// iso format
 	test("Date.parse('1984')", "441763200000", NULL);
 	test("Date.parse('1984-08')", "460166400000", NULL);
