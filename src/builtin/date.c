@@ -384,6 +384,21 @@ static struct Value getDay (struct Context * const context)
 	return Value.binary(weekday);
 }
 
+static struct Value getFullYear (struct Context * const context)
+{
+	int32_t year, month, day;
+	
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
+	
+	if (isnan(context->this.data.date->ms))
+		return Value.chars(Chars.create("Invalid Date"));
+	
+	msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
+	
+	return Value.binary(year);
+}
+
 static struct Value now (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
@@ -460,6 +475,7 @@ void setup (void)
 	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, flags);
 	Function.addToObject(Date(prototype), "getDate", getDate, 0, flags);
 	Function.addToObject(Date(prototype), "getDay", getDay, 0, flags);
+	Function.addToObject(Date(prototype), "getFullYear", getFullYear, 0, flags);
 	
 	Function.addToObject(&Date(constructor)->object, "now", now, 0, flags);
 	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);
