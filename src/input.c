@@ -110,35 +110,27 @@ void printText (struct Input *self, struct Text text, int fullLine)
 	int32_t line = -1;
 	
 	if (!self)
-	{
 		Env.printColor(0, Env(dim), "(unknown input)");
-		Env.newline();
-		Env.print("%.*s", text.length, text.bytes);
-	}
 	else
 	{
-		line = findLine(self, text);
-		
 		if (self->name[0] == '(')
 			Env.printColor(0, Env(dim), "%s", self->name);
 		else
-			Env.printColor(0, Env(bold), "%s", self->name, line);
+			Env.printColor(0, Env(bold), "%s", self->name);
+		
+		line = findLine(self, text);
+		if (line >= 0)
+			Env.printColor(0, Env(bold), " line:%d", line);
 	}
 	
-	if (line >= 0)
+	if (!fullLine || !line)
+		Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
+	else
 	{
 		const char *bytes;
 		ptrdiff_t length = 0;
 		uint32_t start;
 		
-		Env.printColor(0, Env(bold), " line:%d", line);
-		
-		if (!fullLine)
-		{
-			Env.printColor(0, 0, " %.*s", text.length, text.bytes);
-			Env.newline();
-			return;
-		}
 		Env.newline();
 		
 		start = self->lines[line];
