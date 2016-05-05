@@ -27,6 +27,19 @@ const struct Object(Type) Date(type) = {
 	.text = &Text(dateType),
 };
 
+struct date {
+	int64_t year;
+	int32_t month;
+	int32_t day;
+};
+
+struct time {
+	int32_t h;
+	int32_t m;
+	int32_t s;
+	int32_t ms;
+};
+
 static double localOffset;
 
 static const double msPerSecond = 1000;
@@ -54,6 +67,25 @@ static void setupLocalOffset (void)
 		localOffset = difftime(86400, time) / 3600.;
 }
 
+static double toLocal (double ms)
+{
+	return ms + localOffset * msPerHour;
+}
+
+static double toUTC (double ms)
+{
+	return ms - localOffset * msPerHour;
+}
+
+static double binaryArgumentOr (struct Context * const context, int index, double alternative)
+{
+	struct Value value = Context.argument(context, index);
+	if (value.check == 1)
+		return Value.toBinary(Context.argument(context, index)).data.binary;
+	else
+		return alternative;
+}
+
 static double msClip (double ms)
 {
 	if (!isfinite(ms) || fabs(ms) > 8.64 * pow(10, 15))
@@ -62,26 +94,37 @@ static double msClip (double ms)
 		return ms;
 }
 
-static double msFromDate (int32_t year, int32_t month, int32_t day)
+static double msFromDate (struct date date)
 {
 	// Low-Level Date Algorithms, http://howardhinnant.github.io/date_algorithms.html#days_from_civil
 	
 	int32_t era;
 	uint32_t yoe, doy, doe;
 	
-	year -= month <= 2;
-    era = (year >= 0 ? year : year - 399) / 400;
-    yoe = year - era * 400;                                       // [0, 399]
-    doy = (153 * (month + (month > 2? -3: 9)) + 2) / 5 + day - 1; // [0, 365]
-    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;                  // [0, 146096]
+	date.year -= date.month <= 2;
+    era = (int32_t)((date.year >= 0 ? date.year : date.year - 399) / 400);
+    yoe = (uint32_t)(date.year - era * 400);                                     // [0, 399]
+    doy = (153 * (date.month + (date.month > 2? -3: 9)) + 2) / 5 + date.day - 1; // [0, 365]
+    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;                                 // [0, 146096]
 	
     return (double)(era * 146097 + (int32_t)(doe) - 719468) * msPerDay;
 }
 
+static double msFromDateAndTime (struct date date, struct time time)
+{
+	return msFromDate(date)
+		+ time.h * msPerHour
+		+ time.m * msPerMinute
+		+ time.s * msPerSecond
+		+ time.ms
+		;
+}
+
 static double msFromArguments (struct Context * const context)
 {
-	double time;
 	uint16_t count;
+	struct date date;
+	struct time time;
 	double year, month, day, h, m, s, ms;
 	
 	Context.assertVariableParameter(context);
@@ -97,22 +140,21 @@ static double msFromArguments (struct Context * const context)
 	ms = count > 6? Value.toBinary(Context.variableArgument(context, 6)).data.binary: 0;
 	
 	if (isnan(year) || isnan(month) || isnan(day) || isnan(h) || isnan(m) || isnan(s) || isnan(ms))
-		time = NAN;
+		return NAN;
 	else
 	{
 		if (year >= 0 && year <= 99)
 			year += 1900;
 		
-		time =
-			msFromDate(year, month + 1, day)
-			+ h * msPerHour
-			+ m * msPerMinute
-			+ s * msPerSecond
-			+ ms
-			;
+		date.year = year;
+		date.month = month + 1;
+		date.day = day;
+		time.h = h;
+		time.m = m;
+		time.s = s;
+		time.ms = ms;
+		return msFromDateAndTime(date, time);
 	}
-	
-	return time;
 }
 
 static double msFromBytes (const char *bytes, uint16_t length)
@@ -120,6 +162,8 @@ static double msFromBytes (const char *bytes, uint16_t length)
 	char buffer[length + 1];
 	int n = 0, nOffset = 0, i = 0;
 	int year, month = 1, day = 1, h = 0, m = 0, s = 0, ms = 0, hOffset = 0, mOffset = 0;
+	struct date date;
+	struct time time;
 	
 	if (!length)
 		return NAN;
@@ -172,17 +216,17 @@ done:
 	if (month > 12 || day > 31 || h > 23 || m > 59 || s > 59 || ms > 999 || hOffset > 14 || mOffset > 59)
 		return NAN;
 	
-	return
-		msFromDate(year, month, day)
-		+ h * msPerHour
-		+ m * msPerMinute
-		+ s * msPerSecond
-		+ ms
-		- (hOffset * 60 + mOffset) * msPerMinute
-		;
+	date.year = year;
+	date.month = month;
+	date.day = day;
+	time.h = h;
+	time.m = m;
+	time.s = s;
+	time.ms = ms;
+	return msFromDateAndTime(date, time) - (hOffset * 60 + mOffset) * msPerMinute;
 }
 
-static double msToDate (double ms, int32_t *year, int32_t *month, int32_t *day)
+static double msToDate (double ms, struct date *date)
 {
 	// Low-Level Date Algorithms, http://howardhinnant.github.io/date_algorithms.html#civil_from_days
 	
@@ -195,35 +239,70 @@ static double msToDate (double ms, int32_t *year, int32_t *month, int32_t *day)
     yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;  // [0, 399]
     doy = doe - (365 * yoe + yoe / 4 - yoe / 100);                // [0, 365]
     mp = (5 * doy + 2) / 153;                                     // [0, 11]
-    *day = doy - (153 * mp + 2) / 5 + 1;                          // [1, 31]
-    *month = mp + (mp < 10? 3: -9);                               // [1, 12]
-    *year = (int32_t)(yoe) + era * 400 + (mp >= 10);
+    date->day = doy - (153 * mp + 2) / 5 + 1;                     // [1, 31]
+    date->month = mp + (mp < 10? 3: -9);                          // [1, 12]
+    date->year = (int32_t)(yoe) + era * 400 + (mp >= 10);
 	
 	return fmod(ms, 24 * msPerHour) + (ms < 0? 24 * msPerHour: 0);
 }
 
+static double msToHours (double ms)
+{
+	return fmod(floor(ms / msPerHour), 24);
+}
+
+static double msToMinutes (double ms)
+{
+	return fmod(floor(ms / msPerMinute), 60);
+}
+
+static double msToSeconds (double ms)
+{
+	return fmod(floor(ms / msPerSecond), 60);
+}
+
+static double msToMilliseconds (double ms)
+{
+	return fmod(ms, 1000);
+}
+
+static void msToTime (double ms, struct time *time)
+{
+	time->h = msToHours(ms);
+	time->m = msToMinutes(ms);
+	time->s = msToSeconds(ms);
+	time->ms = msToMilliseconds(ms);
+}
+
+static void msToDateAndTime (double ms, struct date *date, struct time *time)
+{
+	msToDate(ms, date);
+	msToTime(ms, time);
+}
+
 static struct Chars *msToChars (double ms, double offset)
 {
-	int32_t year, month, day;
 	const char *format;
+	struct date date;
+	struct time time;
 	
 	if (isnan(ms))
 		return Chars.create("Invalid Date");
 	
-	ms = msToDate(msClip(ms + offset * msPerHour), &year, &month, &day);
+	msToDateAndTime(msClip(ms + offset * msPerHour), &date, &time);
 	
-	if (year >= 100 && year <= 9999)
+	if (date.year >= 100 && date.year <= 9999)
 		format = "%04d/%02d/%02d %02d:%02d:%02d %+03d%02d";
 	else
 		format = "%+06d-%02d-%02dT%02d:%02d:%02d%+03d:%02d";
 	
 	return Chars.create(format
-		, year
-		, month
-		, day
-		, (int)fmod(floor(ms / msPerHour), 24)
-		, (int)fmod(floor(ms / msPerMinute), 60)
-		, (int)fmod(floor(ms / msPerSecond), 60)
+		, date.year
+		, date.month
+		, date.day
+		, time.h
+		, time.m
+		, time.s
 		, (int)offset
 		, (int)fmod(fabs(offset) * 60, 60)
 		);
@@ -231,7 +310,7 @@ static struct Chars *msToChars (double ms, double offset)
 
 unsigned int msToWeekday(double ms)
 {
-	int32_t z = ms / msPerDay;
+	int z = ms / msPerDay;
     return (unsigned)(z >= -4? (z + 4) % 7: (z + 5) % 7 + 6);
 }
 
@@ -272,8 +351,8 @@ static struct Value toUTCString (struct Context * const context)
 static struct Value toISOString (struct Context * const context)
 {
 	const char *format;
-	double ms;
-	int32_t year, month, day;
+	struct date date;
+	struct time time;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
@@ -281,26 +360,26 @@ static struct Value toISOString (struct Context * const context)
 	if (isnan(context->this.data.date->ms))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "invalid date")));
 	
-	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
+	msToDateAndTime(context->this.data.date->ms, &date, &time);
 	
-	if (year >= 0 && year <= 9999)
+	if (date.year >= 0 && date.year <= 9999)
 		format = "%04d-%02d-%02dT%02d:%02d:%06.3fZ";
 	else
 		format = "%+06d-%02d-%02dT%02d:%02d:%06.3fZ";
 	
 	return Value.chars(Chars.create(format
-		, year
-		, month
-		, day
-		, (int)fmod(floor(ms / msPerHour), 24)
-		, (int)fmod(floor(ms / msPerMinute), 60)
-		, fmod(ms / msPerSecond, 60)
+		, date.year
+		, date.month
+		, date.day
+		, time.h
+		, time.m
+		, time.s + (time.ms / 1000.)
 		));
 }
 
 static struct Value toDateString (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
@@ -308,19 +387,18 @@ static struct Value toDateString (struct Context * const context)
 	if (isnan(context->this.data.date->ms))
 		return Value.chars(Chars.create("Invalid Date"));
 	
-	msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
+	msToDate(toLocal(context->this.data.date->ms), &date);
 	
 	return Value.chars(Chars.create("%04d/%02d/%02d"
-		, year
-		, month
-		, day
+		, date.year
+		, date.month
+		, date.day
 		));
 }
 
 static struct Value toTimeString (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
+	struct time time;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
@@ -328,12 +406,12 @@ static struct Value toTimeString (struct Context * const context)
 	if (isnan(context->this.data.date->ms))
 		return Value.chars(Chars.create("Invalid Date"));
 	
-	ms = msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
+	msToTime(toLocal(context->this.data.date->ms), &time);
 	
 	return Value.chars(Chars.create("%02d:%02d:%02d %+03d%02d"
-		, (int)fmod(floor(ms / msPerHour), 24)
-		, (int)fmod(floor(ms / msPerMinute), 60)
-		, (int)fmod(floor(ms / msPerSecond), 60)
+		, time.h
+		, time.m
+		, time.s
 		, (int)localOffset
 		, (int)fmod(fabs(localOffset) * 60, 60)
 		));
@@ -349,234 +427,148 @@ static struct Value valueOf (struct Context * const context)
 
 static struct Value getFullYear (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(year);
+	msToDate(toLocal(context->this.data.date->ms), &date);
+	return Value.binary(date.year);
 }
 
 static struct Value getUTCFullYear (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(year);
+	msToDate(context->this.data.date->ms, &date);
+	return Value.binary(date.year);
 }
 
 static struct Value getMonth (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(month - 1);
+	msToDate(toLocal(context->this.data.date->ms), &date);
+	return Value.binary(date.month - 1);
 }
 
 static struct Value getUTCMonth (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(month - 1);
+	msToDate(context->this.data.date->ms, &date);
+	return Value.binary(date.month - 1);
 }
 
 static struct Value getDate (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(day);
+	msToDate(toLocal(context->this.data.date->ms), &date);
+	return Value.binary(date.day);
 }
 
 static struct Value getUTCDate (struct Context * const context)
 {
-	int32_t year, month, day;
+	struct date date;
 	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(day);
+	msToDate(context->this.data.date->ms, &date);
+	return Value.binary(date.day);
 }
 
 static struct Value getDay (struct Context * const context)
 {
-	int32_t weekday;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	weekday = msToWeekday(context->this.data.date->ms + localOffset * msPerHour);
-	return Value.binary(weekday);
+	return Value.binary(msToWeekday(toLocal(context->this.data.date->ms)));
 }
 
 static struct Value getUTCDay (struct Context * const context)
 {
-	int32_t weekday;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	weekday = msToWeekday(context->this.data.date->ms);
-	return Value.binary(weekday);
+	return Value.binary(msToWeekday(context->this.data.date->ms));
 }
 
 static struct Value getHours (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerHour), 24));
+	return Value.binary(msToHours(toLocal(context->this.data.date->ms)));
 }
 
 static struct Value getUTCHours (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerHour), 24));
+	return Value.binary(msToHours(context->this.data.date->ms));
 }
 
 static struct Value getMinutes (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerMinute), 60));
+	return Value.binary(msToMinutes(toLocal(context->this.data.date->ms)));
 }
 
 static struct Value getUTCMinutes (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerMinute), 60));
+	return Value.binary(msToMinutes(context->this.data.date->ms));
 }
 
 static struct Value getSeconds (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerSecond), 60));
+	return Value.binary(msToSeconds(toLocal(context->this.data.date->ms)));
 }
 
 static struct Value getUTCSeconds (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(fmod(floor(ms / msPerSecond), 60));
+	return Value.binary(msToSeconds(context->this.data.date->ms));
 }
 
 static struct Value getMilliseconds (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms + localOffset * msPerHour, &year, &month, &day);
-	return Value.binary(fmod(ms, 1000));
+	return Value.binary(msToMilliseconds(toLocal(context->this.data.date->ms)));
 }
 
 static struct Value getUTCMilliseconds (struct Context * const context)
 {
-	double ms;
-	int32_t year, month, day;
-	
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	if (isnan(context->this.data.date->ms))
-		return Value.binary(NAN);
-	
-	ms = msToDate(context->this.data.date->ms, &year, &month, &day);
-	return Value.binary(fmod(ms, 1000));
+	return Value.binary(msToMilliseconds(context->this.data.date->ms));
 }
 
 static struct Value getTimezoneOffset (struct Context * const context)
@@ -584,6 +576,306 @@ static struct Value getTimezoneOffset (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	
 	return Value.binary(-localOffset * 60);
+}
+
+static struct Value setTime (struct Context * const context)
+{
+	double ms;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(dateType));
+	
+	ms = Value.toBinary(Context.argument(context, 0)).data.binary;
+	
+	return Value.binary(context->this.data.date->ms = msClip(ms));
+}
+
+static struct Value setMilliseconds (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double ms;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(toLocal(context->this.data.date->ms), &date, &time);
+	ms = binaryArgumentOr(context, 0, NAN);
+	if (isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(msFromDateAndTime(date, time))));
+}
+
+static struct Value setUTCMilliseconds (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double ms;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(context->this.data.date->ms, &date, &time);
+	ms = binaryArgumentOr(context, 0, NAN);
+	if (isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(msFromDateAndTime(date, time)));
+}
+
+static struct Value setSeconds (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double s, ms;
+	
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(toLocal(context->this.data.date->ms), &date, &time);
+	s = binaryArgumentOr(context, 0, NAN);
+	ms = binaryArgumentOr(context, 1, time.ms);
+	if (isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(msFromDateAndTime(date, time))));
+}
+
+static struct Value setUTCSeconds (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double s, ms;
+	
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(context->this.data.date->ms, &date, &time);
+	s = binaryArgumentOr(context, 0, NAN);
+	ms = binaryArgumentOr(context, 1, time.ms);
+	if (isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(msFromDateAndTime(date, time)));
+}
+
+static struct Value setMinutes (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double m, s, ms;
+	
+	Context.assertParameterCount(context, 3);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(toLocal(context->this.data.date->ms), &date, &time);
+	m = binaryArgumentOr(context, 0, NAN);
+	s = binaryArgumentOr(context, 1, time.s);
+	ms = binaryArgumentOr(context, 2, time.ms);
+	if (isnan(m) || isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.m = m;
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(msFromDateAndTime(date, time))));
+}
+
+static struct Value setUTCMinutes (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double m, s, ms;
+	
+	Context.assertParameterCount(context, 3);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(context->this.data.date->ms, &date, &time);
+	m = binaryArgumentOr(context, 0, NAN);
+	s = binaryArgumentOr(context, 1, time.s);
+	ms = binaryArgumentOr(context, 2, time.ms);
+	if (isnan(m) || isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.m = m;
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(msFromDateAndTime(date, time)));
+}
+
+static struct Value setHours (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double h, m, s, ms;
+	
+	Context.assertParameterCount(context, 4);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(toLocal(context->this.data.date->ms), &date, &time);
+	h = binaryArgumentOr(context, 0, NAN);
+	m = binaryArgumentOr(context, 1, time.m);
+	s = binaryArgumentOr(context, 2, time.s);
+	ms = binaryArgumentOr(context, 3, time.ms);
+	if (isnan(h) || isnan(m) || isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.h = h;
+	time.m = m;
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(msFromDateAndTime(date, time))));
+}
+
+static struct Value setUTCHours (struct Context * const context)
+{
+	struct date date;
+	struct time time;
+	double h, m, s, ms;
+	
+	Context.assertParameterCount(context, 4);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDateAndTime(context->this.data.date->ms, &date, &time);
+	h = binaryArgumentOr(context, 0, NAN);
+	m = binaryArgumentOr(context, 1, time.m);
+	s = binaryArgumentOr(context, 2, time.s);
+	ms = binaryArgumentOr(context, 3, time.ms);
+	if (isnan(h) || isnan(m) || isnan(s) || isnan(ms))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	time.h = h;
+	time.m = m;
+	time.s = s;
+	time.ms = ms;
+	return Value.binary(context->this.data.date->ms = msClip(msFromDateAndTime(date, time)));
+}
+
+static struct Value setDate (struct Context * const context)
+{
+	struct date date;
+	double day, ms;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(dateType));
+	
+	ms = msToDate(toLocal(context->this.data.date->ms), &date);
+	day = binaryArgumentOr(context, 0, NAN);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(ms + msFromDate(date))));
+}
+
+static struct Value setUTCDate (struct Context * const context)
+{
+	struct date date;
+	double day, ms;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(dateType));
+	
+	ms = msToDate(context->this.data.date->ms, &date);
+	day = binaryArgumentOr(context, 0, NAN);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(ms + msFromDate(date)));
+}
+
+static struct Value setMonth (struct Context * const context)
+{
+	struct date date;
+	double month, day, ms;
+	
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(dateType));
+	
+	ms = msToDate(toLocal(context->this.data.date->ms), &date);
+	month = binaryArgumentOr(context, 0, NAN) + 1;
+	day = binaryArgumentOr(context, 1, date.day);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.month = month;
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(ms + msFromDate(date))));
+}
+
+static struct Value setUTCMonth (struct Context * const context)
+{
+	struct date date;
+	double month, day, ms;
+	
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(dateType));
+	
+	ms = msToDate(context->this.data.date->ms, &date);
+	month = binaryArgumentOr(context, 0, NAN) + 1;
+	day = binaryArgumentOr(context, 1, date.day);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.month = month;
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(ms + msFromDate(date)));
+}
+
+static struct Value setFullYear (struct Context * const context)
+{
+	struct date date;
+	double year, month, day, ms;
+	
+	Context.assertParameterCount(context, 3);
+	Context.assertThisType(context, Value(dateType));
+	
+	if (isnan(context->this.data.date->ms))
+		context->this.data.date->ms = 0;
+	
+	ms = msToDate(toLocal(context->this.data.date->ms), &date);
+	year = binaryArgumentOr(context, 0, NAN);
+	month = binaryArgumentOr(context, 1, date.month - 1) + 1;
+	day = binaryArgumentOr(context, 2, date.day);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.year = year;
+	date.month = month;
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(ms + msFromDate(date))));
+}
+
+static struct Value setUTCFullYear (struct Context * const context)
+{
+	struct date date;
+	double year, month, day, ms;
+	
+	Context.assertParameterCount(context, 3);
+	Context.assertThisType(context, Value(dateType));
+	
+	if (isnan(context->this.data.date->ms))
+		context->this.data.date->ms = 0;
+	
+	ms = msToDate(context->this.data.date->ms, &date);
+	year = binaryArgumentOr(context, 0, NAN);
+	month = binaryArgumentOr(context, 1, date.month - 1) + 1;
+	day = binaryArgumentOr(context, 2, date.day);
+	if (isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.year = year;
+	date.month = month;
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(ms + msFromDate(date)));
 }
 
 static struct Value now (struct Context * const context)
@@ -627,7 +919,7 @@ static struct Value dateConstructor (struct Context * const context)
 	count = Context.variableArgumentCount(context);
 	
 	if (count > 1)
-		time = msFromArguments(context) - localOffset * msPerHour;
+		time = toUTC(msFromArguments(context));
 	else if (count)
 	{
 		struct Value value = Value.toPrimitive(context, Context.variableArgument(context, 0), Value(hintAuto));
@@ -677,6 +969,21 @@ void setup (void)
 	Function.addToObject(Date(prototype), "getMilliseconds", getMilliseconds, 0, flags);
 	Function.addToObject(Date(prototype), "getUTCMilliseconds", getUTCMilliseconds, 0, flags);
 	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, flags);
+	Function.addToObject(Date(prototype), "setTime", setTime, 1, flags);
+	Function.addToObject(Date(prototype), "setMilliseconds", setMilliseconds, 1, flags);
+	Function.addToObject(Date(prototype), "setUTCMilliseconds", setUTCMilliseconds, 1, flags);
+	Function.addToObject(Date(prototype), "setSeconds", setSeconds, 2, flags);
+	Function.addToObject(Date(prototype), "setUTCSeconds", setUTCSeconds, 2, flags);
+	Function.addToObject(Date(prototype), "setMinutes", setMinutes, 3, flags);
+	Function.addToObject(Date(prototype), "setUTCMinutes", setUTCMinutes, 3, flags);
+	Function.addToObject(Date(prototype), "setHours", setHours, 4, flags);
+	Function.addToObject(Date(prototype), "setUTCHours", setUTCHours, 4, flags);
+	Function.addToObject(Date(prototype), "setDate", setDate, 1, flags);
+	Function.addToObject(Date(prototype), "setUTCDate", setUTCDate, 1, flags);
+	Function.addToObject(Date(prototype), "setMonth", setMonth, 2, flags);
+	Function.addToObject(Date(prototype), "setUTCMonth", setUTCMonth, 2, flags);
+	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, flags);
+	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, flags);
 	
 	Function.addToObject(&Date(constructor)->object, "now", now, 0, flags);
 	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);

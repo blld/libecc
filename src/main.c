@@ -1157,6 +1157,37 @@ static void testDate (void)
 	test("var date = new Date('1995/12/23 23:59:00'); date.getDay()", "6", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.getMilliseconds()", "789", NULL);
 	
+	test("var date = new Date('1995-12-25T00:00:00Z'); date.getUTCFullYear()", "1995", NULL);
+	test("var date = new Date('1995-12-25T00:00:00Z'); date.getUTCMonth()", "11", NULL);
+	test("var date = new Date('1995-12-25T23:59:00Z'); date.getUTCDate()", "25", NULL);
+	test("var date = new Date('1995-12-25T00:00:00Z'); date.getUTCDate()", "25", NULL);
+	test("var date = new Date('1995-12-25T23:59:00Z'); date.getUTCDay()", "1", NULL);
+	test("var date = new Date('1995-12-24T00:00:00Z'); date.getUTCDay()", "0", NULL);
+	test("var date = new Date('1995-12-23T23:59:00Z'); date.getUTCDay()", "6", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.getUTCMilliseconds()", "789", NULL);
+	
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMilliseconds(11)", "819894896011", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds(11)", "819894851789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds(11, 22)", "819894851022", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMinutes(11)", "819893516789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMinutes(11, 22)", "819893482789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMinutes(11, 22, 33)", "819893482033", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCHours(11)", "819891296789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCHours(11, 22)", "819890576789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCHours(11, 22, 33)", "819890553789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCHours(11, 22, 33, 444)", "819890553444", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCDate(11)", "818685296789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMonth(11)", "819894896789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMonth(11, 22)", "819635696789", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear(1)", "-62104620303211", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear(1, 2)", "-62128380303211", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear(1, 2, 3)", "-62130281103211", NULL);
+	test("var date = new Date(NaN); date.setUTCFullYear(1, 2, 3)", "-62130326400000", NULL);
+	
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMilliseconds()", "NaN", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds()", "NaN", NULL);
+	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear()", "NaN", NULL);
+	
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.toISOString()", "1995-12-25T12:34:56.789Z", NULL);
 	
 	// iso format
