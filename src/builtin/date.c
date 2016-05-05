@@ -28,7 +28,7 @@ const struct Object(Type) Date(type) = {
 };
 
 struct date {
-	int64_t year;
+	int32_t year;
 	int32_t month;
 	int32_t day;
 };
