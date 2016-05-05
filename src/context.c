@@ -31,28 +31,28 @@ int argumentCount (struct Context * const self)
 struct Value argument (struct Context * const self, int argumentIndex)
 {
 	self->textIndex = argumentIndex + 4;
-	return self->environment->hashmap[argumentIndex + 3].data.value;
+	return self->environment->hashmap[argumentIndex + 3].value;
 }
 
 void replaceArgument (struct Context * const self, int argumentIndex, struct Value value)
 {
-	self->environment->hashmap[argumentIndex + 3].data.value = value;
+	self->environment->hashmap[argumentIndex + 3].value = value;
 }
 
 void assertVariableParameter (struct Context * const self)
 {
-	assert(self->environment->hashmap[2].data.value.type == Value(objectType));
+	assert(self->environment->hashmap[2].value.type == Value(objectType));
 }
 
 int variableArgumentCount (struct Context * const self)
 {
-	return self->environment->hashmap[2].data.value.data.object->elementCount;
+	return self->environment->hashmap[2].value.data.object->elementCount;
 }
 
 struct Value variableArgument (struct Context * const self, int argumentIndex)
 {
 	self->textIndex = argumentIndex + 4;
-	return self->environment->hashmap[2].data.value.data.object->element[argumentIndex].data.value;
+	return self->environment->hashmap[2].value.data.object->element[argumentIndex].value;
 }
 
 struct Value this (struct Context * const self)

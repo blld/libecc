@@ -92,16 +92,11 @@ Interface(Object,
 		const struct Object(Type) *type;
 		
 		struct {
-			struct {
-				struct Value value;
-			} data;
+			struct Value value;
 		} *element;
 		
 		union {
-			struct {
-				struct Value value;
-				struct Key key;
-			} data;
+			struct Value value;
 			uint16_t slot[16];
 		} *hashmap;
 		

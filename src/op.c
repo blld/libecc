@@ -271,7 +271,7 @@ static inline struct Value callOpsRelease (struct Context * const context, struc
 	result = callOps(context, environment);
 	
 	for (index = 2, count = environment->hashmapCount; index < count; ++index)
-		release(environment->hashmap[index].data.value);
+		release(environment->hashmap[index].value);
 	
 	return result;
 }
@@ -281,15 +281,15 @@ static inline void populateEnvironmentWithArguments (struct Object *environment,
 	int32_t index = 0;
 	int argumentCount = arguments->elementCount;
 	
-	environment->hashmap[2].data.value = retain(Value.object(arguments));
+	environment->hashmap[2].value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(arguments->element[index].data.value);
+			environment->hashmap[index + 3].value = retain(arguments->element[index].value);
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(arguments->element[index].data.value);
+			environment->hashmap[index + 3].value = retain(arguments->element[index].value);
 	}
 }
 
@@ -298,18 +298,18 @@ static inline void populateEnvironmentWithArgumentsVA (struct Object *environmen
 	int32_t index = 0;
 	
 	struct Object *arguments = Arguments.createSized(argumentCount);
-	environment->hashmap[2].data.value = retain(Value.object(arguments));
+	environment->hashmap[2].value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(va_arg(ap, struct Value));
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(va_arg(ap, struct Value));
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(va_arg(ap, struct Value));
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(va_arg(ap, struct Value));
 		
 		for (; index < argumentCount; ++index)
-			arguments->element[index].data.value = va_arg(ap, struct Value);
+			arguments->element[index].value = va_arg(ap, struct Value);
 	}
 }
 
@@ -317,18 +317,18 @@ static inline void populateEnvironmentWithArgumentsOps (struct Context * const c
 {
 	int32_t index = 0;
 	
-	environment->hashmap[2].data.value = retain(Value.object(arguments));
+	environment->hashmap[2].value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(nextOp());
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOp());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = arguments->element[index].data.value = retain(nextOp());
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOp());
 		
 		for (; index < argumentCount; ++index)
-			arguments->element[index].data.value = nextOp();
+			arguments->element[index].value = nextOp();
 	}
 }
 
@@ -337,10 +337,10 @@ static inline void populateEnvironmentVA (struct Object *environment, int32_t pa
 	int32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
+			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
 	else
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(va_arg(ap, struct Value));
+			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
 }
 
 static inline void populateEnvironment (struct Context * const context, struct Object *environment, int32_t parameterCount, int32_t argumentCount)
@@ -348,11 +348,11 @@ static inline void populateEnvironment (struct Context * const context, struct O
 	int32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(nextOp());
+			environment->hashmap[index + 3].value = retain(nextOp());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].data.value = retain(nextOp());
+			environment->hashmap[index + 3].value = retain(nextOp());
 		
 		for (; index < argumentCount; ++index)
 			nextOp();
@@ -597,7 +597,6 @@ struct Value function (struct Context * const context)
 	struct Value value = opValue(), result;
 	struct Function *function = Function.copy(value.data.function);
 	function->environment.prototype = context->environment;
-//	++((struct Function *)((char *)context->environment - offsetof(struct Function, environment)))->object.referenceCount;
 	++context->environment->referenceCount;
 	result = Value.function(function);
 	result.flags = value.flags;
@@ -633,10 +632,7 @@ struct Value array (struct Context * const context)
 	{
 		value = nextOp();
 		if (value.check == 1)
-		{
-			object->element[index].data.value = retain(value);
-			object->element[index].data.value.flags = 0;
-		}
+			object->element[index].value = retain(value);
 	}
 	return Value.object(object);
 }
@@ -668,32 +664,36 @@ struct Value setLocal (struct Context * const context)
 	if (ref->flags & Value(sealed))
 		return value;
 	
-	value.flags = ref->flags;
+	retain(value);
 	release(*ref);
-	return *ref = value;
+	ref->data = value.data;
+	ref->type = value.type;
+	return value;
 }
 
 struct Value getLocalSlotRef (struct Context * const context)
 {
-	return Value.reference(&context->environment->hashmap[opValue().data.integer].data.value);
+	return Value.reference(&context->environment->hashmap[opValue().data.integer].value);
 }
 
 struct Value getLocalSlot (struct Context * const context)
 {
-	return context->environment->hashmap[opValue().data.integer].data.value;
+	return context->environment->hashmap[opValue().data.integer].value;
 }
 
 struct Value setLocalSlot (struct Context * const context)
 {
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
-	struct Value *ref = &context->environment->hashmap[slot].data.value;
+	struct Value *ref = &context->environment->hashmap[slot].value;
 	if (ref->flags & Value(sealed))
 		return value;
 	
-	value.flags = ref->flags;
+	retain(value);
 	release(*ref);
-	return *ref = retain(value);
+	ref->data = value.data;
+	ref->type = value.type;
+	return value;
 }
 
 struct Value getParentSlotRef (struct Context * const context)
@@ -704,7 +704,7 @@ struct Value getParentSlotRef (struct Context * const context)
 	while (count--)
 		object = object->prototype;
 	
-	return Value.reference(&object->hashmap[slot].data.value);
+	return Value.reference(&object->hashmap[slot].value);
 }
 
 struct Value getParentSlot (struct Context * const context)
@@ -720,9 +720,11 @@ struct Value setParentSlot (struct Context * const context)
 	if (ref->flags & Value(sealed))
 		return value;
 	
-	value.flags = ref->flags;
+	retain(value);
 	release(*ref);
-	return *ref = retain(value);
+	ref->data = value.data;
+	ref->type = value.type;
+	return value;
 }
 
 static void prepareObject (struct Context * const context, struct Value *object)
@@ -1234,7 +1236,11 @@ static struct Value changeBinaryRef (struct Context * const context, double (*op
 		return Value.binary(result);
 	}
 	else if (ref->type != Value(binaryType))
-		*ref = Value.toBinary(*ref);
+	{
+		struct Value value = Value.toBinary(*ref);
+		ref->data = value.data;
+		ref->type = value.type;
+	}
 	
 	return Value.binary(operationBinary(&ref->data.binary));
 }
@@ -1272,7 +1278,11 @@ static struct Value operationAny (struct Context * const context, void (*operati
 		return *Object.putValue(context->refObject, ref, context, value);
 	}
 	else if (ref->type != Value(binaryType))
-		*ref = Value.toBinary(*ref);
+	{
+		struct Value value = Value.toBinary(*ref);
+		ref->data = value.data;
+		ref->type = value.type;
+	}
 	
 	operationBinary(&ref->data.binary, b.data.binary);
 	return *ref;
@@ -1288,8 +1298,12 @@ static struct Value addAny (struct Context * const context, void (*operationBina
 	}
 	else if (ref->type != Value(binaryType) || b.type != Value(binaryType))
 	{
+		struct Value value;
 		Context.setText(context, text);
-		return *ref = Value.add(context, *ref, b);
+		value = Value.add(context, *ref, b);
+		ref->data = value.data;
+		ref->type = value.type;
+		return value;
 	}
 	operationBinary(&ref->data.binary, b.data.binary);
 	return *ref;
@@ -1743,9 +1757,8 @@ struct Value iterateMoreOrEqualRef (struct Context * const context)
 struct Value iterateInRef (struct Context * const context)
 {
 	struct Value *ref = nextOp().data.reference;
-	enum Value(Flags) flags = ref->flags;
 	struct Value object = nextOp();
-	struct Value value = nextOp();
+	struct Value value = nextOp(), key;
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
 	
@@ -1755,22 +1768,24 @@ struct Value iterateInRef (struct Context * const context)
 		
 		for (index = 0; index < object.data.object->elementCount; ++index)
 		{
-			if (!(object.data.object->element[index].data.value.check == 1))
+			if (!(object.data.object->element[index].value.check == 1))
 				continue;
 			
-			*ref = Value.chars(Chars.create("%d", index));
-			ref->flags = flags;
+			key = Value.chars(Chars.create("%d", index));
+			ref->data = key.data;
+			ref->type = key.type;
 			
 			stepIteration(value, startOps);
 		}
 		
 		for (index = 2; index < object.data.object->hashmapCount; ++index)
 		{
-			if (!(object.data.object->hashmap[index].data.value.check == 1))
+			if (!(object.data.object->hashmap[index].value.check == 1))
 				continue;
 			
-			*ref = Value.key(object.data.object->hashmap[index].data.key);
-			ref->flags = flags;
+			key = Value.key(object.data.object->hashmap[index].value.key);
+			ref->data = key.data;
+			ref->type = key.type;
 			
 			stepIteration(value, startOps);
 		}

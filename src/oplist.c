@@ -254,9 +254,9 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
 			{
 				for (slotIndex = 0, slotCount = searchEnvironment->hashmapCount; slotIndex < slotCount; ++slotIndex)
 				{
-					if (searchEnvironment->hashmap[slotIndex].data.value.check == 1)
+					if (searchEnvironment->hashmap[slotIndex].value.check == 1)
 					{
-						if (Key.isEqual(searchEnvironment->hashmap[slotIndex].data.key, self->ops[index].value.data.key))
+						if (Key.isEqual(searchEnvironment->hashmap[slotIndex].value.key, self->ops[index].value.key))
 						{
 							if (!level)
 							{

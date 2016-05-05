@@ -88,7 +88,7 @@ static const struct Value propertyTypeError(struct Context * const context, stru
 		
 		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
 		{
-			const struct Text *keyText = Key.textOf(hashmap->data.key);
+			const struct Text *keyText = Key.textOf(hashmap->value.key);
 			return Value.error(Error.typeError(text, "'%.*s' %s", keyText->length, keyText->bytes, description));
 		}
 		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
@@ -241,12 +241,12 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 	length = 0;
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1)
+		if (object->element[index].value.check == 1)
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1)
-			addElement(result, length++, Value.key(object->hashmap[index].data.key), 0);
+		if (object->hashmap[index].value.check == 1)
+			addElement(result, length++, Value.key(object->hashmap[index].value.key), 0);
 	
 	return Value.object(result);
 }
@@ -394,21 +394,21 @@ static struct Value defineProperties (struct Context * const context)
 	
 	for (index = 0; index < properties->elementCount; ++index)
 	{
-		if (!properties->element[index].data.value.check)
+		if (!properties->element[index].value.check)
 			continue;
 		
 		Context.replaceArgument(context, 1, Value.binary(index));
-		Context.replaceArgument(context, 2, properties->element[index].data.value);
+		Context.replaceArgument(context, 2, properties->element[index].value);
 		defineProperty(context);
 	}
 	
 	for (index = 2; index < properties->hashmapCount; ++index)
 	{
-		if (!properties->hashmap[index].data.value.check)
+		if (!properties->hashmap[index].value.check)
 			continue;
 		
-		Context.replaceArgument(context, 1, Value.key(properties->hashmap[index].data.key));
-		Context.replaceArgument(context, 2, properties->hashmap[index].data.value);
+		Context.replaceArgument(context, 1, Value.key(properties->hashmap[index].value.key));
+		Context.replaceArgument(context, 2, properties->hashmap[index].value);
 		defineProperty(context);
 	}
 	
@@ -449,12 +449,12 @@ static struct Value seal (struct Context * const context)
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1)
-			object->element[index].data.value.flags |= Value(sealed);
+		if (object->element[index].value.check == 1)
+			object->element[index].value.flags |= Value(sealed);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1)
-			object->hashmap[index].data.value.flags |= Value(sealed);
+		if (object->hashmap[index].value.check == 1)
+			object->hashmap[index].value.flags |= Value(sealed);
 	
 	return Value.object(object);
 }
@@ -470,12 +470,12 @@ static struct Value freeze (struct Context * const context)
 	object->flags |= Object(sealed);
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1)
-			object->element[index].data.value.flags |= Value(frozen);
+		if (object->element[index].value.check == 1)
+			object->element[index].value.flags |= Value(frozen);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1)
-			object->hashmap[index].data.value.flags |= Value(frozen);
+		if (object->hashmap[index].value.check == 1)
+			object->hashmap[index].value.flags |= Value(frozen);
 	
 	return Value.object(object);
 }
@@ -504,11 +504,11 @@ static struct Value isSealed (struct Context * const context)
 		return Value(false);
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(sealed)))
+		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(sealed)))
 			return Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(sealed)))
+		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(sealed)))
 			return Value(false);
 	
 	return Value(true);
@@ -526,11 +526,11 @@ static struct Value isFrozen (struct Context * const context)
 		return Value(false);
 		
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(readonly) && object->element[index].data.value.flags & Value(sealed)))
+		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(readonly) && object->element[index].value.flags & Value(sealed)))
 			return Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(readonly) && object->hashmap[index].data.value.flags & Value(sealed)))
+		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(readonly) && object->hashmap[index].value.flags & Value(sealed)))
 			return Value(false);
 	
 	return Value(true);
@@ -559,12 +559,12 @@ static struct Value keys (struct Context * const context)
 	length = 0;
 	
 	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].data.value.check == 1 && !(object->element[index].data.value.flags & Value(hidden)))
+		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(hidden)))
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].data.value.check == 1 && !(object->hashmap[index].data.value.flags & Value(hidden)))
-			addElement(result, length++, Value.key(object->hashmap[index].data.key), 0);
+		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(hidden)))
+			addElement(result, length++, Value.key(object->hashmap[index].value.key), 0);
 	
 	return Value.object(result);
 }
@@ -720,7 +720,7 @@ struct Value * member (struct Object *self, struct Key member)
 	{
 		if (( slot = getSlot(object, member) ))
 		{
-			struct Value *ref = &object->hashmap[slot].data.value;
+			struct Value *ref = &object->hashmap[slot].value;
 			if (ref->check == 1)
 				return ref;
 		}
@@ -740,7 +740,7 @@ struct Value * element (struct Object *self, uint32_t element)
 	{
 		if (element < object->elementCount)
 		{
-			struct Value *ref = &object->element[element].data.value;
+			struct Value *ref = &object->element[element].value;
 			if (ref->check == 1)
 				return ref;
 		}
@@ -768,7 +768,7 @@ struct Value * memberOwn (struct Object *self, struct Key member)
 	
 	if (( slot = getSlot(self, member) ))
 	{
-		struct Value *ref = &self->hashmap[slot].data.value;
+		struct Value *ref = &self->hashmap[slot].value;
 		if (ref->check == 1)
 			return ref;
 	}
@@ -782,7 +782,7 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 	
 	if (element < self->elementCount)
 	{
-		struct Value *ref = &self->element[element].data.value;
+		struct Value *ref = &self->element[element].value;
 		if (ref->check == 1)
 			return ref;
 	}
@@ -864,15 +864,15 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Context *
 	{
 		if (ref->flags & Value(readonly))
 			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only property"));
-		
-		value.flags = ref->flags;
 	}
 	else if (self->flags & Object(sealed))
 		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "object is not extensible")));
 	else
-		value.flags = 0;
+		ref->flags = 0;
 	
-	*ref = value;
+	ref->data = value.data;
+	ref->type = value.type;
+	
 	return ref;
 }
 
@@ -953,12 +953,10 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 				assert(self->hashmapCount < UINT16_MAX);
 				slot = self->hashmap[slot].slot[key.data.depth[depth]] = self->hashmapCount++;
 			} while (++depth < 4);
-			
-			self->hashmap[slot].data.key = key;
 			break;
 		}
 		else
-			assert(self->hashmap[slot].data.value.check != 1);
+			assert(self->hashmap[slot].value.check != 1);
 		
 		slot = self->hashmap[slot].slot[key.data.depth[depth]];
 		assert(slot != 1);
@@ -966,14 +964,16 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 	} while (++depth < 4);
 	
 	if (value.flags & Value(accessor))
-		if (self->hashmap[slot].data.value.check == 1 && self->hashmap[slot].data.value.flags & Value(accessor))
-			if ((self->hashmap[slot].data.value.flags & Value(accessor)) != (value.flags & Value(accessor)))
-				value.data.function->pair = self->hashmap[slot].data.value.data.function;
+		if (self->hashmap[slot].value.check == 1 && self->hashmap[slot].value.flags & Value(accessor))
+			if ((self->hashmap[slot].value.flags & Value(accessor)) != (value.flags & Value(accessor)))
+				value.data.function->pair = self->hashmap[slot].value.data.function;
 	
-	self->hashmap[slot].data.value = value;
-	self->hashmap[slot].data.value.flags |= flags;
+	value.key = key;
+	value.flags |= flags;
 	
-	return &self->hashmap[slot].data.value;
+	self->hashmap[slot].value = value;
+	
+	return &self->hashmap[slot].value;
 }
 
 struct Value * addElement (struct Object *self, uint32_t element, struct Value value, enum Value(Flags) flags)
@@ -987,7 +987,7 @@ struct Value * addElement (struct Object *self, uint32_t element, struct Value v
 	else if (self->elementCount <= element)
 		self->elementCount = element + 1;
 	
-	ref = &self->element[element].data.value;
+	ref = &self->element[element].value;
 	
 	value.flags |= flags;
 	*ref = value;
@@ -1016,10 +1016,10 @@ int deleteMember (struct Object *self, struct Key member)
 	
 	slot = getSlot(object, member);
 	
-	if (!slot || !(object->hashmap[slot].data.value.check == 1))
+	if (!slot || !(object->hashmap[slot].value.check == 1))
 		return 1;
 	
-	if (object->hashmap[slot].data.value.flags & Value(sealed))
+	if (object->hashmap[slot].value.flags & Value(sealed))
 		return 0;
 	
 	memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
@@ -1032,7 +1032,7 @@ int deleteElement (struct Object *self, uint32_t element)
 	
 	if (element < self->elementCount)
 	{
-		if (self->element[element].data.value.flags & Value(sealed))
+		if (self->element[element].value.flags & Value(sealed))
 			return 0;
 		
 		memset(&self->element[element], 0, sizeof(*self->element));
@@ -1060,13 +1060,13 @@ void packValue (struct Object *self)
 	assert(self);
 	
 	for (; index < self->hashmapCount; ++index)
-		if (self->hashmap[index].data.value.check == 1)
+		if (self->hashmap[index].value.check == 1)
 		{
 			data = self->hashmap[index];
 			for (copyIndex = index; copyIndex > valueIndex; --copyIndex)
 			{
 				self->hashmap[copyIndex] = self->hashmap[copyIndex - 1];
-				if (!(self->hashmap[copyIndex].data.value.check == 1))
+				if (!(self->hashmap[copyIndex].value.check == 1))
 					for (slot = 0; slot < 16; ++slot)
 					{
 						if (self->hashmap[copyIndex].slot[slot] == index)
@@ -1095,7 +1095,7 @@ void stripMap (struct Object *self)
 	
 	assert(self);
 	
-	while (index < self->hashmapCount && self->hashmap[index].data.value.check == 1)
+	while (index < self->hashmapCount && self->hashmap[index].value.check == 1)
 		++index;
 	
 //	fprintf(stderr, "%d->%d\n", self->hashmapCount, index);
@@ -1139,17 +1139,13 @@ void populateElementWithCList (struct Object *self, uint32_t count, const char *
 		binary = strtod(list[index], &end);
 		
 		if (end == list[index] + length)
-		{
-			self->element[index].data.value = Value.binary(binary);
-			self->element[index].data.value.flags = 0;
-		}
+			self->element[index].value = Value.binary(binary);
 		else
 		{
 			struct Chars *chars = Chars.createSized(length);
 			memcpy(chars->bytes, list[index], length);
 			
-			self->element[index].data.value = Value.chars(chars);
-			self->element[index].data.value.flags = 0;
+			self->element[index].value = Value.chars(chars);
 		}
 	}
 }
@@ -1192,12 +1188,12 @@ void dumpTo(struct Object *self, FILE *file)
 		if (!isArray)
 			fprintf(file, "%d: ", (int)index);
 		
-		if (self->element[index].data.value.check == 1)
+		if (self->element[index].value.check == 1)
 		{
-			if (self->element[index].data.value.type == Value(objectType) && self->element[index].data.value.data.object == self)
+			if (self->element[index].value.type == Value(objectType) && self->element[index].value.data.object == self)
 				fprintf(file, "this");
 			else
-				Value.dumpTo(self->element[index].data.value, file);
+				Value.dumpTo(self->element[index].value, file);
 			
 			fprintf(file, ", ");
 		}
@@ -1207,15 +1203,15 @@ void dumpTo(struct Object *self, FILE *file)
 	{
 		for (index = 0; index < self->hashmapCount; ++index)
 		{
-			if (self->hashmap[index].data.value.check == 1)
+			if (self->hashmap[index].value.check == 1)
 			{
 				fprintf(stderr, "'");
-				Key.dumpTo(self->hashmap[index].data.key, file);
+				Key.dumpTo(self->hashmap[index].value.key, file);
 				fprintf(file, "': ");
-				if (self->hashmap[index].data.value.type == Value(objectType) && self->hashmap[index].data.value.data.object == self)
+				if (self->hashmap[index].value.type == Value(objectType) && self->hashmap[index].value.data.object == self)
 					fprintf(file, "this");
 				else
-					Value.dumpTo(self->hashmap[index].data.value, file);
+					Value.dumpTo(self->hashmap[index].value, file);
 				
 				fprintf(file, ", ");
 			}

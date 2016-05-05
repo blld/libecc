@@ -43,12 +43,12 @@ static void markObject (struct Object *object)
 		markObject(object->prototype);
 	
 	for (index = 0, count = object->elementCount; index < count; ++index)
-		if (object->element[index].data.value.check == 1)
-			markValue(object->element[index].data.value);
+		if (object->element[index].value.check == 1)
+			markValue(object->element[index].value);
 	
 	for (index = 2, count = object->hashmapCount; index < count; ++index)
-		if (object->hashmap[index].data.value.check == 1)
-			markValue(object->hashmap[index].data.value);
+		if (object->hashmap[index].value.check == 1)
+			markValue(object->hashmap[index].value);
 }
 
 static void markChars (struct Chars *chars)
@@ -166,7 +166,7 @@ static void cleanupObject(struct Object *object);
 
 static void releaseObject(struct Object *object)
 {
-	if (object->referenceCount && --object->referenceCount <= 0)
+	if (object->referenceCount > 0 && !--object->referenceCount)
 		cleanupObject(object);
 }
 
@@ -189,12 +189,12 @@ static void cleanupObject(struct Object *object)
 	
 	if (object->elementCount)
 		while (object->elementCount--)
-			if ((value = object->element[object->elementCount].data.value).check == 1)
+			if ((value = object->element[object->elementCount].value).check == 1)
 				releaseValue(value);
 	
 	if (object->hashmapCount)
 		while (object->hashmapCount--)
-			if ((value = object->hashmap[object->hashmapCount].data.value).check == 1)
+			if ((value = object->hashmap[object->hashmapCount].value).check == 1)
 				releaseValue(value);
 }
 

@@ -82,11 +82,11 @@ static struct Value call (struct Context * const context)
 	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
 	
-	object = context->environment->hashmap[2].data.value.data.object;
+	object = context->environment->hashmap[2].value.data.object;
 	
 	if (object->elementCount)
 	{
-		struct Value this = object->element[0].data.value;
+		struct Value this = object->element[0].value;
 		struct Object arguments = *object;
 		
 		--arguments.elementCapacity;
@@ -120,9 +120,9 @@ static struct Value bindCall (struct Context * const context)
 	arguments = Array.createSized(length);
 	
 	memcpy(arguments->element, function->environment.element + 1, sizeof(*arguments->element) * (function->environment.elementCount - 1));
-	memcpy(arguments->element + (function->environment.elementCount - 1), context->environment->hashmap[2].data.value.data.object->element, sizeof(*arguments->element) * (context->environment->hashmap[2].data.value.data.object->elementCount));
+	memcpy(arguments->element + (function->environment.elementCount - 1), context->environment->hashmap[2].value.data.object->element, sizeof(*arguments->element) * (context->environment->hashmap[2].value.data.object->elementCount));
 	
-	return Op.callFunctionArguments(context, 0, context->this.data.function->pair, function->environment.element[0].data.value, arguments);
+	return Op.callFunctionArguments(context, 0, context->this.data.function->pair, function->environment.element[0].value, arguments);
 }
 
 static struct Value bind (struct Context * const context)
@@ -141,9 +141,9 @@ static struct Value bind (struct Context * const context)
 	Object.resizeElement(&function->environment, count? count: 1);
 	if (count)
 		for (index = 0; index < count; ++index)
-			function->environment.element[index].data.value = Context.variableArgument(context, index);
+			function->environment.element[index].value = Context.variableArgument(context, index);
 	else
-		function->environment.element[0].data.value = Value(undefined);
+		function->environment.element[0].value = Value(undefined);
 	
 	function->pair = context->this.data.function;
 	function->boundThis = Value.function(function);

@@ -40,9 +40,9 @@ static void valueAppendFromElement (struct Context * const context, struct Value
 	
 	if (valueIsArray(value))
 		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
-			object->element[(*element)++].data.value = Object.getValue(value.data.object, &value.data.object->element[index].data.value, context);
+			object->element[(*element)++].value = Object.getValue(value.data.object, &value.data.object->element[index].value, context);
 	else
-		object->element[(*element)++].data.value = value;
+		object->element[(*element)++].value = value;
 }
 
 static struct Value isArray (struct Context * const context)
@@ -67,7 +67,7 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 	for (index = 0; index < count; ++index)
 	{
 		if (index < object->elementCount)
-			value = Object.getValue(this.data.object, &object->element[index].data.value, context);
+			value = Object.getValue(this.data.object, &object->element[index].value, context);
 		else
 			value = Value(undefined);
 		
@@ -154,7 +154,7 @@ static struct Value pop (struct Context * const context)
 	
 	this = Value.toObject(context, Context.this(context));
 	value = this.data.object->elementCount?
-		Object.getValue(this.data.object, &this.data.object->element[this.data.object->elementCount - 1].data.value, context):
+		Object.getValue(this.data.object, &this.data.object->element[this.data.object->elementCount - 1].value, context):
 		Value(undefined);
 	
 	--this.data.object->elementCount;
@@ -180,10 +180,7 @@ static struct Value push (struct Context * const context)
 		object->elementCount = length;
 	
 	for (index = 0; index < count; ++index)
-	{
-		object->element[index + base].data.value = Context.variableArgument(context, index);
-		object->element[index + base].data.value.flags = 0;
-	}
+		object->element[index + base].value = Context.variableArgument(context, index);
 	
 	return Value.binary(length);
 }
@@ -205,9 +202,9 @@ static struct Value reverse (struct Context * const context)
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Object.getValue(object, &object->element[index].data.value, context);
-		Object.putValue(object, &object->element[index].data.value, context, Object.getValue(object, &object->element[last - index].data.value, context));
-		Object.putValue(object, &object->element[last - index].data.value, context, temp);
+		temp = Object.getValue(object, &object->element[index].value, context);
+		Object.putValue(object, &object->element[index].value, context, Object.getValue(object, &object->element[last - index].value, context));
+		Object.putValue(object, &object->element[last - index].value, context, temp);
 	}
 	
 	return this;
@@ -228,10 +225,10 @@ static struct Value shift (struct Context * const context)
 	
 	if (object->elementCount)
 	{
-		result = Object.getValue(object, &object->element[0].data.value, context);
+		result = Object.getValue(object, &object->element[0].value, context);
 		
 		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index + 1].data.value, context));
+			Object.putValue(object, &this.data.object->element[index].value, context, Object.getValue(object, &this.data.object->element[index + 1].value, context));
 		
 		--object->elementCount;
 	}
@@ -262,13 +259,10 @@ static struct Value unshift (struct Context * const context)
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = count; index < length; ++index)
-		Object.putValue(object, &this.data.object->element[index].data.value, context, Object.getValue(object, &this.data.object->element[index - count].data.value, context));
+		Object.putValue(object, &this.data.object->element[index].value, context, Object.getValue(object, &this.data.object->element[index - count].value, context));
 	
 	for (index = 0; index < count; ++index)
-	{
-		object->element[index].data.value = Context.variableArgument(context, index);
-		object->element[index].data.value.flags = 0;
-	}
+		object->element[index].value = Context.variableArgument(context, index);
 	
 	return Value.binary(length);
 }
@@ -311,7 +305,7 @@ static struct Value slice (struct Context * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			result->element[to].data.value = Object.getValue(object, &this.data.object->element[from].data.value, context);
+			result->element[to].value = Object.getValue(object, &this.data.object->element[from].value, context);
 	}
 	else
 		result = Array.createSized(0);
@@ -356,10 +350,7 @@ static struct Value arrayConstructor (struct Context * const context)
 	array = Array.createSized(length);
 	
 	for (index = 0; index < count; ++index)
-	{
-		array->element[index].data.value = Context.variableArgument(context, index);
-		array->element[index].data.value.flags = 0;
-	}
+		array->element[index].value = Context.variableArgument(context, index);
 	
 	return Value.object(array);
 }
