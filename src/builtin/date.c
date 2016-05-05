@@ -229,6 +229,13 @@ static struct Chars *msToChars (double ms, double offset)
 		);
 }
 
+unsigned int msToWeekday(double ms)
+{
+	int32_t z = ms / msPerDay;
+    return (unsigned)(z >= -4? (z + 4) % 7: (z + 5) % 7 + 6);
+}
+
+
 static double currentTime ()
 {
 #if _WIN32
@@ -362,6 +369,21 @@ static struct Value getDate (struct Context * const context)
 	return Value.binary(day);
 }
 
+static struct Value getDay (struct Context * const context)
+{
+	int32_t weekday;
+	
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
+	
+	if (isnan(context->this.data.date->ms))
+		return Value.chars(Chars.create("Invalid Date"));
+	
+	weekday = msToWeekday(context->this.data.date->ms + localOffset * msPerHour);
+	
+	return Value.binary(weekday);
+}
+
 static struct Value now (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
@@ -437,6 +459,7 @@ void setup (void)
 	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, flags);
 	Function.addToObject(Date(prototype), "getDate", getDate, 0, flags);
+	Function.addToObject(Date(prototype), "getDay", getDay, 0, flags);
 	
 	Function.addToObject(&Date(constructor)->object, "now", now, 0, flags);
 	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);
