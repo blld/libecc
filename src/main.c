@@ -1140,7 +1140,7 @@ static void testDate (void)
 	
 	test("new Date('1970-01-01').toISOString()", "1970-01-01T00:00:00.000Z", NULL);
 	test("new Date('1970/01/01 12:34:56 +0900').toISOString()", "1970-01-01T03:34:56.000Z", NULL);
-	test("new Date(1984, 07, 31, 01, 23, 45, 678).valueOf()", "462731025678", NULL);
+	test("new Date(1984, 07, 31, 01, 23, 45, 678).valueOf() - new Date().getTimezoneOffset() * 60000", "462763425678", NULL);
 	
 	test("Date.UTC(70, 00, 01)", "0", NULL);
 	test("Date.UTC(70, 01, 01)", "2678400000", NULL);
