@@ -912,6 +912,9 @@ struct Value pushEnvironment (struct Context * const context)
 
 struct Value popEnvironment (struct Context * const context)
 {
+	struct Object *environment = context->environment;
+	context->environment = context->environment->prototype;
+	environment->prototype = NULL;
 	return opValue();
 }
 
@@ -1443,13 +1446,11 @@ struct Value try (struct Context * const context)
 				rethrow = 0;
 			}
 		}
+		else // rethrow
+			popEnvironment(context);
 	}
 	
 	Ecc.popEnv(context->ecc);
-	
-	environment = context->environment;
-	context->environment = context->environment->prototype;
-	environment->prototype = NULL;
 	
 	breaker = context->breaker;
 	context->breaker = 0;
