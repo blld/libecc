@@ -1444,6 +1444,8 @@ struct Value try (struct Context * const context)
 				Object.addMember(context->environment, key, value, 0);
 				value = nextOp(); // execute until noop
 				rethrow = 0;
+				if (context->breaker)
+					popEnvironment(context);
 			}
 		}
 		else // rethrow
