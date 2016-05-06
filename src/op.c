@@ -1419,7 +1419,6 @@ struct Value try (struct Context * const context)
 	volatile int rethrow = 0, breaker = 0;
 	volatile struct Value value = Value(undefined);
 	struct Value finallyValue;
-	struct Object * environment;
 	
 	if (!setjmp(*Ecc.pushEnv(context->ecc))) // try
 		value = nextOp();
