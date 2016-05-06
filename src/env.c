@@ -18,7 +18,7 @@
 
 // MARK: - Private
 
-struct EnvInternal {
+struct Env(Internal) {
 #if __MSDOS__
 	int defaultAttribute;
 #elif _WIN32

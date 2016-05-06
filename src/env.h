@@ -47,7 +47,7 @@ Interface(Env,
 	(void, newline ,())
 	,
 	{
-		struct EnvInternal *internal;
+		struct Env(Internal) *internal;
 	}
 )
 
