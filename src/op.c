@@ -1499,14 +1499,7 @@ struct Value nextIf (struct Context * const context)
 	return nextOp();
 }
 
-struct Value expression (struct Context * const context)
-{
-	release(context->ecc->result);
-	context->ecc->result = retain(trapOp(context, 1));
-	return nextOp();
-}
-
-struct Value autorelease (struct Context * const context)
+struct Value autoreleaseExpression (struct Context * const context)
 {
 	uint32_t counts[3];
 	
@@ -1524,6 +1517,13 @@ struct Value autoreleaseDiscard (struct Context * const context)
 	Pool.getCounts(counts);
 	trapOp(context, 1);
 	Pool.collectUnreferencedFromIndices(counts);
+	return nextOp();
+}
+
+struct Value expression (struct Context * const context)
+{
+	release(context->ecc->result);
+	context->ecc->result = retain(trapOp(context, 1));
 	return nextOp();
 }
 

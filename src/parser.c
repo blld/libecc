@@ -1389,7 +1389,7 @@ static struct OpList * statement (struct Parser *self)
 		index = oplist->opCount;
 		while (index--)
 			if (oplist->ops[index].native == Op.call)
-				return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.autorelease: Op.autoreleaseDiscard, Value(undefined), Text(empty)), oplist);
+				return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.autoreleaseExpression: Op.autoreleaseDiscard, Value(undefined), Text(empty)), oplist);
 		
 		return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.expression: Op.discard, Value(undefined), Text(empty)), oplist);
 	}
