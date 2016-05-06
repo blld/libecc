@@ -1293,15 +1293,16 @@ static struct Value operationAny (struct Context * const context, void (*operati
 
 static struct Value addAny (struct Context * const context, void (*operationBinary)(double *, double), struct Value *ref, struct Value b, const struct Text *text)
 {
+	struct Value value;
+	
 	if (ref->flags & (Value(readonly) | Value(accessor)))
 	{
 		Context.setText(context, text);
-		struct Value value = Value.add(context, Object.getValue(context->refObject, ref, context), b);
+		value = Value.add(context, Object.getValue(context->refObject, ref, context), b);
 		return *Object.putValue(context->refObject, ref, context, retain(value));
 	}
 	else if (ref->type != Value(binaryType) || b.type != Value(binaryType))
 	{
-		struct Value value;
 		Context.setText(context, text);
 		value = Value.add(context, *ref, b);
 		ref->data = value.data;
