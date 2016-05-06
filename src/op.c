@@ -1307,7 +1307,7 @@ static struct Value addAny (struct Context * const context, void (*operationBina
 		value = Value.add(context, *ref, b);
 		ref->data = value.data;
 		ref->type = value.type;
-		return value;
+		return retain(value);
 	}
 	operationBinary(&ref->data.binary, b.data.binary);
 	return *ref;
