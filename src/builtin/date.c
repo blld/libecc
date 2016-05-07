@@ -246,38 +246,49 @@ static double msToDate (double ms, struct date *date)
 	return fmod(ms, 24 * msPerHour) + (ms < 0? 24 * msPerHour: 0);
 }
 
-static double msToHours (double ms)
-{
-	return fmod(floor(ms / msPerHour), 24);
-}
-
-static double msToMinutes (double ms)
-{
-	return fmod(floor(ms / msPerMinute), 60);
-}
-
-static double msToSeconds (double ms)
-{
-	return fmod(floor(ms / msPerSecond), 60);
-}
-
-static double msToMilliseconds (double ms)
-{
-	return fmod(ms, 1000);
-}
-
 static void msToTime (double ms, struct time *time)
 {
-	time->h = msToHours(ms);
-	time->m = msToMinutes(ms);
-	time->s = msToSeconds(ms);
-	time->ms = msToMilliseconds(ms);
+	time->h = fmod(floor(ms / msPerHour), 24);
+	time->m = fmod(floor(ms / msPerMinute), 60);
+	time->s = fmod(floor(ms / msPerSecond), 60);
+	time->ms = fmod(ms, 1000);
 }
 
 static void msToDateAndTime (double ms, struct date *date, struct time *time)
 {
-	msToDate(ms, date);
-	msToTime(ms, time);
+	msToTime(msToDate(ms, date), time);
+}
+
+static double msToHours (double ms)
+{
+	struct date date;
+	struct time time;
+	msToDateAndTime(ms, &date, &time);
+	return time.h;
+}
+
+static double msToMinutes (double ms)
+{
+	struct date date;
+	struct time time;
+	msToDateAndTime(ms, &date, &time);
+	return time.m;
+}
+
+static double msToSeconds (double ms)
+{
+	struct date date;
+	struct time time;
+	msToDateAndTime(ms, &date, &time);
+	return time.s;
+}
+
+static double msToMilliseconds (double ms)
+{
+	struct date date;
+	struct time time;
+	msToDateAndTime(ms, &date, &time);
+	return time.ms;
 }
 
 static struct Chars *msToChars (double ms, double offset)
@@ -289,7 +300,7 @@ static struct Chars *msToChars (double ms, double offset)
 	if (isnan(ms))
 		return Chars.create("Invalid Date");
 	
-	msToDateAndTime(msClip(ms + offset * msPerHour), &date, &time);
+	msToDateAndTime(ms + offset * msPerHour, &date, &time);
 	
 	if (date.year >= 100 && date.year <= 9999)
 		format = "%04d/%02d/%02d %02d:%02d:%02d %+03d%02d";
