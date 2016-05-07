@@ -985,9 +985,9 @@ void setup (void)
 	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, flags);
 	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, flags);
 	
-	Function.addToObject(&Date(constructor)->object, "now", now, 0, flags);
-	Function.addToObject(&Date(constructor)->object, "parse", parse, 1, flags);
-	Function.addToObject(&Date(constructor)->object, "UTC", UTC, -7, flags);
+	Function.addMethod(Date(constructor), "now", now, 0, flags);
+	Function.addMethod(Date(constructor), "parse", parse, 1, flags);
+	Function.addMethod(Date(constructor), "UTC", UTC, -7, flags);
 	
 	setupLocalOffset();
 }

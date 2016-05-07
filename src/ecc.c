@@ -68,11 +68,11 @@ void destroy (struct Ecc *self)
 	}
 }
 
-void addNative (struct Ecc *self, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags) flags)
+void addFunction (struct Ecc *self, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags) flags)
 {
 	assert(self);
 	
-	Function.addNative(self->global, name, native, argumentCount, flags);
+	Function.addFunction(self->global, name, native, argumentCount, flags);
 }
 
 void addValue (struct Ecc *self, const char *name, struct Value value, enum Value(Flags) flags)

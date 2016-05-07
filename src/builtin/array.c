@@ -376,7 +376,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
 	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 	
-	Function.addToObject(&Array(constructor)->object, "isArray", isArray, 1, flags);
+	Function.addMethod(Array(constructor), "isArray", isArray, 1, flags);
 }
 
 void teardown (void)

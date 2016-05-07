@@ -21,8 +21,8 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Ecc.addNative(ecc, "print", print, -1, 0);
-	Ecc.addNative(ecc, "alert", alert, -1, 0);
+	Ecc.addFunction(ecc, "print", print, -1, 0);
+	Ecc.addFunction(ecc, "alert", alert, -1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = printUsage();

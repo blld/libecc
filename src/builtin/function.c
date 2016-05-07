@@ -289,6 +289,23 @@ void destroy (struct Function *self)
 	free(self), self = NULL;
 }
 
+void addMember(struct Function *self, const char *name, struct Value value, enum Value(Flags) flags)
+{
+	assert(self);
+	
+	if (value.type == Value(functionType))
+		value.data.function->name = name;
+	
+	Object.addMember(&self->object, Key.makeWithCString(name), value, flags);
+}
+
+struct Function * addMethod(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
+{
+	assert(self);
+	
+	return addToObject(&self->object, name, native, parameterCount, flags);
+}
+
 void addValue(struct Function *self, const char *name, struct Value value, enum Value(Flags) flags)
 {
 	assert(self);
@@ -299,7 +316,7 @@ void addValue(struct Function *self, const char *name, struct Value value, enum 
 	Object.addMember(&self->environment, Key.makeWithCString(name), value, flags);
 }
 
-struct Function * addNative(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
+struct Function * addFunction(struct Function *self, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags) flags)
 {
 	assert(self);
 	

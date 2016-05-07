@@ -216,13 +216,13 @@ struct Function * create (void)
 	Function.addValue(self, "NaN", Value.binary(NAN), flags | Value(frozen));
 	Function.addValue(self, "Infinity", Value.binary(INFINITY), flags | Value(frozen));
 	Function.addValue(self, "undefined", Value(undefined), flags | Value(frozen));
-	Function.addNative(self, "eval", eval, 1, flags);
-	Function.addNative(self, "parseInt", parseInt, 2, flags);
-	Function.addNative(self, "parseFloat", parseFloat, 1, flags);
-	Function.addNative(self, "isNaN", isNaN, 1, flags);
-	Function.addNative(self, "isFinite", isFinite, 1, flags);
-	Function.addNative(self, "decodeURI", decodeURI, 1, flags);
-	Function.addNative(self, "decodeURIComponent", decodeURIComponent, 1, flags);
+	Function.addFunction(self, "eval", eval, 1, flags);
+	Function.addFunction(self, "parseInt", parseInt, 2, flags);
+	Function.addFunction(self, "parseFloat", parseFloat, 1, flags);
+	Function.addFunction(self, "isNaN", isNaN, 1, flags);
+	Function.addFunction(self, "isFinite", isFinite, 1, flags);
+	Function.addFunction(self, "decodeURI", decodeURI, 1, flags);
+	Function.addFunction(self, "decodeURIComponent", decodeURIComponent, 1, flags);
 	#warning encodeURI
 	#warning encodeURIComponent
 	Function.addValue(self, "Object", Value.function(Object(constructor)), flags);

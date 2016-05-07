@@ -588,19 +588,19 @@ void setup ()
 	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
 	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 	
-	Function.addToObject(&Object(constructor)->object, "getPrototypeOf", getPrototypeOf, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
-	Function.addToObject(&Object(constructor)->object, "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "create", objectCreate, 2, flags);
-	Function.addToObject(&Object(constructor)->object, "defineProperty", defineProperty, 3, flags);
-	Function.addToObject(&Object(constructor)->object, "defineProperties", defineProperties, 2, flags);
-	Function.addToObject(&Object(constructor)->object, "seal", seal, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "freeze", freeze, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "preventExtensions", preventExtensions, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "isSealed", isSealed, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "isFrozen", isFrozen, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "isExtensible", isExtensible, 1, flags);
-	Function.addToObject(&Object(constructor)->object, "keys", keys, 1, flags);
+	Function.addMethod(Object(constructor), "getPrototypeOf", getPrototypeOf, 1, flags);
+	Function.addMethod(Object(constructor), "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
+	Function.addMethod(Object(constructor), "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
+	Function.addMethod(Object(constructor), "create", objectCreate, 2, flags);
+	Function.addMethod(Object(constructor), "defineProperty", defineProperty, 3, flags);
+	Function.addMethod(Object(constructor), "defineProperties", defineProperties, 2, flags);
+	Function.addMethod(Object(constructor), "seal", seal, 1, flags);
+	Function.addMethod(Object(constructor), "freeze", freeze, 1, flags);
+	Function.addMethod(Object(constructor), "preventExtensions", preventExtensions, 1, flags);
+	Function.addMethod(Object(constructor), "isSealed", isSealed, 1, flags);
+	Function.addMethod(Object(constructor), "isFrozen", isFrozen, 1, flags);
+	Function.addMethod(Object(constructor), "isExtensible", isExtensible, 1, flags);
+	Function.addMethod(Object(constructor), "keys", keys, 1, flags);
 }
 
 void teardown (void)

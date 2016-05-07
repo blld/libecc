@@ -153,11 +153,11 @@ void setup ()
 	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
 	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 	
-	Object.addMember(&Number(constructor)->object, Key.makeWithCString("MAX_VALUE"), Value.binary(DBL_MAX), flags);
-	Object.addMember(&Number(constructor)->object, Key.makeWithCString("MIN_VALUE"), Value.binary(DBL_MIN), flags);
-	Object.addMember(&Number(constructor)->object, Key.makeWithCString("NaN"), Value.binary(NAN), flags);
-	Object.addMember(&Number(constructor)->object, Key.makeWithCString("NEGATIVE_INFINITY"), Value.binary(-INFINITY), flags);
-	Object.addMember(&Number(constructor)->object, Key.makeWithCString("POSITIVE_INFINITY"), Value.binary(INFINITY), flags);
+	Function.addMember(Number(constructor), "MAX_VALUE", Value.binary(DBL_MAX), flags);
+	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN), flags);
+	Function.addMember(Number(constructor), "NaN", Value.binary(NAN), flags);
+	Function.addMember(Number(constructor), "NEGATIVE_INFINITY", Value.binary(-INFINITY), flags);
+	Function.addMember(Number(constructor), "POSITIVE_INFINITY", Value.binary(INFINITY), flags);
 }
 
 void teardown (void)

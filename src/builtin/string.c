@@ -389,7 +389,7 @@ void setup ()
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 	
-	Function.addToObject(&String(constructor)->object, "fromCharCode", fromCharCode, -1, flags);
+	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, flags);
 }
 
 void teardown (void)
