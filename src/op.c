@@ -397,7 +397,7 @@ struct Value callFunctionArguments (struct Context * const context, int argument
 	}
 }
 
-struct Value callFunctionVA (struct Context * const context, int argumentOffset, struct Function *function, struct Value this, int argumentCount, ... )
+struct Value callFunctionVA (struct Context * const context, int argumentOffset, struct Function *function, struct Value this, int argumentCount, va_list ap)
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
@@ -407,10 +407,6 @@ struct Value callFunctionVA (struct Context * const context, int argumentOffset,
 		.ecc = context->ecc,
 		.depth = context->depth + 1,
 	};
-	va_list ap;
-	struct Value result;
-	
-	va_start(ap, argumentCount);
 	
 	if (function->flags & Function(needHeap))
 	{
@@ -421,7 +417,7 @@ struct Value callFunctionVA (struct Context * const context, int argumentOffset,
 		else
 			populateEnvironmentVA(environment, function->parameterCount, argumentCount, ap);
 		
-		result = callOps(&subContext, environment);
+		return callOps(&subContext, environment);
 	}
 	else
 	{
@@ -433,12 +429,8 @@ struct Value callFunctionVA (struct Context * const context, int argumentOffset,
 		
 		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
 		
-		result = callOpsRelease(&subContext, &environment);
+		return callOpsRelease(&subContext, &environment);
 	}
-	
-	va_end(ap);
-	
-	return result;
 }
 
 static inline struct Value callFunction (struct Context * const context, struct Function * const function, struct Value this, int32_t argumentCount, int construct)

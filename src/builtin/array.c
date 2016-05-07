@@ -96,7 +96,7 @@ static struct Value toString (struct Context * const context)
 	function = Object.getMember(context->this.data.object, Key(join), context);
 	
 	if (function.type == Value(functionType))
-		return Op.callFunctionVA(context, 0, function.data.function, context->this, 0);
+		return Context.callFunction(context, function.data.function, context->this, 0);
 	else
 		return Object.toString(context);
 }

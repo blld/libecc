@@ -18,6 +18,18 @@
 
 // MARK: - Methods
 
+struct Value callFunction (struct Context * const self, struct Function *function, struct Value this, int argumentCount, ... )
+{
+	struct Value result;
+	va_list ap;
+	
+	va_start(ap, argumentCount);
+	result = Op.callFunctionVA(self, 0, function, this, argumentCount, ap);
+	va_end(ap);
+	
+	return result;
+}
+
 void assertParameterCount (struct Context * const self, int parameterCount)
 {
 	assert(self->environment->hashmapCount == parameterCount + 3);

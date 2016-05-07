@@ -30,6 +30,8 @@
 
 Interface(Context,
 	
+	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
+	
 	(void , assertParameterCount ,(struct Context * const, int parameterCount))
 	(int , argumentCount ,(struct Context * const))
 	(struct Value, argument ,(struct Context * const, int argumentIndex))

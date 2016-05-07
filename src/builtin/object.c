@@ -812,9 +812,9 @@ struct Value getValue (struct Object *self, struct Value *ref, struct Context * 
 			Ecc.fatal("cannot use getter outside context");
 		
 		if (ref->flags & Value(getter))
-			return Op.callFunctionVA(context, 0, ref->data.function, Value.object(self), 0);
+			return Context.callFunction(context, ref->data.function, Value.object(self), 0);
 		else if (ref->data.function->pair)
-			return Op.callFunctionVA(context, 0, ref->data.function->pair, Value.object(self), 0);
+			return Context.callFunction(context, ref->data.function->pair, Value.object(self), 0);
 		else
 			return Value(undefined);
 	}
@@ -851,9 +851,9 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Context *
 			Ecc.fatal("cannot use setter outside context");
 		
 		if (ref->flags & Value(setter))
-			Op.callFunctionVA(context, 0, ref->data.function, Value.object(self), 1, value);
+			Context.callFunction(context, ref->data.function, Value.object(self), 1, value);
 		else if (ref->data.function->pair)
-			Op.callFunctionVA(context, 0, ref->data.function->pair, Value.object(self), 1, value);
+			Context.callFunction(context, ref->data.function->pair, Value.object(self), 1, value);
 		else
 			Ecc.jmpEnv(context->ecc, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only accessor"));
 		

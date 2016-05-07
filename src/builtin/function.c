@@ -65,7 +65,7 @@ static struct Value apply (struct Context * const context)
 	arguments = Context.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		return Op.callFunctionVA(context, 2, context->this.data.function, this, 0);
+		return Op.callFunctionVA(context, 2, context->this.data.function, this, 0, NULL);
 	else
 	{
 		if (!Value.isObject(arguments))
@@ -101,7 +101,7 @@ static struct Value call (struct Context * const context)
 		return Op.callFunctionArguments(context, 1, context->this.data.function, this, &arguments);
 	}
 	else
-		return Op.callFunctionVA(context, 1, context->this.data.function, Value(undefined), 0);
+		return Op.callFunctionVA(context, 1, context->this.data.function, Value(undefined), 0, NULL);
 }
 
 static struct Value bindCall (struct Context * const context)
