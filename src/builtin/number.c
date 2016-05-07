@@ -37,10 +37,10 @@ static struct Value toExponential (struct Context * const context)
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*e", precision, binary));
+		return Value.chars(Chars.createBinary("%.*e", precision, binary));
 	}
 	else
-		return Value.chars(Chars.create("%e", binary));
+		return Value.chars(Chars.createBinary("%e", binary));
 }
 
 static struct Value toFixed (struct Context * const context)
@@ -59,10 +59,10 @@ static struct Value toFixed (struct Context * const context)
 		if (precision < 0 || precision > 20)
 			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*f", precision, binary));
+		return Value.chars(Chars.createBinary("%.*f", precision, binary));
 	}
 	else
-		return Value.chars(Chars.create("%f", binary));
+		return Value.chars(Chars.createBinary("%f", binary));
 }
 
 static struct Value toPrecision (struct Context * const context)
@@ -81,7 +81,7 @@ static struct Value toPrecision (struct Context * const context)
 		if (precision < 0 || precision > 100)
 			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
 		
-		return Value.chars(Chars.create("%.*g", precision, binary));
+		return Value.chars(Chars.createBinary("%.*g", precision, binary));
 	}
 	else
 		return Value.binaryToString(binary, 10);

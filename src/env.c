@@ -133,10 +133,6 @@ void setup (void)
 	self->internal->outputFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
 	#endif
 	
-	#if __MINGW32__
-	_putenv("PRINTF_EXPONENT_DIGITS=2");
-	#endif
-	
 	#else
 	self->internal->isTerminal = getenv("TERM") != NULL;
 	#endif
