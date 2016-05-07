@@ -1,5 +1,5 @@
 
-machine ?= $(shell $(CC) -dumpmachine)
+machine ?= $(shell $(CC) $(CFLAGS) -dumpmachine)
 
 root := .$(machine:%=/%)
 sources := $(wildcard ../src/*.c) $(wildcard ../src/builtin/*.c)
