@@ -79,7 +79,7 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
-static const struct Value propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const struct Text text, const char *description)
+static struct Value propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const struct Text text, const char *description)
 {
 	if (Value.isObject(this))
 	{

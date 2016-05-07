@@ -199,11 +199,13 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 											{
 												uint16_t c = uint16Hex(bytes[index+ 1], bytes[index + 2], bytes[index + 3], bytes[index + 4]);
 												char *b = buffer + bufferIndex;
+												unsigned pair = 0xd800;
+												unsigned max = 0xffff;
 												
 												if (c < 0x80) *b++=c;
 												else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-												else if (c - 0xd800u < 0x800) goto error;
-												else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
+												else if (c - pair < 0x800) goto error;
+												else if (c <= max) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
 												else goto error;
 												
 												bufferIndex = (unsigned int)(b - buffer) - 1;
