@@ -30,7 +30,6 @@ Interface(Chars,
 	
 	(struct Chars *, createVA ,(uint16_t length, const char *format, va_list ap))
 	(struct Chars *, create ,(const char *format, ...))
-	(struct Chars *, createBinary ,(const char *format, ...))
 	(struct Chars *, createSized ,(uint16_t size))
 	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
 	

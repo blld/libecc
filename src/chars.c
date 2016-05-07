@@ -19,20 +19,6 @@ static inline struct Chars * appendText (struct Chars * chars, struct Text text)
 	return append(chars, "%.*s", text.length, text.bytes);
 }
 
-static inline struct Chars * normalizeBinary (struct Chars * chars)
-{
-#if __MINGW32__
-	if (chars->length > 5 && chars->bytes[chars->length - 5] == 'e' && chars->bytes[chars->length - 3] == '0')
-	{
-		chars->bytes[chars->length - 3] = chars->bytes[chars->length - 2];
-		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
-		chars->bytes[chars->length - 1] = 0;
-		--chars->length;
-	}
-#endif
-	return chars;
-}
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -62,24 +48,6 @@ struct Chars * create (const char *format, ...)
 	va_end(ap);
 	
 	return self;
-}
-
-struct Chars * createBinary (const char *format, ...)
-{
-	uint16_t length;
-	va_list ap;
-	struct Chars *self;
-	
-	va_start(ap, format);
-	length = vsnprintf(NULL, 0, format, ap);
-	va_end(ap);
-	
-	va_start(ap, format);
-	self = createSized(length);
-	vsprintf(self->bytes, format, ap);
-	va_end(ap);
-	
-	return normalizeBinary(self);
 }
 
 struct Chars * createSized (uint16_t length)
@@ -241,6 +209,20 @@ struct Chars * endAppend (struct Chars *self)
 	self->bytes[self->length] = '\0';
 	self->flags &= ~Chars(inAppend);
 	return self;
+}
+
+struct Chars * normalizeBinary (struct Chars * chars)
+{
+#if __MINGW32__
+	if (chars->length > 5 && chars->bytes[chars->length - 5] == 'e' && chars->bytes[chars->length - 3] == '0')
+	{
+		chars->bytes[chars->length - 3] = chars->bytes[chars->length - 2];
+		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
+		chars->bytes[chars->length - 1] = 0;
+		--chars->length;
+	}
+#endif
+	return chars;
 }
 
 void destroy (struct Chars *self)
