@@ -803,7 +803,7 @@ static struct Value setMonth (struct Context * const context)
 	ms = msToDate(toLocal(context->this.data.date->ms), &date);
 	month = binaryArgumentOr(context, 0, NAN) + 1;
 	day = binaryArgumentOr(context, 1, date.day);
-	if (isnan(day))
+	if (isnan(month) || isnan(day))
 		return Value.binary(context->this.data.date->ms = NAN);
 	
 	date.month = month;
@@ -822,7 +822,7 @@ static struct Value setUTCMonth (struct Context * const context)
 	ms = msToDate(context->this.data.date->ms, &date);
 	month = binaryArgumentOr(context, 0, NAN) + 1;
 	day = binaryArgumentOr(context, 1, date.day);
-	if (isnan(day))
+	if (isnan(month) || isnan(day))
 		return Value.binary(context->this.data.date->ms = NAN);
 	
 	date.month = month;
@@ -845,7 +845,7 @@ static struct Value setFullYear (struct Context * const context)
 	year = binaryArgumentOr(context, 0, NAN);
 	month = binaryArgumentOr(context, 1, date.month - 1) + 1;
 	day = binaryArgumentOr(context, 2, date.day);
-	if (isnan(day))
+	if (isnan(year) || isnan(month) || isnan(day))
 		return Value.binary(context->this.data.date->ms = NAN);
 	
 	date.year = year;
@@ -869,7 +869,7 @@ static struct Value setUTCFullYear (struct Context * const context)
 	year = binaryArgumentOr(context, 0, NAN);
 	month = binaryArgumentOr(context, 1, date.month - 1) + 1;
 	day = binaryArgumentOr(context, 2, date.day);
-	if (isnan(day))
+	if (isnan(year) || isnan(month) || isnan(day))
 		return Value.binary(context->this.data.date->ms = NAN);
 	
 	date.year = year;
