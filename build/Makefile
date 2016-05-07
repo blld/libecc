@@ -38,7 +38,8 @@ test: all
 
 $(library): $(objects)
 	@echo "   [AR] $@"
-	@$(AR) rcs $@ $(filter-out $(root)/object/main.o,$^)
+	@$(AR) rcs $@ $^
+	@$(AR) d $@ main.o
 
 $(binary): $(objects)
 	@echo "   [LD] $@"
