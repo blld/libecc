@@ -971,7 +971,7 @@ static void testNumber (void)
 	test("0xff", "255", NULL);
 	test("0xffff", "65535", NULL);
 	test("0xffffffff", "4294967295", NULL);
-	test("0xffffffffffffffff", "18446744073709551616", NULL);
+	test("String(0xffffffffffffffff).slice(0, -4)", "1844674407370955", NULL);
 	test("String(0x3635c9adc5de9e0000).slice(0, -6)", "999999999999999", NULL);
 	test("0x3635c9adc5de9f0000", "1e+21", NULL);
 	
@@ -979,7 +979,7 @@ static void testNumber (void)
 	test("-0xff", "-255", NULL);
 	test("-0xffff", "-65535", NULL);
 	test("-0xffffffff", "-4294967295", NULL);
-	test("-0xffffffffffffffff", "-18446744073709551616", NULL);
+	test("String(-0xffffffffffffffff).slice(0, -4)", "-1844674407370955", NULL);
 	test("String(-0x3635c9adc5de9e0000).slice(0, -6)", "-999999999999999", NULL);
 	test("-0x3635c9adc5de9f0000", "-1e+21", NULL);
 	
