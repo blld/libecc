@@ -15,7 +15,7 @@ debug : optim := -O0 -g
 debug : lto   := 
 
 warn  ?= -Wall
-optim ?= -Os -fstrict-aliasing
+optim ?= -Os -fstrict-aliasing -fomit-frame-pointer
 debug ?= -DNDEBUG=1
 lto   ?= $(shell echo "main(){}" | $(CC) -flto -o/dev/null -xc - >/dev/null 2>&1 && echo "-flto")
 libs  ?= $(shell echo "main(){}" | $(CC) -lm -o/dev/null -xc - >/dev/null 2>&1 && echo "-lm")
