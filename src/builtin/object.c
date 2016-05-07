@@ -900,7 +900,7 @@ struct Value *putElement (struct Object *self, uint32_t index, struct Context * 
 {
 	struct Value *ref;
 	
-	if (( ref = element(self, index) ))
+	if (( ref = elementOwn(self, index) ))
 		return putValue(self, ref, context, value);
 	else if (self->prototype && ( ref = element(self->prototype, index) ))
 	{
