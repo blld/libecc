@@ -971,8 +971,8 @@ void setup (void)
 	Function.addToObject(Date(prototype), "getUTCDate", getUTCDate, 0, flags);
 	Function.addToObject(Date(prototype), "getDay", getDay, 0, flags);
 	Function.addToObject(Date(prototype), "getUTCDay", getUTCDay, 0, flags);
-	Function.addToObject(Date(prototype), "getHour", getHours, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCHour", getUTCHours, 0, flags);
+	Function.addToObject(Date(prototype), "getHours", getHours, 0, flags);
+	Function.addToObject(Date(prototype), "getUTCHours", getUTCHours, 0, flags);
 	Function.addToObject(Date(prototype), "getMinutes", getMinutes, 0, flags);
 	Function.addToObject(Date(prototype), "getUTCMinutes", getUTCMinutes, 0, flags);
 	Function.addToObject(Date(prototype), "getSeconds", getSeconds, 0, flags);
