@@ -359,6 +359,24 @@ static struct Value toUTCString (struct Context * const context)
 	return Value.chars(msToChars(context->this.data.date->ms, 0));
 }
 
+static struct Value toJSON (struct Context * const context)
+{
+	struct Value object = Value.toObject(context, Context.this(context));
+	struct Value tv = Value.toPrimitive(context, object, Value(hintNumber));
+	struct Value *toISO;
+	
+	Context.assertParameterCount(context, 1);
+	
+	if (tv.type == Value(binaryType) && !isfinite(tv.data.binary))
+		return Value(null);
+	
+	toISO = Object.member(object.data.object, Key(toISOString));
+	if (!toISO || toISO->type != Value(functionType))
+		Context.throwError(context, Error.typeError(Context.textSeek(context), "toISOString is not a function"));
+	
+	return Context.callFunction(context, toISO->data.function, object, 0);
+}
+
 static struct Value toISOString (struct Context * const context)
 {
 	const char *format;
@@ -957,8 +975,9 @@ void setup (void)
 	Function.setupBuiltinObject(&Date(constructor), dateConstructor, -7, &Date(prototype), Value.date(create(NAN)), &Date(type));
 	
 	Function.addToObject(Date(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, flags);
 	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, flags);
+	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, flags);
+	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, flags);
 	Function.addToObject(Date(prototype), "toDateString", toDateString, 0, flags);
 	Function.addToObject(Date(prototype), "toTimeString", toTimeString, 0, flags);
 	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, flags);

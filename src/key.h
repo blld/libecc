@@ -34,6 +34,7 @@
 	extern struct Key Key(get);
 	extern struct Key Key(set);
 	extern struct Key Key(join);
+	extern struct Key Key(toISOString);
 
 #endif
 

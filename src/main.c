@@ -1195,6 +1195,11 @@ static void testDate (void)
 	
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.toISOString()", "1995-12-25T12:34:56.789Z", NULL);
 	
+	test("var date = new Date(); date.toISOString = undefined; date.toJSON()", "TypeError: toISOString is not a function"
+	,    "                                                     ^~~~         ");
+	test("var o = {}; Date.prototype.toJSON.call(o)", "TypeError: toISOString is not a function"
+	,    "                                       ^ ");
+	
 	// iso format
 	test("Date.parse('1984')", "441763200000", NULL);
 	test("Date.parse('1984-08')", "460166400000", NULL);

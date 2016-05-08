@@ -37,6 +37,7 @@ struct Key Key(configurable);
 struct Key Key(get);
 struct Key Key(set);
 struct Key Key(join);
+struct Key Key(toISOString);
 
 // MARK: - Static Members
 
@@ -62,6 +63,7 @@ void setup (void)
 		Key(get) = makeWithCString("get");
 		Key(set) = makeWithCString("set");
 		Key(join) = makeWithCString("join");
+		Key(toISOString) = makeWithCString("toISOString");
 	}
 }
 
