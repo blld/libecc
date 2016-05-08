@@ -13,7 +13,7 @@
 
 #define textMake(N, T) \
 	static const char N ## Literal[] = T; \
-	const struct Text Text(N) = { N ## Literal, sizeof N ## Literal - 1 }
+	const struct Text Text(N) = { .bytes = N ## Literal, .length = sizeof N ## Literal - 1 }
 
 textMake(undefined, "undefined");
 textMake(null, "null");
@@ -71,7 +71,7 @@ struct Text join (struct Text from, struct Text to)
 	return make(from.bytes, to.bytes - from.bytes + to.length);
 }
 
-uint16_t nextCodepointBytes (struct Text text)
+uint16_t nextCodepointLength (struct Text text)
 {
 	switch (text.length)
 	{
@@ -142,7 +142,7 @@ uint32_t nextCodepoint (struct Text *text)
 	}
 }
 
-uint16_t toUTF16Bytes (struct Text text)
+uint16_t toUTF16Length (struct Text text)
 {
 	uint16_t windex = 0;
 	
