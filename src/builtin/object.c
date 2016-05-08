@@ -370,7 +370,7 @@ static struct Value defineProperty (struct Context * const context)
 sealedError:
 	Context.setTextIndex(context, Context(callIndex));
 	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "property is non-configurable")));
-	exit(1);
+	unreachable
 }
 
 static struct Value defineProperties (struct Context * const context)
@@ -1097,8 +1097,6 @@ void stripMap (struct Object *self)
 	
 	while (index < self->hashmapCount && self->hashmap[index].value.check == 1)
 		++index;
-	
-//	fprintf(stderr, "%d->%d\n", self->hashmapCount, index);
 	
 	self->hashmapCapacity = self->hashmapCount = index;
 	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);

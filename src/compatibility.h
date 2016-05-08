@@ -29,9 +29,11 @@
 
 	#if __GNUC__
 		#define noreturn __attribute__((noreturn))
+		#define unreachable
 		#define typeof __typeof__
 	#else
 		#define noreturn
+		#define unreachable exit(1);
 		#define typeof __typeof__
 	#endif
 

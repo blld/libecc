@@ -237,7 +237,7 @@ int isTrue (struct Value value)
 		return stringLength(value) > 0;
 	
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
-	exit(1);
+	unreachable
 }
 
 
@@ -256,8 +256,10 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	if (value.type < Value(objectType))
 		return value;
 	
-	if (!context)
+	if (!context) {
 		Ecc.fatal("cannot use toPrimitive outside context");
+		unreachable
+	}
 	
 	object = value.data.object;
 	hint = hint? hint: value.type == Value(dateType)? 1: -1;
@@ -286,7 +288,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	else
 		Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert value to primitive")));
 	
-	exit(1);
+	unreachable
 }
 
 struct Value toBinary (struct Value value)
@@ -345,7 +347,7 @@ struct Value toBinary (struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
-	exit(1);
+	unreachable
 }
 
 struct Value toInteger (struct Value value)
@@ -439,7 +441,7 @@ struct Value toString (struct Context * const context, struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
-	exit(1);
+	unreachable
 }
 
 uint16_t stringLength (struct Value value)
@@ -516,7 +518,7 @@ error:
 		else
 			Ecc.jmpEnv(context->ecc, error(Error.typeError(text, "cannot convert %s to object", typeName(value.type))));
 	}
-	exit(1);
+	unreachable
 }
 
 struct Value toType (struct Value value)
@@ -556,7 +558,7 @@ struct Value toType (struct Value value)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
-	exit(1);
+	unreachable
 }
 
 struct Value equals (struct Context * const context, struct Value a, struct Value b)
@@ -779,7 +781,7 @@ const char * typeName (enum Value(Type) type)
 			break;
 	}
 	Ecc.fatal("Invalid Value(Type) : %u", type);
-	exit(1);
+	unreachable
 }
 
 const char * maskName (enum Value(Mask) mask)
@@ -802,7 +804,7 @@ const char * maskName (enum Value(Mask) mask)
 			return "dynamic";
 	}
 	Ecc.fatal("Invalid Value(Mask) : %u", mask);
-	exit(1);
+	unreachable
 }
 
 void dumpTo (struct Value value, FILE *file)
