@@ -30,6 +30,7 @@
 
 Interface(Context,
 	
+	(void, throwError ,(struct Context * const, struct Error *error) noreturn)
 	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
 	
 	(void , assertParameterCount ,(struct Context * const, int parameterCount))

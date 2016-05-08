@@ -388,6 +388,7 @@ static void testException (void)
 	test("try { throw 'a' } catch(b){ 'b' } finally { 'c' } 'd'", "d", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { throw c + 'c'; return 'c' }})()", "abc"
 	,    "                                                                                                 ^~~~~~                   ");
+	test("(function(){ try { throw 'a' } catch (b) { throw 'b' } finally { return 'c' } })()", "c", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { return 'b' } } catch (c) { throw c + 'c'; return 'c' } })()", "b", NULL);
 	test("(function(){ try { try { throw 'a' } catch (b) { throw b + 'b'; return 'b' } } catch (c) { return 'c' }})()", "c", NULL);
 	test("var a = 0; try { for (;;) { if(++a > 10) throw a; } } catch (e) { e } finally { a + 'f' }", "11f", NULL);
@@ -726,6 +727,10 @@ static void testObject (void)
 	test("var a = { b:1 }; ++a.b", "2", NULL);
 	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property"
 	,    "                                   ^~~~~");
+	test("var a = { b:1 }; Object.freeze(a); a.b += 1", "TypeError: 'b' is read-only property"
+	,    "                                   ^~~~~~~~");
+	test("var a = { b:1 }; Object.freeze(a); a.b -= 1", "TypeError: 'b' is read-only property"
+	,    "                                   ^~~~~~~~");
 	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only property"
 	,    "                                   ^~~~~~~~");
 	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only property"

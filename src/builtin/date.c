@@ -369,7 +369,7 @@ static struct Value toISOString (struct Context * const context)
 	Context.assertThisType(context, Value(dateType));
 	
 	if (isnan(context->this.data.date->ms))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "invalid date")));
+		Context.throwError(context, Error.rangeError(Context.textSeek(context), "invalid date"));
 	
 	msToDateAndTime(context->this.data.date->ms, &date, &time);
 	

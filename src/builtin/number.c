@@ -35,7 +35,7 @@ static struct Value toExponential (struct Context * const context)
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
+			Context.throwError(context, Error.rangeError(Context.textSeek(context), "precision %d out of range", precision));
 		
 		return Value.chars(Chars.normalizeBinary(Chars.create("%.*e", precision, binary)));
 	}
@@ -57,7 +57,7 @@ static struct Value toFixed (struct Context * const context)
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 20)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
+			Context.throwError(context, Error.rangeError(Context.textSeek(context), "precision %d out of range", precision));
 		
 		return Value.chars(Chars.normalizeBinary(Chars.create("%.*f", precision, binary)));
 	}
@@ -79,7 +79,7 @@ static struct Value toPrecision (struct Context * const context)
 	{
 		int32_t precision = Value.toInteger(value).data.integer;
 		if (precision < 0 || precision > 100)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "precision %d out of range", precision)));
+			Context.throwError(context, Error.rangeError(Context.textSeek(context), "precision %d out of range", precision));
 		
 		return Value.chars(Chars.normalizeBinary(Chars.create("%.*g", precision, binary)));
 	}
@@ -102,7 +102,7 @@ static struct Value toString (struct Context * const context)
 	{
 		radix = Value.toInteger(value).data.integer;
 		if (radix < 2 || radix > 36)
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "radix must be an integer at least 2 and no greater than 36")));
+			Context.throwError(context, Error.rangeError(Context.textSeek(context), "radix must be an integer at least 2 and no greater than 36"));
 		
 		if (radix != 10 && (binary < LONG_MIN || binary > LONG_MAX))
 			Env.printWarning("%g.toString(%d) out of bounds; only long int are supported by radices other than 10", binary, radix);

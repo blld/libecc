@@ -344,7 +344,7 @@ static struct Value arrayConstructor (struct Context * const context)
 			count = 0;
 		}
 		else
-			Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(Context.textSeek(context), "invalid array length")));
+			Context.throwError(context, Error.rangeError(Context.textSeek(context), "invalid array length"));
 	}
 	
 	array = Array.createSized(length);

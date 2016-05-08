@@ -69,7 +69,7 @@ static struct Value apply (struct Context * const context)
 	else
 	{
 		if (!Value.isObject(arguments))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(Context.textSeek(context), "arguments is not an object")));
+			Context.throwError(context, Error.typeError(Context.textSeek(context), "arguments is not an object"));
 		
 		return Op.callFunctionArguments(context, 2, context->this.data.function, this, arguments.data.object);
 	}

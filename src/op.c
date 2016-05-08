@@ -257,7 +257,7 @@ const char * toChars (const Native(Function) native)
 static inline struct Value callOps (struct Context * const context, struct Object *environment)
 {
 	if (context->depth >= context->ecc->maximumCallDepth)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.rangeError(context->parent->ops->text, "maximum depth exceeded")));
+		Context.throwError(context, Error.rangeError(context->parent->ops->text, "maximum depth exceeded"));
 	
 	context->environment = environment;
 	return context->ops->native(context);
@@ -486,7 +486,7 @@ static inline struct Value callFunction (struct Context * const context, struct 
 static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
 {
 	if (value.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not a function", text->length, text->bytes)));
+		Context.throwError(context, Error.typeError(*text, "'%.*s' is not a function", text->length, text->bytes));
 	
 	if (value.data.function->flags & Function(useBoundThis))
 		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
@@ -523,8 +523,7 @@ struct Value construct (struct Context * const context)
 		return object;
 	
 error:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' is not a constructor", text->length, text->bytes)));
-	unreachable
+	Context.throwError(context, Error.typeError(*text, "'%.*s' is not a constructor", text->length, text->bytes));
 }
 
 struct Value call (struct Context * const context)
@@ -639,7 +638,7 @@ struct Value getLocalRef (struct Context * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.member(context->environment, key);
 	if (!ref)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.referenceError(context->ops->text, "'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes)));
+		Context.throwError(context, Error.referenceError(context->ops->text, "'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	
 	return Value.reference(ref);
 }
@@ -745,7 +744,7 @@ struct Value getMemberRef (struct Context * const context)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+			Context.throwError(context, Error.typeError(*text, "object is not extensible"));
 		
 		ref = Object.addMember(object.data.object, key, Value(undefined), 0);
 	}
@@ -801,7 +800,7 @@ struct Value deleteMember (struct Context * const context)
 	
 	result = Object.deleteMember(object.data.object, key);
 	if (!result)
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes)));
+		Context.throwError(context, Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	
 	return Value.truth(result);
 }
@@ -836,7 +835,7 @@ struct Value getPropertyRef (struct Context * const context)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "object is not extensible")));
+			Context.throwError(context, Error.typeError(*text, "object is not extensible"));
 		
 		ref = Object.addProperty(object.data.object, property, Value(undefined), 0);
 	}
@@ -891,7 +890,7 @@ struct Value deleteProperty (struct Context * const context)
 	if (!result)
 	{
 		struct Value string = Value.toString(NULL, property);
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string))));
+		Context.throwError(context, Error.typeError(*text, "property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string)));
 	}
 	return Value.truth(result);
 }
@@ -1026,11 +1025,11 @@ struct Value instanceOf (struct Context * const context)
 		return Value(false);
 	
 	if (b.type != Value(functionType))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s' not a function", text->length, text->bytes)));
+		Context.throwError(context, Error.typeError(*text, "'%.*s' not a function", text->length, text->bytes));
 	
 	b = Object.getMember(b.data.object, Key(prototype), context);
 	if (!Value.isObject(b))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(*text, "'%.*s'.prototype not an object", text->length, text->bytes)));
+		Context.throwError(context, Error.typeError(*text, "'%.*s'.prototype not an object", text->length, text->bytes));
 	
 	object = a.data.object;
 	while (( object = object->prototype ))
@@ -1047,7 +1046,7 @@ struct Value in (struct Context * const context)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		Ecc.jmpEnv(context->ecc, Value.error(Error.typeError(context->ops->text, "'%.*s' not an object", context->ops->text.length, context->ops->text.bytes)));
+		Context.throwError(context, Error.typeError(context->ops->text, "'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
 	
 	ref = Object.property(object.data.object, property);
 	
@@ -1463,7 +1462,6 @@ struct Value try (struct Context * const context)
 	{
 		context->ops = rethrowOps;
 		Ecc.jmpEnv(context->ecc, retain(value));
-		unreachable
 	}
 	else if (breaker)
 	{
@@ -1479,7 +1477,6 @@ struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
 	Ecc.jmpEnv(context->ecc, retain(trapOp(context, 0)));
-	unreachable
 }
 
 struct Value next (struct Context * const context)

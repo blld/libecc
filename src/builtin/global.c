@@ -156,8 +156,7 @@ static struct Value decodeURIExcept (struct Context * const context, const char 
 	return Value.chars(chars);
 	
 	error:
-	Ecc.jmpEnv(context->ecc, Value.error(Error.uriError(Context.textSeek(context), "malformed URI")));
-	unreachable
+	Context.throwError(context, Error.uriError(Context.textSeek(context), "malformed URI"));
 }
 
 static struct Value decodeURI (struct Context * const context)
