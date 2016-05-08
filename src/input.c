@@ -77,7 +77,8 @@ struct Input * createFromBytes (const char *bytes, uint32_t length, const char *
 	
 	self = create();
 	
-	if (name) {
+	if (name)
+	{
 		va_list ap;
 		va_start(ap, name);
 		vsnprintf(self->name, sizeof(self->name), name, ap);
