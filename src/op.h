@@ -67,11 +67,11 @@
 		_( moreOrEqual )\
 		_( instanceOf )\
 		_( in )\
+		_( add )\
+		_( minus )\
 		_( multiply )\
 		_( divide )\
 		_( modulo )\
-		_( add )\
-		_( minus )\
 		_( leftShift )\
 		_( rightShift )\
 		_( unsignedRightShift )\
@@ -93,11 +93,11 @@
 		_( decrementRef )\
 		_( postIncrementRef )\
 		_( postDecrementRef )\
+		_( addAssignRef )\
+		_( minusAssignRef )\
 		_( multiplyAssignRef )\
 		_( divideAssignRef )\
 		_( moduloAssignRef )\
-		_( addAssignRef )\
-		_( minusAssignRef )\
 		_( leftShiftAssignRef )\
 		_( rightShiftAssignRef )\
 		_( unsignedRightShiftAssignRef )\
