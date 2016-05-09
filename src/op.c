@@ -1141,52 +1141,46 @@ struct Value not (struct Context * const context)
 
 // MARK: assignement
 
-#define unaryBinaryOpRef(OP, RET) \
+#define unaryBinaryOpRef(OP) \
 	const struct Text *text = opText(0); \
 	struct Value *ref = nextOp().data.reference; \
-	struct Value a, b; \
+	struct Value a; \
+	double result; \
 	 \
-	a = b = *ref; \
-	if (a.type == Value(binaryType)) \
-	{ \
-		OP b.data.binary; \
-		*ref = b; \
-		return RET; \
-	} \
-	else if (a.flags & (Value(readonly) | Value(accessor))) \
+	a = *ref; \
+	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = b = Value.toBinary(release(Object.getValue(context->refObject, ref, context))); \
-		OP b.data.binary; \
-		Object.putValue(context->refObject, ref, context, b); \
-		return RET; \
+		a = Value.toBinary(release(Object.getValue(context->refObject, ref, context))); \
+		result = OP; \
+		Object.putValue(context->refObject, ref, context, a); \
+		return Value.binary(result); \
 	} \
-	else \
-	{ \
-		a = b = Value.toBinary(release(a)); \
-		OP b.data.binary; \
-		*ref = b; \
-		return RET; \
-	} \
+	else if (a.type != Value(binaryType)) \
+		a = Value.toBinary(release(a)); \
+	 \
+	result = OP; \
+	*ref = a; \
+	return Value.binary(result); \
 
 struct Value incrementRef (struct Context * const context)
 {
-	unaryBinaryOpRef(++, b)
+	unaryBinaryOpRef(++a.data.binary)
 }
 
 struct Value decrementRef (struct Context * const context)
 {
-	unaryBinaryOpRef(--, b)
+	unaryBinaryOpRef(--a.data.binary)
 }
 
 struct Value postIncrementRef (struct Context * const context)
 {
-	unaryBinaryOpRef(++, a)
+	unaryBinaryOpRef(a.data.binary++)
 }
 
 struct Value postDecrementRef (struct Context * const context)
 {
-	unaryBinaryOpRef(--, a)
+	unaryBinaryOpRef(a.data.binary--)
 }
 
 #define assignOpRef(OP, TYPE, CONV) \
