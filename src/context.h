@@ -56,9 +56,9 @@ Interface(Context,
 		struct Object *refObject;
 		int breaker;
 		
-		struct Ecc * ecc;
 		struct Object * environment;
 		struct Context * parent;
+		struct Ecc * ecc;
 		
 		int textIndex;
 		const struct Text *text;
