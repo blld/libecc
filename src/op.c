@@ -1580,9 +1580,9 @@ struct Value iterate (struct Context * const context)
 static struct Value iterateIntegerRef (
 	struct Context * const context,
 	int (*compareInteger) (int32_t, int32_t),
-	typeof(integerWontOverflowPositive) wontOverflow,
-	typeof(Value.more) compareValue,
-	typeof(Value.add) valueStep)
+	int (*wontOverflow) (int32_t, int32_t),
+	struct Value io_libecc_interface_Unwrap((*compareValue)) (struct Context * const, struct Value, struct Value),
+	struct Value io_libecc_interface_Unwrap((*valueStep)) (struct Context * const, struct Value, struct Value))
 {
 	const struct Op *endOps = context->ops + opValue().data.integer;
 	struct Value stepValue = nextOp();

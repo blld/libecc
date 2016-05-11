@@ -29,10 +29,8 @@
 
 	#if __GNUC__
 		#define noreturn __attribute__((noreturn))
-		#define typeof __typeof__
 	#else
 		#define noreturn
-		#define typeof __typeof__
 	#endif
 
 	#if (__STDC_VERSION__ < 199901L)
