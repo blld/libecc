@@ -83,8 +83,8 @@ static struct Error *propertyTypeError(struct Context * const context, struct Va
 {
 	if (Value.isObject(this))
 	{
-		typeof(this.data.object->hashmap) hashmap = (typeof(hashmap))ref;
-		typeof(this.data.object->element) element = (typeof(element))ref;
+		union Object(Hashmap) *hashmap = (union Object(Hashmap) *)ref;
+		union Object(Element) *element = (union Object(Element) *)ref;
 		
 		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
 		{
@@ -374,12 +374,12 @@ sealedError:
 
 static struct Value defineProperties (struct Context * const context)
 {
-	typeof(context->environment->hashmap) originalHashmap = context->environment->hashmap;
+	union Object(Hashmap) *originalHashmap = context->environment->hashmap;
 	uint16_t originalHashmapCount = context->environment->hashmapCount;
 	
 	uint16_t index, hashmapCount = 6;
 	struct Object *object, *properties;
-	typeof(*context->environment->hashmap) hashmap[hashmapCount];
+	union Object(Hashmap) hashmap[hashmapCount];
 	
 	Context.assertParameterCount(context, 2);
 	
@@ -1053,7 +1053,7 @@ int deleteProperty (struct Object *self, struct Value property)
 
 void packValue (struct Object *self)
 {
-	typeof(*self->hashmap) data;
+	union Object(Hashmap) data;
 	uint32_t index = 2, valueIndex = 2, copyIndex, slot;
 	
 	assert(self);

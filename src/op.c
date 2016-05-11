@@ -312,7 +312,7 @@ struct Value callFunctionArguments (struct Context * const context, int argument
 	else
 	{
 		struct Object environment = function->environment;
-		typeof(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		union Object(Hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -347,7 +347,7 @@ struct Value callFunctionVA (struct Context * const context, int argumentOffset,
 	else
 	{
 		struct Object environment = function->environment;
-		typeof(*function->environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		union Object(Hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -384,8 +384,8 @@ static inline struct Value callFunction (struct Context * const context, struct 
 	{
 		struct Object environment = function->environment;
 		struct Object arguments = Object.identity;
-		typeof(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
-		typeof(*environment.element) element[argumentCount];
+		union Object(Hashmap) hashmap[function->environment.hashmapCapacity];
+		union Object(Element) element[argumentCount];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -398,7 +398,7 @@ static inline struct Value callFunction (struct Context * const context, struct 
 	else
 	{
 		struct Object environment = function->environment;
-		typeof(*environment.hashmap) hashmap[function->environment.hashmapCapacity];
+		union Object(Hashmap) hashmap[function->environment.hashmapCapacity];
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
@@ -1192,17 +1192,17 @@ struct Value postDecrementRef (struct Context * const context)
 		b = CONV(b); \
 	 \
 	a = *ref; \
-	if (a.type == TYPE) \
-	{ \
-		OP; \
-		return *ref = a; \
-	} \
-	else if (a.flags & (Value(readonly) | Value(accessor))) \
+	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
 		a = CONV(release(Object.getValue(context->refObject, ref, context))); \
 		OP; \
 		return *Object.putValue(context->refObject, ref, context, a); \
+	} \
+	else if (a.type == TYPE) \
+	{ \
+		OP; \
+		return *ref = a; \
 	} \
 	else \
 	{ \
