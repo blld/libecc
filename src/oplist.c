@@ -18,7 +18,6 @@
 struct OpList * create (const Native(Function) native, struct Value value, struct Text text)
 {
 	struct OpList *self = malloc(sizeof(*self) + sizeof(*self->ops) * 1);
-	assert(self);
 	self->ops[0] = Op.make(native, value, text);
 	self->opCount = 1;
 	return self;

@@ -73,7 +73,6 @@ static inline enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *me
 struct Lexer * createWithInput(struct Input *input)
 {
 	struct Lexer *self = malloc(sizeof(*self));
-	assert(self);
 	*self = Lexer.identity;
 	
 	assert(input);

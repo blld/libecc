@@ -1592,7 +1592,6 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 struct Parser * createWithLexer (struct Lexer *lexer)
 {
 	struct Parser *self = malloc(sizeof(*self));
-	assert(self);
 	*self = Parser.identity;
 	
 	self->lexer = lexer;

@@ -620,7 +620,6 @@ struct Object * create (struct Object *prototype)
 struct Object * createSized (struct Object *prototype, uint16_t size)
 {
 	struct Object *self = malloc(sizeof(*self));
-	assert(self);
 	Pool.addObject(self);
 	return initializeSized(self, prototype, size);
 }
@@ -687,7 +686,6 @@ struct Object * copy (const struct Object *original)
 	size_t byteSize;
 	
 	struct Object *self = malloc(sizeof(*self));
-	assert(self);
 	Pool.addObject(self);
 	
 	*self = *original;

@@ -81,7 +81,6 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
-	assert(self);
 	Pool.addObject(&self->object);
 	
 	*self = Error.identity;

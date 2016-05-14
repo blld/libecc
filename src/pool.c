@@ -66,8 +66,6 @@ void setup (void)
 	assert (!self);
 	
 	self = malloc(sizeof(*self));
-	assert(self);
-	
 	*self = Pool.identity;
 }
 

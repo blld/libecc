@@ -223,7 +223,6 @@ struct Function * create (struct Object *environment)
 struct Function * createSized (struct Object *environment, uint32_t size)
 {
 	struct Function *self = malloc(sizeof(*self));
-	assert(self);
 	Pool.addFunction(self);
 	
 	*self = Function.identity;
@@ -263,7 +262,6 @@ struct Function * copy (struct Function *original)
 	struct Function *self = malloc(sizeof(*self));
 	size_t byteSize;
 	
-	assert(self);
 	assert(original);
 	Pool.addObject(&self->object);
 	

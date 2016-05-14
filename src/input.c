@@ -17,8 +17,6 @@ static struct Input * create()
 {
 	size_t linesBytes;
 	struct Input *self = malloc(sizeof(*self));
-	
-	assert(self);
 	*self = Input.identity;
 	
 	self->lineCapacity = 8;
@@ -86,7 +84,6 @@ struct Input * createFromBytes (const char *bytes, uint32_t length, const char *
 	}
 	self->length = length;
 	self->bytes = malloc(length + 1);
-	assert(self->bytes);
 	memcpy(self->bytes, bytes, length);
 	self->bytes[length] = '\0';
 	
