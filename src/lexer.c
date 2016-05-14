@@ -61,8 +61,9 @@ static inline int acceptChar(struct Lexer *self, char c)
 		return 0;
 }
 
-static inline enum Lexer(Token) error(struct Lexer *self, struct Error *error)
+static inline enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *message)
 {
+	struct Error *error = Error.syntaxError(self->text, message);
 	self->value = Value.error(error);
 	return Lexer(errorToken);
 }
@@ -121,7 +122,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						if (c == '*' && acceptChar(self, '/'))
 							goto retry;
 					
-					return error(self, Error.syntaxError(self->text, "unterminated comment"));
+					return syntaxError(self, Chars.create("unterminated comment"));
 				}
 				else if (previewChar(self) == '/')
 				{
@@ -135,7 +136,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				{
 					#warning TODO
 					Env.printWarning("TODO: regex or division");
-					return error(self, Error.syntaxError(self->text, "TODO: regex"));
+					return syntaxError(self, Chars.create("TODO: regex"));
 				}
 				else if (acceptChar(self, '='))
 					return Lexer(divideAssignToken);
@@ -192,7 +193,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 												index += 2;
 												break;
 											}
-											return error(self, Error.syntaxError(Text.make(self->text.bytes + bufferIndex, 4), "malformed hexadecimal character escape sequence"));
+											self->text = Text.make(self->text.bytes + bufferIndex, 4);
+											return syntaxError(self, Chars.create("malformed hexadecimal character escape sequence"));
 										
 										case 'u':
 											if (isxdigit(bytes[index + 1]) && isxdigit(bytes[index + 2]) && isxdigit(bytes[index + 3]) && isxdigit(bytes[index + 4]))
@@ -213,7 +215,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 												break;
 											}
 											error:
-											return error(self, Error.syntaxError(Text.make(self->text.bytes + bufferIndex, 6), "malformed Unicode character escape sequence"));
+											self->text = Text.make(self->text.bytes + bufferIndex, 6);
+											return syntaxError(self, Chars.create("malformed Unicode character escape sequence"));
 										
 										default:
 											buffer[bufferIndex] = bytes[index];
@@ -235,7 +238,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						break;
 				}
 				
-				return error(self, Error.syntaxError(self->text, "unterminated string literal"));
+				return syntaxError(self, Chars.create("unterminated string literal"));
 			}
 			
 			case '.':
@@ -267,7 +270,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							break;
 					
 					if (self->text.length <= 2)
-						return error(self, Error.syntaxError(self->text, "missing hexadecimal digits after '0x'"));
+						return syntaxError(self, Chars.create("missing hexadecimal digits after '0x'"));
 				}
 				else
 				{
@@ -288,7 +291,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							acceptChar(self, '-');
 						
 						if (!isdigit(previewChar(self)))
-							return error(self, Error.syntaxError(self->text, "missing exponent"));
+							return syntaxError(self, Chars.create("missing exponent"));
 						
 						while (isdigit(previewChar(self)))
 							nextChar(self);
@@ -299,7 +302,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				{
 					self->text.bytes += self->text.length;
 					self->text.length = 1;
-					return error(self, Error.syntaxError(self->text, "identifier starts immediately after numeric literal"));
+					return syntaxError(self, Chars.create("identifier starts immediately after numeric literal"));
 				}
 				
 				if (binary)
@@ -523,7 +526,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						
 						for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
 							if (self->text.length == reservedKeywords[k].length && memcmp(self->text.bytes, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
-								return error(self, Error.syntaxError(self->text, "'%s' is a reserved identifier", reservedKeywords[k]));
+								return syntaxError(self, Chars.create("'%s' is a reserved identifier", reservedKeywords[k]));
 					}
 					
 					self->disallowRegex = 1;
@@ -532,9 +535,9 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				}
 				else
 					if (isprint(c))
-						return error(self, Error.syntaxError(self->text, "invalid character '%c'", c));
+						return syntaxError(self, Chars.create("invalid character '%c'", c));
 					else
-						return error(self, Error.syntaxError(self->text, "invalid character '\\%d'", c & 0xff));
+						return syntaxError(self, Chars.create("invalid character '\\%d'", c & 0xff));
 			}
 		}
 	}

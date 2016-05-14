@@ -156,7 +156,7 @@ static struct Value decodeURIExcept (struct Context * const context, const char 
 	return Value.chars(chars);
 	
 	error:
-	Context.throwError(context, Error.uriError(Context.textSeek(context), "malformed URI"));
+	Context.uriError(context, Chars.create("malformed URI"));
 }
 
 static struct Value decodeURI (struct Context * const context)

@@ -79,7 +79,7 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
-static struct Error *propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const struct Text text, const char *description)
+static void propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const char *description)
 {
 	if (Value.isObject(this))
 	{
@@ -89,12 +89,16 @@ static struct Error *propertyTypeError(struct Context * const context, struct Va
 		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
 		{
 			const struct Text *keyText = Key.textOf(hashmap->value.key);
-			return Error.typeError(text, "'%.*s' %s", keyText->length, keyText->bytes, description);
+			Context.typeError(context, Chars.create("'%.*s' %s", keyText->length, keyText->bytes, description));
 		}
 		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
-			return Error.typeError(text, "'%d' %s", element - this.data.object->element, description);
+			Context.typeError(context, Chars.create("'%d' %s", element - this.data.object->element, description));
 	}
-	return Error.typeError(text, "'%.*s' %s", text.length, text.bytes, description);
+	else
+	{
+		struct Text text = Context.textSeek(context);
+		Context.typeError(context, Chars.create("'%.*s' %s", text.length, text.bytes, description));
+	}
 }
 
 //
@@ -103,7 +107,7 @@ static struct Object *checkObject (struct Context * const context, int argument)
 {
 	struct Value value = Context.argument(context, argument);
 	if (!Value.isObject(value))
-		Context.throwError(context, Error.typeError(Context.textSeek(context), "not an object"));
+		Context.typeError(context, Chars.create("not an object"));
 	
 	return value.data.object;
 }
@@ -277,13 +281,13 @@ static struct Value defineProperty (struct Context * const context)
 			setter = NULL;
 		
 		if (getter && getter->type != Value(functionType))
-			Context.throwError(context, Error.typeError(Context.textSeek(context), "getter is not a function"));
+			Context.typeError(context, Chars.create("getter is not a function"));
 		
 		if (setter && setter->type != Value(functionType))
-			Context.throwError(context, Error.typeError(Context.textSeek(context), "setter is not a function"));
+			Context.typeError(context, Chars.create("setter is not a function"));
 		
 		if (member(descriptor, Key(value)) || member(descriptor, Key(writable)))
-			Context.throwError(context, Error.typeError(Context.textSeek(context), "value & writable forbidden when a getter or setter are set"));
+			Context.typeError(context, Chars.create("value & writable forbidden when a getter or setter are set"));
 		
 		if (getter)
 		{
@@ -369,7 +373,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 sealedError:
 	Context.setTextIndex(context, Context(callIndex));
-	Context.throwError(context, Error.typeError(Context.textSeek(context), "property is non-configurable"));
+	Context.typeError(context, Chars.create("property is non-configurable"));
 }
 
 static struct Value defineProperties (struct Context * const context)
@@ -854,7 +858,7 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Context *
 		else if (ref->data.function->pair)
 			Context.callFunction(context, ref->data.function->pair, Value.object(self), 1, value);
 		else
-			Context.throwError(context, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only accessor"));
+			propertyTypeError(context, ref, Value.object(self), "is read-only accessor");
 		
 		return ref;
 	}
@@ -862,10 +866,10 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Context *
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			Context.throwError(context, propertyTypeError(context, ref, Value.object(self), Context.textSeek(context), "is read-only property"));
+			propertyTypeError(context, ref, Value.object(self), "is read-only property");
 	}
 	else if (self->flags & Object(sealed))
-		Context.throwError(context, Error.typeError(Context.textSeek(context), "object is not extensible"));
+		Context.typeError(context, Chars.create("object is not extensible"));
 	else
 		ref->flags = 0;
 	
@@ -886,11 +890,11 @@ struct Value *putMember (struct Object *self, struct Key key, struct Context * c
 		if (ref->flags & Value(accessor))
 			return putValue(self, ref, context, value);
 		else if (ref->flags & Value(readonly))
-			Context.throwError(context, Error.typeError(Context.textSeek(context), "'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes));
+			Context.typeError(context, Chars.create("'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
 	
 	if (self->flags & Object(sealed))
-		Context.throwError(context, Error.typeError(Context.textSeek(context), "object is not extensible"));
+		Context.typeError(context, Chars.create("object is not extensible"));
 	
 	return addMember(self, key, value, 0);
 }
@@ -906,11 +910,11 @@ struct Value *putElement (struct Object *self, uint32_t index, struct Context * 
 		if (ref->flags & Value(accessor))
 			return putValue(self, ref, context, value);
 		else if (ref->flags & Value(readonly))
-			Context.throwError(context, Error.typeError(Context.textSeek(context), "'%d' is readonly", index));
+			Context.typeError(context, Chars.create("'%d' is readonly", index));
 	}
 	
 	if (self->flags & Object(sealed))
-		Context.throwError(context, Error.typeError(Context.textSeek(context), "object is not extensible"));
+		Context.typeError(context, Chars.create("object is not extensible"));
 	
 	return addElement(self, index, value, 0);
 }

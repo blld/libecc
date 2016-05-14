@@ -372,7 +372,7 @@ static struct Value toJSON (struct Context * const context)
 	
 	toISO = Object.member(object.data.object, Key(toISOString));
 	if (!toISO || toISO->type != Value(functionType))
-		Context.throwError(context, Error.typeError(Context.textSeek(context), "toISOString is not a function"));
+		Context.typeError(context, Chars.create("toISOString is not a function"));
 	
 	return Context.callFunction(context, toISO->data.function, object, 0);
 }
@@ -387,7 +387,7 @@ static struct Value toISOString (struct Context * const context)
 	Context.assertThisType(context, Value(dateType));
 	
 	if (isnan(context->this.data.date->ms))
-		Context.throwError(context, Error.rangeError(Context.textSeek(context), "invalid date"));
+		Context.rangeError(context, Chars.create("invalid date"));
 	
 	msToDateAndTime(context->this.data.date->ms, &date, &time);
 	

@@ -40,6 +40,16 @@ static void error (struct Parser *self, struct Error *error)
 	}
 }
 
+static void syntaxError (struct Parser *self, struct Text text, struct Chars *message)
+{
+	error(self, Error.syntaxError(text, message));
+}
+
+static void referenceError (struct Parser *self, struct Text text, struct Chars *message)
+{
+	error(self, Error.referenceError(text, message));
+}
+
 static inline enum Lexer(Token) nextToken (struct Parser *self)
 {
 	if (self->previewToken != Lexer(errorToken))
@@ -66,9 +76,9 @@ static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
 	if (previewToken(self) != token)
 	{
 		if (token && token < Lexer(errorToken))
-			error(self, Error.syntaxError(self->lexer->text, "expected '%c', got %s", token, Lexer.tokenChars(previewToken(self))));
+			syntaxError(self, self->lexer->text, Chars.create("expected '%c', got %s", token, Lexer.tokenChars(previewToken(self))));
 		else
-			error(self, Error.syntaxError(self->lexer->text, "expected %s, got %s", Lexer.tokenChars(token), Lexer.tokenChars(previewToken(self))));
+			syntaxError(self, self->lexer->text, Chars.create("expected %s, got %s", Lexer.tokenChars(token), Lexer.tokenChars(previewToken(self))));
 		
 		return 0;
 	}
@@ -79,7 +89,7 @@ static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
 
 static inline struct OpList * expectationError (struct Parser *self, const char *type)
 {
-	error(self, Error.syntaxError(self->lexer->text, "expected %s, got %s", type, Lexer.tokenChars(previewToken(self))));
+	syntaxError(self, self->lexer->text, Chars.create("expected %s, got %s", type, Lexer.tokenChars(previewToken(self))));
 	return NULL;
 }
 
@@ -121,9 +131,9 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 		if (oplist->ops[0].value.type == Value(keyType))
 		{
 			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
-				error(self, Error.syntaxError(OpList.text(oplist), name));
+				syntaxError(self, OpList.text(oplist), Chars.create(name));
 			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
-				error(self, Error.syntaxError(OpList.text(oplist), name));
+				syntaxError(self, OpList.text(oplist), Chars.create(name));
 		}
 		
 		oplist->ops[0].native = Op.getLocalRef;
@@ -133,7 +143,7 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 	else if (oplist->ops[0].native == Op.getProperty)
 		oplist->ops[0].native = Op.getPropertyRef;
 	else
-		error(self, Error.referenceError(OpList.text(oplist), "%s", name));
+		referenceError(self, OpList.text(oplist), Chars.create("%s", name));
 	
 	return oplist;
 }
@@ -148,7 +158,7 @@ static void semicolon (struct Parser *self)
 	else if (self->lexer->didLineBreak || previewToken(self) == '}' || previewToken(self) == Lexer(noToken))
 		return;
 	
-	error(self, Error.syntaxError(self->lexer->text, "missing ; before statement"));
+	syntaxError(self, self->lexer->text, Chars.create("missing ; before statement"));
 }
 
 static struct Op identifier (struct Parser *self)
@@ -342,7 +352,7 @@ static struct OpList * arguments (struct Parser *self, int *count)
 		{
 			argumentOps = assignment(self, 0);
 			if (!argumentOps)
-				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 			
 			++*count;
 			oplist = OpList.join(oplist, argumentOps);
@@ -422,7 +432,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 		if (previewToken(self) == '.')
 		{
 			if (!oplist)
-				error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 			
 			self->lexer->disallowKeyword = 1;
 			nextToken(self);
@@ -500,15 +510,15 @@ static struct OpList * unary (struct Parser *self)
 		oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].native == Op.getLocal)
-			error(self, Error.syntaxError(OpList.text(oplist), "delete of an unqualified identifier in strict mode"));
+			syntaxError(self, OpList.text(oplist), Chars.create("delete of an unqualified identifier in strict mode"));
 		else if (oplist && oplist->ops[0].native == Op.getMember)
 			oplist->ops->native = Op.deleteMember;
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
 			oplist->ops->native = Op.deleteProperty;
 		else if (oplist)
-			error(self, Error.referenceError(OpList.text(oplist), "invalid delete operand"));
+			referenceError(self, OpList.text(oplist), Chars.create("invalid delete operand"));
 		else
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+			syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return oplist;
 	}
@@ -795,7 +805,7 @@ static struct OpList * logicalAnd (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalAnd, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
+			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return oplist;
 }
@@ -812,7 +822,7 @@ static struct OpList * logicalOr (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalOr, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
+			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return oplist;
 }
@@ -840,7 +850,7 @@ static struct OpList * conditional (struct Parser *self, int noIn)
 			return oplist;
 		}
 		else
-			error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
+			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
 	}
 	return oplist;
 }
@@ -854,13 +864,13 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 	if (acceptToken(self, '='))
 	{
 		if (!oplist)
-			error(self, Error.syntaxError(text, "expected expression, got '='"));
+			syntaxError(self, text, Chars.create("expected expression, got '='"));
 		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
 		{
 			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
-				error(self, Error.syntaxError(text, "can't assign to eval"));
+				syntaxError(self, text, Chars.create("can't assign to eval"));
 			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
-				error(self, Error.syntaxError(text, "can't assign to arguments"));
+				syntaxError(self, text, Chars.create("can't assign to arguments"));
 			
 			oplist->ops->native = Op.setLocal;
 		}
@@ -869,12 +879,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		else if (oplist->ops[0].native == Op.getProperty)
 			oplist->ops->native = Op.setProperty;
 		else
-			error(self, Error.referenceError(OpList.text(oplist), "invalid assignment left-hand side"));
+			referenceError(self, OpList.text(oplist), Chars.create("invalid assignment left-hand side"));
 		
 		if (( opassign = assignment(self, noIn) ))
 			oplist->ops->text = Text.join(oplist->ops->text, opassign->ops->text);
 		else
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+			syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.join(oplist, opassign);
 	}
@@ -908,12 +918,12 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		if (( opassign = assignment(self, noIn) ))
 			oplist->ops->text = Text.join(oplist->ops->text, opassign->ops->text);
 		else
-			error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+			syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		
 		return OpList.unshiftJoin(Op.make(native, Value(undefined), oplist->ops->text), expressionRef(self, oplist, "invalid assignment left-hand side"), opassign);
 	}
 	
-	error(self, Error.syntaxError(text, "expected expression, got '%.*s'", text.length, text.bytes));
+	syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
 	
 	return NULL;
 }
@@ -988,9 +998,9 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 		return NULL;
 	
 	if (Key.isEqual(value.data.key, Key(eval)))
-		error(self, Error.syntaxError(text, "redefining eval is deprecated"));
+		syntaxError(self, text, Chars.create("redefining eval is deprecated"));
 	else if (Key.isEqual(value.data.key, Key(arguments)))
-		error(self, Error.syntaxError(text, "redefining arguments is deprecated"));
+		syntaxError(self, text, Chars.create("redefining arguments is deprecated"));
 	
 	Object.addMember(&self->function->environment, value.data.key, Value(undefined), 0);
 	
@@ -1000,7 +1010,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 		if (opassign)
 			return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), Text(empty)), OpList.create(Op.setLocal, value, Text.join(text, opassign->ops->text)), opassign);
 		
-		error(self, Error.syntaxError(self->lexer->text, "expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
 		return NULL;
 	}
 	else
@@ -1104,7 +1114,7 @@ static struct OpList * forStatement (struct Parser *self)
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value(undefined), self->lexer->text), oplist);
 		}
 		else
-			error(self, Error.referenceError(OpList.text(oplist), "invalid for/in left-hand side"));
+			referenceError(self, OpList.text(oplist), Chars.create("invalid for/in left-hand side"));
 		
 		oplist = OpList.join(oplist, expression(self, 0));
 		expectToken(self, ')');
@@ -1152,7 +1162,7 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 	
 	depth = self->depthCount;
 	if (!depth)
-		error(self, Error.syntaxError(text, "continue must be inside loop"));
+		syntaxError(self, text, Chars.create("continue must be inside loop"));
 	
 	lastestDepth = 0;
 	while (depth--)
@@ -1165,7 +1175,7 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 			if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
 				return OpList.create(Op.breaker, Value.integer(breaker - 1), self->lexer->text);
 	}
-	error(self, Error.syntaxError(labelText, "label not found"));
+	syntaxError(self, labelText, Chars.create("label not found"));
 	return oplist;
 }
 
@@ -1185,7 +1195,7 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 	
 	depth = self->depthCount;
 	if (!depth)
-		error(self, Error.syntaxError(text, "break must be inside loop or switch"));
+		syntaxError(self, text, Chars.create("break must be inside loop or switch"));
 	
 	while (depth--)
 	{
@@ -1193,7 +1203,7 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 		if (Key.isEqual(label, Key(none)) || Key.isEqual(label, self->depths[depth].key))
 			return OpList.create(Op.breaker, Value.integer(breaker), self->lexer->text);
 	}
-	error(self, Error.syntaxError(labelText, "label not found"));
+	syntaxError(self, labelText, Chars.create("label not found"));
 	return oplist;
 }
 
@@ -1202,7 +1212,7 @@ static struct OpList * returnStatement (struct Parser *self, struct Text text)
 	struct OpList *oplist = NULL;
 	
 	if (self->sourceDepth <= 1)
-		error(self, Error.syntaxError(text, "return not in function"));
+		syntaxError(self, text, Chars.create("return not in function"));
 	
 	if (!self->lexer->didLineBreak && previewToken(self) != ';' && previewToken(self) != '}' && previewToken(self) != Lexer(noToken))
 		oplist = expression(self, 0);
@@ -1249,10 +1259,10 @@ static struct OpList * switchStatement (struct Parser *self)
 				oplist = OpList.join(oplist, statementList(self));
 			}
 			else
-				error(self, Error.syntaxError(text, "more than one switch default"));
+				syntaxError(self, text, Chars.create("more than one switch default"));
 		}
 		else
-			error(self, Error.syntaxError(text, "invalid switch statement"));
+			syntaxError(self, text, Chars.create("invalid switch statement"));
 	}
 	
 	if (!defaultOps && oplist)
@@ -1297,7 +1307,7 @@ static struct OpList * statement (struct Parser *self)
 		return returnStatement(self, text);
 	else if (acceptToken(self, Lexer(withToken)))
 	{
-		error(self, Error.syntaxError(text, "strict mode code may not contain 'with' statements"));
+		syntaxError(self, text, Chars.create("strict mode code may not contain 'with' statements"));
 		return oplist;
 	}
 	else if (acceptToken(self, Lexer(switchToken)))
@@ -1308,7 +1318,7 @@ static struct OpList * statement (struct Parser *self)
 			oplist = expression(self, 0);
 		
 		if (!oplist)
-			error(self, Error.syntaxError(text, "throw statement is missing an expression"));
+			syntaxError(self, text, Chars.create("throw statement is missing an expression"));
 		
 		semicolon(self);
 		return OpList.unshift(Op.make(Op.throw, Value(undefined), Text.join(text, OpList.text(oplist))), oplist);
@@ -1322,7 +1332,7 @@ static struct OpList * statement (struct Parser *self)
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->opCount), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
-			error(self, Error.syntaxError(self->lexer->text, "expected catch or finally, got %s", Lexer.tokenChars(previewToken(self))));
+			syntaxError(self, self->lexer->text, Chars.create("expected catch or finally, got %s", Lexer.tokenChars(previewToken(self))));
 		
 		if (acceptToken(self, Lexer(catchToken)))
 		{
@@ -1331,7 +1341,7 @@ static struct OpList * statement (struct Parser *self)
 			
 			expectToken(self, '(');
 			if (previewToken(self) != Lexer(identifierToken))
-				error(self, Error.syntaxError(text, "missing identifier in catch"));
+				syntaxError(self, text, Chars.create("missing identifier in catch"));
 			
 			identiferOp = identifier(self);
 			expectToken(self, ')');
@@ -1411,9 +1421,9 @@ static struct OpList * parameters (struct Parser *self, int *count)
 			if (op.value.data.key.data.integer)
 			{
 				if (Key.isEqual(op.value.data.key, Key(eval)))
-					error(self, Error.syntaxError(op.text, "redefining eval is deprecated"));
+					syntaxError(self, op.text, Chars.create("redefining eval is deprecated"));
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
-					error(self, Error.syntaxError(op.text, "redefining arguments is deprecated"));
+					syntaxError(self, op.text, Chars.create("redefining arguments is deprecated"));
 				
 				Object.addMember(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
 			}
@@ -1443,13 +1453,13 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 			identifierOp = identifier(self);
 			
 			if (Key.isEqual(identifierOp.value.data.key, Key(eval)))
-				error(self, Error.syntaxError(identifierOp.text, "redefining eval is deprecated"));
+				syntaxError(self, identifierOp.text, Chars.create("redefining eval is deprecated"));
 			else if (Key.isEqual(identifierOp.value.data.key, Key(arguments)))
-				error(self, Error.syntaxError(identifierOp.text, "redefining arguments is deprecated"));
+				syntaxError(self, identifierOp.text, Chars.create("redefining arguments is deprecated"));
 		}
 		else if (isDeclaration)
 		{
-			error(self, Error.syntaxError(self->lexer->text, "function statement requires a name"));
+			syntaxError(self, self->lexer->text, Chars.create("function statement requires a name"));
 			return NULL;
 		}
 	}
@@ -1468,9 +1478,9 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
 	
 	if (isGetter && parameterCount != 0)
-		error(self, Error.syntaxError(Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), "getter functions must have no arguments"));
+		syntaxError(self, Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), Chars.create("getter functions must have no arguments"));
 	else if (isSetter && parameterCount != 1)
-		error(self, Error.syntaxError(Text.make(self->lexer->text.bytes, 0), "setter functions must have one argument"));
+		syntaxError(self, Text.make(self->lexer->text.bytes, 0), Chars.create("setter functions must have one argument"));
 	
 	expectToken(self, ')');
 	expectToken(self, '{');
@@ -1549,7 +1559,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 				}
 			}
 			else
-				error(self, Error.syntaxError(self->lexer->text, "expected statement, got %s", Lexer.tokenChars(previewToken(self))));
+				syntaxError(self, self->lexer->text, Chars.create("expected statement, got %s", Lexer.tokenChars(previewToken(self))));
 		}
 	
 	if (init)

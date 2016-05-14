@@ -31,12 +31,17 @@ const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
 };
 
-static struct Value messageValue (struct Context * const context, struct Value value)
+static struct Chars *messageValue (struct Context * const context, struct Value value)
 {
 	if (value.type == Value(undefinedType))
-		return value;
+		return NULL;
+	else if (value.type == Value(charsType))
+		return value.data.chars;
 	else
-		return Value.toString(NULL, value);
+	{
+		value = Value.toString(NULL, value);
+		return Chars.create("%.*s", Value.stringLength(value), Value.stringBytes(value));
+	}
 }
 
 static struct Chars * toChars (struct Context * const context, struct Value value)
@@ -104,68 +109,68 @@ static struct Value toString (struct Context * const context)
 
 static struct Value errorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(error(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(error(Context.textSeek(context), message));
 }
 
 static struct Value rangeErrorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(rangeError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(rangeError(Context.textSeek(context), message));
 }
 
 static struct Value referenceErrorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(referenceError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(referenceError(Context.textSeek(context), message));
 }
 
 static struct Value syntaxErrorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(syntaxError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(syntaxError(Context.textSeek(context), message));
 }
 
 static struct Value typeErrorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(typeError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(typeError(Context.textSeek(context), message));
 }
 
 static struct Value uriErrorConstructor (struct Context * const context)
 {
-	struct Value message;
+	struct Chars *message;
 	
 	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
-	return Value.error(uriError(Context.textSeek(context), "%.*s", Value.stringLength(message), Value.stringBytes(message)));
+	return Value.error(uriError(Context.textSeek(context), message));
 }
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
@@ -213,118 +218,34 @@ void teardown (void)
 	Error(uriConstructor) = NULL;
 }
 
-struct Error * error (struct Text text, const char *format, ...)
+struct Error * error (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(prototype), text, chars);
+	return create(Error(prototype), text, message);
 }
 
-struct Error * rangeError (struct Text text, const char *format, ...)
+struct Error * rangeError (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(rangePrototype), text, chars);
+	return create(Error(rangePrototype), text, message);
 }
 
-struct Error * referenceError (struct Text text, const char *format, ...)
+struct Error * referenceError (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(referencePrototype), text, chars);
+	return create(Error(referencePrototype), text, message);
 }
 
-struct Error * syntaxError (struct Text text, const char *format, ...)
+struct Error * syntaxError (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(syntaxPrototype), text, chars);
+	return create(Error(syntaxPrototype), text, message);
 }
 
-struct Error * typeError (struct Text text, const char *format, ...)
+struct Error * typeError (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(typePrototype), text, chars);
+	return create(Error(typePrototype), text, message);
 }
 
-struct Error * uriError (struct Text text, const char *format, ...)
+struct Error * uriError (struct Text text, struct Chars *message)
 {
-	struct Chars *chars = NULL;
-	if (format)
-	{
-		va_list ap;
-		int16_t length;
-		
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		
-		va_start(ap, format);
-		chars = Chars.createVA(length, format, ap);
-		va_end(ap);
-	}
-	return create(Error(uriPrototype), text, chars);
+	return create(Error(uriPrototype), text, message);
 }
 
 void destroy (struct Error *self)

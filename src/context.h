@@ -30,7 +30,12 @@
 
 Interface(Context,
 	
-	(void, throwError ,(struct Context * const, struct Error *error) noreturn)
+	(void, rangeError ,(struct Context * const, struct Chars *) noreturn)
+	(void, referenceError ,(struct Context * const, struct Chars *) noreturn)
+	(void, syntaxError ,(struct Context * const, struct Chars *) noreturn)
+	(void, typeError ,(struct Context * const, struct Chars *) noreturn)
+	(void, uriError ,(struct Context * const, struct Chars *) noreturn)
+	
 	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
 	
 	(void , assertParameterCount ,(struct Context * const, int parameterCount))

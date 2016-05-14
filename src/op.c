@@ -182,7 +182,7 @@ const char * toChars (const Native(Function) native)
 static inline struct Value callOps (struct Context * const context, struct Object *environment)
 {
 	if (context->depth >= context->ecc->maximumCallDepth)
-		Context.throwError(context, Error.rangeError(context->parent->ops->text, "maximum depth exceeded"));
+		Context.rangeError(context, Chars.create("maximum depth exceeded"));
 	
 	context->environment = environment;
 	return context->ops->native(context);
@@ -411,7 +411,7 @@ static inline struct Value callFunction (struct Context * const context, struct 
 static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
 {
 	if (value.type != Value(functionType))
-		Context.throwError(context, Error.typeError(*text, "'%.*s' is not a function", text->length, text->bytes));
+		Context.typeError(context, Chars.create("'%.*s' is not a function", text->length, text->bytes));
 	
 	if (value.data.function->flags & Function(useBoundThis))
 		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
@@ -448,7 +448,8 @@ struct Value construct (struct Context * const context)
 		return object;
 	
 error:
-	Context.throwError(context, Error.typeError(*text, "'%.*s' is not a constructor", text->length, text->bytes));
+	Context.setTextIndex(context, Context(funcIndex));
+	Context.typeError(context, Chars.create("'%.*s' is not a constructor", text->length, text->bytes));
 }
 
 struct Value call (struct Context * const context)
@@ -563,7 +564,7 @@ struct Value getLocalRef (struct Context * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.member(context->environment, key);
 	if (!ref)
-		Context.throwError(context, Error.referenceError(context->ops->text, "'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes));
+		Context.referenceError(context, Chars.create("'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	
 	return Value.reference(ref);
 }
@@ -669,8 +670,10 @@ struct Value getMemberRef (struct Context * const context)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Context.throwError(context, Error.typeError(*text, "object is not extensible"));
-		
+		{
+			Context.setText(context, text);
+			Context.typeError(context, Chars.create("object is not extensible"));
+		}
 		ref = Object.addMember(object.data.object, key, Value(undefined), 0);
 	}
 	
@@ -725,7 +728,10 @@ struct Value deleteMember (struct Context * const context)
 	
 	result = Object.deleteMember(object.data.object, key);
 	if (!result)
-		Context.throwError(context, Error.typeError(*text, "property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes));
+	{
+		Context.setText(context, text);
+		Context.typeError(context, Chars.create("property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes));
+	}
 	
 	return Value.truth(result);
 }
@@ -760,8 +766,10 @@ struct Value getPropertyRef (struct Context * const context)
 	if (!ref)
 	{
 		if (object.data.object->flags & Object(sealed))
-			Context.throwError(context, Error.typeError(*text, "object is not extensible"));
-		
+		{
+			Context.setText(context, text);
+			Context.typeError(context, Chars.create("object is not extensible"));
+		}
 		ref = Object.addProperty(object.data.object, property, Value(undefined), 0);
 	}
 	
@@ -815,7 +823,8 @@ struct Value deleteProperty (struct Context * const context)
 	if (!result)
 	{
 		struct Value string = Value.toString(NULL, property);
-		Context.throwError(context, Error.typeError(*text, "property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string)));
+		Context.setText(context, text);
+		Context.typeError(context, Chars.create("property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string)));
 	}
 	return Value.truth(result);
 }
@@ -950,11 +959,11 @@ struct Value instanceOf (struct Context * const context)
 		return Value(false);
 	
 	if (b.type != Value(functionType))
-		Context.throwError(context, Error.typeError(*text, "'%.*s' not a function", text->length, text->bytes));
+		Context.typeError(context, Chars.create("'%.*s' not a function", text->length, text->bytes));
 	
 	b = Object.getMember(b.data.object, Key(prototype), context);
 	if (!Value.isObject(b))
-		Context.throwError(context, Error.typeError(*text, "'%.*s'.prototype not an object", text->length, text->bytes));
+		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", text->length, text->bytes));
 	
 	object = a.data.object;
 	while (( object = object->prototype ))
@@ -971,7 +980,7 @@ struct Value in (struct Context * const context)
 	struct Value *ref;
 	
 	if (!Value.isObject(object))
-		Context.throwError(context, Error.typeError(context->ops->text, "'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
+		Context.typeError(context, Chars.create("'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
 	
 	ref = Object.property(object.data.object, property);
 	

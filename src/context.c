@@ -18,9 +18,29 @@
 
 // MARK: - Methods
 
-void throwError (struct Context * const self, struct Error *error)
+void rangeError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(error));
+	Ecc.jmpEnv(self->ecc, Value.error(Error.rangeError(textSeek(self), chars)));
+}
+
+void referenceError (struct Context * const self, struct Chars *chars)
+{
+	Ecc.jmpEnv(self->ecc, Value.error(Error.referenceError(textSeek(self), chars)));
+}
+
+void syntaxError (struct Context * const self, struct Chars *chars)
+{
+	Ecc.jmpEnv(self->ecc, Value.error(Error.syntaxError(textSeek(self), chars)));
+}
+
+void typeError (struct Context * const self, struct Chars *chars)
+{
+	Ecc.jmpEnv(self->ecc, Value.error(Error.typeError(textSeek(self), chars)));
+}
+
+void uriError (struct Context * const self, struct Chars *chars)
+{
+	Ecc.jmpEnv(self->ecc, Value.error(Error.uriError(textSeek(self), chars)));
 }
 
 struct Value callFunction (struct Context * const self, struct Function *function, struct Value this, int argumentCount, ... )
@@ -83,7 +103,7 @@ void assertThisType (struct Context * const self, enum Value(Type) type)
 	if (self->this.type != type)
 	{
 		setTextIndex(self, Context(thisIndex));
-		throwError(self, Error.typeError(textSeek(self), "not a %s", Value.typeName(type)));
+		typeError(self, Chars.create("not a %s", Value.typeName(type)));
 	}
 }
 
@@ -92,7 +112,7 @@ void assertThisMask (struct Context * const self, enum Value(Mask) mask)
 	if (!(self->this.type & mask))
 	{
 		setTextIndex(self, Context(thisIndex));
-		throwError(self, Error.typeError(textSeek(self), "not a %s", Value.maskName(mask)));
+		typeError(self, Chars.create("not a %s", Value.maskName(mask)));
 	}
 }
 

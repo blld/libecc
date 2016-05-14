@@ -281,9 +281,9 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	
 	text = Context.textSeek(context);
 	if (context->textIndex != Context(callIndex) && text.length)
-		Context.throwError(context, Error.typeError(text, "cannot convert '%.*s' to primitive", text.length, text.bytes));
+		Context.typeError(context, Chars.create("cannot convert '%.*s' to primitive", text.length, text.bytes));
 	else
-		Context.throwError(context, Error.typeError(text, "cannot convert value to primitive"));
+		Context.typeError(context, Chars.create("cannot convert value to primitive"));
 }
 
 struct Value toBinary (struct Value value)
@@ -507,9 +507,9 @@ error:
 		struct Text text = Context.textSeek(context);
 		
 		if (context->textIndex != Context(callIndex) && text.length)
-			Context.throwError(context, Error.typeError(text, "cannot convert '%.*s' to object", text.length, text.bytes));
+			Context.typeError(context, Chars.create("cannot convert '%.*s' to object", text.length, text.bytes));
 		else
-			Context.throwError(context, Error.typeError(text, "cannot convert %s to object", typeName(value.type)));
+			Context.typeError(context, Chars.create("cannot convert %s to object", typeName(value.type)));
 	}
 }
 

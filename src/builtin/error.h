@@ -41,12 +41,12 @@ Interface(Error,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct Error *, error ,(struct Text, const char *format, ...))
-	(struct Error *, rangeError ,(struct Text, const char *format, ...))
-	(struct Error *, referenceError ,(struct Text, const char *format, ...))
-	(struct Error *, syntaxError ,(struct Text, const char *format, ...))
-	(struct Error *, typeError ,(struct Text, const char *format, ...))
-	(struct Error *, uriError ,(struct Text, const char *format, ...))
+	(struct Error *, error ,(struct Text, struct Chars *message))
+	(struct Error *, rangeError ,(struct Text, struct Chars *message))
+	(struct Error *, referenceError ,(struct Text, struct Chars *message))
+	(struct Error *, syntaxError ,(struct Text, struct Chars *message))
+	(struct Error *, typeError ,(struct Text, struct Chars *message))
+	(struct Error *, uriError ,(struct Text, struct Chars *message))
 	(void, destroy ,(struct Error *))
 	,
 	{

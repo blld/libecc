@@ -344,7 +344,7 @@ static struct Value arrayConstructor (struct Context * const context)
 			count = 0;
 		}
 		else
-			Context.throwError(context, Error.rangeError(Context.textSeek(context), "invalid array length"));
+			Context.rangeError(context, Chars.create("invalid array length"));
 	}
 	
 	array = Array.createSized(length);
