@@ -194,6 +194,8 @@ void setup (void)
 	setupBuiltinObject(&Error(uriConstructor), uriErrorConstructor, 1, &Error(uriPrototype), &Text(uriErrorName));
 	
 	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
+	
+	Object.addMember(Error(prototype), Key(message), Value.text(&Text(empty)), flags);
 }
 
 void teardown (void)

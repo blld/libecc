@@ -379,6 +379,8 @@ void setup ()
 	
 	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &String(type));
 	
+	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, flags);
+	
 	Function.addToObject(String(prototype), "toString", toString, 0, flags);
 	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
@@ -388,8 +390,6 @@ void setup ()
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
-	
-	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, flags);
 }
 
 void teardown (void)

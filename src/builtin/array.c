@@ -365,7 +365,10 @@ void setup (void)
 	
 	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &Array(type));
 	
+	Function.addMethod(Array(constructor), "isArray", isArray, 1, flags);
+	
 	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Array(prototype), "toLocaleString", toString, 0, flags);
 	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
 	Function.addToObject(Array(prototype), "join", join, 1, flags);
 	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
@@ -374,9 +377,8 @@ void setup (void)
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
-	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 	
-	Function.addMethod(Array(constructor), "isArray", isArray, 1, flags);
+	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 }
 
 void teardown (void)

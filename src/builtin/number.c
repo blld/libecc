@@ -147,17 +147,18 @@ void setup ()
 	
 	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &Number(type));
 	
-	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
-	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
-	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
-	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
-	
 	Function.addMember(Number(constructor), "MAX_VALUE", Value.binary(DBL_MAX), flags);
 	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN), flags);
 	Function.addMember(Number(constructor), "NaN", Value.binary(NAN), flags);
 	Function.addMember(Number(constructor), "NEGATIVE_INFINITY", Value.binary(-INFINITY), flags);
 	Function.addMember(Number(constructor), "POSITIVE_INFINITY", Value.binary(INFINITY), flags);
+	
+	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
+	Function.addToObject(Number(prototype), "toLocaleString", toString, 1, flags);
+	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
+	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
+	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
+	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
 }
 
 void teardown (void)

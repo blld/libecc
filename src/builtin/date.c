@@ -972,14 +972,20 @@ void setup (void)
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
+	setupLocalOffset();
+	
 	Function.setupBuiltinObject(&Date(constructor), dateConstructor, -7, &Date(prototype), Value.date(create(NAN)), &Date(type));
 	
+	Function.addMethod(Date(constructor), "parse", parse, 1, flags);
+	Function.addMethod(Date(constructor), "UTC", UTC, -7, flags);
+	Function.addMethod(Date(constructor), "now", now, 0, flags);
+	
 	Function.addToObject(Date(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, flags);
-	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, flags);
-	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, flags);
 	Function.addToObject(Date(prototype), "toDateString", toDateString, 0, flags);
 	Function.addToObject(Date(prototype), "toTimeString", toTimeString, 0, flags);
+	Function.addToObject(Date(prototype), "toLocaleString", toString, 0, flags);
+	Function.addToObject(Date(prototype), "toLocaleDateString", toDateString, 0, flags);
+	Function.addToObject(Date(prototype), "toLocaleTimeString", toTimeString, 0, flags);
 	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, flags);
 	Function.addToObject(Date(prototype), "getTime", valueOf, 0, flags);
 	Function.addToObject(Date(prototype), "getFullYear", getFullYear, 0, flags);
@@ -1014,12 +1020,9 @@ void setup (void)
 	Function.addToObject(Date(prototype), "setUTCMonth", setUTCMonth, 2, flags);
 	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, flags);
 	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, flags);
-	
-	Function.addMethod(Date(constructor), "now", now, 0, flags);
-	Function.addMethod(Date(constructor), "parse", parse, 1, flags);
-	Function.addMethod(Date(constructor), "UTC", UTC, -7, flags);
-	
-	setupLocalOffset();
+	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, flags);
+	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, flags);
+	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, flags);
 }
 
 void teardown (void)

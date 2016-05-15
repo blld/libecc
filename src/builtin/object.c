@@ -584,13 +584,6 @@ void setup ()
 	
 	Function.setupBuiltinObject(&Object(constructor), objectConstructor, 1, NULL, Value.object(Object(prototype)), NULL);
 	
-	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
-	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(Object(prototype), "hasOwnProperty", hasOwnProperty, 1, flags);
-	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
-	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
-	
 	Function.addMethod(Object(constructor), "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addMethod(Object(constructor), "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
 	Function.addMethod(Object(constructor), "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
@@ -604,6 +597,13 @@ void setup ()
 	Function.addMethod(Object(constructor), "isFrozen", isFrozen, 1, flags);
 	Function.addMethod(Object(constructor), "isExtensible", isExtensible, 1, flags);
 	Function.addMethod(Object(constructor), "keys", keys, 1, flags);
+	
+	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
+	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, flags);
+	Function.addToObject(Object(prototype), "hasOwnProperty", hasOwnProperty, 1, flags);
+	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
+	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
 }
 
 void teardown (void)
