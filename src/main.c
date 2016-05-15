@@ -615,7 +615,7 @@ static void testFunction (void)
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range"
 	,    "                                                ^~~     ");
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
-	,    "                                                                                     ^                                    ");
+	,    "                                                                         ^~~~~~~~~~~~~~                                   ");
 	test("function F(){}; F.prototype = 123; new F", "[object Object]", NULL);
 	
 	test("var f = function(){ return this }.bind(undefined); f()", "undefined", NULL);
