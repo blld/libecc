@@ -48,7 +48,7 @@ static int debug = 0;
 
 static void printUsage(void)
 {
-	Env.printColor(Env(white), Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
+	Env.printColor(0, Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
 	Env.printColor(Env(green), Env(bold), "\tstep-in\n");
 	fprintf(stderr, "\t  c\n");
 	Env.printColor(Env(green), Env(bold), "\tcontinue\n");
