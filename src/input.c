@@ -121,7 +121,7 @@ void printText (struct Input *self, struct Text text, int fullLine)
 			Env.printColor(0, Env(bold), " line:%d", line);
 	}
 	
-	if (!fullLine || !line)
+	if (!fullLine || line < 0)
 		Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
 	else
 	{
@@ -156,7 +156,7 @@ void printText (struct Input *self, struct Text text, int fullLine)
 				else
 					mark[index] = bytes[index];
 			
-			if (isprint(bytes[index]))
+			if (isprint(bytes[index]) || isspace(bytes[index]))
 				mark[index] = '^';
 			else
 			{
@@ -166,7 +166,7 @@ void printText (struct Input *self, struct Text text, int fullLine)
 			}
 			
 			while (++index < text.bytes - bytes + text.length && index <= length)
-				if (isprint(bytes[index]))
+				if (isprint(bytes[index]) || isspace(bytes[index]))
 					mark[index] = '~';
 				else
 					mark[index] = bytes[index];
