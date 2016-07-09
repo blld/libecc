@@ -123,15 +123,15 @@ static void test (const char *func, int line, const char *test, const char *expe
 		
 		assert(textStart >= 0);
 		
-		if ((input->length - textStart == 0 || input->bytes[textStart] == ')') && textLength == 1)
+		if (input && (input->length - textStart == 0 || input->bytes[textStart] == ')') && textLength == 1)
 			textLength = 0;
 		
-		if (ecc->text.bytes - input->bytes != textStart || ecc->text.length != textLength)
+		if (!input || ecc->text.bytes - input->bytes != textStart || ecc->text.length != textLength)
 		{
 			++testErrorCount;
 			Env.printColor(Env(red), Env(bold), "[failure]");
 			Env.print(" %s:%d - ", func, line);
-			Env.printColor(0, Env(bold), "text should highlight `%.*s`", textLength, input->bytes + textStart);
+			Env.printColor(0, Env(bold), "text should highlight `%.*s`", textLength, test + textStart);
 			Env.newline();
 			goto error;
 		}
