@@ -372,8 +372,10 @@ static struct Value toJSON (struct Context * const context)
 	
 	toISO = Object.member(object.data.object, Key(toISOString));
 	if (!toISO || toISO->type != Value(functionType))
+	{
+		Context.setTextIndex(context, Context(callIndex));
 		Context.typeError(context, Chars.create("toISOString is not a function"));
-	
+	}
 	return Context.callFunction(context, toISO->data.function, object, 0);
 }
 
