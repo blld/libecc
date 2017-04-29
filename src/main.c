@@ -121,7 +121,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 		ptrdiff_t textStart = strchr(text, '^') - text, textLength = (end? end - text - textStart: 0) + 1;
 		struct Input *input = Ecc.findInput(ecc, ecc->text);
 		
-		assert(textStart >= 0);
+		assert(textStart >= 0 && textStart <= strlen(test));
 		
 		if (input && (input->length - textStart == 0 || input->bytes[textStart] == ')') && textLength == 1)
 			textLength = 0;
@@ -348,20 +348,22 @@ static void testConvertion (void)
 	,    "                                                          ^              ");
 	test("var a = { toString: function () { return this } }, b = []; b.join[a](b)", "TypeError: cannot convert 'a' to primitive"
 	,    "                                                                  ^    ");
-	test("var a = { toString: function () { return this } }, b = [], c = [a]; b.join[c[0]](b)", "TypeError: cannot convert 'c[0]' to primitive"
-	,    "                                                                           ^~~~    ");
-	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join()", "TypeError: cannot convert value to primitive"
-	,    "                                                                ^~~~~~~~");
-	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join.call(b)", "TypeError: cannot convert value to primitive"
-	,    "                                                                ^~~~~~~~~~~~~~");
+	test("var a = { toString: function () { return this } }, b = [], c = [a]; b.join[c[0]]", "TypeError: cannot convert 'c[0]' to primitive"
+	,    "                                                                           ^~~~ ");
+	test("var a = { toString: function () { return this } }, b = [], c = [a]; b.join[c]", "TypeError: cannot convert 'c' to primitive"
+	,    "                                                                           ^ ");
+	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join()", "TypeError: cannot convert 'b' to primitive"
+	,    "                                                                ^       ");
+	test("var a = { toString: function () { return this } }, b = [1,2,a]; b.join.call(b)", "TypeError: cannot convert 'b' to primitive"
+	,    "                                                                            ^ ");
 	test("Array.prototype.concat.call(undefined, 123).toString()", "TypeError: cannot convert 'undefined' to object"
 	,    "                            ^~~~~~~~~                 ");
 	test("var b = []; b.call.join(b)", "TypeError: cannot convert 'b.call' to object"
 	,    "            ^~~~~~        ");
 	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
 	,    "            ^~~~~~      ");
-	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
-	,    "            ^~~~~~      ");
+	test("var b = []; b.call(b)", "TypeError: 'b.call' is not a function"
+	,    "            ^        ");
 	test("var a = { toString: function () { return this } }, b = ''; b.join[a](b)", "TypeError: cannot convert 'b.join' to object"
 	,    "                                                           ^~~~~~      ");
 }
@@ -415,7 +417,6 @@ static void testOperator (void)
 	test("10 & 3", "2", NULL);
 	test("10 ^ 3", "9", NULL);
 	test("10 | 3", "11", NULL);
-	
 	test("var u = undefined; u += 123.;", "NaN", NULL);
 }
 
@@ -525,7 +526,6 @@ static void testDelete (void)
 	,    "       ^");
 	test("var a = { b: 123, c: 'abc' }; a.b", "123", NULL);
 	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined", NULL);
-	
 	test("delete Object.prototype", "TypeError: property 'prototype' is non-configurable and can't be deleted"
 	,    "       ^~~~~~~~~~~~~~~~");
 }
@@ -617,7 +617,6 @@ static void testFunction (void)
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
 	,    "                                                                         ^~~~~~~~~~~~~~                                   ");
 	test("function F(){}; F.prototype = 123; new F", "[object Object]", NULL);
-	
 	test("var f = function(){ return this }.bind(undefined); f()", "undefined", NULL);
 	test("var f = function(){ return this }.bind(null); f()", "null", NULL);
 	test("var f = function(){ return this }.bind(123); f()", "123", NULL);
@@ -641,8 +640,7 @@ static void testLoop (void)
 	test("var a = { 'a': 123 }, b; for (b in a) a[b];", "123", NULL);
 	test("var a = { 'a': 123 }; for (var b in a) a[b];", "123", NULL);
 	test("var a = { 'a': 123 }; for (b in a) ;", "ReferenceError: 'b' is not defined"
-	,    "                           ^        "
-	);
+	,    "                           ^        ");
 	test("var a = [ 'a', 123 ], b; for (b in a) b + ':' + a[b];", "1:123", NULL);
 	test("var a = [ 'a', 123 ], b; for (b in a) typeof b;", "string", NULL);
 	test("continue abc;", "SyntaxError: continue must be inside loop"
@@ -790,12 +788,10 @@ static void testError (void)
 	test("SyntaxError.prototype", "SyntaxError", NULL);
 	test("TypeError.prototype", "TypeError", NULL);
 	test("URIError.prototype", "URIError", NULL);
-	
 	test("Error.prototype.name", "Error", NULL);
 	test("RangeError.prototype.name", "RangeError", NULL);
 	test("RangeError('test')", "RangeError: test", NULL);
 	test("Object.prototype.toString.call(RangeError())", "[object Error]", NULL);
-	
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]", NULL);
 	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number"
 	,    "                                 ^~~              ");
@@ -835,7 +831,6 @@ static void testAccessor (void)
 	test("var a = { _a: 2, set a(v) { this._a = v }, get a() { return this._a } }; ++a.a; a._a", "3", NULL);
 	test("({ a: function(){ return 123 } }).a()", "123", NULL);
 	test("({ a: function(){ return this.b }, b: 456 }).a()", "456", NULL);
-	
 	test("var a = { get: 123 }; a.get", "123", NULL);
 	test("var a = { set: 123 }; a.set", "123", NULL);
 	test("var a = { get get() { return 123 } }; a.get", "123", NULL);
@@ -850,7 +845,6 @@ static void testArray (void)
 	test("Array.prototype", "", NULL);
 	test("typeof Array", "function", NULL);
 	test("typeof Array.prototype", "object", NULL);
-	
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a[1]", "b", NULL);
 	test("var a = [ 'a', 'b', 'c' ]; a['1'] = 123; a[1]", "123", NULL);
 	test("var a = [ 'a', 'b', 'c' ]; a['a'] = 123; a.a", "123", NULL);
@@ -869,16 +863,12 @@ static void testArray (void)
 	test("Array.isArray(Array.prototype)", "true", NULL);
 	test("var alpha = ['a', 'b', 'c'], numeric = [1, 2, 3]; alpha.concat(numeric).toString()", "a,b,c,1,2,3", NULL);
 	test("Array.prototype.concat.call(123, 'abc', [{}, 456]).toString()", "123,abc,[object Object],456", NULL);
-	
 	test("var a = [1, 2]; a.length", "2", NULL);
 	test("var a = [1, 2]; a.length = 5; a.length", "5", NULL);
 	test("var a = [1, 2]; a[5] = 5; a.length", "6", NULL);
-	
 	test("var a = [1, 2]; a.join()", "1,2", NULL);
 	test("var a = [1, 2]; a.join('abc')", "1abc2", NULL);
-	
 	test("var a = [1, 2], b = ''; b += a.pop(); b += a.pop(); b += a.pop()", "21undefined", NULL);
-	
 	test("var a = [1, 2]; a.push(); a.toString()", "1,2", NULL);
 	test("var a = [1, 2]; a.push('abc', 345)", "4", NULL);
 	test("var a = [1, 2]; a.push('abc', 345); a", "1,2,abc,345", NULL);
@@ -886,25 +876,21 @@ static void testArray (void)
 	test("var a = [1, 2]; a.unshift('abc', 345)", "4", NULL);
 	test("var a = [1, 2]; a.unshift('abc', 345); a", "abc,345,1,2", NULL);
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.unshift(); a", "123,def,def", NULL);
-	
 	test("var a = [1]; a.reverse(); a.toString()", "1", NULL);
 	test("var a = [1,2]; a.reverse(); a.toString()", "2,1", NULL);
 	test("var a = [1,2,'abc']; a.reverse(); a.toString()", "abc,2,1", NULL);
-	
 	test("var a = [1, 2], b = ''; b += a.shift(); b += a.shift(); b += a.shift()", "12undefined", NULL);
 	test("var a = ['abc', 'def']; Object.defineProperty(a, 0, {get: function(){ return this[1]; }}); a.shift()", "TypeError: '0' is read-only accessor"
 	,    "                                                                                           ^~~~~~~~~");
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift()", "123", NULL);
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift(); a", "def,", NULL);
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this.length },set: function(v){}}); a.shift(); a.push(123, 456); a", "3,4,123,456", NULL);
-	
 	test("var a = [1, 2, 'abc', null, 456]; a.slice().toString()", "1,2,abc,,456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(2).toString()", "abc,,456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(2,4).toString()", "abc,", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-2).toString()", ",456", NULL);
 	test("var a = [1, 2, 'abc', null, 456]; a.slice(-4,-2).toString()", "2,abc", NULL);
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.slice(-2)", "def,def", NULL);
-	
 	test("var a = Array(); a.length", "0", NULL);
 	test("var a = Array(4); a.length", "4", NULL);
 	test("var a = Array(4.5); a.length", "RangeError: invalid array length"
@@ -913,10 +899,8 @@ static void testArray (void)
 	,    "              ^~           ");
 	test("var a = Array('abc'); a.length", "1", NULL);
 	test("var a = Array(123, 'abc'); a.length", "2", NULL);
-	
 	test("var a = [ 123 ]; function b(){ arguments[0] = 456; }; b.apply(null, a); a;", "123", NULL);
 	test("function b(){ return arguments; }; var a = b.call(null, 123); a;", "[object Arguments]", NULL);
-	
 	test("var a = [ 'abc', 'def' ], r = ''; Object.defineProperty(a, 1, {get: function(){ return this[0]; }}); for (var p in a) r += p + a[p]; r", "0abc1abc", NULL);
 	test("var a = [ 'abc', 'def' ], r = ''; Object.defineProperty(a, 1, {get: function(){ return this[0]; }}); a.join('|')", "abc|abc", NULL);
 	test("var a = [ 'abc', 'def' ], r = ''; Object.defineProperty(a, 1, {get: function(){ return this[0]; }}); a + '^'", "abc,abc^", NULL);
@@ -927,14 +911,11 @@ static void testArray (void)
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a.push(123); a[1]", "3", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a = a.reverse(); a.push(123); a[0]", "2", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 0, {get: function(){ return this[1]; }, set: function(v){ }}); a = a.shift()", "def", NULL);
-	
 	test("var o = { toString: function(){ return ' world!' } }, a = [ 'hello', o ]; a", "hello, world!", NULL);
 	test("var a = [ 123, 456 ], a = [ 'hello', a ]; a.toString = function(){ return 'test' }; [ a ]", "test", NULL);
 	test("var o = [], c = 0, a = [o, o]; Object.defineProperty(o, '0', { get: function (){ return ++c } }); a", "1,2", NULL);
 	test("var o = {}, a = ['abc',123]; o[a] = 'test'; Object.getOwnPropertyNames(o)", "abc,123", NULL);
-	
 	test("var a = [1,2,3,4]; Object.defineProperty(a, 'length', {value:2}); a", "1,2", NULL);
-	
 	test("[].join.call({1:'@'})", "", NULL);
 	test("[].join.call({1:'@', length:2})", ",@", NULL);
 	test("[].join.call({1:'@', length:12})", ",@,,,,,,,,,,", NULL);
@@ -947,7 +928,6 @@ static void testBoolean (void)
 	test("Object.prototype.toString.call(Boolean.prototype)", "[object Boolean]", NULL);
 	test("Boolean.prototype.constructor", "function Boolean() [native code]", NULL);
 	test("Boolean.prototype", "false", NULL);
-	
 	test("var b = new Boolean('a'); b.valueOf() === true", "true", NULL);
 	test("var b = Boolean('a'); b.valueOf() === true", "true", NULL);
 	test("var b = new Boolean(0); b.toString()", "false", NULL);
@@ -967,11 +947,9 @@ static void testNumber (void)
 	test("Object.prototype.toString.call(Number.prototype)", "[object Number]", NULL);
 	test("Number.prototype.constructor", "function Number() [native code]", NULL);
 	test("Number.prototype", "0", NULL);
-	
 	test("Number.toString", "function toString() [native code]", NULL);
 	test("Number.toString()", "function Number() [native code]", NULL);
 	test("Number.toString.call(null)", "TypeError: not a function", NULL);
-	
 	test("0xf", "15", NULL);
 	test("0xff", "255", NULL);
 	test("0xffff", "65535", NULL);
@@ -979,7 +957,6 @@ static void testNumber (void)
 	test("String(0xffffffffffffffff).slice(0, -4)", "1844674407370955", NULL);
 	test("String(0x3635c9adc5de9e0000).slice(0, -6)", "999999999999999", NULL);
 	test("0x3635c9adc5de9f0000", "1e+21", NULL);
-	
 	test("-0xf", "-15", NULL);
 	test("-0xff", "-255", NULL);
 	test("-0xffff", "-65535", NULL);
@@ -987,25 +964,16 @@ static void testNumber (void)
 	test("String(-0xffffffffffffffff).slice(0, -4)", "-1844674407370955", NULL);
 	test("String(-0x3635c9adc5de9e0000).slice(0, -6)", "-999999999999999", NULL);
 	test("-0x3635c9adc5de9f0000", "-1e+21", NULL);
-	
 	test("0x7fffffff | 0", "2147483647", NULL);
 	test("0xffffffff | 0", "-1", NULL);
 	test("0x1fffffff0 | 0", "-16", NULL);
 	test("-0x7fffffff | 0", "-2147483647", NULL);
 	test("-0xffffffff | 0", "1", NULL);
 	test("-0x1fffffff0 | 0", "16", NULL);
-	
 	test("0123", "83", NULL);
 	test("-0123", "-83", NULL);
 	test("parseInt('0123')", "123", NULL);
 	test("parseInt('-0123')", "-123", NULL);
-	
-	// toString
-	// radix 10 -> libc %g (double)
-	// radix  8 -> libc %lo (long int)
-	// radix 16 -> libc %lx (long int)
-	// other radices are custom code (long int)
-	
 	test("123.456.toString(2)", "1111011", NULL);
 	test("123.456.toString(4)", "1323", NULL);
 	test("123.456.toString(8)", "173", NULL);
@@ -1015,7 +983,6 @@ static void testNumber (void)
 	test("123.456.toString(24)", "53", NULL);
 	test("123.456.toString(32)", "3r", NULL);
 	test("123.456.toString(36)", "3f", NULL);
-	
 	test("2147483647..toString(2)", "1111111111111111111111111111111", NULL);
 	test("(-2147483647).toString(2)", "-1111111111111111111111111111111", NULL);
 	test("2147483647..toString(8)", "17777777777", NULL);
@@ -1027,20 +994,16 @@ static void testNumber (void)
 	test("-2147483647..toString(16)", "NaN", NULL);
 	test("-2147483647..toString(10)", "-2147483647", NULL);
 	test("-2147483647 .toString()", "-2147483647", NULL);
-	
 	test("123.456.toExponential()", "1.234560e+02", NULL);
 	test("123.456.toFixed()", "123.456000", NULL);
 	test("123.456.toPrecision()", "123.456", NULL);
-	
 	test("123.456.toExponential(10)", "1.2345600000e+02", NULL);
 	test("123.456.toFixed(10)", "123.4560000000", NULL);
 	test("123.456.toPrecision(10)", "123.456", NULL);
-	
 	test("Math.round(2147483647.4)", "2147483647", NULL);
 	test("Math.round(-2147483647.5)", "-2147483647", NULL);
 	test("Math.round(2147483647.5)", "2147483648", NULL);
 	test("Math.round(-2147483647.6)", "-2147483648", NULL);
-	
 	test("var orig = Number.prototype.toString; Number.prototype.toString = function(){ return this + 'abc' }; var r = 123..toString(); Number.prototype.toString = orig; r", "123abc", NULL);
 }
 
@@ -1050,7 +1013,6 @@ static void testString (void)
 	test("Object.prototype.toString.call(String.prototype)", "[object String]", NULL);
 	test("String.prototype.constructor", "function String() [native code]", NULL);
 	test("String.prototype", "", NULL);
-	
 	test("''.toString.call(123)", "TypeError: not a string"
 	,    "                 ^~~ ");
 	test("''.valueOf.call(123)", "TypeError: not a string"
@@ -1058,7 +1020,6 @@ static void testString (void)
 	test("'aべcaべc'.length", "6", NULL);
 	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
 	,    "                     べ  べ     ^~~~~~~~~~~~~          ");
-	
 	test("'abせd'.slice()", "abせd", NULL);
 	test("'abせd'.slice(1)", "bせd", NULL);
 	test("'abせd'.slice(undefined,2)", "ab", NULL);
@@ -1071,7 +1032,6 @@ static void testString (void)
 	test("'abせd'.slice(0,2048)", "abせd", NULL);
 	test("'abせd'.slice(-2048)", "abせd", NULL);
 	test("'abせd'.slice(0,-2048)", "", NULL);
-	
 	test("'abせd'.substring()", "abせd", NULL);
 	test("'abせd'.substring(1)", "bせd", NULL);
 	test("'abせd'.substring(undefined,2)", "ab", NULL);
@@ -1084,24 +1044,20 @@ static void testString (void)
 	test("'abせd'.substring(0,2048)", "abせd", NULL);
 	test("'abせd'.substring(-2048)", "abせd", NULL);
 	test("'abせd'.substring(0,-2048)", "", NULL);
-	
 	test("'abせd'.charAt()", "a", NULL);
 	test("'abせd'.charAt(0)", "a", NULL);
 	test("'abせd'.charAt(2)", "せ", NULL);
 	test("'abせd'.charAt(3)", "d", NULL);
 	test("'abせd'.charAt(-1)", "", NULL);
 	test("'abせd'.charAt(2048)", "", NULL);
-	
 	test("'abせd'.charCodeAt()", "97", NULL);
 	test("'abせd'.charCodeAt(0)", "97", NULL);
 	test("'abせd'.charCodeAt(2)", "12379", NULL);
 	test("'abせd'.charCodeAt(3)", "100", NULL);
 	test("'abせd'.charCodeAt(-1)", "NaN", NULL);
 	test("'abせd'.charCodeAt(2048)", "NaN", NULL);
-	
 	test("'abせd'.concat()", "abせd", NULL);
 	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull", NULL);
-	
 	test("'aべundefined'.indexOf()", "2", NULL);
 	test("'aべcaべc'.indexOf()", "-1", NULL);
 	test("'aべcaべc'.indexOf('c')", "2", NULL);
@@ -1111,7 +1067,6 @@ static void testString (void)
 	test("'aべcaべc'.indexOf('c', 2)", "2", NULL);
 	test("'aべcaべc'.indexOf('c', 3)", "5", NULL);
 	test("''.indexOf.length", "1", NULL);
-	
 	test("'aべundefined'.lastIndexOf()", "2", NULL);
 	test("'aべcaべc'.lastIndexOf()", "-1", NULL);
 	test("'aべcaべc'.lastIndexOf('c')", "5", NULL);
@@ -1129,30 +1084,24 @@ static void testDate (void)
 	test("Object.prototype.toString.call(Date.prototype)", "[object Date]", NULL);
 	test("Date.prototype.constructor", "function Date() [native code]", NULL);
 	test("Date.prototype", "Invalid Date", NULL);
-	
 	test("(new Date(0)).toISOString()", "1970-01-01T00:00:00.000Z", NULL);
 	test("(new Date(951782400000)).toISOString()", "2000-02-29T00:00:00.000Z", NULL);
 	test("(new Date(951868800000)).toISOString()", "2000-03-01T00:00:00.000Z", NULL);
 	test("(new Date(8640000000000000)).toISOString()", "+275760-09-13T00:00:00.000Z", NULL);
 	test("(new Date(-8640000000000000)).toISOString()", "-271821-04-20T00:00:00.000Z", NULL);
-	
 	test("var x = new Date(0); x.valueOf() == Date.parse(x.toString())", "true", NULL);
 	test("var x = new Date(0); x.valueOf() == Date.parse(x.toUTCString())", "true", NULL);
 	test("var x = new Date(0); x.valueOf() == Date.parse(x.toISOString())", "true", NULL);
 	test("var x = new Date(951782400000); x.valueOf() == Date.parse(x.toString())", "true", NULL);
 	test("var x = new Date(951868800000); x.valueOf() == Date.parse(x.toUTCString())", "true", NULL);
 	test("var x = new Date(8640000000000000); x.valueOf() == Date.parse(x.toISOString())", "true", NULL);
-	
 	test("new Date('1970-01-01').toISOString()", "1970-01-01T00:00:00.000Z", NULL);
 	test("new Date('1970/01/01 12:34:56 +0900').toISOString()", "1970-01-01T03:34:56.000Z", NULL);
 	test("new Date(1984, 07, 31, 01, 23, 45, 678).valueOf() - new Date().getTimezoneOffset() * 60000", "462763425678", NULL);
-	
 	test("Date.UTC(70, 00, 01)", "0", NULL);
 	test("Date.UTC(70, 01, 01)", "2678400000", NULL);
 	test("Date.UTC(1984, 07, 31, 01, 23, 45, 678)", "462763425678", NULL);
-	
 	test("(Date.parse('1984/08/31') - Date.parse('1984-08-31')) / 60000 == new Date().getTimezoneOffset()", "true", NULL);
-	
 	test("var date = new Date('1995/12/25 00:00:00'); date.getFullYear()", "1995", NULL);
 	test("var date = new Date('1995/12/25 00:00:00'); date.getMonth()", "11", NULL);
 	test("var date = new Date('1995/12/25 23:59:00'); date.getDate()", "25", NULL);
@@ -1161,7 +1110,6 @@ static void testDate (void)
 	test("var date = new Date('1995/12/24 00:00:00'); date.getDay()", "0", NULL);
 	test("var date = new Date('1995/12/23 23:59:00'); date.getDay()", "6", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.getMilliseconds()", "789", NULL);
-	
 	test("var date = new Date('1995-12-25T00:00:00Z'); date.getUTCFullYear()", "1995", NULL);
 	test("var date = new Date('1995-12-25T00:00:00Z'); date.getUTCMonth()", "11", NULL);
 	test("var date = new Date('1995-12-25T23:59:00Z'); date.getUTCDate()", "25", NULL);
@@ -1170,7 +1118,6 @@ static void testDate (void)
 	test("var date = new Date('1995-12-24T00:00:00Z'); date.getUTCDay()", "0", NULL);
 	test("var date = new Date('1995-12-23T23:59:00Z'); date.getUTCDay()", "6", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.getUTCMilliseconds()", "789", NULL);
-	
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMilliseconds(11)", "819894896011", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds(11)", "819894851789", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds(11, 22)", "819894851022", NULL);
@@ -1188,13 +1135,10 @@ static void testDate (void)
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear(1, 2)", "-62128380303211", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear(1, 2, 3)", "-62130281103211", NULL);
 	test("var date = new Date(NaN); date.setUTCFullYear(1, 2, 3)", "-62130326400000", NULL);
-	
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCMilliseconds()", "NaN", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCSeconds()", "NaN", NULL);
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.setUTCFullYear()", "NaN", NULL);
-	
 	test("var date = new Date('1995-12-25T12:34:56.789Z'); date.toISOString()", "1995-12-25T12:34:56.789Z", NULL);
-	
 	test("var date = new Date(); date.toISOString = undefined; date.toJSON()", "TypeError: toISOString is not a function"
 	,    "                                                     ^~~~~~~~~~~~~");
 	test("var o = {}; Date.prototype.toJSON.call(o)", "TypeError: toISOString is not a function"
@@ -1204,14 +1148,21 @@ static void testDate (void)
 	test("Date.parse('1984')", "441763200000", NULL);
 	test("Date.parse('1984-08')", "460166400000", NULL);
 	test("Date.parse('1984-08-31')", "462758400000", NULL);
-	
 	test("Date.parse('1984-08-31T01:23Z')", "462763380000", NULL);
 	test("Date.parse('1984-08-31T01:23:45Z')", "462763425000", NULL);
 	test("Date.parse('1984-08-31T01:23:45.678Z')", "462763425678", NULL);
-	
 	test("Date.parse('1984-08-31T01:23+12:34')", "462718140000", NULL);
 	test("Date.parse('1984-08-31T01:23:45+12:34')", "462718185000", NULL);
 	test("Date.parse('1984-08-31T01:23:45.678+12:34')", "462718185678", NULL);
+	
+	// iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
+	test("Date.parse('1984-08-31T01:23')", "NaN", NULL);
+	test("Date.parse('1984-08-31T01:23:45')", "NaN", NULL);
+	test("Date.parse('1984-08-31T01:23:45.678')", "NaN", NULL);
+	
+	// iso format only support '+hh:mm' time offset
+	test("Date.parse('1984-08-31T01:23+1234')", "NaN", NULL);
+	test("Date.parse('1984-08-31T01:23 +12:34')", "NaN", NULL);
 	
 	// implementation format
 	test("Date.parse('1984/08/31 01:23 +0000')", "462763380000", NULL);
@@ -1221,15 +1172,7 @@ static void testDate (void)
 	// implementation format years < 100 are not supported
 	test("Date.parse('99/08/31 01:23:45 +0000')", "NaN", NULL);
 	
-	// iso format with time and no offset is not supported: ES5 & ES6 are contradictory and hence not portable
-	test("Date.parse('1984-08-31T01:23')", "NaN", NULL);
-	test("Date.parse('1984-08-31T01:23:45')", "NaN", NULL);
-	test("Date.parse('1984-08-31T01:23:45.678')", "NaN", NULL);
-	
-	// iso format only support time offset '+hh:mm', implementation format only ' +hhmm'
-	test("Date.parse('1984-08-31T01:23+1234')", "NaN", NULL);
-	test("Date.parse('1984-08-31T01:23 +12:34')", "NaN", NULL);
-	
+	// implementation format only support ' +hhmm' time offset
 	test("Date.parse('1984/08')", "NaN", NULL);
 	test("Date.parse('1984/08/31 01:23:45+0000')", "NaN", NULL);
 	test("Date.parse('1984/08/31 01:23:45 +00:00')", "NaN", NULL);
