@@ -62,8 +62,6 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 	uint32_t index, count = Value.toBinary(length).data.binary;
 	struct Chars *chars = Chars.beginAppend();
 	
-	Context.setTextIndex(context, Context(callIndex));
-	
 	for (index = 0; index < count; ++index)
 	{
 		if (index < object->elementCount)
@@ -71,16 +69,11 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 		else
 			value = Value(undefined);
 		
-		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-		{
-			value = Value.toString(context, value);
-			if (index)
-				chars = Chars.append(chars, "%.*s%.*s", separator.length, separator.bytes, Value.stringLength(value), Value.stringBytes(value));
-			else
-				chars = Chars.append(chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
-		}
-		else if (index)
+		if (index)
 			chars = Chars.append(chars, "%.*s", separator.length, separator.bytes);
+		
+		if (value.type != Value(undefinedType) && value.type != Value(nullType))
+			chars = Chars.appendValue(chars, context, value);
 	}
 	
 	return Chars.endAppend(chars);
@@ -142,6 +135,8 @@ static struct Value join (struct Context * const context)
 		value = Value.toString(context, value);
 		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	}
+	
+	Context.setTextIndex(context, Context(noIndex));
 	
 	return Value.chars(toChars(context, object, separator));
 }

@@ -65,7 +65,7 @@ Interface(Context,
 		struct Context * parent;
 		struct Ecc * ecc;
 		
-		int textIndex;
+		enum Context(Index) textIndex;
 		const struct Text *text;
 		
 		int construct;
