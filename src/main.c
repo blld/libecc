@@ -91,6 +91,7 @@ static struct Value alert (struct Context * const context)
 static int testVerbosity = 0;
 static int testErrorCount = 0;
 
+useframe
 static void test (const char *func, int line, const char *test, const char *expect, const char *text)
 {
 	struct Value result;

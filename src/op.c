@@ -1313,6 +1313,7 @@ struct Value debugger (struct Context * const context)
 	return trapOp(context, 0);
 }
 
+useframe
 struct Value try (struct Context * const context)
 {
 	const struct Op *end = context->ops + opValue().data.integer;

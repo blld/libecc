@@ -33,6 +33,12 @@
 		#define noreturn
 	#endif
 
+	#if __GNUC__ && !__clang__
+		#define useframe __attribute__((optimize("no-omit-frame-pointer")))
+	#else
+		#define useframe
+	#endif
+
 	#if (__STDC_VERSION__ < 199901L)
 		#ifdef __GNUC__
 			#define inline __inline__
