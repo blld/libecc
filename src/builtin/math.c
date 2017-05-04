@@ -219,7 +219,10 @@ static struct Value mathRound (struct Context * const context)
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(value);
 	
-	return Value.binary(floor(value.data.binary + 0.5));
+	if (value.data.binary < 0)
+		return Value.binary(1.0 - ceil(0.5 - value.data.binary));
+	else
+		return Value.binary(floor(0.5 + value.data.binary));
 }
 
 static struct Value mathSin (struct Context * const context)
