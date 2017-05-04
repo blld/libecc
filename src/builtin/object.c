@@ -127,7 +127,7 @@ static struct Value hasOwnProperty (struct Context * const context)
 	
 	v = Value.toString(context, Context.argument(context, 0));
 	context->this = Value.toObject(context, Context.this(context));
-	return Value.truth(getSlot(context->this.data.object, Key.makeWithText((struct Text){ Value.stringBytes(v), Value.stringLength(v) }, 0)));
+	return Value.truth(getSlot(context->this.data.object, Key.makeWithText(Text.make(Value.stringBytes(v), Value.stringLength(v)), 0)));
 }
 
 static struct Value isPrototypeOf (struct Context * const context)

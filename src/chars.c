@@ -115,10 +115,10 @@ struct Chars * appendValue (struct Chars *self, struct Context * const context, 
 			return appendText(self, *value.data.text);
 		
 		case Value(stringType):
-			return appendText(self, (struct Text){ value.data.string->value->bytes, value.data.string->value->length });
+			return appendText(self, Text.make(value.data.string->value->bytes, value.data.string->value->length));
 		
 		case Value(charsType):
-			return appendText(self, (struct Text){ value.data.chars->bytes, value.data.chars->length });
+			return appendText(self, Text.make(value.data.chars->bytes, value.data.chars->length));
 		
 		case Value(nullType):
 			return appendText(self, Text(null));

@@ -129,7 +129,7 @@ static struct Value join (struct Context * const context)
 	object = Value.toObject(context, Context.this(context));
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
-		separator = (struct Text){ ",", 1 };
+		separator = Text.make(",", 1);
 	else
 	{
 		value = Value.toString(context, value);
