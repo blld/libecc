@@ -33,7 +33,7 @@
 		#define noreturn
 	#endif
 
-	#if __GNUC__ && !__clang__
+	#if __GNUC__ && _WIN32
 		#define useframe __attribute__((optimize("no-omit-frame-pointer")))
 	#else
 		#define useframe
