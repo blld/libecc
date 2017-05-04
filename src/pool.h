@@ -28,6 +28,7 @@ Interface(Pool,
 	(void, addFunction ,(struct Function *function))
 	(void, addObject ,(struct Object *object))
 	(void, addChars ,(struct Chars *chars))
+	(void, reindexChars ,(struct Chars *chars, struct Chars *was))
 	
 	(void, unmarkAll ,(void))
 	(void, markValue ,(struct Value value))

@@ -67,15 +67,15 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 	else
 		message = Value.toString(context, message);
 	
-	chars = Chars.beginAppend();
-	chars = Chars.appendValue(chars, context, name);
+	Chars.beginAppend(&chars);
+	Chars.appendValue(&chars, context, name);
 	
 	if (Value.stringLength(name) && Value.stringLength(message))
-		chars = Chars.append(chars, ": ");
+		Chars.append(&chars, ": ");
 	
-	chars = Chars.appendValue(chars, context, message);
+	Chars.appendValue(&chars, context, message);
 	
-	return Chars.endAppend(chars);
+	return Chars.endAppend(&chars);
 }
 
 static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)

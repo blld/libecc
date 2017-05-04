@@ -129,12 +129,13 @@ static struct Value concat (struct Context * const context)
 	Context.assertVariableParameter(context);
 	
 	count = Context.variableArgumentCount(context);
-	chars = Chars.beginAppend();
-	chars = Chars.appendValue(chars, context, Context.this(context));
-	for (index = 0; index < count; ++index)
-		chars = Chars.appendValue(chars, context, Context.variableArgument(context, index));
 	
-	return Value.chars(Chars.endAppend(chars));
+	Chars.beginAppend(&chars);
+	Chars.appendValue(&chars, context, Context.this(context));
+	for (index = 0; index < count; ++index)
+		chars = Chars.appendValue(&chars, context, Context.variableArgument(context, index));
+	
+	return Value.chars(Chars.endAppend(&chars));
 }
 
 static struct Value indexOf (struct Context * const context)

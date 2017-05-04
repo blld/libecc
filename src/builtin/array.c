@@ -60,8 +60,9 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(object, Key(length), context);
 	uint32_t index, count = Value.toBinary(length).data.binary;
-	struct Chars *chars = Chars.beginAppend();
+	struct Chars *chars;
 	
+	Chars.beginAppend(&chars);
 	for (index = 0; index < count; ++index)
 	{
 		if (index < object->elementCount)
@@ -70,13 +71,13 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 			value = Value(undefined);
 		
 		if (index)
-			chars = Chars.append(chars, "%.*s", separator.length, separator.bytes);
+			Chars.append(&chars, "%.*s", separator.length, separator.bytes);
 		
 		if (value.type != Value(undefinedType) && value.type != Value(nullType))
-			chars = Chars.appendValue(chars, context, value);
+			Chars.appendValue(&chars, context, value);
 	}
 	
-	return Chars.endAppend(chars);
+	return Chars.endAppend(&chars);
 }
 
 static struct Value toString (struct Context * const context)

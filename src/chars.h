@@ -33,11 +33,11 @@ Interface(Chars,
 	(struct Chars *, createSized ,(uint16_t size))
 	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
 	
-	(struct Chars *, beginAppend ,(void))
-	(struct Chars *, append ,(struct Chars *, const char *format, ...))
-	(struct Chars *, appendValue ,(struct Chars *, struct Context * const context, struct Value value))
-	(struct Chars *, appendBinary ,(struct Chars *, double binary, int base))
-	(struct Chars *, endAppend ,(struct Chars *))
+	(void, beginAppend ,(struct Chars **))
+	(struct Chars *, append ,(struct Chars **, const char *format, ...))
+	(struct Chars *, appendValue ,(struct Chars **, struct Context * const context, struct Value value))
+	(struct Chars *, appendBinary ,(struct Chars **, double binary, int base))
+	(struct Chars *, endAppend ,(struct Chars **))
 	
 	(struct Chars *, normalizeBinary ,(struct Chars *))
 	

@@ -380,9 +380,9 @@ struct Value binaryToString (double binary, int base)
 			return text(&Text(infinity));
 	}
 	
-	chars = Chars.beginAppend();
-	chars = Chars.appendBinary(chars, binary, base);
-	return Value.chars(Chars.endAppend(chars));
+	Chars.beginAppend(&chars);
+	Chars.appendBinary(&chars, binary, base);
+	return Value.chars(Chars.endAppend(&chars));
 }
 
 struct Value toString (struct Context * const context, struct Value value)
@@ -640,10 +640,12 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 		
 		if (isString(a) || isString(b))
 		{
-			struct Chars *chars = Chars.beginAppend();
-			chars = Chars.appendValue(chars, context, a);
-			chars = Chars.appendValue(chars, context, b);
-			return Value.chars(Chars.endAppend(chars));
+			struct Chars *chars;
+			
+			Chars.beginAppend(&chars);
+			chars = Chars.appendValue(&chars, context, a);
+			chars = Chars.appendValue(&chars, context, b);
+			return Value.chars(Chars.endAppend(&chars));
 		}
 		else
 			return binary(toBinary(a).data.binary + toBinary(b).data.binary);

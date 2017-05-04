@@ -31,14 +31,14 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 	assert(value.data.function);
 	
 	self = value.data.function;
-	chars = Chars.beginAppend();
+	Chars.beginAppend(&chars);
 	
 	if (self->text.bytes == Text(nativeCode).bytes)
-		chars = Chars.append(chars, "function %s() [native code]", self->name? self->name: "");
+		Chars.append(&chars, "function %s() [native code]", self->name? self->name: "");
 	else
-		chars = Chars.append(chars, "%.*s", self->text.length, self->text.bytes);
+		Chars.append(&chars, "%.*s", self->text.length, self->text.bytes);
 	
-	return Chars.endAppend(chars);
+	return Chars.endAppend(&chars);
 }
 
 static struct Value toString (struct Context * const context)
@@ -169,21 +169,22 @@ static struct Value functionConstructor (struct Context * const context)
 	{
 		int_fast32_t index;
 		struct Value value;
-		struct Chars *chars = Chars.beginAppend();
-		chars = Chars.append(chars, "(function(");
+		struct Chars *chars;
+		
+		Chars.beginAppend(&chars);
+		Chars.append(&chars, "(function(");
 		for (index = 0; index < argumentCount; ++index)
 		{
 			if (index == argumentCount - 1)
-				chars = Chars.append(chars, ") {");
+				Chars.append(&chars, ") {");
 			
 			value = Value.toString(context, Context.variableArgument(context, index));
-			chars = Chars.append(chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
+			Chars.append(&chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
 			
 			if (index < argumentCount - 2)
-				chars = Chars.append(chars, ",");
+				Chars.append(&chars, ",");
 		}
-		chars = Chars.append(chars, "})");
-		Chars.endAppend(chars);
+		Chars.append(&chars, "})");
 		Ecc.evalInput(context->ecc, Input.createFromBytes(chars->bytes, chars->length, "(Function)"), 0);
 	}
 	else

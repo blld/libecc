@@ -14,7 +14,7 @@
 
 // MARK: - Private
 
-static inline struct Chars * appendText (struct Chars * chars, struct Text text)
+static inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 {
 	return append(chars, "%.*s", text.length, text.bytes);
 }
@@ -76,20 +76,22 @@ struct Chars * createWithBytes (uint16_t length, const char *bytes)
 }
 
 
-struct Chars * beginAppend (void)
+void beginAppend (struct Chars **chars)
 {
 	struct Chars *self = malloc(sizeof(*self));
 	*self = Chars.identity;
 	self->flags |= Chars(inAppend);
-	return self;
+	*chars = self;
+	Pool.addChars(self);
 }
 
-struct Chars * append (struct Chars *self, const char *format, ...)
+struct Chars * append (struct Chars **chars, const char *format, ...)
 {
 	uint16_t length;
 	va_list ap;
+	struct Chars *self = *chars;
 	
-	assert(self);
+	assert(self->flags & Chars(inAppend));
 	
 	va_start(ap, format);
 	length = vsnprintf(NULL, 0, format, ap);
@@ -101,55 +103,60 @@ struct Chars * append (struct Chars *self, const char *format, ...)
 	self->length += length;
 	va_end(ap);
 	
+	if (self != *chars)
+	{
+		Pool.reindexChars(self, *chars);
+		*chars = self;
+	}
 	return self;
 }
 
-struct Chars * appendValue (struct Chars *self, struct Context * const context, struct Value value)
+struct Chars * appendValue (struct Chars **chars, struct Context * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
 		case Value(keyType):
-			return appendText(self, *Key.textOf(value.data.key));
+			return appendText(chars, *Key.textOf(value.data.key));
 		
 		case Value(textType):
-			return appendText(self, *value.data.text);
+			return appendText(chars, *value.data.text);
 		
 		case Value(stringType):
-			return appendText(self, Text.make(value.data.string->value->bytes, value.data.string->value->length));
+			return appendText(chars, Text.make(value.data.string->value->bytes, value.data.string->value->length));
 		
 		case Value(charsType):
-			return appendText(self, Text.make(value.data.chars->bytes, value.data.chars->length));
+			return appendText(chars, Text.make(value.data.chars->bytes, value.data.chars->length));
 		
 		case Value(nullType):
-			return appendText(self, Text(null));
+			return appendText(chars, Text(null));
 		
 		case Value(undefinedType):
-			return appendText(self, Text(undefined));
+			return appendText(chars, Text(undefined));
 		
 		case Value(falseType):
-			return appendText(self, Text(false));
+			return appendText(chars, Text(false));
 		
 		case Value(trueType):
-			return appendText(self, Text(true));
+			return appendText(chars, Text(true));
 		
 		case Value(booleanType):
-			return appendText(self, value.data.boolean->truth? Text(true): Text(false));
+			return appendText(chars, value.data.boolean->truth? Text(true): Text(false));
 		
 		case Value(integerType):
-			return appendBinary(self, value.data.integer, 10);
+			return appendBinary(chars, value.data.integer, 10);
 		
 		case Value(numberType):
-			return appendBinary(self, value.data.number->value, 10);
+			return appendBinary(chars, value.data.number->value, 10);
 		
 		case Value(binaryType):
-			return appendBinary(self, value.data.binary, 10);
+			return appendBinary(chars, value.data.binary, 10);
 		
 		case Value(functionType):
 		case Value(objectType):
 		case Value(errorType):
 		case Value(dateType):
 		case Value(hostType):
-			return appendValue(self, context, Value.toString(context, value));
+			return appendValue(chars, context, Value.toString(context, value));
 		
 		case Value(referenceType):
 			break;
@@ -157,7 +164,7 @@ struct Chars * appendValue (struct Chars *self, struct Context * const context, 
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
-struct Chars * appendBinary (struct Chars * chars, double binary, int base)
+struct Chars * appendBinary (struct Chars **chars, double binary, int base)
 {
 	if (!base || base == 10)
 	{
@@ -202,11 +209,15 @@ struct Chars * appendBinary (struct Chars * chars, double binary, int base)
 	}
 }
 
-struct Chars * endAppend (struct Chars *self)
+struct Chars * endAppend (struct Chars **chars)
 {
-	Pool.addChars(self);
+	struct Chars *self = *chars;
+	
+	assert(self->flags & Chars(inAppend));
+	
 	self->bytes[self->length] = '\0';
 	self->flags &= ~Chars(inAppend);
+	
 	return self;
 }
 
