@@ -90,12 +90,15 @@ static struct Value alert (struct Context * const context)
 
 static int testVerbosity = 0;
 static int testErrorCount = 0;
+static int testCount = 0;
+static double testTime = 0;
 
 useframe
 static void test (const char *func, int line, const char *test, const char *expect, const char *text)
 {
 	struct Value result;
 	uint16_t length;
+	clock_t start = clock();
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
 		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(primitiveResult));
@@ -105,6 +108,9 @@ static void test (const char *func, int line, const char *test, const char *expe
 	
 	result = Value.toString(NULL, ecc->result);
 	length = Value.stringLength(result);
+	
+	testTime += (double)(clock() - start) / CLOCKS_PER_SEC;
+	++testCount;
 	
 	if (length != strlen(expect) || memcmp(expect, Value.stringBytes(result), length))
 	{
@@ -1218,6 +1224,8 @@ static int runTest (int verbosity)
 		Env.printColor(0, Env(bold), "all success");
 	
 	Env.newline();
+	Env.newline();
+	Env.print("%d tests, %.2f ms", testCount, testTime * 1000);
 	
 	return testErrorCount? EXIT_FAILURE: EXIT_SUCCESS;
 }
