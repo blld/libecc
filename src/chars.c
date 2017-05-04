@@ -186,7 +186,7 @@ struct Chars * appendBinary (struct Chars * chars, double binary, int base)
 		{
 			static char const digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 			char buffer[1 + sizeof(integer) * CHAR_BIT];
-			char *p = buffer + sizeof(buffer);
+			char *p = buffer + sizeof(buffer) - 1;
 			uint16_t count;
 			
 			while (integer) {
@@ -196,7 +196,7 @@ struct Chars * appendBinary (struct Chars * chars, double binary, int base)
 			if (sign)
 				*(--p) = '-';
 			
-			count = buffer + sizeof(buffer) - p;
+			count = buffer + sizeof(buffer) - 1 - p;
 			return append(chars, "%.*s", count, p);
 		}
 	}
