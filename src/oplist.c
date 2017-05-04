@@ -72,7 +72,11 @@ struct OpList * joinDiscarded (struct OpList *self, uint16_t n, struct OpList *w
 		n -= 16;
 	}
 	
-	self = OpList.append(self, Op.make(Op.discardN, Value.integer(n), Text(empty)));
+	if (n == 1)
+		self = OpList.append(self, Op.make(Op.discard, Value(undefined), Text(empty)));
+	else
+		self = OpList.append(self, Op.make(Op.discardN, Value.integer(n), Text(empty)));
+	
 	return join(self, with);
 }
 
