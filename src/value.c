@@ -374,7 +374,7 @@ struct Value binaryToString (double binary, int base)
 		return text(&Text(nan));
 	else if (isinf(binary))
 	{
-		if (signbit(binary))
+		if (binary < 0)
 			return text(&Text(negativeInfinity));
 		else
 			return text(&Text(infinity));

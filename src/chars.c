@@ -173,7 +173,7 @@ struct Chars * appendBinary (struct Chars * chars, double binary, int base)
 	}
 	else
 	{
-		int sign = signbit(binary);
+		int sign = binary < 0;
 		unsigned long integer = sign? -binary: binary;
 		
 		if (base == 8 || base == 16)
