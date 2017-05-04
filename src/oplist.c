@@ -308,7 +308,7 @@ void dumpTo (struct OpList *self, FILE *file)
 	
 	for (i = 0; i < self->opCount; ++i)
 	{
-		fprintf(file, "[%p] %s ", self->ops + i, Op.toChars(self->ops[i].native));
+		fprintf(file, "[%p] %s ", (void *)(self->ops + i), Op.toChars(self->ops[i].native));
 		
 		if (self->ops[i].native == Op.function)
 		{
