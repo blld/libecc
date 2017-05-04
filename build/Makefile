@@ -43,7 +43,7 @@ $(library): $(objects)
 
 $(binary): $(objects)
 	@echo "   [LD] $@"
-	@$(CC) $(CFLAGS) $(LDFLAGS) $(libs) $^ -o $@
+	@$(CC) $(CFLAGS) $(LDFLAGS) $^ $(libs) -o $@
 
 $(root)/object/%.o: ../src/%.c
 	@echo "   [CC] $@"
