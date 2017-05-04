@@ -46,7 +46,7 @@
 
 static int debug = 0;
 
-static void printUsage(void)
+void usage(void)
 {
 	Env.printColor(0, Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
 	Env.printColor(Env(green), Env(bold), "\tstep-in\n");
@@ -75,13 +75,10 @@ static void printBacktrace(struct Context * const context)
 
 static struct Value trapOp(struct Context *context, int offset)
 {
-	void (*usage)(void);
 	const struct Text *text = opText(offset);
 	
 	context->text = text;
 	if (debug && text->bytes && text->length) {
-		usage = printUsage;
-		
 		Env.newline();
 		printBacktrace(context);
 		Ecc.printTextInput(context->ecc, *context->text, 1);
