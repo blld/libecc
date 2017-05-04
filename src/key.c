@@ -104,8 +104,9 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 		
 		if (copyOnCreate)
 		{
-			char *chars = malloc(text.length);
+			char *chars = malloc(text.length + 1);
 			memcpy(chars, text.bytes, text.length);
+			chars[text.length] = '\0';
 			charsList = realloc(charsList, sizeof(*charsList) * (charsCount + 1));
 			charsList[charsCount++] = chars;
 			keyPool[keyCount++] = Text.make(chars, text.length);
