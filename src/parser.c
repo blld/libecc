@@ -1229,7 +1229,7 @@ static struct OpList * returnStatement (struct Parser *self, struct Text text)
 static struct OpList * switchStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *conditionOps = NULL, *defaultOps = NULL;
-	struct Text text;
+	struct Text text = Text(empty);
 	uint32_t conditionCount = 0;
 	
 	expectToken(self, '(');
