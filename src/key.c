@@ -72,6 +72,7 @@ void teardown (void)
 	while (charsCount)
 		free(charsList[--charsCount]), charsList[charsCount] = NULL;
 	
+	free(charsList), charsList = NULL, charsCount = 0;
 	free(keyPool), keyPool = NULL, keyCount = 0, keyCapacity = 0;
 }
 
