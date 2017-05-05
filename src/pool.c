@@ -136,7 +136,7 @@ void reindexChars (struct Chars *chars, struct Chars *was)
 		if (self->charsList[index] == was)
 		{
 			self->charsList[index] = chars;
-			break;
+			return;
 		}
 	
 	assert(0);
