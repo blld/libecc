@@ -684,7 +684,7 @@ struct Value getMember (struct Context * const context)
 	
 	prepareObject(context, &object);
 	
-	return Object.getMember(object.data.object, key, context);
+	return Object.getMember(object.data.object, context, key);
 }
 
 struct Value setMember (struct Context * const context)
@@ -697,7 +697,7 @@ struct Value setMember (struct Context * const context)
 	value = retain(nextOp());
 	
 	Context.setText(context, text);
-	Object.putMember(object.data.object, key, context, value);
+	Object.putMember(object.data.object, context, key, value);
 	
 	return value;
 }
@@ -711,7 +711,7 @@ struct Value callMember (struct Context * const context)
 	
 	prepareObject(context, &object);
 	
-	return callValue(context, Object.getMember(object.data.object, key, context), object, argumentCount, 0, text);
+	return callValue(context, Object.getMember(object.data.object, context, key), object, argumentCount, 0, text);
 }
 
 struct Value deleteMember (struct Context * const context)
@@ -758,7 +758,7 @@ struct Value getPropertyRef (struct Context * const context)
 	prepareObjectProperty(context, &object, &property);
 	
 	context->refObject = object.data.object;
-	ref = Object.propertyOwn(object.data.object, property);
+	ref = Object.propertyOwn(object.data.object, context, property);
 	
 	if (!ref)
 	{
@@ -767,7 +767,7 @@ struct Value getPropertyRef (struct Context * const context)
 			Context.setText(context, text);
 			Context.typeError(context, Chars.create("object is not extensible"));
 		}
-		ref = Object.addProperty(object.data.object, property, Value(undefined), 0);
+		ref = Object.addProperty(object.data.object, context, property, Value(undefined), 0);
 	}
 	
 	return Value.reference(ref);
@@ -779,7 +779,7 @@ struct Value getProperty (struct Context * const context)
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	return Object.getProperty(object.data.object, property, context);
+	return Object.getProperty(object.data.object, context, property);
 }
 
 struct Value setProperty (struct Context * const context)
@@ -792,7 +792,7 @@ struct Value setProperty (struct Context * const context)
 	value = retain(nextOp());
 	
 	Context.setText(context, text);
-	Object.putProperty(object.data.object, property, context, value);
+	Object.putProperty(object.data.object, context, property, value);
 	
 	return value;
 }
@@ -805,7 +805,7 @@ struct Value callProperty (struct Context * const context)
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	return callValue(context, Object.getProperty(object.data.object, property, context), object, argumentCount, 0, text);
+	return callValue(context, Object.getProperty(object.data.object, context, property), object, argumentCount, 0, text);
 }
 
 struct Value deleteProperty (struct Context * const context)
@@ -816,10 +816,10 @@ struct Value deleteProperty (struct Context * const context)
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	result = Object.deleteProperty(object.data.object, property);
+	result = Object.deleteProperty(object.data.object, context, property);
 	if (!result)
 	{
-		struct Value string = Value.toString(NULL, property);
+		struct Value string = Value.toString(context, property);
 		Context.setText(context, text);
 		Context.typeError(context, Chars.create("property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string)));
 	}
@@ -958,7 +958,7 @@ struct Value instanceOf (struct Context * const context)
 	if (b.type != Value(functionType))
 		Context.typeError(context, Chars.create("'%.*s' not a function", text->length, text->bytes));
 	
-	b = Object.getMember(b.data.object, Key(prototype), context);
+	b = Object.getMember(b.data.object, context, Key(prototype));
 	if (!Value.isObject(b))
 		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", text->length, text->bytes));
 	
@@ -979,7 +979,7 @@ struct Value in (struct Context * const context)
 	if (!Value.isObject(object))
 		Context.typeError(context, Chars.create("'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
 	
-	ref = Object.property(object.data.object, property);
+	ref = Object.property(object.data.object, context, property);
 	
 	return Value.truth(ref != NULL);
 }
@@ -1157,9 +1157,9 @@ struct Value not (struct Context * const context)
 	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = Value.toBinary(release(Object.getValue(context->refObject, ref, context))); \
+		a = Value.toBinary(release(Object.getValue(context->refObject, context, ref))); \
 		result = OP; \
-		Object.putValue(context->refObject, ref, context, a); \
+		Object.putValue(context->refObject, context, ref, a); \
 		return Value.binary(result); \
 	} \
 	else if (a.type != Value(binaryType)) \
@@ -1201,9 +1201,9 @@ struct Value postDecrementRef (struct Context * const context)
 	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = CONV(release(Object.getValue(context->refObject, ref, context))); \
+		a = CONV(release(Object.getValue(context->refObject, context, ref))); \
 		OP; \
-		return *Object.putValue(context->refObject, ref, context, a); \
+		return *Object.putValue(context->refObject, context, ref, a); \
 	} \
 	else if (a.type == TYPE) \
 	{ \
@@ -1237,9 +1237,9 @@ struct Value addAssignRef (struct Context * const context)
 		Context.setText(context, text);
 		if (a.flags & (Value(readonly) | Value(accessor)))
 		{
-			a = release(Object.getValue(context->refObject, ref, context));
+			a = release(Object.getValue(context->refObject, context, ref));
 			a = retain(Value.add(context, a, b));
-			return *Object.putValue(context->refObject, ref, context, a);
+			return *Object.putValue(context->refObject, context, ref, a);
 		}
 		else
 		{

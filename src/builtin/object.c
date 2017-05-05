@@ -40,7 +40,7 @@ static inline uint16_t getSlot (const struct Object * const self, const struct K
 		.slot[key.data.depth[3]];
 }
 
-static inline uint32_t getElementOrKey (struct Value property, struct Key *key)
+static inline uint32_t getElementOrKey (struct Value property, struct Context * const context, struct Key *key)
 {
 	uint32_t element = UINT32_MAX;
 	
@@ -61,7 +61,7 @@ static inline uint32_t getElementOrKey (struct Value property, struct Key *key)
 				*key = Key.makeWithText(text, 1);
 		}
 		else
-			return getElementOrKey(Value.toString(NULL, property), key);
+			return getElementOrKey(Value.toString(context, property), context, key);
 	}
 	
 	return element;
@@ -161,7 +161,7 @@ static struct Value propertyIsEnumerable (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	object = Value.toObject(context, Context.this(context)).data.object;
-	ref = propertyOwn(object, value);
+	ref = propertyOwn(object, context, value);
 	
 	if (ref)
 		return Value.truth(!(ref->flags & Value(hidden)));
@@ -206,7 +206,7 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 	
 	object = checkObject(context, 0);
 	value = Context.argument(context, 1);
-	ref = propertyOwn(object, value);
+	ref = propertyOwn(object, context, value);
 	
 	if (ref)
 	{
@@ -266,7 +266,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 	object = checkObject(context, 0);
 	property = Value.toString(context, Context.argument(context, 1));
-	current = Object.propertyOwn(object, property);
+	current = Object.propertyOwn(object, context, property);
 	descriptor = checkObject(context, 2);
 	
 	getter = member(descriptor, Key(get));
@@ -310,29 +310,29 @@ static struct Value defineProperty (struct Context * const context)
 	}
 	else
 	{
-		value = getMember(descriptor, Key(value), context);
+		value = getMember(descriptor, context, Key(value));
 		
-		if (!Value.isTrue(getMember(descriptor, Key(writable), context)))
+		if (!Value.isTrue(getMember(descriptor, context, Key(writable))))
 			value.flags |= Value(readonly);
 	}
 	
-	if (!Value.isTrue(getMember(descriptor, Key(enumerable), context)))
+	if (!Value.isTrue(getMember(descriptor, context, Key(enumerable))))
 		value.flags |= Value(hidden);
 	
-	if (!Value.isTrue(getMember(descriptor, Key(configurable), context)))
+	if (!Value.isTrue(getMember(descriptor, context, Key(configurable))))
 		value.flags |= Value(sealed);
 	
-	element = getElementOrKey(property, &key);
+	element = getElementOrKey(property, context, &key);
 	
 	if (object->type == &Array(type) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
 	{
 		Context.setTextIndex(context, Context(callIndex));
-		putProperty(object, property, context, value);
+		putProperty(object, context, property, value);
 		return Value(true);
 	}
 	else if (!current)
 	{
-		addProperty(object, property, value, 0);
+		addProperty(object, context, property, value, 0);
 		return Value(true);
 	}
 	else
@@ -366,7 +366,7 @@ static struct Value defineProperty (struct Context * const context)
 			}
 		}
 		
-		addProperty(object, property, value, 0);
+		addProperty(object, context, property, value, 0);
 	}
 	
 	return Value(true);
@@ -750,10 +750,10 @@ struct Value * element (struct Object *self, uint32_t element)
 	return NULL;
 }
 
-struct Value * property (struct Object *self, struct Value property)
+struct Value * property (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t index = getElementOrKey(property, &key);
+	uint32_t index = getElementOrKey(property, context, &key);
 	
 	if (index < UINT32_MAX)
 		return element(self, index);
@@ -791,10 +791,10 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 	return NULL;
 }
 
-struct Value * propertyOwn (struct Object *self, struct Value property)
+struct Value * propertyOwn (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t index = getElementOrKey(property, &key);
+	uint32_t index = getElementOrKey(property, context, &key);
 	
 	if (index < UINT32_MAX)
 		return elementOwn(self, index);
@@ -802,7 +802,7 @@ struct Value * propertyOwn (struct Object *self, struct Value property)
 		return memberOwn(self, key);
 }
 
-struct Value getValue (struct Object *self, struct Value *ref, struct Context * const context)
+struct Value getValue (struct Object *self, struct Context * const context, struct Value *ref)
 {
 	if (!ref)
 		return Value(undefined);
@@ -823,31 +823,31 @@ struct Value getValue (struct Object *self, struct Value *ref, struct Context * 
 	return *ref;
 }
 
-struct Value getMember (struct Object *self, struct Key key, struct Context * const context)
+struct Value getMember (struct Object *self, struct Context * const context, struct Key key)
 {
-	return getValue(self, member(self, key), context);
+	return getValue(self, context, member(self, key));
 }
 
-struct Value getElement (struct Object *self, uint32_t index, struct Context * const context)
+struct Value getElement (struct Object *self, struct Context * const context, uint32_t index)
 {
 	if (self->type == &String(type))
 		return String.valueAtPosition((struct String *)self, index);
 	else
-		return getValue(self, element(self, index), context);
+		return getValue(self, context, element(self, index));
 }
 
-struct Value getProperty (struct Object *self, struct Value property, struct Context * const context)
+struct Value getProperty (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, &key);
+	uint32_t element = getElementOrKey(property, context, &key);
 	
 	if (element < UINT32_MAX)
-		return getElement(self, element, context);
+		return getElement(self, context, element);
 	else
-		return getMember(self, key, context);
+		return getMember(self, context, key);
 }
 
-struct Value *putValue (struct Object *self, struct Value *ref, struct Context * const context, struct Value value)
+struct Value *putValue (struct Object *self, struct Context * const context, struct Value *ref, struct Value value)
 {
 	if (ref->flags & Value(accessor))
 	{
@@ -880,16 +880,16 @@ struct Value *putValue (struct Object *self, struct Value *ref, struct Context *
 	return ref;
 }
 
-struct Value *putMember (struct Object *self, struct Key key, struct Context * const context, struct Value value)
+struct Value *putMember (struct Object *self, struct Context * const context, struct Key key, struct Value value)
 {
 	struct Value *ref;
 	
 	if (( ref = memberOwn(self, key) ))
-		return putValue(self, ref, context, value);
+		return putValue(self, context, ref, value);
 	else if (self->prototype && ( ref = member(self->prototype, key) ))
 	{
 		if (ref->flags & Value(accessor))
-			return putValue(self, ref, context, value);
+			return putValue(self, context, ref, value);
 		else if (ref->flags & Value(readonly))
 			Context.typeError(context, Chars.create("'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
@@ -900,16 +900,16 @@ struct Value *putMember (struct Object *self, struct Key key, struct Context * c
 	return addMember(self, key, value, 0);
 }
 
-struct Value *putElement (struct Object *self, uint32_t index, struct Context * const context, struct Value value)
+struct Value *putElement (struct Object *self, struct Context * const context, uint32_t index, struct Value value)
 {
 	struct Value *ref;
 	
 	if (( ref = elementOwn(self, index) ))
-		return putValue(self, ref, context, value);
+		return putValue(self, context, ref, value);
 	else if (self->prototype && ( ref = element(self->prototype, index) ))
 	{
 		if (ref->flags & Value(accessor))
-			return putValue(self, ref, context, value);
+			return putValue(self, context, ref, value);
 		else if (ref->flags & Value(readonly))
 			Context.typeError(context, Chars.create("'%d' is readonly", index));
 	}
@@ -920,15 +920,15 @@ struct Value *putElement (struct Object *self, uint32_t index, struct Context * 
 	return addElement(self, index, value, 0);
 }
 
-struct Value *putProperty (struct Object *self, struct Value property, struct Context * const context, struct Value value)
+struct Value *putProperty (struct Object *self, struct Context * const context, struct Value property, struct Value value)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, &key);
+	uint32_t element = getElementOrKey(property, context, &key);
 	
 	if (element < UINT32_MAX)
-		return putElement(self, element, context, value);
+		return putElement(self, context, element, value);
 	else
-		return putMember(self, key, context, value);
+		return putMember(self, context, key, value);
 }
 
 struct Value * addMember (struct Object *self, struct Key key, struct Value value, enum Value(Flags) flags)
@@ -999,10 +999,10 @@ struct Value * addElement (struct Object *self, uint32_t element, struct Value v
 	return ref;
 }
 
-struct Value * addProperty (struct Object *self, struct Value property, struct Value value, enum Value(Flags) flags)
+struct Value * addProperty (struct Object *self, struct Context * const context, struct Value property, struct Value value, enum Value(Flags) flags)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, &key);
+	uint32_t element = getElementOrKey(property, context, &key);
 	
 	if (element < UINT32_MAX)
 		return addElement(self, element, value, flags);
@@ -1045,10 +1045,10 @@ int deleteElement (struct Object *self, uint32_t element)
 	return 1;
 }
 
-int deleteProperty (struct Object *self, struct Value property)
+int deleteProperty (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, &key);
+	uint32_t element = getElementOrKey(property, context, &key);
 	
 	if (element < UINT32_MAX)
 		return deleteElement(self, element);

@@ -39,7 +39,7 @@ static struct Chars *messageValue (struct Context * const context, struct Value 
 		return value.data.chars;
 	else
 	{
-		value = Value.toString(NULL, value);
+		value = Value.toString(context, value);
 		return Chars.create("%.*s", Value.stringLength(value), Value.stringBytes(value));
 	}
 }
@@ -55,13 +55,13 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 	
 	self = value.data.object;
 	
-	name = Object.getMember(self, Key(name), context);
+	name = Object.getMember(self, context, Key(name));
 	if (name.type == Value(undefinedType))
 		name = Value.text(&Text(errorName));
 	else
 		name = Value.toString(context, name);
 	
-	message = Object.getMember(self, Key(message), context);
+	message = Object.getMember(self, context, Key(message));
 	if (message.type == Value(undefinedType))
 		message = Value.text(&Text(empty));
 	else

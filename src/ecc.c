@@ -112,8 +112,8 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 			
 			if (value.type == Value(errorType))
 			{
-				name = Value.toString(&context, Object.getMember(value.data.object, Key(name), &context));
-				message = Value.toString(&context, Object.getMember(value.data.object, Key(message), &context));
+				name = Value.toString(&context, Object.getMember(value.data.object, &context, Key(name)));
+				message = Value.toString(&context, Object.getMember(value.data.object, &context, Key(message)));
 			}
 			else
 				message = Value.toString(&context, value);
