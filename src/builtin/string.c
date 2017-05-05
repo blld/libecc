@@ -411,3 +411,20 @@ struct String * create (struct Chars *chars)
 	
 	return self;
 }
+
+struct Value valueAtPosition (struct String *self, uint32_t position)
+{
+	int32_t index, length;
+	
+	index = positionIndex(self->value->bytes, self->value->length, position, 0);
+	length = positionIndex(self->value->bytes, self->value->length, position + 1, 0) - index;
+	
+	if (length <= 0)
+		return Value(undefined);
+	else
+	{
+		struct Chars *result = Chars.createSized(length);
+		memcpy(result->bytes, self->value->bytes + index, length);
+		return Value.chars(result);
+	}
+}

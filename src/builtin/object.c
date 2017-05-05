@@ -830,7 +830,10 @@ struct Value getMember (struct Object *self, struct Key key, struct Context * co
 
 struct Value getElement (struct Object *self, uint32_t index, struct Context * const context)
 {
-	return getValue(self, element(self, index), context);
+	if (self->type == &String(type))
+		return String.valueAtPosition((struct String *)self, index);
+	else
+		return getValue(self, element(self, index), context);
 }
 
 struct Value getProperty (struct Object *self, struct Value property, struct Context * const context)

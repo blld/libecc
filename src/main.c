@@ -1083,6 +1083,9 @@ static void testString (void)
 	test("'aべcaべc'.lastIndexOf('c', 2)", "2", NULL);
 	test("'aべcaべc'.lastIndexOf('c', 3)", "2", NULL);
 	test("''.lastIndexOf.length", "1", NULL);
+	test("'123'[2]", "3", NULL);
+	test("'123'[3]", "undefined", NULL);
+	test("var a = '123'; a[1] = 5; a", "123", NULL);
 }
 
 static void testDate (void)

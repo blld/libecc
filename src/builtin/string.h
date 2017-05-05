@@ -30,6 +30,7 @@ Interface(String,
 	(void, teardown ,(void))
 	
 	(struct String *, create ,(struct Chars *))
+	(struct Value, valueAtPosition ,(struct String *, uint32_t position))
 	,
 	{
 		struct Object object;
