@@ -96,28 +96,29 @@ static double testTime = 0;
 useframe
 static void test (const char *func, int line, const char *test, const char *expect, const char *text)
 {
-	struct Value result;
+	const char *bytes;
 	uint16_t length;
 	clock_t start = clock();
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(primitiveResult));
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(stringResult));
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
 	
-	result = Value.toString(NULL, ecc->result);
-	length = Value.stringLength(result);
-	
 	testTime += (double)(clock() - start) / CLOCKS_PER_SEC;
 	++testCount;
 	
-	if (length != strlen(expect) || memcmp(expect, Value.stringBytes(result), length))
+	assert(Value.isString(ecc->result));
+	bytes = Value.stringBytes(ecc->result);
+	length = Value.stringLength(ecc->result);
+	
+	if (length != strlen(expect) || memcmp(expect, bytes, length))
 	{
 		++testErrorCount;
 		Env.printColor(Env(red), Env(bold), "[failure]");
 		Env.print(" %s:%d - ", func, line);
-		Env.printColor(0, Env(bold), "expect \"%s\" was \"%.*s\"", expect, Value.stringLength(result), Value.stringBytes(result));
+		Env.printColor(0, Env(bold), "expect \"%s\" was \"%.*s\"", expect, length, bytes);
 		Env.newline();
 		goto error;
 	}
@@ -1086,6 +1087,7 @@ static void testString (void)
 	test("'123'[2]", "3", NULL);
 	test("'123'[3]", "undefined", NULL);
 	test("var a = '123'; a[1] = 5; a", "123", NULL);
+	test("var s = new String('abc'); s[1]", "b", NULL);
 }
 
 static void testDate (void)

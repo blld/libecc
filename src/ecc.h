@@ -19,8 +19,9 @@
 	#include "input.h"
 
 	enum Ecc(EvalFlags) {
-		Ecc(globalThis) = 1 << 0,
-		Ecc(primitiveResult) = 1 << 1,
+		Ecc(globalThis)      = 0x1 /* 0000 0001 */,
+		Ecc(primitiveResult) = 0x2 /* 0000 0010 */,
+		Ecc(stringResult)    = 0x6 /* 0000 0110 */,
 	};
 
 #endif

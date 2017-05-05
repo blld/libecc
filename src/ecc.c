@@ -138,7 +138,11 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	if (flags & Ecc(primitiveResult))
 	{
 		Context.setTextIndex(&context, Context(noIndex));
-		self->result = Value.toPrimitive(&context, self->result, Value(hintAuto));
+		
+		if ((flags & Ecc(stringResult)) == Ecc(stringResult))
+			self->result = Value.toString(&context, self->result);
+		else
+			self->result = Value.toPrimitive(&context, self->result, Value(hintAuto));
 	}
 	
 	if (trap)
