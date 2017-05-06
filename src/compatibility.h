@@ -33,7 +33,8 @@
 		#define noreturn
 	#endif
 
-	#if __GNUC__ && _WIN32
+	#if __GNUC__ && _WIN32 && !_MSC_VER
+		/* use ebp frame */
 		#define useframe __attribute__((optimize("no-omit-frame-pointer")))
 	#else
 		#define useframe
