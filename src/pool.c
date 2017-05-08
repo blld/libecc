@@ -165,10 +165,13 @@ void markValue (struct Value value)
 		markFunction(value.data.function);
 	else if (value.type >= Value(objectType))
 	{
-		markObject(value.data.object);
-		
 		if (value.type == Value(stringType))
 			markChars(value.data.string->value);
+		
+		if (value.type == Value(regexpType))
+			markChars(value.data.regexp->pattern);
+		
+		markObject(value.data.object);
 	}
 	else if (value.type == Value(charsType))
 		markChars(value.data.chars);
@@ -198,6 +201,12 @@ static void cleanupObject(struct Object *object)
 	
 	if (object->prototype && object->prototype->referenceCount)
 		--object->referenceCount;
+	
+	if (value.type == Value(stringType))
+		--value.data.string->value->referenceCount;
+	
+	if (value.type == Value(regexpType))
+		--value.data.regexp->pattern->referenceCount;
 	
 	if (object->elementCount)
 		while (object->elementCount--)

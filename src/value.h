@@ -47,6 +47,7 @@
 		/* 0100 0000 */ Value(objectType) = 0x40,
 		/* 0100 0001 */ Value(errorType) = 0x41,
 		/* 0100 0010 */ Value(functionType) = 0x42,
+		/* 0100 0011 */ Value(regexpType) = 0x43,
 		/* 0100 0100 */ Value(dateType) = 0x44,
 		/* 0100 1000 */ Value(numberType) = 0x48,
 		/* 0101 0000 */ Value(stringType) = 0x50,
@@ -103,6 +104,7 @@ Interface(Value,
 	(struct Value, object ,(struct Object *))
 	(struct Value, error ,(struct Error *))
 	(struct Value, string ,(struct String *))
+	(struct Value, regexp ,(struct RegExp *))
 	(struct Value, number ,(struct Number *))
 	(struct Value, boolean ,(struct Boolean *))
 	(struct Value, date ,(struct Date *))
@@ -160,6 +162,7 @@ Interface(Value,
 			struct Object *object;
 			struct Error *error;
 			struct String *string;
+			struct RegExp *regexp;
 			struct Number *number;
 			struct Boolean *boolean;
 			struct Date *date;

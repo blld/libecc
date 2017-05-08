@@ -151,6 +151,7 @@ struct Chars * appendValue (struct Chars **chars, struct Context * const context
 		case Value(binaryType):
 			return appendBinary(chars, value.data.binary, 10);
 		
+		case Value(regexpType):
 		case Value(functionType):
 		case Value(objectType):
 		case Value(errorType):

@@ -125,6 +125,17 @@ struct Value string (struct String *string)
 	};
 }
 
+struct Value regexp (struct RegExp *regexp)
+{
+	assert(regexp);
+	
+	return (struct Value){
+		.data = { .regexp = regexp },
+		.type = Value(regexpType),
+		.check = 1,
+	};
+}
+
 struct Value number (struct Number *number)
 {
 	assert(number);
@@ -335,6 +346,7 @@ struct Value toBinary (struct Value value)
 		case Value(errorType):
 		case Value(dateType):
 		case Value(functionType):
+		case Value(regexpType):
 		case Value(hostType):
 			return binary(NAN);
 		
@@ -428,6 +440,7 @@ struct Value toString (struct Context * const context, struct Value value)
 		case Value(dateType):
 		case Value(functionType):
 		case Value(errorType):
+		case Value(regexpType):
 		case Value(hostType):
 			return toString(context, toPrimitive(context, value, Value(hintString)));
 		
@@ -497,6 +510,7 @@ struct Value toObject (struct Context * const context, struct Value value)
 		case Value(numberType):
 		case Value(dateType):
 		case Value(booleanType):
+		case Value(regexpType):
 		case Value(hostType):
 			break;
 	}
@@ -540,6 +554,7 @@ struct Value toType (struct Value value)
 		case Value(booleanType):
 		case Value(errorType):
 		case Value(dateType):
+		case Value(regexpType):
 		case Value(hostType):
 			return text(&Text(object));
 		
@@ -770,6 +785,9 @@ const char * typeName (enum Value(Type) type)
 		case Value(booleanType):
 			return "boolean";
 		
+		case Value(regexpType):
+			return "regexp";
+			
 		case Value(referenceType):
 			break;
 	}
@@ -856,6 +874,7 @@ void dumpTo (struct Value value, FILE *file)
 		case Value(objectType):
 		case Value(dateType):
 		case Value(errorType):
+		case Value(regexpType):
 		case Value(hostType):
 			Object.dumpTo(value.data.object, file);
 			return;
