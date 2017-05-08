@@ -408,7 +408,10 @@ static inline struct Value callFunction (struct Context * const context, struct 
 static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
 {
 	if (value.type != Value(functionType))
+	{
+		Context.setText(context, text);
 		Context.typeError(context, Chars.create("'%.*s' is not a function", text->length, text->bytes));
+	}
 	
 	if (value.data.function->flags & Function(useBoundThis))
 		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);

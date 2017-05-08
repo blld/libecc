@@ -371,7 +371,7 @@ static void testConvertion (void)
 	test("var b = []; b.call[1](b)", "TypeError: cannot convert 'b.call' to object"
 	,    "            ^~~~~~      ");
 	test("var b = []; b.call(b)", "TypeError: 'b.call' is not a function"
-	,    "            ^        ");
+	,    "            ^~~~~~   ");
 	test("var a = { toString: function () { return this } }, b = ''; b.join[a](b)", "TypeError: cannot convert 'b.join' to object"
 	,    "                                                           ^~~~~~      ");
 }
