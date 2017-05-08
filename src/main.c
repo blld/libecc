@@ -1191,6 +1191,12 @@ static void testDate (void)
 	test("Date.parse('1984/08/31 01:23:45  +0000')", "NaN", NULL);
 }
 
+static void testRegExp (void)
+{
+	test("/abc", "SyntaxError: unterminated regexp literal"
+	,    "^~~~");
+}
+
 static int runTest (int verbosity)
 {
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->environment), 0);
@@ -1220,6 +1226,7 @@ static int runTest (int verbosity)
 	testNumber();
 	testString();
 	testDate();
+	testRegExp();
 	
 	Env.newline();
 	

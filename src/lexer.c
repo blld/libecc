@@ -133,9 +133,21 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				}
 				else if (!self->disallowRegex)
 				{
-					#warning TODO
-					Env.printWarning("TODO: regex or division");
-					return syntaxError(self, Chars.create("TODO: regex"));
+					while (( c = nextChar(self) ))
+					{
+						if (c == '\\')
+							nextChar(self);
+						else if (c == '/')
+						{
+							acceptChar(self, 'g');
+							acceptChar(self, 'i');
+							acceptChar(self, 'm');
+							return Lexer(regexpToken);
+						}
+						else if (c == '\r' || c == '\n')
+							break;
+					}
+					return syntaxError(self, Chars.create("unterminated regexp literal"));
 				}
 				else if (acceptChar(self, '='))
 					return Lexer(divideAssignToken);

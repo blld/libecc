@@ -308,7 +308,7 @@ static struct OpList * primary (struct Parser *self)
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 		oplist = OpList.create(Op.text, Value(undefined), self->lexer->text);
-	else if (previewToken(self) == Lexer(regexToken)
+	else if (previewToken(self) == Lexer(regexpToken)
 		|| previewToken(self) == Lexer(integerToken)
 		|| previewToken(self) == Lexer(binaryToken)
 		)

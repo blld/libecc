@@ -30,7 +30,7 @@
 		_( binary ,"number",)\
 		_( string ,,)\
 		_( identifier ,,)\
-		_( regex ,,)\
+		_( regexp ,,)\
 		\
 		/* keyword */\
 		_( break ,,)\
