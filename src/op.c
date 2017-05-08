@@ -1399,22 +1399,22 @@ struct Value nextIf (struct Context * const context)
 
 struct Value autoreleaseExpression (struct Context * const context)
 {
-	uint32_t counts[3];
+	uint32_t indices[3];
 	
-	Pool.getCounts(counts);
+	Pool.getIndices(indices);
 	release(context->ecc->result);
 	context->ecc->result = retain(trapOp(context, 1));
-	Pool.collectUnreferencedFromIndices(counts);
+	Pool.collectUnreferencedFromIndices(indices);
 	return nextOp();
 }
 
 struct Value autoreleaseDiscard (struct Context * const context)
 {
-	uint32_t counts[3];
+	uint32_t indices[3];
 	
-	Pool.getCounts(counts);
+	Pool.getIndices(indices);
 	trapOp(context, 1);
-	Pool.collectUnreferencedFromIndices(counts);
+	Pool.collectUnreferencedFromIndices(indices);
 	return nextOp();
 }
 

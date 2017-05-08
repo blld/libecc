@@ -284,9 +284,9 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 		}
 }
 
-void getCounts (uint32_t counts[3])
+void getIndices (uint32_t indices[3])
 {
-	counts[0] = self->functionCount;
-	counts[1] = self->objectCount;
-	counts[2] = self->charsCount;
+	indices[0] = self->functionCount;
+	indices[1] = self->objectCount;
+	indices[2] = self->charsCount;
 }

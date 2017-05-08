@@ -36,7 +36,7 @@ Interface(Pool,
 	(void, collectUnmarked ,(void))
 	(void, collectUnreferencedFromIndices ,(uint32_t indices[3]))
 	
-	(void, getCounts ,(uint32_t counts[3]))
+	(void, getIndices ,(uint32_t indices[3]))
 	,
 	{
 		struct Function **functionList;
