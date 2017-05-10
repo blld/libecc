@@ -330,7 +330,7 @@ static struct Value stringConstructor (struct Context * const context)
 		value = Value.toString(context, value);
 	
 	if (context->construct)
-		return Value.string(String.create(Chars.createWithBytes(Value.stringLength(value), Value.stringBytes(value))));
+		return Value.string(create(Chars.createWithBytes(Value.stringLength(value), Value.stringBytes(value))));
 	else
 		return value;
 }
@@ -404,10 +404,12 @@ struct String * create (struct Chars *chars)
 	struct String *self = malloc(sizeof(*self));
 	*self = String.identity;
 	Pool.addObject(&self->object);
+	
 	Object.initialize(&self->object, String(prototype));
 	Object.addMember(&self->object, Key(length), Value.integer(indexPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
+	++chars->referenceCount;
 	
 	return self;
 }
