@@ -996,7 +996,7 @@ static void testNumber (void)
 	test("2147483647..toString(8)", "17777777777", NULL);
 	test("(-2147483647).toString(8)", "-17777777777", NULL);
 	test("Number.MAX_VALUE.toString(10)", "1.79769e+308", NULL);
-	test("Number.MIN_VALUE.toString(10)", "2.2250738585072e-308", NULL);
+	test("Number.MIN_VALUE.toString(10)", "4.94065645841247e-324", NULL);
 	test("(2147483647).toString(16)", "7fffffff", NULL);
 	test("(-2147483647).toString(16)", "-7fffffff", NULL);
 	test("-2147483647..toString(16)", "NaN", NULL);
