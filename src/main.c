@@ -530,7 +530,7 @@ static void testSwitch (void)
 
 static void testDelete (void)
 {
-	test("delete b", "SyntaxError: delete of an unqualified identifier in strict mode"
+	test("delete b", "SyntaxError: delete of an unqualified identifier"
 	,    "       ^");
 	test("var a = { b: 123, c: 'abc' }; a.b", "123", NULL);
 	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined", NULL);

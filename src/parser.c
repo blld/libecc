@@ -510,7 +510,7 @@ static struct OpList * unary (struct Parser *self)
 		oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].native == Op.getLocal)
-			syntaxError(self, OpList.text(oplist), Chars.create("delete of an unqualified identifier in strict mode"));
+			syntaxError(self, OpList.text(oplist), Chars.create("delete of an unqualified identifier"));
 		else if (oplist && oplist->ops[0].native == Op.getMember)
 			oplist->ops->native = Op.deleteMember;
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
