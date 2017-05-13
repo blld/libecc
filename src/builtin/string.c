@@ -317,7 +317,7 @@ static struct Value substring (struct Context * const context)
 	}
 }
 
-static struct Value stringConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -364,9 +364,6 @@ static struct Value fromCharCode (struct Context * const context)
 		else *b++ = '\0';
 	}
 	
-	while (chars->length && !chars->bytes[chars->length - 1])
-		--chars->length;
-	
 	return Value.chars(chars);
 }
 
@@ -378,7 +375,10 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&String(constructor), stringConstructor, 1, &String(prototype), Value.string(create(Chars.createSized(0))), &String(type));
+	Function.setupBuiltinObject(
+		&String(constructor), constructor, 1,
+		&String(prototype), Value.string(create(Chars.createSized(0))),
+		&String(type));
 	
 	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, flags);
 	
