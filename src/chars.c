@@ -179,18 +179,60 @@ struct Chars * appendValue (struct Chars **chars, struct Context * const context
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
+static
+struct Chars * stripBinary (struct Chars * chars)
+{
+	while (chars->bytes[chars->length - 1] == '0')
+		chars->bytes[--chars->length] = '\0';
+	
+	if (chars->bytes[chars->length - 1] == '.')
+		chars->bytes[--chars->length] = '\0';
+	
+	return chars;
+}
+
+struct Chars * normalizeBinary (struct Chars * chars)
+{
+	if (chars->length > 5 && chars->bytes[chars->length - 5] == 'e' && chars->bytes[chars->length - 3] == '0')
+	{
+		chars->bytes[chars->length - 3] = chars->bytes[chars->length - 2];
+		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
+		chars->bytes[chars->length - 1] = 0;
+		--chars->length;
+	}
+	if (chars->length > 4 && chars->bytes[chars->length - 4] == 'e' && chars->bytes[chars->length - 2] == '0')
+	{
+		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
+		chars->bytes[chars->length - 1] = 0;
+		--chars->length;
+	}
+	return chars;
+}
+
 struct Chars * appendBinary (struct Chars **chars, double binary, int base)
 {
+	if (isnan(binary))
+		return appendText(chars, Text(nan));
+	else if (!isfinite(binary))
+	{
+		if (binary < 0)
+			return appendText(chars, Text(negativeInfinity));
+		else
+			return appendText(chars, Text(infinity));
+	}
+	
 	if (!base || base == 10)
 	{
 		if (binary <= -1e+21 || binary >= 1e+21)
 			return normalizeBinary(append(chars, "%g", binary));
+		if ((binary < 1 && binary >= 0.000001) || (binary > -1 && binary <= -0.000001))
+			return stripBinary(append(chars, "%.10f", binary));
 		else
 		{
 			double dblDig10 = pow(10, DBL_DIG);
 			int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: 21;
 			
-			return append(chars, "%.*g", precision, binary);
+			return normalizeBinary(append(chars, "%.*g", precision, binary));
 		}
 	}
 	else
@@ -234,20 +276,6 @@ struct Chars * endAppend (struct Chars **chars)
 	self->flags &= ~Chars(inAppend);
 	
 	return self;
-}
-
-struct Chars * normalizeBinary (struct Chars * chars)
-{
-#if __MINGW32__
-	if (chars->length > 5 && chars->bytes[chars->length - 5] == 'e' && chars->bytes[chars->length - 3] == '0')
-	{
-		chars->bytes[chars->length - 3] = chars->bytes[chars->length - 2];
-		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
-		chars->bytes[chars->length - 1] = 0;
-		--chars->length;
-	}
-#endif
-	return chars;
 }
 
 void destroy (struct Chars *self)
