@@ -157,7 +157,7 @@ static struct Value prototypeConstructor (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value functionConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	int argumentCount;
 	
@@ -202,7 +202,10 @@ static struct Value functionConstructor (struct Context * const context)
 
 void setup ()
 {
-	Function.setupBuiltinObject(&Function(constructor), functionConstructor, -1, &Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)), &Function(type));
+	Function.setupBuiltinObject(
+		&Function(constructor), constructor, -1,
+		&Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)),
+		&Function(type));
 	
 	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
 	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
@@ -253,7 +256,7 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
-	Object.addMember(&self->object, Key(length), Value.integer(abs(parameterCount)), 0);
+	Object.addMember(&self->object, Key(length), Value.integer(abs(parameterCount)), Value(hidden) | Value(sealed));
 	
 	return self;
 }
