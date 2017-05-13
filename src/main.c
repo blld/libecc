@@ -181,7 +181,7 @@ static void testLexer (void)
 	,    "    ^" "~~~    ");
 	test("'xxx\\""uabxyabc'", "SyntaxError: malformed Unicode character escape sequence"
 	,    "    ^" "~~~~~    ");
-	test("'\\a\\b\\f\\n\\r\\t\\v'", "\a\b\f\n\r\t\v", NULL);
+	test("'\\b\\f\\n\\r\\t\\v'", "\b\f\n\r\t\v", NULL);
 	test("'\\x44'", "D", NULL);
 	test("'\\u4F8B'", "例", NULL);
 	test("'例'", "例", NULL);

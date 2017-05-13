@@ -190,7 +190,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 									switch (bytes[index])
 									{
 										case '0': buffer[bufferIndex] = '\0'; break;
-										case 'a': buffer[bufferIndex] = '\a'; break;
 										case 'b': buffer[bufferIndex] = '\b'; break;
 										case 'f': buffer[bufferIndex] = '\f'; break;
 										case 'n': buffer[bufferIndex] = '\n'; break;
