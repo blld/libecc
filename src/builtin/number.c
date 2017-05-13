@@ -119,7 +119,7 @@ static struct Value valueOf (struct Context * const context)
 	return Value.binary(context->this.data.number->value);
 }
 
-static struct Value numberConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -127,9 +127,9 @@ static struct Value numberConstructor (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
-		value = Value.binary(0);
+		value = Value.binary(value.check == 1? NAN: 0);
 	else
-		value = Value.toBinary(value);
+		value = Value.toBinary(Value.toPrimitive(context, value, Value(hintNumber)));
 	
 	if (context->construct)
 		return Value.number(Number.create(value.data.binary));
@@ -143,16 +143,21 @@ static struct Value numberConstructor (struct Context * const context)
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(hidden);
+	enum Value(Flags) flags;
 	
-	Function.setupBuiltinObject(&Number(constructor), numberConstructor, 1, &Number(prototype), Value.number(create(0)), &Number(type));
+	Function.setupBuiltinObject(
+		&Number(constructor), constructor, 1,
+		&Number(prototype), Value.number(create(0)),
+		&Number(type));
 	
+	flags = Value(hidden) | Value(readonly) | Value(frozen);
 	Function.addMember(Number(constructor), "MAX_VALUE", Value.binary(DBL_MAX), flags);
-	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN), flags);
+	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN * DBL_EPSILON), flags);
 	Function.addMember(Number(constructor), "NaN", Value.binary(NAN), flags);
 	Function.addMember(Number(constructor), "NEGATIVE_INFINITY", Value.binary(-INFINITY), flags);
 	Function.addMember(Number(constructor), "POSITIVE_INFINITY", Value.binary(INFINITY), flags);
 	
+	flags = Value(hidden);
 	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "toLocaleString", toString, 1, flags);
 	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
