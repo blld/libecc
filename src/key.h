@@ -35,6 +35,11 @@
 	extern struct Key Key(set);
 	extern struct Key Key(join);
 	extern struct Key Key(toISOString);
+	extern struct Key Key(lastIndex);
+	extern struct Key Key(global);
+	extern struct Key Key(ignoreCase);
+	extern struct Key Key(multiline);
+	extern struct Key Key(source);
 
 #endif
 

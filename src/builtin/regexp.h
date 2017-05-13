@@ -19,6 +19,7 @@
 
 	extern struct Object * RegExp(prototype);
 	extern struct Function * RegExp(constructor);
+	extern const struct Object(Type) RegExp(type);
 
 #endif
 
@@ -27,10 +28,18 @@ Interface(RegExp,
 	
 	(void, setup ,(void))
 	(void, teardown ,(void))
+	
+	(struct RegExp *, create ,(struct Chars *pattern, struct Error **))
 	,
 	{
 		struct Object object;
-		double value;
+		struct Chars *pattern;
+		struct Chars *source;
+		void *program;
+		int count;
+		int global;
+		int ignoreCase;
+		int multiline;
 	}
 )
 

@@ -27,6 +27,7 @@
 		_( function )\
 		_( object )\
 		_( array )\
+		_( regexp )\
 		_( this )\
 		\
 		_( getLocalRef )\

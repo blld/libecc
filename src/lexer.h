@@ -119,7 +119,7 @@ Interface(Lexer,
 		struct Value value;
 		struct Text text;
 		int didLineBreak;
-		int disallowRegex;
+		int allowRegex;
 		int disallowKeyword;
 	}
 )

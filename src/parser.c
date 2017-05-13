@@ -308,10 +308,7 @@ static struct OpList * primary (struct Parser *self)
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 		oplist = OpList.create(Op.text, Value(undefined), self->lexer->text);
-	else if (previewToken(self) == Lexer(regexpToken)
-		|| previewToken(self) == Lexer(integerToken)
-		|| previewToken(self) == Lexer(binaryToken)
-		)
+	else if (previewToken(self) == Lexer(integerToken) || previewToken(self) == Lexer(binaryToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else if (previewToken(self) == Lexer(thisToken))
 		oplist = OpList.create(Op.this, Value(undefined), self->lexer->text);
@@ -328,17 +325,29 @@ static struct OpList * primary (struct Parser *self)
 	else if (acceptToken(self, '('))
 	{
 		oplist = expression(self, 0);
-		self->lexer->disallowRegex = 1;
 		expectToken(self, ')');
-		self->lexer->disallowRegex = 0;
 		return oplist;
 	}
 	else
-		return NULL;
+	{
+		if (self->lexer->text.bytes[0] == '/')
+		{
+			self->lexer->allowRegex = 1;
+			self->lexer->offset -= self->lexer->text.length;
+			nextToken(self);
+			self->lexer->allowRegex = 0;
+			
+			if (previewToken(self) != Lexer(regexpToken))
+				syntaxError(self, self->lexer->text, Chars.create("expected RegExp, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		}
+		
+		if (previewToken(self) == Lexer(regexpToken))
+			oplist = OpList.create(Op.regexp, Value(undefined), self->lexer->text);
+		else
+			return NULL;
+	}
 	
-	self->lexer->disallowRegex = 1;
 	nextToken(self);
-	self->lexer->disallowRegex = 0;
 	
 	return oplist;
 }

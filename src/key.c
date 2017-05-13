@@ -38,6 +38,12 @@ struct Key Key(get);
 struct Key Key(set);
 struct Key Key(join);
 struct Key Key(toISOString);
+struct Key Key(source);
+struct Key Key(global);
+struct Key Key(ignoreCase);
+struct Key Key(multiline);
+struct Key Key(lastIndex);
+
 
 // MARK: - Static Members
 
@@ -64,6 +70,11 @@ void setup (void)
 		Key(set) = makeWithCString("set");
 		Key(join) = makeWithCString("join");
 		Key(toISOString) = makeWithCString("toISOString");
+		Key(source) = makeWithCString("source");
+		Key(global) = makeWithCString("global");
+		Key(ignoreCase) = makeWithCString("ignoreCase");
+		Key(multiline) = makeWithCString("multiline");
+		Key(lastIndex) = makeWithCString("lastIndex");
 	}
 }
 

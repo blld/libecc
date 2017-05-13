@@ -31,6 +31,7 @@
 	extern const struct Text Text(negativeInfinity);
 	extern const struct Text Text(nativeCode);
 	extern const struct Text Text(empty);
+	extern const struct Text Text(emptyRegExp);
 
 	extern const struct Text Text(nullType);
 	extern const struct Text Text(undefinedType);
@@ -38,6 +39,7 @@
 	extern const struct Text Text(errorType);
 	extern const struct Text Text(arrayType);
 	extern const struct Text Text(stringType);
+	extern const struct Text Text(regexpType);
 	extern const struct Text Text(numberType);
 	extern const struct Text Text(booleanType);
 	extern const struct Text Text(dateType);

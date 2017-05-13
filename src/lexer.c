@@ -61,6 +61,11 @@ static inline int acceptChar(struct Lexer *self, char c)
 		return 0;
 }
 
+static inline char eof(struct Lexer *self)
+{
+	return self->offset >= self->input->length;
+}
+
 static inline enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *message)
 {
 	struct Error *error = Error.syntaxError(self->text, message);
@@ -117,8 +122,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			{
 				if (acceptChar(self, '*'))
 				{
-					while (( c = nextChar(self) ))
-						if (c == '*' && acceptChar(self, '/'))
+					while (!eof(self))
+						if (nextChar(self) == '*' && acceptChar(self, '/'))
 							goto retry;
 					
 					return syntaxError(self, Chars.create("unterminated comment"));
@@ -131,17 +136,23 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					
 					return 0;
 				}
-				else if (!self->disallowRegex)
+				else if (self->allowRegex)
 				{
-					while (( c = nextChar(self) ))
+					while (!eof(self))
 					{
+						int c = self->input->bytes[self->offset++];
+						++self->text.length;
+						
 						if (c == '\\')
-							nextChar(self);
+						{
+							++self->offset;
+							++self->text.length;
+						}
 						else if (c == '/')
 						{
-							acceptChar(self, 'g');
-							acceptChar(self, 'i');
-							acceptChar(self, 'm');
+							while (isalpha(previewChar(self)))
+								nextChar(self);
+							
 							return Lexer(regexpToken);
 						}
 						else if (c == '\r' || c == '\n')
@@ -161,8 +172,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				char end = c;
 				int haveEscape = 0;
 				int didLineBreak = self->didLineBreak;
-				
-				self->disallowRegex = 1;
 				
 				while (( c = nextChar(self) ))
 				{
@@ -269,8 +278,6 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			{
 				int binary = 0;
 				
-				self->disallowRegex = 1;
-				
 				if (c == '0' && (acceptChar(self, 'x') || acceptChar(self, 'X')))
 				{
 					while (( c = previewChar(self) ))
@@ -287,7 +294,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					while (isdigit(previewChar(self)))
 						nextChar(self);
 					
-					if (acceptChar(self, '.'))
+					if (c == '.' || acceptChar(self, '.'))
 						binary = 1;
 					
 					while (isdigit(previewChar(self)))
@@ -457,9 +464,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						const char *name;
 						size_t length;
 						enum Lexer(Token) token;
-						int disallowRegex;
 					} keywords[] = {
-						#define _(X, Y) { #X, sizeof(#X) - 1, Lexer(X##Token), 0 ## Y },
+						#define _(X, Y) { #X, sizeof(#X) - 1, Lexer(X##Token) },
 						_(break,)
 						_(case,)
 						_(catch,)
@@ -489,10 +495,10 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						_(void,)
 						_(typeof,)
 						
-						_(null, 1)
-						_(true, 1)
-						_(false, 1)
-						_(this, 1)
+						_(null,)
+						_(true,)
+						_(false,)
+						_(this,)
 						#undef _
 					};
 					
@@ -529,17 +535,13 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					{
 						for (k = 0; k < sizeof(keywords) / sizeof(*keywords); ++k)
 							if (self->text.length == keywords[k].length && memcmp(self->text.bytes, keywords[k].name, keywords[k].length) == 0)
-							{
-								self->disallowRegex |= keywords[k].disallowRegex;
 								return keywords[k].token;
-							}
 						
 						for (k = 0; k < sizeof(reservedKeywords) / sizeof(*reservedKeywords); ++k)
 							if (self->text.length == reservedKeywords[k].length && memcmp(self->text.bytes, reservedKeywords[k].name, reservedKeywords[k].length) == 0)
 								return syntaxError(self, Chars.create("'%s' is a reserved identifier", reservedKeywords[k]));
 					}
 					
-					self->disallowRegex = 1;
 					self->value = Value.key(Key.makeWithText(self->text, 0));
 					return Lexer(identifierToken);
 				}

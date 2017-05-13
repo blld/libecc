@@ -13,7 +13,7 @@ static struct Value print (struct Context * const context);
 static struct Value alert (struct Context * const context);
 static int runTest (int verbosity);
 
-static struct Ecc *ecc = NULL;
+static struct Ecc *ecc;
 
 int main (int argc, const char * argv[])
 {
@@ -185,6 +185,8 @@ static void testLexer (void)
 	test("'\\x44'", "D", NULL);
 	test("'\\u4F8B'", "例", NULL);
 	test("'例'", "例", NULL);
+	test("/abc", "SyntaxError: unterminated regexp literal"
+	,    "^~~~");
 }
 
 static void testParser (void)
@@ -1193,8 +1195,37 @@ static void testDate (void)
 
 static void testRegExp (void)
 {
-	test("/abc", "SyntaxError: unterminated regexp literal"
-	,    "^~~~");
+	test("RegExp", "function RegExp() [native code]", NULL);
+	test("Object.prototype.toString.call(RegExp.prototype)", "[object RegExp]", NULL);
+	test("RegExp.prototype.constructor", "function RegExp() [native code]", NULL);
+	test("RegExp.prototype", "/(?:)/", NULL);
+	test("/1/gg", "SyntaxError: invalid flags"
+	,    "    ^");
+	test("/(/", "SyntaxError: expect ')'"
+	,    "  ^");
+	test("/[/", "SyntaxError: expect ']'"
+	,    "  ^");
+	test("var r = /a/; r instanceof RegExp", "true", NULL);
+	test("var r = /a/g; r.global", "true", NULL);
+	test("var r = /a/i; r.ignoreCase", "true", NULL);
+	test("var r = /a/m; r.multiline", "true", NULL);
+	test("/a|ab/.exec('abc')", "a", NULL);
+	test("/ab+c/.exec('abbbc')", "abbbc", NULL);
+	test("/あべ+せ/.exec('あべべべせ')", "あべべべせ", NULL);
+	test("/べ/.exec('あべせ')", "べ", NULL);
+	test("/((a)|(ab))((c)|(bc))/.exec('abc')", "abc,a,a,,bc,,bc", NULL);
+	test("/(aa|aabaac|ba|b|c)*/.exec('aabaac')", "aaba,ba", NULL);
+	test("/(z)((a+)?(b+)?(c))*/.exec('zaacbbbcac')", "zaacbbbcac,z,ac,a,,c", NULL);
+	test("/(a*)*/.exec('b')", ",", NULL);
+	test("/(?=(a+))/i.exec('baaabac')", ",aaa", NULL);
+	test("/[1二3]/i.exec('1')", "1", NULL);
+	test("/[1二3]/i.exec('2')", "null", NULL);
+	test("/[1二3]/i.exec('二')", "二", NULL);
+	test("/([1二3])/.exec('3')", "3,3", NULL);
+	test("/[^1二3]/i.exec('1')", "null", NULL);
+	test("/[^1二3]/i.exec('2')", "2", NULL);
+	test("/[^1二3]/i.exec('二')", "null", NULL);
+	test("/([^1二3])/.exec('3')", "null", NULL);
 }
 
 static int runTest (int verbosity)

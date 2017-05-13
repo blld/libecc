@@ -77,8 +77,9 @@ static struct Value trapOp(struct Context *context, int offset)
 {
 	const struct Text *text = opText(offset);
 	
-	context->text = text;
 	if (debug && text->bytes && text->length) {
+		context->text = text;
+		
 		Env.newline();
 		printBacktrace(context);
 		Ecc.printTextInput(context->ecc, *context->text, 1);
@@ -507,6 +508,19 @@ struct Value valueConstRef (struct Context * const context)
 struct Value text (struct Context * const context)
 {
 	return Value.text(opText(0));
+}
+
+struct Value regexp (struct Context * const context)
+{
+	struct Error *error = NULL;
+	struct Chars *chars = Chars.createWithBytes(*opText(0).length, *opText(0).bytes);
+	struct RegExp *regexp = RegExp.create(chars, &error);
+	if (error)
+	{
+		error->text.bytes = *opText(0).bytes + (error->text.bytes - chars->bytes);
+		Ecc.jmpEnv(context->ecc, Value.error(error));
+	}
+	return Value.regexp(regexp);
 }
 
 struct Value function (struct Context * const context)

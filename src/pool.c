@@ -169,7 +169,10 @@ void markValue (struct Value value)
 			markChars(value.data.string->value);
 		
 		if (value.type == Value(regexpType))
+		{
 			markChars(value.data.regexp->pattern);
+			markChars(value.data.regexp->source);
+		}
 		
 		markObject(value.data.object);
 	}
@@ -206,7 +209,10 @@ static void cleanupObject(struct Object *object)
 		--value.data.string->value->referenceCount;
 	
 	if (value.type == Value(regexpType))
+	{
 		--value.data.regexp->pattern->referenceCount;
+		--value.data.regexp->source->referenceCount;
+	}
 	
 	if (object->elementCount)
 		while (object->elementCount--)

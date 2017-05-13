@@ -31,6 +31,7 @@ textMake(infinity, "Infinity");
 textMake(negativeInfinity, "-Infinity");
 textMake(nativeCode, "[native code]");
 textMake(empty, "");
+textMake(emptyRegExp, "/(?:)/");
 
 textMake(nullType, "[object Null]");
 textMake(undefinedType, "[object Undefined]");
@@ -38,6 +39,7 @@ textMake(objectType, "[object Object]");
 textMake(errorType, "[object Error]");
 textMake(arrayType, "[object Array]");
 textMake(stringType, "[object String]");
+textMake(regexpType, "[object RegExp]");
 textMake(numberType, "[object Number]");
 textMake(booleanType, "[object Boolean]");
 textMake(dateType, "[object Date]");

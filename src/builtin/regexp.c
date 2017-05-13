@@ -9,19 +9,705 @@
 #define Implementation
 #include "regexp.h"
 
+#include "../pool.h"
+#include "../ecc.h"
+#include "../lexer.h"
+
+enum Opcode {
+	opNLookahead = 0,
+	opLookahead = 1,
+	opReference,
+	opStart,
+	opEnd,
+	opBoundary,
+	
+	opSplit,
+	opRedo,
+	opSave,
+	opAny,
+	opOneOf,
+	opNeitherOf,
+	opDigit,
+	opSpace,
+	opWord,
+	opBytes,
+	opJump,
+	opMatch,
+	
+	opOver = -1,
+};
+
+struct Node {
+	char *bytes;
+	int16_t offset;
+	uint16_t depth;
+	enum Opcode opcode;
+};
+
+struct State {
+	const char **capture;
+	const char **index;
+};
+
+struct Parse {
+	const char *c;
+	const char *end;
+	int count;
+};
+
 // MARK: - Private
 
 struct Object * RegExp(prototype) = NULL;
 struct Function * RegExp(constructor) = NULL;
 
+void finalize (struct Object *object)
+{
+	struct RegExp *self = (struct RegExp *)object;
+	struct Node *n = self->program;
+	while (n->opcode != opOver)
+	{
+		if (n->bytes)
+			free(n->bytes), n->bytes = NULL;
+		
+		++n;
+	}
+	
+	free(self->program), self->program = NULL;
+}
+
+const struct Object(Type) RegExp(type) = {
+	.text = &Text(regexpType),
+	
+	.finalize = finalize,
+};
+
+
+//MARK: parsing
+
+static
+struct Node *node (enum Opcode opcode, long offset, const char *bytes)
+{
+	struct Node *n = calloc(2, sizeof(*n));
+	
+	size_t len = bytes? strlen(bytes): 0;
+	if (len)
+		n[0].bytes = strdup(bytes);
+	
+	n[0].offset = offset;
+	n[0].opcode = opcode;
+	n[1].opcode = opOver;
+	
+	return n;
+}
+
+static
+int len (struct Node *n)
+{
+	int len = 0;
+	if (!n)
+		return 0;
+	
+	while (n[++len].opcode != opOver);
+	return len;
+}
+
+static
+struct Node *join (struct Node *a, struct Node *b)
+{
+	size_t lena = 0, lenb = 0;
+	
+	if (!a)
+		return b;
+	else if (!b)
+		return a;
+	
+	while (a[++lena].opcode != opOver);
+	while (b[++lenb].opcode != opOver);
+	
+	if (lena == 1 && lenb == 1 && a->opcode == opBytes && b->opcode == opBytes)
+	{
+		a->bytes = realloc(a->bytes, a->offset + b->offset + 1);
+		memcpy(a->bytes + a->offset, b->bytes, b->offset + 1);
+		a->offset += b->offset;
+		free(b->bytes), b->bytes = NULL;
+	}
+	else
+	{
+		a = realloc(a, sizeof(*a) * (lena + lenb + 1));
+		memcpy(a + lena, b, sizeof(*a) * (lenb + 1));
+	}
+	free(b), b = NULL;
+	return a;
+}
+
+static
+int accept(struct Parse *p, int c)
+{
+	if (*p->c == c)
+	{
+		++p->c;
+		return 1;
+	}
+	return 0;
+}
+
+static
+int charLength(const char *c)
+{
+	if ((c[0] & 0xf8) == 0xf0 && (c[1] & 0xc0) == 0x80 && (c[2] & 0xc0) == 0x80 && (c[3] & 0xc0) == 0x80)
+		return 4;
+	else if ((c[0] & 0xf0) == 0xe0 && (c[1] & 0xc0) == 0x80 && (c[2] & 0xc0) == 0x80)
+		return 3;
+	else if ((c[0] & 0xe0) == 0xc0 && (c[1] & 0xc0) == 0x80)
+		return 2;
+	else
+		return 1;
+}
+
+static
+int getU(struct Parse *p, char buffer[5])
+{
+	int i = 0, l = charLength(p->c);
+	do
+		buffer[i] = p->c[i];
+	while (++i < l);
+	buffer[l] = '\0';
+	p->c += l;
+	return l;
+}
+
+static struct Node *disjunction (struct Parse *p, struct Error **error);
+
+static
+struct Node *term (struct Parse *p, struct Error **error)
+{
+	char buffer[5] = { 0 };
+	
+	if (*p->c == '/')
+		return NULL;
+	else if (accept(p, '^'))
+		return node(opStart, 0, NULL);
+	else if (accept(p, '$'))
+		return node(opEnd, 0, NULL);
+	else if (accept(p, '\\'))
+	{
+		switch (*p->c)
+		{
+			case 'b': return node(opBoundary, 1, NULL);
+			case 'B': return node(opBoundary, 0, NULL);
+			case 'f': return node(opBytes, 1, "\f");
+			case 'n': return node(opBytes, 1, "\n");
+			case 'r': return node(opBytes, 1, "\r");
+			case 't': return node(opBytes, 1, "\t");
+			case 'v': return node(opBytes, 1, "\v");
+			case 'd': return node(opDigit, 1, NULL);
+			case 'D': return node(opDigit, 0, NULL);
+			case 's': return node(opSpace, 1, NULL);
+			case 'S': return node(opSpace, 0, NULL);
+			case 'w': return node(opWord, 1, NULL);
+			case 'W': return node(opWord, 0, NULL);
+			case 'c':
+			{
+				buffer[0] = *(p->c++) & 31;
+				return node(opBytes, 1, buffer);
+			}
+			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+			{
+				int c = *p->c - '0';
+				while (isdigit(*(++p->c)))
+					c = c * 10 + *p->c;
+				
+				return node(opReference, c, NULL);
+			}
+			case '0':
+			{
+				buffer[0] = *(++p->c) - '0';
+				if (buffer[0] >= 0 && buffer[0] <= 7)
+				{
+					if (*p->c >= '0' && *p->c <= '7')
+					{
+						buffer[0] = buffer[0] * 8 + *(++p->c) - '0';
+						if (*p->c >= '0' && *p->c <= '7')
+							buffer[0] = buffer[0] * 8 + *(++p->c) - '0';
+					}
+				}
+				return node(opBytes, 1, buffer);
+			}
+			case 'x':
+			{
+				if (isxdigit(p->c[1]) && isxdigit(p->c[2]))
+				{
+					buffer[0] = Lexer.uint8Hex(p->c[1], p->c[2]);
+					p->c += 2;
+					return node(opBytes, 1, buffer);
+				}
+				buffer[0] = *(++p->c);
+				return node(opBytes, 1, buffer);
+			}
+			case 'u':
+			{
+				if (isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]) && isxdigit(p->c[4]))
+				{
+					uint16_t c = Lexer.uint16Hex(p->c[1], p->c[2], p->c[3], p->c[4]);
+					char *b = buffer;
+					
+					if (c < 0x80) *b++ = c;
+					else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
+					else if (c - 0xd800 < 0x800) goto error;
+					else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
+					else goto error;
+					
+					p->c += 4;
+					return node(opBytes, (int)(b - buffer) - 1, buffer);
+				}
+				error:
+				buffer[0] = *(++p->c);
+				return node(opBytes, 1, buffer);
+			}
+			default:
+				break;
+		}
+	}
+	else if (accept(p, '('))
+	{
+		struct Node *n;
+		int count = 0;
+		char modifier = '\0';
+		
+		if (accept(p, '?'))
+		{
+			if (*p->c == '=' || *p->c == '!' || *p->c == ':')
+				modifier = *(p->c++);
+		}
+		else
+		{
+			count = ++p->count;
+			if (count > 0xff)
+			{
+				*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("too many captures"));
+				return NULL;
+			}
+		}
+		
+		n = disjunction(p, error);
+		if (!accept(p, ')'))
+		{
+			*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("expect ')'"));
+			return NULL;
+		}
+		
+		switch (modifier) {
+			case '\0': return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
+			case '=': return join(node(opLookahead, len(n) + 1, NULL), n);
+			case '!': return join(node(opNLookahead, len(n) + 1, NULL), n);
+			case ':': return n;
+		}
+	}
+	else if (accept(p, '.'))
+		return node(opAny, 0, NULL);
+	else if (accept(p, '['))
+	{
+		int not = accept(p, '^');
+		const char *start = p->c;
+		
+		while (*(++p->c) != ']')
+		{
+			if (p->c >= p->end)
+			{
+				*error = Error.syntaxError(Text.make(p->c - 1, 1), Chars.create("expect ']'"));
+				return NULL;
+			}
+			++p->c;
+		}
+		{
+			long len = p->c - start;
+			char buffer[len + 1];
+			memcpy(buffer, start, len);
+			buffer[len] = '\0';
+			accept(p, ']');
+			return node(not? opNeitherOf: opOneOf, 0, buffer);
+		}
+	}
+	else if (!*p->c)
+	{
+		char *bytes = calloc(2, 1);
+		struct Node *n = node(opBytes, 1, NULL);
+		n->bytes = bytes;
+		p->c += 1;
+		return n;
+	}
+	else if (strchr("^$\\.*+?()[]{}|", *p->c))
+		return NULL;
+	
+	return node(opBytes, getU(p, buffer), buffer);
+}
+
+static
+struct Node *alternative (struct Parse *p, struct Error **error)
+{
+	struct Node *n = NULL, *t;
+	
+	for (;;)
+	{
+		if (!(t = term(p, error)))
+			break;
+		
+		if (t->opcode > opBoundary)
+		{
+			int header = 0;
+			
+			switch (*(p->c++))
+			{
+				case '?':
+					t = join(node(opSplit, len(t) + 1, NULL), t);
+					break;
+					
+				case '*':
+					t = join(node(opSplit, len(t) + 2, NULL), t);
+					header = 1;
+					/* vvv */
+					
+				case '+':
+				{
+					int index = 0, count = len(t), length = 0;
+					char buffer[count + 1];
+					
+					for (index = 0; index < count; ++index) {
+						if (t[index].opcode == opSave)
+							buffer[length++] = (unsigned char)t[index].offset;
+					}
+					buffer[length] = '\0';
+					
+					t = join(t, node(opRedo, header - len(t), buffer));
+					break;
+				}
+					
+				case '{':
+				{
+					//TOOD
+					break;
+				}
+				default:
+					--p->c;
+			}
+			
+			if (accept(p, '?'))
+			{
+			}
+		}
+		n = join(n, t);
+	}
+	return n;
+}
+
+static
+struct Node *disjunction (struct Parse *p, struct Error **error)
+{
+	struct Node *n = alternative(p, error), *d;
+	if (accept(p, '|'))
+	{
+		d = disjunction(p, error);
+		n = join(n, node(opJump, len(d) + 1, NULL));
+		n = join(node(opSplit, len(n) + 1, NULL), join(n, d));
+	}
+	return n;
+}
+
+static
+struct Node *pattern (struct Parse *p, struct Error **error)
+{
+	assert(*p->c == '/');
+	++p->c;
+	
+	return join(disjunction(p, error), node(opMatch, 0, NULL));
+}
+
+
+//MARK: matching
+
+static
+int match (struct State * const s, struct Node *n, const char *c);
+
+static inline
+int fork (struct State * const s, struct Node *n, const char *c, int offset)
+{
+	int result;
+	if (++n->depth > 255)
+	{
+		// TODO
+		return 0;
+	}
+	result = match(s, n + offset, c);
+	--n->depth;
+	return result;
+}
+
+int match (struct State * const s, struct Node *n, const char *c)
+{
+	goto start;
+next:
+	++n;
+start:
+	
+	switch(n->opcode)
+	{
+		case opNLookahead:
+		case opLookahead:
+		{
+			if (fork(s, n, c, 1) == n->opcode)
+				goto jump;
+			else
+				return 0;
+		}
+			
+		case opStart:
+			return 0;
+			
+		case opEnd:
+			return 0;
+			
+		case opBoundary:
+			return 0;
+			
+		case opSplit:
+			if (fork(s, n, c, 1))
+				return 1;
+			else
+				goto jump;
+			
+		case opRedo:
+			if (fork(s, n, c, n->offset))
+			{
+				if (n->bytes)
+				{
+					size_t index, count;
+					for (index = 1, count = strlen(n->bytes); index < count; ++index)
+						s->index[(unsigned char)n->bytes[index]] = c;
+				}
+				return 1;
+			}
+			else
+				goto next;
+			
+		case opSave:
+			if (fork(s, n, c, 1)) {
+				if (s->capture[n->offset] < c && c >= s->index[n->offset]) {
+					s->capture[n->offset] = c;
+				}
+				return 1;
+			}
+			return 0;
+			
+		case opDigit:
+			if (isdigit(*c) != n->offset)
+				return 0;
+			
+			while (isdigit(*(++c)));
+			goto next;
+			
+		case opSpace:
+			if (isspace(*c) == n->offset)
+				return 0;
+			
+			while (isspace(*(++c)));
+			goto next;
+			
+		case opWord:
+			if (isalpha(*c) == n->offset)
+				return 0;
+			
+			while (isalpha(*(++c)));
+			goto next;
+			
+		case opBytes:
+			if (memcmp(n->bytes, c, n->offset))
+				return 0;
+			
+			c += n->offset;
+			goto next;
+			
+		case opOneOf:
+		{
+			const char *set = n->bytes;
+			int len;
+			
+			while (*set)
+			{
+				len = charLength(set);
+				if (!memcmp(c, set, len))
+				{
+					c += len;
+					goto next;
+				}
+				set += len;
+			}
+			return 0;
+		}
+			
+		case opNeitherOf:
+		{
+			const char *set = n->bytes;
+			int len;
+			
+			while (*set)
+			{
+				len = charLength(set);
+				if (!memcmp(c, set, len))
+					return 0;
+				
+				set += len;
+			}
+			c += charLength(c);
+			goto next;
+		}
+			
+		case opAny:
+			if (*c == '\r' || *c == '\n')
+				goto next;
+			else
+				return 0;
+			
+		case opJump:
+			goto jump;
+			
+		case opMatch:
+			s->capture[1] = c;
+			return 1;
+			
+		case opOver:
+			break;
+	}
+	abort();
+	
+jump:
+	n += n->offset;
+	goto start;
+}
+
+
 // MARK: - Static Members
 
-static struct Value constructorFunction (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
-	Context.assertParameterCount(context, 1);
+	struct Error *error = NULL;
+	struct Value result;
+	struct Chars *chars;
 	
-#warning TODO
-	return Value(null);
+	Context.assertParameterCount(context, 2);
+	
+	Chars.beginAppend(&chars);
+	Chars.append(&chars, "/");
+	Chars.appendValue(&chars, context, Context.argument(context, 0));
+	Chars.append(&chars, "/");
+	Chars.appendValue(&chars, context, Context.argument(context, 1));
+	
+	result = Value.regexp(create(Chars.endAppend(&chars), &error));
+	if (error)
+	{
+		struct Context *c = context;
+		while (!c->text && c->parent)
+			c = c->parent;
+		
+		if (c->text)
+			error->text = *c->text;
+		
+		Ecc.jmpEnv(context->ecc, Value.error(error));
+	}
+	return result;
+}
+
+static struct Value toString (struct Context * const context)
+{
+	struct RegExp *self = context->this.data.regexp;
+	
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(regexpType));
+	
+	if (((struct Node *)(self->program))[0].opcode == opMatch)
+		return Value.text(&Text(emptyRegExp));
+	else
+		return Value.chars(self->pattern);
+}
+
+#if 0
+static
+void printNode (struct Node *n)
+{
+	switch (n->opcode)
+	{
+		case opNLookahead: printf("lookahead "); break;
+		case opLookahead: printf("!lookahead "); break;
+		case opReference: printf("reference "); break;
+		case opStart: printf("start "); break;
+		case opEnd: printf("end "); break;
+		case opBoundary: printf("boundary "); break;
+		case opSplit: printf("split "); break;
+		case opRedo: printf("redo "); break;
+		case opSave: printf("save "); break;
+		case opAny: printf("any "); break;
+		case opOneOf: printf("oneof "); break;
+		case opDigit: printf("digit "); break;
+		case opSpace: printf("space "); break;
+		case opWord: printf("word "); break;
+		case opBytes: printf("bytes "); break;
+		case opJump: printf("jump "); break;
+		case opMatch: printf("match "); break;
+		case opOver: printf("over "); break;
+	}
+	printf("%d", n->offset);
+	if (n->bytes && n->opcode != opRedo)
+		printf(" `%s`", n->bytes);
+	
+	putchar('\n');
+}
+#endif
+
+static struct Value exec (struct Context * const context)
+{
+	struct RegExp *self = context->this.data.regexp;
+	struct Value value;
+	int result = 0;
+	
+	Context.assertParameterCount(context, 2);
+	Context.assertThisType(context, Value(regexpType));
+	
+	value = Value.toString(context, Context.argument(context, 0));
+	{
+		int offset = 0, length = Value.stringLength(value);
+		const char *bytes = Value.stringBytes(value);
+		const char *capture[2 + self->count * 2];
+		const char *index[2 + self->count * 2];
+		struct State s = { capture, index };
+		
+#if 0
+		struct Node *n = self->program;
+		while (n->opcode != opOver)
+			printNode(n++);
+#endif
+		
+		while (!result && offset < length)
+		{
+			memset(capture, 0, sizeof(capture));
+			memset(index, 0, sizeof(index));
+			result = match(&s, self->program, capture[0] = bytes + offset);
+			offset += charLength(bytes);
+		}
+		
+		if (result)
+		{
+			struct Object *array = Array.createSized(self->count);
+			int index, count;
+			
+			for (index = 0, count = self->count; index < count; ++index)
+			{
+				struct Chars *chars = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+				array->element[index].value = Value.chars(chars);
+			}
+			return Value.object(array);
+		}
+		else
+			return Value(null);
+	}
 }
 
 // MARK: - Methods
@@ -30,17 +716,75 @@ void setup ()
 {
 	const enum Value(Flags) flags = Value(hidden);
 	
-	RegExp(prototype) = Object.create(Object(prototype));
+	Function.setupBuiltinObject(
+		&RegExp(constructor), constructor, 2,
+		&RegExp(prototype), Value.regexp(create(Chars.create("//"), NULL)),
+		&RegExp(type));
 	
-	RegExp(constructor) = Function.createWithNative(constructorFunction, 1);
-//	Function.addToObject(&numberConstructor->object, "fromCharCode", fromCharCode, -1, flags);
-	
-	Object.addMember(RegExp(prototype), Key(constructor), Value.function(RegExp(constructor)), 0);
-	Object.addMember(&RegExp(constructor)->object, Key(prototype), Value.object(RegExp(prototype)), 0);
+	Function.addToObject(RegExp(prototype), "toString", toString, 0, flags);
+	Function.addToObject(RegExp(prototype), "exec", exec, 2, flags);
 }
 
 void teardown (void)
 {
 	RegExp(prototype) = NULL;
 	RegExp(constructor) = NULL;
+}
+
+struct RegExp * create (struct Chars *s, struct Error **error)
+{
+	struct Parse p = { 0 };
+	
+	struct RegExp *self = malloc(sizeof(*self));
+	*self = RegExp.identity;
+	Pool.addObject(&self->object);
+	
+	Object.initialize(&self->object, RegExp(prototype));
+	
+	p.c = s->bytes;
+	p.end = s->bytes + s->length;
+	
+	self->pattern = s;
+	self->program = pattern(&p, error);
+	self->count = p.count + 1;
+	self->source = Chars.createWithBytes(p.c - self->pattern->bytes - 1, self->pattern->bytes + 1);
+	
+	++self->pattern->referenceCount;
+	++self->source->referenceCount;
+	
+	if (*p.c == '/')
+		for (;;)
+		{
+			switch (*(++p.c)) {
+				case 'g':
+					if (self->global == 1)
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+					
+					self->global = 1;
+					continue;
+					
+				case 'i':
+					if (self->ignoreCase == 1)
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+					
+					self->ignoreCase = 1;
+					continue;
+					
+				case 'm':
+					if (self->multiline == 1)
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+					
+					self->multiline = 1;
+					continue;
+			}
+			break;
+		}
+	
+	Object.addMember(&self->object, Key(source), Value.chars(self->source), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(global), Value.truth(self->global), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(ignoreCase), Value.truth(self->ignoreCase), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(multiline), Value.truth(self->multiline), Value(readonly) | Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(lastIndex), Value.integer(0), Value(hidden) | Value(sealed));
+	
+	return self;
 }
