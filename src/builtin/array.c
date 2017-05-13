@@ -324,7 +324,7 @@ static struct Value setLength (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value arrayConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	uint32_t index, count, length;
 	struct Object *array;
@@ -359,7 +359,10 @@ void setup (void)
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Array(constructor), arrayConstructor, -1, &Array(prototype), Value.object(createSized(0)), &Array(type));
+	Function.setupBuiltinObject(
+		&Array(constructor), constructor, -1,
+		&Array(prototype), Value.object(createSized(0)),
+		&Array(type));
 	
 	Function.addMethod(Array(constructor), "isArray", isArray, 1, flags);
 	
