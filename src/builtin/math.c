@@ -270,10 +270,11 @@ struct Object * Math(object) = NULL;
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(hidden);
+	enum Value(Flags) flags;
 	
 	Math(object) = Object.createTyped(&Math(type));
 	
+	flags = Value(hidden) | Value(readonly) | Value(frozen);
 	Object.addMember(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
 	Object.addMember(Math(object), Key.makeWithCString("LN10"), Value.binary(2.30258509299404568402), flags);
 	Object.addMember(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);
@@ -283,6 +284,7 @@ void setup ()
 	Object.addMember(Math(object), Key.makeWithCString("SQRT1_2"), Value.binary(0.707106781186547524401), flags);
 	Object.addMember(Math(object), Key.makeWithCString("SQRT2"), Value.binary(1.41421356237309504880), flags);
 	
+	flags = Value(hidden);
 	Function.addToObject(Math(object), "abs", mathAbs, 1, flags);
 	Function.addToObject(Math(object), "acos", mathACos, 1, flags);
 	Function.addToObject(Math(object), "asin", mathASin, 1, flags);
