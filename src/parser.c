@@ -1066,7 +1066,7 @@ static struct OpList * doStatement (struct Parser *self)
 	expectToken(self, '(');
 	condition = expression(self, 0);
 	expectToken(self, ')');
-	semicolon(self);
+	acceptToken(self, ';');
 	
 	return OpList.createLoop(NULL, condition, NULL, oplist, 1);
 }
