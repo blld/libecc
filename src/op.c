@@ -879,8 +879,13 @@ struct Value equal (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
-	return Value.equals(context, a, b);
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary == b.data.binary);
+	else
+	{
+		Context.setText(context, text);
+		return Value.equals(context, a, b);
+	}
 }
 
 struct Value notEqual (struct Context * const context)
@@ -889,8 +894,13 @@ struct Value notEqual (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
-	return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary != b.data.binary);
+	else
+	{
+		Context.setText(context, text);
+		return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
+	}
 }
 
 struct Value identical (struct Context * const context)
@@ -919,11 +929,13 @@ struct Value less (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
 	else
+	{
+		Context.setText(context, text);
 		return Value.less(context, a, b);
+	}
 }
 
 struct Value lessOrEqual (struct Context * const context)
@@ -932,11 +944,13 @@ struct Value lessOrEqual (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
 	else
+	{
+		Context.setText(context, text);
 		return Value.lessOrEqual(context, a, b);
+	}
 }
 
 struct Value more (struct Context * const context)
@@ -945,11 +959,13 @@ struct Value more (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
 	else
+	{
+		Context.setText(context, text);
 		return Value.more(context, a, b);
+	}
 }
 
 struct Value moreOrEqual (struct Context * const context)
@@ -958,11 +974,13 @@ struct Value moreOrEqual (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
 	else
+	{
+		Context.setText(context, text);
 		return Value.moreOrEqual(context, a, b);
+	}
 }
 
 struct Value instanceOf (struct Context * const context)
@@ -1010,14 +1028,16 @@ struct Value add (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
-	Context.setText(context, text);
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 	{
 		a.data.binary += b.data.binary;
 		return a;
 	}
 	else
+	{
+		Context.setText(context, text);
 		return Value.add(context, a, b);
+	}
 }
 
 struct Value minus (struct Context * const context)
@@ -1141,7 +1161,7 @@ struct Value positive (struct Context * const context)
 	if (a.type == Value(binaryType))
 		return a;
 	else
-		return Value.toBinary(a);
+		return Value.toBinary(context, a);
 }
 
 struct Value negative (struct Context * const context)
@@ -1701,10 +1721,11 @@ struct Value iterateInRef (struct Context * const context)
 		
 		for (index = 2; index < object.data.object->hashmapCount; ++index)
 		{
-			if (!(object.data.object->hashmap[index].value.check == 1))
+			union Object(Hashmap) hashmap = object.data.object->hashmap[index];
+			if (!(hashmap.value.check == 1) || (hashmap.value.flags & Value(hidden)))
 				continue;
 			
-			key = Value.key(object.data.object->hashmap[index].value.key);
+			key = Value.key(hashmap.value.key);
 			ref->data = key.data;
 			ref->type = key.type;
 			
