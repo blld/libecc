@@ -169,7 +169,7 @@ static struct Value propertyIsEnumerable (struct Context * const context)
 		return Value(false);
 }
 
-static struct Value objectConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -582,7 +582,10 @@ void setup ()
 	
 	assert(sizeof(*Object(prototype)->hashmap) == 32);
 	
-	Function.setupBuiltinObject(&Object(constructor), objectConstructor, 1, NULL, Value.object(Object(prototype)), NULL);
+	Function.setupBuiltinObject(
+		&Object(constructor), constructor, 1,
+		NULL, Value.object(Object(prototype)),
+		NULL);
 	
 	Function.addMethod(Object(constructor), "getPrototypeOf", getPrototypeOf, 1, flags);
 	Function.addMethod(Object(constructor), "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
