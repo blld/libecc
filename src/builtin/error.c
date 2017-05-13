@@ -174,7 +174,11 @@ static struct Value uriErrorConstructor (struct Context * const context)
 
 static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
-	Function.setupBuiltinObject(constructor, native, 1, prototype, Value.error(error(*name, NULL)), &Error(type));
+	Function.setupBuiltinObject(
+		constructor, native, 1,
+		prototype, Value.error(error(*name, NULL)),
+		&Error(type));
+	
 	Object.addMember(*prototype, Key(name), Value.text(name), Value(hidden));
 }
 
