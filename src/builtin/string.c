@@ -325,7 +325,7 @@ static struct Value constructor (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
-		value = Value.text(&Text(empty));
+		value = Value.text(value.check == 1? &Text(undefined): &Text(empty));
 	else
 		value = Value.toString(context, value);
 	
