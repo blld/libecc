@@ -620,6 +620,8 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 		return truth(a.data.binary == b.data.binary);
 	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return truth(a.data.integer == b.data.integer);
+	else if (isObject(a) || isObject(b))
+		return truth(isObject(a) && isObject(b) && a.data.object == b.data.object);
 	else if (isNumber(a) && isNumber(b))
 		return truth(toBinary(a).data.binary == toBinary(b).data.binary);
 	else if (isString(a) && isString(b))
