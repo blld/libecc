@@ -397,6 +397,7 @@
 					"-fstrict-aliasing",
 					"-fno-math-errno",
 					"-fno-trapping-math",
+					"-fno-exception",
 				);
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wall";
