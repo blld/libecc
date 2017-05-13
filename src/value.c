@@ -243,7 +243,7 @@ int isTrue (struct Value value)
 	else if (value.type == Value(integerType))
 		return value.data.integer != 0;
 	else if (value.type == Value(binaryType))
-		return value.data.binary != 0;
+		return !isnan(value.data.binary) && value.data.binary != 0;
 	else if (isString(value))
 		return stringLength(value) > 0;
 	
