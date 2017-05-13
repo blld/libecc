@@ -17,6 +17,7 @@
 
 #define valueMake(T) { .type = Value(T), .check = 1 }
 
+const struct Value Value(none) = {{ 0 }};
 const struct Value Value(undefined) = valueMake(undefinedType);
 const struct Value Value(true) = valueMake(trueType);
 const struct Value Value(false) = valueMake(falseType);
@@ -28,13 +29,6 @@ const struct Value Value(null) = valueMake(nullType);
 
 
 // make
-
-struct Value none (void)
-{
-	return (struct Value){
-		.check = 0,
-	};
-}
 
 struct Value truth (int truth)
 {

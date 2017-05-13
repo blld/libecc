@@ -184,7 +184,7 @@ static struct OpList * array (struct Parser *self)
 		while (previewToken(self) == ',')
 		{
 			++count;
-			oplist = OpList.append(oplist, Op.make(Op.value, Value.none(), self->lexer->text));
+			oplist = OpList.append(oplist, Op.make(Op.value, Value(none), self->lexer->text));
 			nextToken(self);
 		}
 		
@@ -555,6 +555,7 @@ static struct OpList * unary (struct Parser *self)
 static struct OpList * multiplicative (struct Parser *self)
 {
 	struct OpList *oplist = unary(self), *alt;
+	
 	while (1)
 	{
 		Native(Function) native;

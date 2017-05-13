@@ -83,7 +83,8 @@
 		Value(hintString) = 1,
 		Value(hintNumber) = -1,
 	};
-
+	
+	extern const struct Value Value(none);
 	extern const struct Value Value(undefined);
 	extern const struct Value Value(true);
 	extern const struct Value Value(false);
@@ -94,7 +95,6 @@
 
 Interface(Value,
 	
-	(struct Value, none ,(void))
 	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
