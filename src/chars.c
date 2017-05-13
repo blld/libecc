@@ -14,11 +14,6 @@
 
 // MARK: - Private
 
-static inline struct Chars * appendText (struct Chars ** chars, struct Text text)
-{
-	return append(chars, "%.*s", text.length, text.bytes);
-}
-
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -108,6 +103,25 @@ struct Chars * append (struct Chars **chars, const char *format, ...)
 		Pool.reindexChars(self, *chars);
 		*chars = self;
 	}
+	return self;
+}
+
+static
+inline struct Chars * appendText (struct Chars ** chars, struct Text text)
+{
+	struct Chars *self = *chars;
+	
+	self = realloc(self, sizeof(*self) + self->length + text.length);
+	memcpy(self->bytes + self->length, text.bytes, text.length);
+	self->length += text.length;
+	self->bytes[self->length] = '\0';
+	
+	if (self != *chars)
+	{
+		Pool.reindexChars(self, *chars);
+		*chars = self;
+	}
+	
 	return self;
 }
 
