@@ -46,7 +46,7 @@ static struct Value valueOf (struct Context * const context)
 
 // MARK: - Static Members
 
-static struct Value booleanConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	char truth;
 	
@@ -65,7 +65,10 @@ void setup ()
 {
 	enum Value(Flags) flags = Value(hidden);
 	
-	Function.setupBuiltinObject(&Boolean(constructor), booleanConstructor, 1, &Boolean(prototype), Value.boolean(create(0)), &Boolean(type));
+	Function.setupBuiltinObject(
+		&Boolean(constructor), constructor, 1,
+		&Boolean(prototype), Value.boolean(create(0)),
+		&Boolean(type));
 	
 	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
 	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
