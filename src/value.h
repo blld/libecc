@@ -122,8 +122,8 @@ Interface(Value,
 	
 	(struct Value, toPrimitive ,(struct Context * const, struct Value, enum Value(hintPrimitive)))
 	
-	(struct Value, toBinary ,(struct Value))
-	(struct Value, toInteger ,(struct Value))
+	(struct Value, toBinary ,(struct Context * const, struct Value))
+	(struct Value, toInteger ,(struct Context * const, struct Value))
 	(struct Value, binaryToString ,(double binary, int base))
 	
 	(struct Value, toString ,(struct Context * const, struct Value))

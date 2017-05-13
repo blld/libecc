@@ -59,7 +59,7 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 {
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(object, context, Key(length));
-	uint32_t index, count = Value.toBinary(length).data.binary;
+	uint32_t index, count = Value.toBinary(context, length).data.binary;
 	struct Chars *chars;
 	
 	Chars.beginAppend(&chars);
@@ -276,7 +276,7 @@ static struct Value slice (struct Context * const context)
 	object = this.data.object;
 	
 	start = Context.argument(context, 0);
-	binary = Value.toBinary(start).data.binary;
+	binary = Value.toBinary(context, start).data.binary;
 	if (start.type == Value(undefinedType))
 		from = 0;
 	else if (binary > 0)
@@ -285,7 +285,7 @@ static struct Value slice (struct Context * const context)
 		from = binary + object->elementCount >= 0? object->elementCount + binary: 0;
 	
 	end = Context.argument(context, 1);
-	binary = Value.toBinary(end).data.binary;
+	binary = Value.toBinary(context, end).data.binary;
 	if (end.type == Value(undefinedType))
 		to = object->elementCount;
 	else if (binary < 0)
@@ -319,7 +319,7 @@ static struct Value getLength (struct Context * const context)
 static struct Value setLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(Context.argument(context, 0)).data.binary);
+	Object.resizeElement(context->this.data.object, Value.toBinary(context, Context.argument(context, 0)).data.binary);
 	
 	return Value(undefined);
 }
@@ -333,7 +333,7 @@ static struct Value constructor (struct Context * const context)
 	length = count = Context.variableArgumentCount(context);
 	if (count == 1 && Value.isNumber(Context.variableArgument(context, 0)))
 	{
-		double binary = Value.toBinary(Context.variableArgument(context, 0)).data.binary;
+		double binary = Value.toBinary(context, Context.variableArgument(context, 0)).data.binary;
 		if (binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
 		{
 			length = binary;

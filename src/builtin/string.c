@@ -83,7 +83,7 @@ static struct Value charAt (struct Context * const context)
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
-	position = Value.toInteger(Context.argument(context, 0)).data.integer;
+	position = Value.toInteger(context, Context.argument(context, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
@@ -108,7 +108,7 @@ static struct Value charCodeAt (struct Context * const context)
 	chars = Value.stringBytes(context->this);
 	length = Value.stringLength(context->this);
 	
-	position = Value.toInteger(Context.argument(context, 0)).data.integer;
+	position = Value.toInteger(context, Context.argument(context, 0)).data.integer;
 	index = positionIndex(chars, length, position, 0);
 	length = positionIndex(chars, length, position + 1, 0) - index;
 	
@@ -157,7 +157,7 @@ static struct Value indexOf (struct Context * const context)
 	searchLength = Value.stringLength(search);
 	
 	length -= searchLength;
-	position = argumentCount >= 2? Value.toInteger(Context.variableArgument(context, 1)).data.integer: 0;
+	position = argumentCount >= 2? Value.toInteger(context, Context.variableArgument(context, 1)).data.integer: 0;
 	index = positionIndex(chars, length, position, 0);
 	
 	for (; index <= length; ++index)
@@ -205,7 +205,7 @@ static struct Value lastIndexOf (struct Context * const context)
 	if (argumentCount < 2 || Context.variableArgument(context, 1).type == Value(undefinedType))
 		position = indexPosition(chars, length, length);
 	else
-		position = Value.toInteger(Context.variableArgument(context, 1)).data.integer;
+		position = Value.toInteger(context, Context.variableArgument(context, 1)).data.integer;
 	
 	position -= indexPosition(searchChars, searchLength, searchLength);
 	index = positionIndex(chars, length, position, 0);
@@ -252,13 +252,13 @@ static struct Value slice (struct Context * const context)
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
-		start = positionIndex(chars, length, Value.toInteger(from).data.integer, 1);
+		start = positionIndex(chars, length, Value.toInteger(context, from).data.integer, 1);
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
-		end = positionIndex(chars, length, Value.toInteger(to).data.integer, 1);
+		end = positionIndex(chars, length, Value.toInteger(context, to).data.integer, 1);
 	
 	length = end - start;
 	
@@ -290,13 +290,13 @@ static struct Value substring (struct Context * const context)
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
-		start = positionIndex(chars, length, Value.toInteger(from).data.integer, 0);
+		start = positionIndex(chars, length, Value.toInteger(context, from).data.integer, 0);
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
-		end = positionIndex(chars, length, Value.toInteger(to).data.integer, 0);
+		end = positionIndex(chars, length, Value.toInteger(context, to).data.integer, 0);
 	
 	if (start > end)
 	{
@@ -345,7 +345,7 @@ static struct Value fromCharCode (struct Context * const context)
 	
 	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
 	{
-		c = Value.toInteger(Context.variableArgument(context, index)).data.integer;
+		c = Value.toInteger(context, Context.variableArgument(context, index)).data.integer;
 		if (c < 0x80) length += 1;
 		else if (c < 0x800) length += 2;
 		else if (c <= 0xffff) length += 3;
@@ -357,7 +357,7 @@ static struct Value fromCharCode (struct Context * const context)
 	
 	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
 	{
-		c = Value.toInteger(Context.variableArgument(context, index)).data.integer;
+		c = Value.toInteger(context, Context.variableArgument(context, index)).data.integer;
 		if (c < 0x80) *b++ = c;
 		else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
 		else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;

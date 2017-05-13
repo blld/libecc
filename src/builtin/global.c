@@ -49,7 +49,7 @@ static struct Value parseInt (struct Context * const context)
 	Context.assertParameterCount(context, 2);
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	base = Value.toInteger(Context.argument(context, 1)).data.integer;
+	base = Value.toInteger(context, Context.argument(context, 1)).data.integer;
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	
@@ -88,7 +88,7 @@ static struct Value isFinite (struct Context * const context)
 	
 	Context.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Context.argument(context, 0));
+	value = Value.toBinary(context, Context.argument(context, 0));
 	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
 
@@ -98,7 +98,7 @@ static struct Value isNaN (struct Context * const context)
 	
 	Context.assertParameterCount(context, 1);
 	
-	value = Value.toBinary(Context.argument(context, 0));
+	value = Value.toBinary(context, Context.argument(context, 0));
 	return Value.truth(isnan(value.data.binary));
 }
 

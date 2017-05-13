@@ -26,7 +26,7 @@ static struct Value getLength (struct Context * const context)
 static struct Value setLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(Context.argument(context, 0)).data.binary);
+	Object.resizeElement(context->this.data.object, Value.toBinary(context, Context.argument(context, 0)).data.binary);
 	return Value(undefined);
 }
 

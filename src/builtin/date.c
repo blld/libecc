@@ -81,7 +81,7 @@ static double binaryArgumentOr (struct Context * const context, int index, doubl
 {
 	struct Value value = Context.argument(context, index);
 	if (value.check == 1)
-		return Value.toBinary(Context.argument(context, index)).data.binary;
+		return Value.toBinary(context, Context.argument(context, index)).data.binary;
 	else
 		return alternative;
 }
@@ -131,13 +131,13 @@ static double msFromArguments (struct Context * const context)
 	
 	count = Context.variableArgumentCount(context);
 	
-	year = Value.toBinary(Context.variableArgument(context, 0)).data.binary,
-	month = Value.toBinary(Context.variableArgument(context, 1)).data.binary,
-	day = count > 2? Value.toBinary(Context.variableArgument(context, 2)).data.binary: 1,
-	h = count > 3? Value.toBinary(Context.variableArgument(context, 3)).data.binary: 0,
-	m = count > 4? Value.toBinary(Context.variableArgument(context, 4)).data.binary: 0,
-	s = count > 5? Value.toBinary(Context.variableArgument(context, 5)).data.binary: 0,
-	ms = count > 6? Value.toBinary(Context.variableArgument(context, 6)).data.binary: 0;
+	year = Value.toBinary(context, Context.variableArgument(context, 0)).data.binary,
+	month = Value.toBinary(context, Context.variableArgument(context, 1)).data.binary,
+	day = count > 2? Value.toBinary(context, Context.variableArgument(context, 2)).data.binary: 1,
+	h = count > 3? Value.toBinary(context, Context.variableArgument(context, 3)).data.binary: 0,
+	m = count > 4? Value.toBinary(context, Context.variableArgument(context, 4)).data.binary: 0,
+	s = count > 5? Value.toBinary(context, Context.variableArgument(context, 5)).data.binary: 0,
+	ms = count > 6? Value.toBinary(context, Context.variableArgument(context, 6)).data.binary: 0;
 	
 	if (isnan(year) || isnan(month) || isnan(day) || isnan(h) || isnan(m) || isnan(s) || isnan(ms))
 		return NAN;
@@ -616,7 +616,7 @@ static struct Value setTime (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(dateType));
 	
-	ms = Value.toBinary(Context.argument(context, 0)).data.binary;
+	ms = Value.toBinary(context, Context.argument(context, 0)).data.binary;
 	
 	return Value.binary(context->this.data.date->ms = msClip(ms));
 }
@@ -958,7 +958,7 @@ static struct Value constructor (struct Context * const context)
 		if (Value.isString(value))
 			time = msFromBytes(Value.stringBytes(value), Value.stringLength(value));
 		else
-			time = Value.toBinary(value).data.binary;
+			time = Value.toBinary(context, value).data.binary;
 	}
 	else
 		time = currentTime();

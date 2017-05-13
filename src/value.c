@@ -291,7 +291,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 		Context.typeError(context, Chars.create("cannot convert value to primitive"));
 }
 
-struct Value toBinary (struct Value value)
+struct Value toBinary (struct Context * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
@@ -342,7 +342,7 @@ struct Value toBinary (struct Value value)
 		case Value(functionType):
 		case Value(regexpType):
 		case Value(hostType):
-			return binary(NAN);
+			return toBinary(context, toPrimitive(context, value, Value(hintNumber)));
 		
 		case Value(referenceType):
 			break;
@@ -350,10 +350,10 @@ struct Value toBinary (struct Value value)
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
-struct Value toInteger (struct Value value)
+struct Value toInteger (struct Context * const context, struct Value value)
 {
 	const double modulus = (double)UINT32_MAX + 1;
-	double binary = toBinary(value).data.binary;
+	double binary = toBinary(context, value).data.binary;
 	
 	if (!binary || !isfinite(binary))
 		return integer(0);
@@ -568,7 +568,7 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return truth(a.data.integer == b.data.integer);
 	else if (isNumber(a) && isNumber(b))
-		return truth(toBinary(a).data.binary == toBinary(b).data.binary);
+		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
 		uint32_t aLength = stringLength(a);
@@ -587,13 +587,13 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 	else if (a.type == Value(undefinedType) && b.type == Value(nullType))
 		return Value(true);
 	else if (isNumber(a) && isString(b))
-		return equals(context, a, toBinary(b));
+		return equals(context, a, toBinary(context, b));
 	else if (isString(a) && isNumber(b))
-		return equals(context, toBinary(a), b);
+		return equals(context, toBinary(context, a), b);
 	else if (isBoolean(a))
-		return equals(context, toBinary(a), b);
+		return equals(context, toBinary(context, a), b);
 	else if (isBoolean(b))
-		return equals(context, a, toBinary(b));
+		return equals(context, a, toBinary(context, b));
 	else if (((isString(a) || isNumber(a)) && isObject(b))
 		   || (isObject(a) && (isString(b) || isNumber(b)))
 		   )
@@ -617,7 +617,7 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 	else if (isObject(a) || isObject(b))
 		return truth(isObject(a) && isObject(b) && a.data.object == b.data.object);
 	else if (isNumber(a) && isNumber(b))
-		return truth(toBinary(a).data.binary == toBinary(b).data.binary);
+		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
 		uint32_t aLength = stringLength(a);
@@ -642,7 +642,7 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return binary((double)a.data.integer + (double)b.data.integer);
 	else if (isNumber(a) && isNumber(b))
-		return binary(toBinary(a).data.binary + toBinary(b).data.binary);
+		return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
 	else
 	{
 		a = toPrimitive(context, a, Value(hintAuto));
@@ -659,7 +659,7 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 			return Value.chars(Chars.endAppend(&chars));
 		}
 		else
-			return binary(toBinary(a).data.binary + toBinary(b).data.binary);
+			return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
 	}
 }
 
@@ -670,7 +670,7 @@ static struct Value subtract (struct Context * const context, struct Value a, st
 	else if (a.type == Value(integerType) && b.type == Value(integerType))
 		return binary(a.data.integer - b.data.integer);
 	
-	return binary(toBinary(a).data.binary - toBinary(b).data.binary);
+	return binary(toBinary(context, a).data.binary - toBinary(context, b).data.binary);
 }
 
 static struct Value compare (struct Context * const context, struct Value a, struct Value b)
@@ -690,8 +690,8 @@ static struct Value compare (struct Context * const context, struct Value a, str
 	}
 	else
 	{
-		a = toBinary(a);
-		b = toBinary(b);
+		a = toBinary(context, a);
+		b = toBinary(context, b);
 		
 		if (isnan(a.data.binary) || isnan(b.data.binary))
 			return Value(undefined);

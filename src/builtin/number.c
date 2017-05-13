@@ -29,11 +29,11 @@ static struct Value toExponential (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
-	binary = Value.toBinary(context->this).data.binary;
+	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
-		int32_t precision = Value.toInteger(value).data.integer;
+		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 20)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
@@ -51,11 +51,11 @@ static struct Value toFixed (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
-	binary = Value.toBinary(context->this).data.binary;
+	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
-		int32_t precision = Value.toInteger(value).data.integer;
+		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 20)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
@@ -73,11 +73,11 @@ static struct Value toPrecision (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
-	binary = Value.toBinary(context->this).data.binary;
+	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
-		int32_t precision = Value.toInteger(value).data.integer;
+		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 100)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
@@ -96,11 +96,11 @@ static struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
-	binary = Value.toBinary(context->this).data.binary;
+	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
 	if (value.type != Value(undefinedType))
 	{
-		radix = Value.toInteger(value).data.integer;
+		radix = Value.toInteger(context, value).data.integer;
 		if (radix < 2 || radix > 36)
 			Context.rangeError(context, Chars.create("radix must be an integer at least 2 and no greater than 36"));
 		
@@ -129,7 +129,7 @@ static struct Value constructor (struct Context * const context)
 	if (value.type == Value(undefinedType))
 		value = Value.binary(value.check == 1? NAN: 0);
 	else
-		value = Value.toBinary(Value.toPrimitive(context, value, Value(hintNumber)));
+		value = Value.toBinary(context, Value.toPrimitive(context, value, Value(hintNumber)));
 	
 	if (context->construct)
 		return Value.number(Number.create(value.data.binary));

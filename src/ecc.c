@@ -121,6 +121,11 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 			if (name.type == Value(undefinedType))
 				name = Value.text(&Text(errorName));
 			
+#warning delete me
+//		FILE *blah = fopen("blah.txt", "w");
+//		fwrite(self->bytes, 1, self->length, blah);
+			fprintf(stderr, "--- src:\n%s", input->bytes);
+			
 			Env.newline();
 			Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
 			

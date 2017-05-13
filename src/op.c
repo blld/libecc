@@ -1030,7 +1030,7 @@ struct Value minus (struct Context * const context)
 		return a;
 	}
 	else
-		return Value.binary(Value.toBinary(a).data.binary - Value.toBinary(b).data.binary);
+		return Value.binary(Value.toBinary(context, a).data.binary - Value.toBinary(context, b).data.binary);
 }
 
 struct Value multiply (struct Context * const context)
@@ -1043,7 +1043,7 @@ struct Value multiply (struct Context * const context)
 		return a;
 	}
 	else
-		return Value.binary(Value.toBinary(a).data.binary * Value.toBinary(b).data.binary);
+		return Value.binary(Value.toBinary(context, a).data.binary * Value.toBinary(context, b).data.binary);
 }
 
 struct Value divide (struct Context * const context)
@@ -1056,7 +1056,7 @@ struct Value divide (struct Context * const context)
 		return a;
 	}
 	else
-		return Value.binary(Value.toBinary(a).data.binary / Value.toBinary(b).data.binary);
+		return Value.binary(Value.toBinary(context, a).data.binary / Value.toBinary(context, b).data.binary);
 }
 
 struct Value modulo (struct Context * const context)
@@ -1066,49 +1066,49 @@ struct Value modulo (struct Context * const context)
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.binary(fmod(a.data.binary, b.data.binary));
 	else
-		return Value.binary(fmod(Value.toBinary(a).data.binary, Value.toBinary(b).data.binary));
+		return Value.binary(fmod(Value.toBinary(context, a).data.binary, Value.toBinary(context, b).data.binary));
 }
 
 struct Value leftShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(a).data.integer << (uint32_t)Value.toInteger(b).data.integer);
+	return Value.integer(Value.toInteger(context, a).data.integer << (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value rightShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
+	return Value.integer(Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value unsignedRightShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer((uint32_t)Value.toInteger(a).data.integer >> (uint32_t)Value.toInteger(b).data.integer);
+	return Value.integer((uint32_t)Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseAnd (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(a).data.integer & Value.toInteger(b).data.integer);
+	return Value.integer(Value.toInteger(context, a).data.integer & Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseXor (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(a).data.integer ^ Value.toInteger(b).data.integer);
+	return Value.integer(Value.toInteger(context, a).data.integer ^ Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseOr (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(a).data.integer | Value.toInteger(b).data.integer);
+	return Value.integer(Value.toInteger(context, a).data.integer | Value.toInteger(context, b).data.integer);
 }
 
 struct Value logicalAnd (struct Context * const context)
@@ -1150,13 +1150,13 @@ struct Value negative (struct Context * const context)
 	if (a.type == Value(binaryType))
 		return Value.binary(-a.data.binary);
 	else
-		return Value.binary(-Value.toBinary(a).data.binary);
+		return Value.binary(-Value.toBinary(context, a).data.binary);
 }
 
 struct Value invert (struct Context * const context)
 {
 	struct Value a = nextOp();
-	return Value.integer(~Value.toInteger(a).data.integer);
+	return Value.integer(~Value.toInteger(context, a).data.integer);
 }
 
 struct Value not (struct Context * const context)
@@ -1177,13 +1177,13 @@ struct Value not (struct Context * const context)
 	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = Value.toBinary(release(Object.getValue(context->refObject, context, ref))); \
+		a = Value.toBinary(context, release(Object.getValue(context->refObject, context, ref))); \
 		result = OP; \
 		Object.putValue(context->refObject, context, ref, a); \
 		return Value.binary(result); \
 	} \
 	else if (a.type != Value(binaryType)) \
-		a = Value.toBinary(release(a)); \
+		a = Value.toBinary(context, release(a)); \
 	 \
 	result = OP; \
 	*ref = a; \
@@ -1215,13 +1215,13 @@ struct Value postDecrementRef (struct Context * const context)
 	struct Value a, b = nextOp(); \
 	 \
 	if (b.type != TYPE) \
-		b = CONV(b); \
+		b = CONV(context, b); \
 	 \
 	a = *ref; \
 	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = CONV(release(Object.getValue(context->refObject, context, ref))); \
+		a = CONV(context, release(Object.getValue(context->refObject, context, ref))); \
 		OP; \
 		return *Object.putValue(context->refObject, context, ref, a); \
 	} \
@@ -1232,7 +1232,7 @@ struct Value postDecrementRef (struct Context * const context)
 	} \
 	else \
 	{ \
-		a = CONV(release(a)); \
+		a = CONV(context, release(a)); \
 		OP; \
 		return *ref = a; \
 	} \
@@ -1620,14 +1620,14 @@ static struct Value iterateIntegerRef (
 	
 	if (indexRef->type == Value(binaryType) && indexRef->data.binary >= INT32_MIN && indexRef->data.binary <= INT32_MAX)
 	{
-		struct Value integerValue = Value.toInteger(*indexRef);
+		struct Value integerValue = Value.toInteger(context, *indexRef);
 		if (indexRef->data.binary == integerValue.data.integer)
 			*indexRef = integerValue;
 	}
 	
 	if (countRef->type == Value(binaryType) && countRef->data.binary >= INT32_MIN && countRef->data.binary <= INT32_MAX)
 	{
-		struct Value integerValue = Value.toInteger(*countRef);
+		struct Value integerValue = Value.toInteger(context, *countRef);
 		if (countRef->data.binary == integerValue.data.integer)
 			*countRef = integerValue;
 	}

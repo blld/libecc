@@ -25,7 +25,7 @@ static struct Value mathAbs (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(fabs(value.data.binary));
 }
@@ -38,7 +38,7 @@ static struct Value mathACos (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(acos(value.data.binary));
 }
@@ -51,7 +51,7 @@ static struct Value mathASin (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(asin(value.data.binary));
 }
@@ -64,7 +64,7 @@ static struct Value mathATan (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(atan(value.data.binary));
 }
@@ -77,11 +77,11 @@ static struct Value mathATan2 (struct Context * const context)
 	
 	x = Context.argument(context, 0);
 	if (x.type != Value(binaryType))
-		x = Value.toBinary(x);
+		x = Value.toBinary(context, x);
 	
 	y = Context.argument(context, 1);
 	if (y.type != Value(binaryType))
-		y = Value.toBinary(y);
+		y = Value.toBinary(context, y);
 	
 	return Value.binary(atan2(x.data.binary, y.data.binary));
 }
@@ -94,7 +94,7 @@ static struct Value mathCeil (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(ceil(value.data.binary));
 }
@@ -107,7 +107,7 @@ static struct Value mathCos (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(cos(value.data.binary));
 }
@@ -120,7 +120,7 @@ static struct Value mathExp (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(exp(value.data.binary));
 }
@@ -133,7 +133,7 @@ static struct Value mathFloor (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(floor(value.data.binary));
 }
@@ -146,7 +146,7 @@ static struct Value mathLog (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(log(value.data.binary));
 }
@@ -160,7 +160,7 @@ static struct Value mathMax (struct Context * const context)
 	
 	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
 	{
-		value = Value.toBinary(Context.variableArgument(context, index)).data.binary;
+		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
 		if (result < value)
 			result = value;
 	}
@@ -177,7 +177,7 @@ static struct Value mathMin (struct Context * const context)
 	
 	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
 	{
-		value = Value.toBinary(Context.variableArgument(context, index)).data.binary;
+		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
 		if (result > value)
 			result = value;
 	}
@@ -193,11 +193,11 @@ static struct Value mathPow (struct Context * const context)
 	
 	x = Context.argument(context, 0);
 	if (x.type != Value(binaryType))
-		x = Value.toBinary(x);
+		x = Value.toBinary(context, x);
 	
 	y = Context.argument(context, 1);
 	if (y.type != Value(binaryType))
-		y = Value.toBinary(y);
+		y = Value.toBinary(context, y);
 	
 	return Value.binary(pow(x.data.binary, y.data.binary));
 }
@@ -217,7 +217,7 @@ static struct Value mathRound (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	if (value.data.binary < 0)
 		return Value.binary(1.0 - ceil(0.5 - value.data.binary));
@@ -233,7 +233,7 @@ static struct Value mathSin (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(sin(value.data.binary));
 }
@@ -246,7 +246,7 @@ static struct Value mathSqrt (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(sqrt(value.data.binary));
 }
@@ -259,7 +259,7 @@ static struct Value mathTan (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
-		value = Value.toBinary(value);
+		value = Value.toBinary(context, value);
 	
 	return Value.binary(tan(value.data.binary));
 }
