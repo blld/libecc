@@ -564,8 +564,10 @@ struct Value getLocalRef (struct Context * const context)
 	struct Key key = opValue().data.key;
 	struct Value *ref = Object.member(context->environment, key);
 	if (!ref)
+	{
+		Context.setText(context, opText(0));
 		Context.referenceError(context, Chars.create("'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes));
-	
+	}
 	return Value.reference(ref);
 }
 
@@ -793,6 +795,7 @@ struct Value setProperty (struct Context * const context)
 	prepareObjectProperty(context, &object, &property);
 	
 	value = retain(nextOp());
+	value.flags = 0;
 	
 	Context.setText(context, text);
 	Object.putProperty(object.data.object, context, property, value);
