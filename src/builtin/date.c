@@ -453,7 +453,7 @@ static struct Value valueOf (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(dateType));
 	
-	return Value.binary(context->this.data.date->ms);
+	return Value.binary(context->this.data.date->ms >= 0? floor(context->this.data.date->ms): ceil(context->this.data.date->ms));
 }
 
 static struct Value getFullYear (struct Context * const context)
@@ -937,7 +937,7 @@ static struct Value UTC (struct Context * const context)
 	return Value.binary(NAN);
 }
 
-static struct Value dateConstructor (struct Context * const context)
+static struct Value constructor (struct Context * const context)
 {
 	double time;
 	uint16_t count;
@@ -976,7 +976,10 @@ void setup (void)
 	
 	setupLocalOffset();
 	
-	Function.setupBuiltinObject(&Date(constructor), dateConstructor, -7, &Date(prototype), Value.date(create(NAN)), &Date(type));
+	Function.setupBuiltinObject(
+		&Date(constructor), constructor, -7,
+		&Date(prototype), Value.date(create(NAN)),
+		&Date(type));
 	
 	Function.addMethod(Date(constructor), "parse", parse, 1, flags);
 	Function.addMethod(Date(constructor), "UTC", UTC, -7, flags);
