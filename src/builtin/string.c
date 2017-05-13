@@ -337,7 +337,7 @@ static struct Value constructor (struct Context * const context)
 
 static struct Value fromCharCode (struct Context * const context)
 {
-	int32_t c, index, count, length = 0;
+	uint16_t c, index, count, length = 0;
 	struct Chars *chars;
 	char *b;
 	
