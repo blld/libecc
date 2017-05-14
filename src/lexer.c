@@ -597,14 +597,11 @@ struct Value parseBinary (struct Text text)
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
-	while (*b && (*b <= 32 || *b > 127))
-		++b;
-	
 	binary = strtod(b, &end);
 	
 	if (end - buffer != text.length)
 	{
-		if (*end <= 32 || *end > 127)
+		if (!*end || isspace(*end))
 			return Value.binary(binary);
 		else
 			return Value.binary(NAN);
