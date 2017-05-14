@@ -147,7 +147,7 @@ struct OpList * append (struct OpList *self, struct Op op)
 
 struct OpList * appendNoop (struct OpList *self)
 {
-	return append(self, Op.make(Op.noop, Value(undefined), Text.make(NULL, 0)));
+	return append(self, Op.make(Op.noop, Value(undefined), Text(empty)));
 }
 
 struct OpList * createLoop (struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition)
@@ -339,7 +339,7 @@ struct Text text (struct OpList *oplist)
 {
 	uint16_t length;
 	if (!oplist)
-		return Text.make(NULL, 0);
+		return Text(empty);
 	
 	length = oplist->ops[oplist->opCount - 1].text.bytes + oplist->ops[oplist->opCount - 1].text.length - oplist->ops[0].text.bytes;
 	
