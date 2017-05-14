@@ -563,9 +563,7 @@ struct Value toType (struct Value value)
 
 struct Value equals (struct Context * const context, struct Value a, struct Value b)
 {
-	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return truth(a.data.binary == b.data.binary);
-	else if (isNumber(a) && isNumber(b))
+	if (isNumber(a) && isNumber(b))
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
@@ -608,9 +606,7 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 
 struct Value same (struct Context * const context, struct Value a, struct Value b)
 {
-	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return truth(a.data.binary == b.data.binary);
-	else if (isObject(a) || isObject(b))
+	if (isObject(a) || isObject(b))
 		return truth(isObject(a) && isObject(b) && a.data.object == b.data.object);
 	else if (isNumber(a) && isNumber(b))
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
@@ -654,11 +650,6 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 
 static struct Value subtract (struct Context * const context, struct Value a, struct Value b)
 {
-	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return binary(a.data.binary - b.data.binary);
-	else if (a.type == Value(integerType) && b.type == Value(integerType))
-		return binary(a.data.integer - b.data.integer);
-	
 	return binary(toBinary(context, a).data.binary - toBinary(context, b).data.binary);
 }
 

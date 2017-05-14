@@ -905,6 +905,9 @@ struct Value identical (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
 	
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary == b.data.binary);
+	
 	Context.setText(context, text);
 	return Value.same(context, a, b);
 }
@@ -914,6 +917,9 @@ struct Value notIdentical (struct Context * const context)
 	struct Value a = nextOp();
 	const struct Text *text = opText(0);
 	struct Value b = nextOp();
+	
+	if (a.type == Value(binaryType) && b.type == Value(binaryType))
+		return Value.truth(a.data.binary != b.data.binary);
 	
 	Context.setText(context, text);
 	return Value.truth(!Value.isTrue(Value.same(context, a, b)));
