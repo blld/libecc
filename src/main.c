@@ -633,6 +633,7 @@ static void testFunction (void)
 	test("var f = function(a, b){ return arguments }.bind(123); [].join.call(f(1, 2))", "1,2", NULL);
 	test("var f = function(a, b){ return arguments }.bind(123, 1); [].join.call(f(2, 3))", "1,2,3", NULL);
 	test("var f = function(a, b){ return arguments }.bind(123, 1, 2, 3); [].join.call(f(4, 5))", "1,2,3,4,5", NULL);
+	test("function f1(x, x) { return x; } f1(1, 2)", "2", NULL);
 }
 
 static void testLoop (void)
@@ -1015,6 +1016,8 @@ static void testNumber (void)
 	test("Math.round(2147483647.5)", "2147483648", NULL);
 	test("Math.round(-2147483647.6)", "-2147483648", NULL);
 	test("var orig = Number.prototype.toString; Number.prototype.toString = function(){ return this + 'abc' }; var r = 123..toString(); Number.prototype.toString = orig; r", "123abc", NULL);
+	test("Number()", "0", NULL);
+	test("Number(undefined)", "NaN", NULL);
 }
 
 static void testString (void)
