@@ -1449,7 +1449,7 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	struct Text text = self->lexer->text, textParameter;
 	
 	struct OpList *oplist = NULL;
-	int parameterCount = 0, p;
+	int parameterCount = 0;
 	
 	struct Op identifierOp = { 0, Value(undefined) };
 	struct Function *parentFunction;
@@ -1503,9 +1503,6 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 	function->oplist = oplist;
 	function->text = text;
 	function->parameterCount = parameterCount;
-	
-	for (p = 3; p < parameterCount; ++p)
-		function->environment.hashmap[p].value = Value(none);
 	
 	Object.addMember(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
 	
