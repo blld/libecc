@@ -63,8 +63,8 @@ textMake(inputErrorName, "InputError");
 struct Text make (const char *bytes, uint16_t length)
 {
 	return (struct Text){
-		bytes,
-		length,
+		.bytes = bytes,
+		.length = length,
 	};
 }
 
