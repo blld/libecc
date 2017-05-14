@@ -1436,6 +1436,7 @@ static struct OpList * parameters (struct Parser *self, int *count)
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
 					syntaxError(self, op.text, Chars.create("redefining arguments is deprecated"));
 				
+				Object.deleteMember(&self->function->environment, op.value.data.key);
 				Object.addMember(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
 			}
 		} while (acceptToken(self, ','));

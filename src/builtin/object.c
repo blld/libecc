@@ -1016,12 +1016,20 @@ struct Value * addProperty (struct Object *self, struct Context * const context,
 int deleteMember (struct Object *self, struct Key member)
 {
 	struct Object *object = self;
-	uint32_t slot;
+	uint32_t slot, refSlot;
 	
 	assert(object);
 	assert(member.data.integer);
 	
-	slot = getSlot(object, member);
+	refSlot =
+		self->hashmap[
+		self->hashmap[
+		self->hashmap[1]
+		.slot[member.data.depth[0]]]
+		.slot[member.data.depth[1]]]
+		.slot[member.data.depth[2]];
+	
+	slot = self->hashmap[refSlot].slot[member.data.depth[3]];
 	
 	if (!slot || !(object->hashmap[slot].value.check == 1))
 		return 1;
@@ -1029,7 +1037,8 @@ int deleteMember (struct Object *self, struct Key member)
 	if (object->hashmap[slot].value.flags & Value(sealed))
 		return 0;
 	
-	memset(&object->hashmap[slot], 0, sizeof(*object->hashmap));
+	object->hashmap[slot].value = Value(undefined);
+	self->hashmap[refSlot].slot[member.data.depth[3]] = 0;
 	return 1;
 }
 
