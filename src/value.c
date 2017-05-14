@@ -565,8 +565,6 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
-	else if (a.type == Value(integerType) && b.type == Value(integerType))
-		return truth(a.data.integer == b.data.integer);
 	else if (isNumber(a) && isNumber(b))
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
@@ -612,8 +610,6 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 {
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return truth(a.data.binary == b.data.binary);
-	else if (a.type == Value(integerType) && b.type == Value(integerType))
-		return truth(a.data.integer == b.data.integer);
 	else if (isObject(a) || isObject(b))
 		return truth(isObject(a) && isObject(b) && a.data.object == b.data.object);
 	else if (isNumber(a) && isNumber(b))
@@ -637,13 +633,7 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 
 static struct Value add (struct Context * const context, struct Value a, struct Value b)
 {
-	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return binary(a.data.binary + b.data.binary);
-	else if (a.type == Value(integerType) && b.type == Value(integerType))
-		return binary((double)a.data.integer + (double)b.data.integer);
-	else if (isNumber(a) && isNumber(b))
-		return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
-	else
+	if (!isNumber(a) || !isNumber(b))
 	{
 		a = toPrimitive(context, a, Value(hintAuto));
 		Context.setTextIndex(context, Context(noIndex));
@@ -658,9 +648,8 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 			chars = Chars.appendValue(&chars, context, b);
 			return Value.chars(Chars.endAppend(&chars));
 		}
-		else
-			return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
 	}
+	return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
 }
 
 static struct Value subtract (struct Context * const context, struct Value a, struct Value b)

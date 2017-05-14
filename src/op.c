@@ -881,11 +881,9 @@ struct Value equal (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.equals(context, a, b);
-	}
+	
+	Context.setText(context, text);
+	return Value.equals(context, a, b);
 }
 
 struct Value notEqual (struct Context * const context)
@@ -896,11 +894,9 @@ struct Value notEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary != b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
-	}
+	
+	Context.setText(context, text);
+	return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
 }
 
 struct Value identical (struct Context * const context)
@@ -931,11 +927,9 @@ struct Value less (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.less(context, a, b);
-	}
+	
+	Context.setText(context, text);
+	return Value.less(context, a, b);
 }
 
 struct Value lessOrEqual (struct Context * const context)
@@ -946,11 +940,9 @@ struct Value lessOrEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.lessOrEqual(context, a, b);
-	}
+	
+	Context.setText(context, text);
+	return Value.lessOrEqual(context, a, b);
 }
 
 struct Value more (struct Context * const context)
@@ -961,11 +953,9 @@ struct Value more (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.more(context, a, b);
-	}
+	
+	Context.setText(context, text);
+	return Value.more(context, a, b);
 }
 
 struct Value moreOrEqual (struct Context * const context)
@@ -976,11 +966,9 @@ struct Value moreOrEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
-	else
-	{
-		Context.setText(context, text);
-		return Value.moreOrEqual(context, a, b);
-	}
+	
+	Context.setText(context, text);
+	return Value.moreOrEqual(context, a, b);
 }
 
 struct Value instanceOf (struct Context * const context)
@@ -1033,11 +1021,8 @@ struct Value add (struct Context * const context)
 		a.data.binary += b.data.binary;
 		return a;
 	}
-	else
-	{
-		Context.setText(context, text);
-		return Value.add(context, a, b);
-	}
+	Context.setText(context, text);
+	return Value.add(context, a, b);
 }
 
 struct Value minus (struct Context * const context)
@@ -1093,42 +1078,42 @@ struct Value leftShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(context, a).data.integer << (uint32_t)Value.toInteger(context, b).data.integer);
+	return Value.binary(Value.toInteger(context, a).data.integer << (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value rightShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
+	return Value.binary(Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value unsignedRightShift (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer((uint32_t)Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
+	return Value.binary((uint32_t)Value.toInteger(context, a).data.integer >> (uint32_t)Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseAnd (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(context, a).data.integer & Value.toInteger(context, b).data.integer);
+	return Value.binary(Value.toInteger(context, a).data.integer & Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseXor (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(context, a).data.integer ^ Value.toInteger(context, b).data.integer);
+	return Value.binary(Value.toInteger(context, a).data.integer ^ Value.toInteger(context, b).data.integer);
 }
 
 struct Value bitwiseOr (struct Context * const context)
 {
 	struct Value a = nextOp();
 	struct Value b = nextOp();
-	return Value.integer(Value.toInteger(context, a).data.integer | Value.toInteger(context, b).data.integer);
+	return Value.binary(Value.toInteger(context, a).data.integer | Value.toInteger(context, b).data.integer);
 }
 
 struct Value logicalAnd (struct Context * const context)
@@ -1176,7 +1161,7 @@ struct Value negative (struct Context * const context)
 struct Value invert (struct Context * const context)
 {
 	struct Value a = nextOp();
-	return Value.integer(~Value.toInteger(context, a).data.integer);
+	return Value.binary(~Value.toInteger(context, a).data.integer);
 }
 
 struct Value not (struct Context * const context)
@@ -1241,21 +1226,15 @@ struct Value postDecrementRef (struct Context * const context)
 	if (a.flags & (Value(readonly) | Value(accessor))) \
 	{ \
 		Context.setText(context, text); \
-		a = CONV(context, release(Object.getValue(context->refObject, context, ref))); \
+		a = CONV(context, Object.getValue(context->refObject, context, ref)); \
 		OP; \
 		return *Object.putValue(context->refObject, context, ref, a); \
 	} \
-	else if (a.type == TYPE) \
-	{ \
-		OP; \
-		return *ref = a; \
-	} \
-	else \
-	{ \
+	else if (a.type != TYPE) \
 		a = CONV(context, release(a)); \
-		OP; \
-		return *ref = a; \
-	} \
+	\
+	OP; \
+	return *ref = a; \
 
 #define assignBinaryOpRef(OP) assignOpRef(OP, Value(binaryType), Value.toBinary)
 #define assignIntegerOpRef(OP) assignOpRef(OP, Value(integerType), Value.toInteger)
@@ -1266,27 +1245,24 @@ struct Value addAssignRef (struct Context * const context)
 	struct Value *ref = nextOp().data.reference;
 	struct Value a, b = nextOp();
 	
+	Context.setText(context, text);
+
 	a = *ref;
+	if (a.flags & (Value(readonly) | Value(accessor)))
+	{
+		a = Object.getValue(context->refObject, context, ref);
+		a = retain(Value.add(context, a, b));
+		return *Object.putValue(context->refObject, context, ref, a);
+	}
+	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 	{
 		a.data.binary += b.data.binary;
 		return *ref = a;
 	}
-	else
-	{
-		Context.setText(context, text);
-		if (a.flags & (Value(readonly) | Value(accessor)))
-		{
-			a = release(Object.getValue(context->refObject, context, ref));
-			a = retain(Value.add(context, a, b));
-			return *Object.putValue(context->refObject, context, ref, a);
-		}
-		else
-		{
-			a = retain(Value.add(context, release(a), b));
-			return *ref = a;
-		}
-	}
+	
+	a = retain(Value.add(context, release(a), b));
+	return *ref = a;
 }
 
 struct Value minusAssignRef (struct Context * const context)

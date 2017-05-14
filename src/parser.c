@@ -112,13 +112,36 @@ static void popDepth (struct Parser *self)
 
 // MARK: Expression
 
-static struct OpList * foldConstant (struct OpList * ops)
+static
+struct OpList * foldConstant (struct OpList * oplist)
 {
-	struct Context context = { ops->ops };
+	struct Context context = { oplist->ops };
 	struct Value value = context.ops->native(&context);
-	struct Text text = OpList.text(ops);
-	OpList.destroy(ops);
+	struct Text text = OpList.text(oplist);
+	OpList.destroy(oplist);
 	return OpList.create(Op.value, value, text);
+}
+
+static
+struct OpList * useBinary (struct OpList * oplist, int add)
+{
+	if (oplist && oplist->ops[0].native == Op.value && (Value.isNumber(oplist->ops[0].value) || !add))
+	{
+		struct Context context = { oplist->ops };
+		oplist->ops[0].value = Value.toBinary(&context, oplist->ops[0].value);
+	}
+	return oplist;
+}
+
+static
+struct OpList * useInteger (struct OpList * oplist)
+{
+	if (oplist && oplist->ops[0].native == Op.value)
+	{
+		struct Context context = { oplist->ops };
+		oplist->ops[0].value = Value.toInteger(&context, oplist->ops[0].value);
+	}
+	return oplist;
 }
 
 static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
@@ -540,11 +563,11 @@ static struct OpList * unary (struct Parser *self)
 	else if (acceptToken(self, Lexer(decrementToken)))
 		native = Op.decrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
 	else if (acceptToken(self, '+'))
-		native = Op.positive, alt = unary(self);
+		native = Op.positive, alt = useBinary(unary(self), 0);
 	else if (acceptToken(self, '-'))
-		native = Op.negative, alt = unary(self);
+		native = Op.negative, alt = useBinary(unary(self), 0);
 	else if (acceptToken(self, '~'))
-		native = Op.invert, alt = unary(self);
+		native = Op.invert, alt = useInteger(unary(self));
 	else if (acceptToken(self, '!'))
 		native = Op.not, alt = unary(self);
 	else
@@ -578,10 +601,10 @@ static struct OpList * multiplicative (struct Parser *self)
 		else
 			return oplist;
 		
-		if (oplist)
+		if (useBinary(oplist, 0))
 		{
 			nextToken(self);
-			if ((alt = unary(self)))
+			if ((alt = useBinary(unary(self), 0)))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
@@ -611,10 +634,10 @@ static struct OpList * additive (struct Parser *self)
 		else
 			return oplist;
 		
-		if (oplist)
+		if (useBinary(oplist, native == Op.add))
 		{
 			nextToken(self);
-			if ((alt = multiplicative(self)))
+			if ((alt = useBinary(multiplicative(self), native == Op.add)))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
@@ -646,10 +669,10 @@ static struct OpList * shift (struct Parser *self)
 		else
 			return oplist;
 		
-		if (oplist)
+		if (useInteger(oplist))
 		{
 			nextToken(self);
-			if ((alt = additive(self)))
+			if ((alt = useInteger(additive(self))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
@@ -742,10 +765,10 @@ static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 	struct OpList *oplist = equality(self, noIn), *alt;
 	while (previewToken(self) == '&')
 	{
-		if (oplist)
+		if (useInteger(oplist))
 		{
 			nextToken(self);
-			if ((alt = equality(self, noIn)))
+			if ((alt = useInteger(equality(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseAnd, Value(undefined), text), oplist, alt);
@@ -764,10 +787,10 @@ static struct OpList * bitwiseXor (struct Parser *self, int noIn)
 	struct OpList *oplist = bitwiseAnd(self, noIn), *alt;
 	while (previewToken(self) == '^')
 	{
-		if (oplist)
+		if (useInteger(oplist))
 		{
 			nextToken(self);
-			if ((alt = bitwiseAnd(self, noIn)))
+			if ((alt = useInteger(bitwiseAnd(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseXor, Value(undefined), text), oplist, alt);
@@ -786,10 +809,10 @@ static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 	struct OpList *oplist = bitwiseXor(self, noIn), *alt;
 	while (previewToken(self) == '|')
 	{
-		if (oplist)
+		if (useInteger(oplist))
 		{
 			nextToken(self);
-			if ((alt = bitwiseXor(self, noIn)))
+			if ((alt = useInteger(bitwiseXor(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseOr, Value(undefined), text), oplist, alt);
