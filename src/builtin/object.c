@@ -182,7 +182,7 @@ static struct Value constructor (struct Context * const context)
 	else if (context->construct && Value.isObject(value))
 		return value;
 	else
-		return Value.toObject(context, Context.this(context));
+		return Value.toObject(context, value);
 }
 
 static struct Value getPrototypeOf (struct Context * const context)
