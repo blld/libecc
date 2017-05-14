@@ -14,8 +14,10 @@
 #include "../lexer.h"
 
 enum Opcode {
-	opNLookahead = 0,
-	opLookahead = 1,
+	opOver = 0,
+	
+	opNLookahead,
+	opLookahead,
 	opReference,
 	opStart,
 	opEnd,
@@ -33,15 +35,13 @@ enum Opcode {
 	opBytes,
 	opJump,
 	opMatch,
-	
-	opOver = -1,
 };
 
 struct Node {
 	char *bytes;
 	int16_t offset;
-	uint16_t depth;
-	enum Opcode opcode;
+	uint8_t opcode;
+	uint8_t depth;
 };
 
 struct State {
@@ -52,7 +52,7 @@ struct State {
 struct Parse {
 	const char *c;
 	const char *end;
-	int count;
+	uint16_t count;
 };
 
 // MARK: - Private
@@ -89,32 +89,27 @@ struct Node *node (enum Opcode opcode, long offset, const char *bytes)
 {
 	struct Node *n = calloc(2, sizeof(*n));
 	
-	size_t len = bytes? strlen(bytes): 0;
-	if (len)
-		n[0].bytes = strdup(bytes);
-	
+	n[0].bytes = bytes && strlen(bytes)? strdup(bytes): NULL;
 	n[0].offset = offset;
 	n[0].opcode = opcode;
-	n[1].opcode = opOver;
 	
 	return n;
 }
 
 static
-int len (struct Node *n)
+uint16_t nlen (struct Node *n)
 {
-	int len = 0;
-	if (!n)
-		return 0;
+	uint16_t len = 0;
+	if (n)
+		while (n[++len].opcode != opOver);
 	
-	while (n[++len].opcode != opOver);
 	return len;
 }
 
 static
 struct Node *join (struct Node *a, struct Node *b)
 {
-	size_t lena = 0, lenb = 0;
+	uint16_t lena = 0, lenb = 0;
 	
 	if (!a)
 		return b;
@@ -141,7 +136,7 @@ struct Node *join (struct Node *a, struct Node *b)
 }
 
 static
-int accept(struct Parse *p, int c)
+int accept(struct Parse *p, char c)
 {
 	if (*p->c == c)
 	{
@@ -258,7 +253,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 					else goto error;
 					
 					p->c += 4;
-					return node(opBytes, (int)(b - buffer) - 1, buffer);
+					return node(opBytes, (int16_t)(b - buffer) - 1, buffer);
 				}
 				error:
 				buffer[0] = *(++p->c);
@@ -271,7 +266,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 	else if (accept(p, '('))
 	{
 		struct Node *n;
-		int count = 0;
+		unsigned char count = 0;
 		char modifier = '\0';
 		
 		if (accept(p, '?'))
@@ -282,7 +277,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 		else
 		{
 			count = ++p->count;
-			if (count > 0xff)
+			if ((int)count * 2 + 1 > 0xff)
 			{
 				*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("too many captures"));
 				return NULL;
@@ -298,8 +293,8 @@ struct Node *term (struct Parse *p, struct Error **error)
 		
 		switch (modifier) {
 			case '\0': return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
-			case '=': return join(node(opLookahead, len(n) + 1, NULL), n);
-			case '!': return join(node(opNLookahead, len(n) + 1, NULL), n);
+			case '=': return join(node(opLookahead, nlen(n) + 1, NULL), n);
+			case '!': return join(node(opNLookahead, nlen(n) + 1, NULL), n);
 			case ':': return n;
 		}
 	}
@@ -320,7 +315,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 			++p->c;
 		}
 		{
-			long len = p->c - start;
+			int16_t len = p->c - start;
 			char buffer[len + 1];
 			memcpy(buffer, start, len);
 			buffer[len] = '\0';
@@ -359,26 +354,25 @@ struct Node *alternative (struct Parse *p, struct Error **error)
 			switch (*(p->c++))
 			{
 				case '?':
-					t = join(node(opSplit, len(t) + 1, NULL), t);
+					t = join(node(opSplit, nlen(t) + 1, NULL), t);
 					break;
 					
 				case '*':
-					t = join(node(opSplit, len(t) + 2, NULL), t);
+					t = join(node(opSplit, nlen(t) + 2, NULL), t);
 					header = 1;
 					/* vvv */
 					
 				case '+':
 				{
-					int index = 0, count = len(t), length = 0;
-					char buffer[count + 1];
+					uint16_t index, count = nlen(t), length = 0;
+					char buffer[count];
 					
-					for (index = 0; index < count; ++index) {
+					for (index = 0; index < count; ++index)
 						if (t[index].opcode == opSave)
 							buffer[length++] = (unsigned char)t[index].offset;
-					}
-					buffer[length] = '\0';
 					
-					t = join(t, node(opRedo, header - len(t), buffer));
+					buffer[length] = '\0';
+					t = join(t, node(opRedo, header - nlen(t), buffer));
 					break;
 				}
 					
@@ -391,9 +385,9 @@ struct Node *alternative (struct Parse *p, struct Error **error)
 					--p->c;
 			}
 			
-			if (accept(p, '?'))
-			{
-			}
+//			if (accept(p, '?'))
+//			{
+//			}
 		}
 		n = join(n, t);
 	}
@@ -406,9 +400,12 @@ struct Node *disjunction (struct Parse *p, struct Error **error)
 	struct Node *n = alternative(p, error), *d;
 	if (accept(p, '|'))
 	{
+		uint16_t len;
 		d = disjunction(p, error);
-		n = join(n, node(opJump, len(d) + 1, NULL));
-		n = join(node(opSplit, len(n) + 1, NULL), join(n, d));
+		n = join(n, node(opJump, nlen(d) + 1, NULL));
+		len = nlen(n);
+		n = join(n, d);
+		n = join(node(opSplit, len + 1, NULL), n);
 	}
 	return n;
 }
@@ -429,14 +426,15 @@ static
 int match (struct State * const s, struct Node *n, const char *c);
 
 static inline
-int fork (struct State * const s, struct Node *n, const char *c, int offset)
+int forkMatch (struct State * const s, struct Node *n, const char *c, int16_t offset)
 {
 	int result;
-	if (++n->depth > 255)
-	{
-		// TODO
-		return 0;
-	}
+	
+	if (n->depth == 0xff)
+		return 0; //!\\ too many recursion
+	else
+		++n->depth;
+	
 	result = match(s, n + offset, c);
 	--n->depth;
 	return result;
@@ -448,17 +446,16 @@ int match (struct State * const s, struct Node *n, const char *c)
 next:
 	++n;
 start:
+	;
 	
-	switch(n->opcode)
+	switch((enum Opcode)n->opcode)
 	{
 		case opNLookahead:
 		case opLookahead:
-		{
-			if (fork(s, n, c, 1) == n->opcode)
+			if (forkMatch(s, n, c, 1) == (n->opcode - 1))
 				goto jump;
-			else
-				return 0;
-		}
+			
+			return 0;
 			
 		case opStart:
 			return 0;
@@ -470,27 +467,26 @@ start:
 			return 0;
 			
 		case opSplit:
-			if (fork(s, n, c, 1))
+			if (forkMatch(s, n, c, 1))
 				return 1;
-			else
-				goto jump;
+			
+			goto jump;
 			
 		case opRedo:
-			if (fork(s, n, c, n->offset))
+			if (forkMatch(s, n, c, n->offset))
 			{
 				if (n->bytes)
 				{
 					size_t index, count;
-					for (index = 1, count = strlen(n->bytes); index < count; ++index)
+					for (index = 0, count = strlen(n->bytes); index < count; ++index)
 						s->index[(unsigned char)n->bytes[index]] = c;
 				}
 				return 1;
 			}
-			else
-				goto next;
+			goto next;
 			
 		case opSave:
-			if (fork(s, n, c, 1)) {
+			if (forkMatch(s, n, c, 1)) {
 				if (s->capture[n->offset] < c && c >= s->index[n->offset]) {
 					s->capture[n->offset] = c;
 				}
@@ -561,11 +557,17 @@ start:
 			goto next;
 		}
 			
+		case opReference:
+			if (memcmp(c, s->capture[n->offset * 2], s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]))
+				return 0;
+			
+			return 1;
+			
 		case opAny:
 			if (*c == '\r' || *c == '\n')
 				goto next;
-			else
-				return 0;
+			
+			return 0;
 			
 		case opJump:
 			goto jump;
@@ -635,30 +637,30 @@ void printNode (struct Node *n)
 {
 	switch (n->opcode)
 	{
-		case opNLookahead: printf("lookahead "); break;
-		case opLookahead: printf("!lookahead "); break;
-		case opReference: printf("reference "); break;
-		case opStart: printf("start "); break;
-		case opEnd: printf("end "); break;
-		case opBoundary: printf("boundary "); break;
-		case opSplit: printf("split "); break;
-		case opRedo: printf("redo "); break;
-		case opSave: printf("save "); break;
-		case opAny: printf("any "); break;
-		case opOneOf: printf("oneof "); break;
-		case opDigit: printf("digit "); break;
-		case opSpace: printf("space "); break;
-		case opWord: printf("word "); break;
-		case opBytes: printf("bytes "); break;
-		case opJump: printf("jump "); break;
-		case opMatch: printf("match "); break;
-		case opOver: printf("over "); break;
+		case opNLookahead: fprintf(stderr, "lookahead "); break;
+		case opLookahead: fprintf(stderr, "!lookahead "); break;
+		case opReference: fprintf(stderr, "reference "); break;
+		case opStart: fprintf(stderr, "start "); break;
+		case opEnd: fprintf(stderr, "end "); break;
+		case opBoundary: fprintf(stderr, "boundary "); break;
+		case opSplit: fprintf(stderr, "split "); break;
+		case opRedo: fprintf(stderr, "redo "); break;
+		case opSave: fprintf(stderr, "save "); break;
+		case opAny: fprintf(stderr, "any "); break;
+		case opOneOf: fprintf(stderr, "oneof "); break;
+		case opDigit: fprintf(stderr, "digit "); break;
+		case opSpace: fprintf(stderr, "space "); break;
+		case opWord: fprintf(stderr, "word "); break;
+		case opBytes: fprintf(stderr, "bytes "); break;
+		case opJump: fprintf(stderr, "jump "); break;
+		case opMatch: fprintf(stderr, "match "); break;
+		case opOver: fprintf(stderr, "over "); break;
 	}
-	printf("%d", n->offset);
+	fprintf(stderr, "%d", n->offset);
 	if (n->bytes && n->opcode != opRedo)
-		printf(" `%s`", n->bytes);
+		fprintf(stderr, " `%s`", n->bytes);
 	
-	putchar('\n');
+	putc('\n', stderr);
 }
 #endif
 
