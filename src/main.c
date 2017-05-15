@@ -565,6 +565,13 @@ static void testGlobal (void)
 	test("decodeURI('%C3%A7')", "ç", NULL);
 	test("decodeURI('%3B%2F%3F%3A%40%26%3D%2B%24%2C%23')", "%3B%2F%3F%3A%40%26%3D%2B%24%2C%23", NULL);
 	test("decodeURIComponent('%3B%2F%3F%3A%40%26%3D%2B%24%2C%23')", ";/?:@&=+$,#", NULL);
+	test("encodeURI('abc/def')", "abc/def", NULL);
+	test("encodeURI('abc%2fdef')", "abc%252fdef", NULL);
+	test("encodeURI('ハロー')", "%E3%83%8F%E3%83%AD%E3%83%BC", NULL);
+	test("encodeURI('𩸽')", "%F0%A9%B8%BD", NULL);
+	test("encodeURI('ç')", "%C3%A7", NULL);
+	test("encodeURI(';/?:@&=+$,#')", ";/?:@&=+$,#", NULL);
+	test("encodeURIComponent(';/?:@&=+$,#')", "%3B%2F%3F%3A%40%26%3D%2B%24%2C%23", NULL);
 }
 
 static void testFunction (void)

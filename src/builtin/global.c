@@ -102,7 +102,7 @@ static struct Value isNaN (struct Context * const context)
 	return Value.truth(isnan(value.data.binary));
 }
 
-static struct Value decodeURIExcept (struct Context * const context, const char *exclude)
+static struct Value decodeExcept (struct Context * const context, const char *exclude)
 {
 	struct Value value;
 	const char *bytes;
@@ -120,6 +120,7 @@ static struct Value decodeURIExcept (struct Context * const context, const char 
 	while (index < count)
 	{
 		c = bytes[index++];
+		
 		if (c != '%')
 			chars->bytes[offset++] = c;
 		else if (index + 2 > count || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
@@ -161,12 +162,56 @@ static struct Value decodeURIExcept (struct Context * const context, const char 
 
 static struct Value decodeURI (struct Context * const context)
 {
-	return decodeURIExcept(context, ";/?:@&=+$,#");
+	return decodeExcept(context, ";/?:@&=+$,#");
 }
 
 static struct Value decodeURIComponent (struct Context * const context)
 {
-	return decodeURIExcept(context, NULL);
+	return decodeExcept(context, NULL);
+}
+
+static struct Value encodeExpect (struct Context * const context, const char *exclude)
+{
+	const char hex[] = "0123456789ABCDEF";
+	struct Value value;
+	const char *bytes;
+	uint16_t index = 0, offset = 0, count;
+	struct Chars *chars;
+	unsigned char c;
+	
+	Context.assertParameterCount(context, 1);
+	
+	value = Value.toString(context, Context.argument(context, 0));
+	bytes = Value.stringBytes(value);
+	count = Value.stringLength(value);
+	chars = Chars.createSized(count * 3);
+	
+	while (index < count)
+	{
+		c = bytes[index++];
+		
+		if (strchr(exclude, c))
+			chars->bytes[offset++] = c;
+		else
+		{
+			chars->bytes[offset++] = '%';
+			chars->bytes[offset++] = hex[c >> 4];
+			chars->bytes[offset++] = hex[c & 0xf];
+		}
+	}
+	
+	chars->length = offset;
+	return Value.chars(chars);
+}
+
+static struct Value encodeURI (struct Context * const context)
+{
+	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()" ";/?:@&=+$,#");
+}
+
+static struct Value encodeURIComponent (struct Context * const context)
+{
+	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()");
 }
 
 // MARK: - Static Members
@@ -222,8 +267,8 @@ struct Function * create (void)
 	Function.addFunction(self, "isFinite", isFinite, 1, flags);
 	Function.addFunction(self, "decodeURI", decodeURI, 1, flags);
 	Function.addFunction(self, "decodeURIComponent", decodeURIComponent, 1, flags);
-	#warning encodeURI
-	#warning encodeURIComponent
+	Function.addFunction(self, "encodeURI", encodeURI, 1, flags);
+	Function.addFunction(self, "encodeURIComponent", encodeURIComponent, 1, flags);
 	Function.addValue(self, "Object", Value.function(Object(constructor)), flags);
 	Function.addValue(self, "Function", Value.function(Function(constructor)), flags);
 	Function.addValue(self, "Array", Value.function(Array(constructor)), flags);
