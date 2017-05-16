@@ -223,6 +223,10 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 	value = Context.argument(context, 1);
 	ref = propertyOwn(object, context, value);
 	
+	if (object->type == &Arguments(type))
+		if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
+			ref = member(object, Key(callee));
+	
 	if (ref)
 	{
 		struct Object *result = create(Object(prototype));
@@ -256,18 +260,7 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 			return Value.object(result);
 		}
 	}
-	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
-	{
-		if (object->type == &Arguments(type))
-		{
-			struct Object *result = create(Object(prototype));
-			addMember(result, Key(get), Value.function(NULL), 0);
-			addMember(result, Key(set), Value.function(NULL), 0);
-			addMember(result, Key(enumerable), Value.truth(!(ref->flags & Value(hidden))), 0);
-			addMember(result, Key(configurable), Value.truth(!(ref->flags & Value(sealed))), 0);
-			return Value.object(result);
-		}
-	}
+	
 	return Value(undefined);
 }
 
