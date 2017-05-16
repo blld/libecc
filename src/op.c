@@ -73,22 +73,25 @@ static void printBacktrace(struct Context * const context)
 	}
 }
 
+#define _ \
+	const struct Text *text = opText(offset);\
+	if (debug && text->bytes && text->length) {\
+		context->text = text;\
+		Env.newline();\
+		printBacktrace(context);\
+		Ecc.printTextInput(context->ecc, *context->text, 1);\
+		trap();\
+	}\
+	return nextOp();
+
+
 static struct Value trapOp(struct Context *context, int offset)
 {
-	const struct Text *text = opText(offset);
-	
-	if (debug && text->bytes && text->length) {
-		context->text = text;
-		
-		Env.newline();
-		printBacktrace(context);
-		Ecc.printTextInput(context->ecc, *context->text, 1);
-		
-		trap();
-	}
-/* gdb/lldb infos: p usage() */    return nextOp();
+_	/* gdb/lldb infos: p usage() */
 }
 
+
+#undef _
 
 #else
 	#define trapOp(context, offset) nextOp()
@@ -286,10 +289,10 @@ struct Value callFunctionArguments (struct Context * const context, int argument
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
-		.parent = context,
 		.this = this,
-		.argumentOffset = argumentOffset,
+		.parent = context,
 		.ecc = context->ecc,
+		.argumentOffset = argumentOffset,
 		.depth = context->depth + 1,
 	};
 	
@@ -324,10 +327,10 @@ struct Value callFunctionVA (struct Context * const context, int argumentOffset,
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
-		.parent = context,
 		.this = this,
-		.argumentOffset = argumentOffset,
+		.parent = context,
 		.ecc = context->ecc,
+		.argumentOffset = argumentOffset,
 		.depth = context->depth + 1,
 	};
 	
@@ -360,10 +363,10 @@ static inline struct Value callFunction (struct Context * const context, struct 
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
-		.parent = context,
 		.this = this,
-		.construct = construct,
+		.parent = context,
 		.ecc = context->ecc,
+		.construct = construct,
 		.depth = context->depth + 1,
 	};
 	
@@ -1027,8 +1030,11 @@ struct Value add (struct Context * const context)
 		a.data.binary += b.data.binary;
 		return a;
 	}
-	Context.setText(context, text);
-	return Value.add(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.add(context, a, b);
+	}
 }
 
 struct Value minus (struct Context * const context)
@@ -1075,7 +1081,10 @@ struct Value modulo (struct Context * const context)
 	struct Value a = nextOp();
 	struct Value b = nextOp();
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
-		return Value.binary(fmod(a.data.binary, b.data.binary));
+	{
+		a.data.binary = fmod(a.data.binary, b.data.binary);
+		return a;
+	}
 	else
 		return Value.binary(fmod(Value.toBinary(context, a).data.binary, Value.toBinary(context, b).data.binary));
 }
