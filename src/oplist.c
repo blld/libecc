@@ -230,7 +230,7 @@ normal:
 	}
 }
 
-void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
+void optimizeWithEnvironment (struct OpList *self, struct Object *environment, uint32_t selfIndex)
 {
 	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, environmentLevel = 0;
 	
@@ -240,7 +240,10 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
 	for (index = 0, count = self->opCount; index < count; ++index)
 	{
 		if (self->ops[index].native == Op.function)
-			optimizeWithEnvironment(self->ops[index].value.data.function->oplist, &self->ops[index].value.data.function->environment);
+		{
+			uint32_t selfIndex = index && self->ops[index - 1].native == Op.setLocalSlot? self->ops[index - 1].value.data.integer: 0;
+			optimizeWithEnvironment(self->ops[index].value.data.function->oplist, &self->ops[index].value.data.function->environment, selfIndex);
+		}
 		
 		if (self->ops[index].native == Op.pushEnvironment)
 			++environmentLevel;
@@ -279,6 +282,16 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment)
 							}
 							else
 								goto notfound;
+							
+							if (index > 1 && level == 1 && slotIndex == selfIndex)
+							{
+								struct Op op = self->ops[index - 1];
+								if (op.native == Op.call && self->ops[index - 2].native == Op.result)
+								{
+									self->ops[index - 1] = Op.make(Op.repopulate, op.value, op.text);
+									self->ops[index] = Op.make(Op.value, Value.integer(-index), self->ops[index].text);
+								}
+							}
 							
 							goto found;
 						}

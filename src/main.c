@@ -641,6 +641,8 @@ static void testFunction (void)
 	test("var f = function(a, b){ return arguments }.bind(123, 1); [].join.call(f(2, 3))", "1,2,3", NULL);
 	test("var f = function(a, b){ return arguments }.bind(123, 1, 2, 3); [].join.call(f(4, 5))", "1,2,3,4,5", NULL);
 	test("function f1(x, x) { return x; } f1(1, 2)", "2", NULL);
+	test("function f(n,a,b){ if (n > 0) return f(n - 1, b, a + b); else return a }; f(10, 0, 1)", "55", NULL);
+	test("function f(n,a,b){ if (arguments[0] > 0) return f(arguments[0] - 1, arguments[2], arguments[1] + arguments[2]); else return arguments[1] }; f(10, 0, 1)", "55", NULL);
 }
 
 static void testLoop (void)

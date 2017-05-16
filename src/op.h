@@ -120,6 +120,7 @@
 		_( jump )\
 		_( jumpIf )\
 		_( jumpIfNot )\
+		_( repopulate )\
 		_( result )\
 		_( resultVoid )\
 		_( switchOp )\

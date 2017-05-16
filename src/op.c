@@ -1534,6 +1534,38 @@ struct Value result (struct Context * const context)
 	return result;
 }
 
+struct Value repopulate (struct Context * const context)
+{
+	uint32_t index, count = opValue().data.integer + 3;
+	const struct Op *nextOps = context->ops + nextOp().data.integer;
+	
+	{
+		union Object(Hashmap) hashmap[context->environment->hashmapCapacity];
+		
+		for (index = 0; index < 3; ++index)
+			hashmap[index].value = context->environment->hashmap[index].value;
+		
+		for (index = 3; index < count; ++index)
+		{
+			release(context->environment->hashmap[index].value);
+			hashmap[index].value = retain(nextOp());
+		}
+		
+		if (context->environment->hashmap[2].value.type == Value(objectType)) {
+			
+			struct Object *arguments = context->environment->hashmap[2].value.data.object;
+			
+			for (index = 3; index < count; ++index)
+				arguments->element[index - 3].value = hashmap[index].value;
+		}
+		
+		memcpy(context->environment->hashmap, hashmap, sizeof(hashmap));
+	}
+	
+	context->ops = nextOps;
+	return nextOp();
+}
+
 struct Value resultVoid (struct Context * const context)
 {
 	struct Value result = Value(undefined);

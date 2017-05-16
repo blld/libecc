@@ -1673,7 +1673,7 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 	oplist = sourceElements(self, Lexer(noToken));
 	self->function = NULL;
 	
-	OpList.optimizeWithEnvironment(oplist, &function->environment);
+	OpList.optimizeWithEnvironment(oplist, &function->environment, 0);
 	
 	if (self->error)
 	{
