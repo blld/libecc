@@ -40,6 +40,8 @@ Interface(Parser,
 		
 		struct Function *function;
 		uint16_t sourceDepth;
+		
+		int preferInteger;
 	}
 )
 

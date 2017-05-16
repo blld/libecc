@@ -331,8 +331,15 @@ static struct OpList * primary (struct Parser *self)
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 		oplist = OpList.create(Op.text, Value(undefined), self->lexer->text);
-	else if (previewToken(self) == Lexer(integerToken) || previewToken(self) == Lexer(binaryToken))
+	else if (previewToken(self) == Lexer(binaryToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
+	else if (previewToken(self) == Lexer(integerToken))
+	{
+		if (self->preferInteger)
+			oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
+		else
+			oplist = OpList.create(Op.value, Value.binary(self->lexer->value.data.integer), self->lexer->text);
+	}
 	else if (previewToken(self) == Lexer(thisToken))
 		oplist = OpList.create(Op.this, Value(undefined), self->lexer->text);
 	else if (previewToken(self) == Lexer(nullToken))
@@ -464,7 +471,10 @@ static struct OpList * leftHandSide (struct Parser *self)
 		if (previewToken(self) == '.')
 		{
 			if (!oplist)
+			{
 				syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				return oplist;
+			}
 			
 			self->lexer->disallowKeyword = 1;
 			nextToken(self);
@@ -1125,6 +1135,8 @@ static struct OpList * forStatement (struct Parser *self)
 	
 	expectToken(self, '(');
 	
+	self->preferInteger = 1;
+	
 	if (acceptToken(self, Lexer(varToken)))
 		oplist = variableDeclarationList(self, 1);
 	else if (previewToken(self) != ';')
@@ -1153,6 +1165,8 @@ static struct OpList * forStatement (struct Parser *self)
 		oplist = OpList.join(oplist, expression(self, 0));
 		expectToken(self, ')');
 		
+		self->preferInteger = 0;
+		
 		pushDepth(self, Key(none), 2);
 		body = statement(self);
 		popDepth(self);
@@ -1171,6 +1185,8 @@ static struct OpList * forStatement (struct Parser *self)
 			increment = expression(self, 0);
 		
 		expectToken(self, ')');
+		
+		self->preferInteger = 0;
 		
 		pushDepth(self, Key(none), 2);
 		body = statement(self);
