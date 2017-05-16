@@ -1161,6 +1161,8 @@ void stripMap (struct Object *self)
 	
 	self->hashmapCapacity = self->hashmapCount = index;
 	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
+	
+	memset(self->hashmap + 1, 0, sizeof(*self->hashmap));
 }
 
 void resizeElement (struct Object *self, uint32_t size)
