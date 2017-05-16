@@ -37,6 +37,7 @@ static struct Value setLength (struct Context * const context)
 void setup (void)
 {
 	Arguments(prototype) = Object.createTyped(&Arguments(type));
+	
 	Object.addMember(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
 }
 
@@ -59,16 +60,6 @@ struct Object *createWithCList (int count, const char * list[])
 	struct Object *self = createSized(count);
 	
 	Object.populateElementWithCList(self, count, list);
-	
-	return self;
-}
-
-struct Object *initializeSized (struct Object *self, uint32_t size)
-{
-	Object.initializeSized(self, Arguments(prototype), 0);
-	
-	if (size)
-		Object.resizeElement(self, size);
 	
 	return self;
 }

@@ -30,8 +30,6 @@ Interface(Arguments,
 	
 	(struct Object *, createSized ,(uint32_t size))
 	(struct Object *, createWithCList ,(int count, const char * list[]))
-	
-	(struct Object *, initializeSized ,(struct Object *, uint32_t size))
 	,
 	{
 		struct Object object;
