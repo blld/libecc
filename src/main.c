@@ -940,6 +940,7 @@ static void testArray (void)
 	test("[].toString.call({1:'@'})", "[object Object]", NULL);
 	test("function f(){ return arguments.hasOwnProperty('length') }; f()", "true", NULL);
 	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'length') }; f()", "[object Object]", 0);
+	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'callee') }; f()", "[object Object]", 0);
 	test("function f(){ return Object.getOwnPropertyNames(arguments) }; f()", "length,callee", NULL);
 	test("function f(){ return arguments.callee }; f()", "TypeError: 'arguments', and 'callee' cannot be accessed in this context"
 	,    "                     ^~~~~~~~~              ");
