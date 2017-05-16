@@ -121,13 +121,28 @@ static struct Value valueOf (struct Context * const context)
 
 static struct Value hasOwnProperty (struct Context * const context)
 {
-	struct Value v;
+	struct Object *self;
+	struct Value value;
+	struct Key key;
+	uint32_t index;
 	
 	Context.assertParameterCount(context, 1);
 	
-	v = Value.toString(context, Context.argument(context, 0));
-	context->this = Value.toObject(context, Context.this(context));
-	return Value.truth(getSlot(context->this.data.object, Key.makeWithText(Text.make(Value.stringBytes(v), Value.stringLength(v)), 0)));
+	self = Value.toObject(context, Context.this(context)).data.object;
+	value = Context.argument(context, 0);
+	index = getElementOrKey(value, context, &key);
+	
+	if (index < UINT32_MAX)
+		return Value.truth(index < self->elementCount && self->element[index].value.check);
+	
+	if (memberOwn(self, key))
+		return Value(true);
+	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(length)))))
+		return Value.truth(self->type == &Arguments(type) || self->type == &Array(type));
+	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
+		return Value.truth(self->type == &Arguments(type));
+	
+	return Value(false);
 }
 
 static struct Value isPrototypeOf (struct Context * const context)
@@ -229,6 +244,30 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 		
 		return Value.object(result);
 	}
+	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(length)))))
+	{
+		if (object->type == &Arguments(type) || object->type == &Array(type))
+		{
+			struct Object *result = create(Object(prototype));
+			addMember(result, Key(value), Value.binary(object->elementCount), 0);
+			addMember(result, Key(writable), Value(true), 0);
+			addMember(result, Key(enumerable), Value(false), 0);
+			addMember(result, Key(configurable), Value(true), 0);
+			return Value.object(result);
+		}
+	}
+	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
+	{
+		if (object->type == &Arguments(type))
+		{
+			struct Object *result = create(Object(prototype));
+			addMember(result, Key(get), Value.function(NULL), 0);
+			addMember(result, Key(set), Value.function(NULL), 0);
+			addMember(result, Key(enumerable), Value.truth(!(ref->flags & Value(hidden))), 0);
+			addMember(result, Key(configurable), Value.truth(!(ref->flags & Value(sealed))), 0);
+			return Value.object(result);
+		}
+	}
 	return Value(undefined);
 }
 
@@ -247,6 +286,12 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 	for (index = 0; index < object->elementCount; ++index)
 		if (object->element[index].value.check == 1)
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
+	
+	if (object->type == &Arguments(type) || object->type == &Array(type))
+		addElement(result, length++, Value.key(Key(length)), 0);
+	
+	if (object->type == &Arguments(type))
+		addElement(result, length++, Value.key(Key(callee)), 0);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].value.check == 1)
@@ -324,7 +369,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 	element = getElementOrKey(property, context, &key);
 	
-	if (object->type == &Array(type) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
+	if ((object->type == &Array(type) || object->type == &Arguments(type)) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
 	{
 		Context.setTextIndex(context, Context(callIndex));
 		putProperty(object, context, property, value);

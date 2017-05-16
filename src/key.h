@@ -22,6 +22,7 @@
 	extern struct Key Key(constructor);
 	extern struct Key Key(length);
 	extern struct Key Key(arguments);
+	extern struct Key Key(callee);
 	extern struct Key Key(name);
 	extern struct Key Key(message);
 	extern struct Key Key(toString);

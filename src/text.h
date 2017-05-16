@@ -24,6 +24,8 @@
 	extern const struct Text Text(string);
 	extern const struct Text Text(object);
 	extern const struct Text Text(function);
+	extern const struct Text Text(length);
+	extern const struct Text Text(callee);
 	extern const struct Text Text(zero);
 	extern const struct Text Text(one);
 	extern const struct Text Text(nan);

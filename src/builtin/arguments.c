@@ -30,6 +30,12 @@ static struct Value setLength (struct Context * const context)
 	return Value(undefined);
 }
 
+static struct Value poison (struct Context * const context)
+{
+	Context.typeError(context, Chars.create("'arguments', and 'callee' cannot be accessed in this context"));
+	return Value(undefined);
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -39,6 +45,7 @@ void setup (void)
 	Arguments(prototype) = Object.createTyped(&Arguments(type));
 	
 	Object.addMember(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
+	Object.addMember(Arguments(prototype), Key(callee), Function.accessor(poison, poison), Value(hidden) | Value(sealed));
 }
 
 void teardown (void)

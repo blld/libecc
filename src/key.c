@@ -25,6 +25,7 @@ struct Key Key(prototype);
 struct Key Key(constructor);
 struct Key Key(length);
 struct Key Key(arguments);
+struct Key Key(callee);
 struct Key Key(name);
 struct Key Key(message);
 struct Key Key(toString);
@@ -55,8 +56,9 @@ void setup (void)
 	{
 		Key(prototype) = makeWithCString("prototype");
 		Key(constructor) = makeWithCString("constructor");
-		Key(length) = makeWithCString("length");
+		Key(length) = Key.makeWithText(Text(length), 0);
 		Key(arguments) = makeWithCString("arguments");
+		Key(callee) = Key.makeWithText(Text(callee), 0);
 		Key(name) = makeWithCString("name");
 		Key(message) = makeWithCString("message");
 		Key(toString) = makeWithCString("toString");
