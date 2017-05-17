@@ -17,7 +17,8 @@
 
 struct OpList * create (const Native(Function) native, struct Value value, struct Text text)
 {
-	struct OpList *self = malloc(sizeof(*self) + sizeof(*self->ops) * 1);
+	struct OpList *self = malloc(sizeof(*self));
+	self->ops = malloc(sizeof(*self->ops) * 1);
 	self->ops[0] = Op.make(native, value, text);
 	self->opCount = 1;
 	return self;
@@ -27,6 +28,7 @@ void destroy (struct OpList * self)
 {
 	assert(self);
 	
+	free(self->ops), self->ops = NULL;
 	free(self), self = NULL;
 }
 
@@ -37,9 +39,10 @@ struct OpList * join (struct OpList *self, struct OpList *with)
 	else if (!with)
 		return self;
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + with->opCount));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + with->opCount));
 	memcpy(self->ops + self->opCount, with->ops, sizeof(*self->ops) * with->opCount);
 	self->opCount += with->opCount;
+	free(with->ops), with->ops = NULL;
 	free(with), with = NULL;
 	
 	return self;
@@ -54,10 +57,12 @@ struct OpList * join3 (struct OpList *self, struct OpList *a, struct OpList *b)
 	else if (!b)
 		return join(self, a);
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount));
 	memcpy(self->ops + self->opCount, a->ops, sizeof(*self->ops) * a->opCount);
 	memcpy(self->ops + self->opCount + a->opCount, b->ops, sizeof(*self->ops) * b->opCount);
 	self->opCount += a->opCount + b->opCount;
+	free(a->ops), a->ops = NULL;
+	free(b->ops), b->ops = NULL;
 	free(a), a = NULL;
 	free(b), b = NULL;
 	
@@ -85,7 +90,7 @@ struct OpList * unshift (struct Op op, struct OpList *self)
 	if (!self)
 		return create(op.native, op.value, op.text);
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + 1));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + 1));
 	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount++);
 	self->ops[0] = op;
 	return self;
@@ -98,11 +103,12 @@ struct OpList * unshiftJoin (struct Op op, struct OpList *self, struct OpList *w
 	else if (!with)
 		return unshift(op, self);
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + with->opCount + 1));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + with->opCount + 1));
 	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
 	memcpy(self->ops + self->opCount + 1, with->ops, sizeof(*self->ops) * with->opCount);
 	self->ops[0] = op;
 	self->opCount += with->opCount + 1;
+	free(with->ops), with->ops = NULL;
 	free(with), with = NULL;
 	
 	return self;
@@ -117,12 +123,14 @@ struct OpList * unshiftJoin3 (struct Op op, struct OpList *self, struct OpList *
 	else if (!b)
 		return unshiftJoin(op, self, a);
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount + 1));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount + 1));
 	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
 	memcpy(self->ops + self->opCount + 1, a->ops, sizeof(*self->ops) * a->opCount);
 	memcpy(self->ops + self->opCount + a->opCount + 1, b->ops, sizeof(*self->ops) * b->opCount);
 	self->ops[0] = op;
 	self->opCount += a->opCount + b->opCount + 1;
+	free(a->ops), a->ops = NULL;
+	free(b->ops), b->ops = NULL;
 	free(a), a = NULL;
 	free(b), b = NULL;
 	
@@ -140,7 +148,7 @@ struct OpList * append (struct OpList *self, struct Op op)
 	if (!self)
 		return create(op.native, op.value, op.text);
 	
-	self = realloc(self, sizeof(*self) + sizeof(*self->ops) * (self->opCount + 1));
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + 1));
 	self->ops[self->opCount++] = op;
 	return self;
 }

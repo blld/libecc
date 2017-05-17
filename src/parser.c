@@ -1683,7 +1683,8 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 		};
 		
 		OpList.destroy(oplist), oplist = NULL;
-		oplist = malloc(sizeof(*oplist) + sizeof(errorOps));
+		oplist = malloc(sizeof(*oplist));
+		oplist->ops = malloc(sizeof(errorOps));
 		oplist->opCount = sizeof(errorOps) / sizeof(*errorOps);
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}

@@ -43,7 +43,7 @@ Interface(OpList,
 	,
 	{
 		uint32_t opCount;
-		struct Op ops[1];
+		struct Op *ops;
 	}
 )
 
