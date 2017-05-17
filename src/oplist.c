@@ -20,7 +20,7 @@ struct OpList * create (const Native(Function) native, struct Value value, struc
 	struct OpList *self = malloc(sizeof(*self));
 	self->ops = malloc(sizeof(*self->ops) * 1);
 	self->ops[0] = Op.make(native, value, text);
-	self->opCount = 1;
+	self->count = 1;
 	return self;
 }
 
@@ -39,9 +39,9 @@ struct OpList * join (struct OpList *self, struct OpList *with)
 	else if (!with)
 		return self;
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + with->opCount));
-	memcpy(self->ops + self->opCount, with->ops, sizeof(*self->ops) * with->opCount);
-	self->opCount += with->opCount;
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + with->count));
+	memcpy(self->ops + self->count, with->ops, sizeof(*self->ops) * with->count);
+	self->count += with->count;
 	
 	destroy(with), with = NULL;
 	
@@ -57,10 +57,10 @@ struct OpList * join3 (struct OpList *self, struct OpList *a, struct OpList *b)
 	else if (!b)
 		return join(self, a);
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount));
-	memcpy(self->ops + self->opCount, a->ops, sizeof(*self->ops) * a->opCount);
-	memcpy(self->ops + self->opCount + a->opCount, b->ops, sizeof(*self->ops) * b->opCount);
-	self->opCount += a->opCount + b->opCount;
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + a->count + b->count));
+	memcpy(self->ops + self->count, a->ops, sizeof(*self->ops) * a->count);
+	memcpy(self->ops + self->count + a->count, b->ops, sizeof(*self->ops) * b->count);
+	self->count += a->count + b->count;
 	
 	destroy(a), a = NULL;
 	destroy(b), b = NULL;
@@ -89,8 +89,8 @@ struct OpList * unshift (struct Op op, struct OpList *self)
 	if (!self)
 		return create(op.native, op.value, op.text);
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + 1));
-	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount++);
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + 1));
+	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->count++);
 	self->ops[0] = op;
 	return self;
 }
@@ -102,11 +102,11 @@ struct OpList * unshiftJoin (struct Op op, struct OpList *self, struct OpList *w
 	else if (!with)
 		return unshift(op, self);
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + with->opCount + 1));
-	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
-	memcpy(self->ops + self->opCount + 1, with->ops, sizeof(*self->ops) * with->opCount);
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + with->count + 1));
+	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->count);
+	memcpy(self->ops + self->count + 1, with->ops, sizeof(*self->ops) * with->count);
 	self->ops[0] = op;
-	self->opCount += with->opCount + 1;
+	self->count += with->count + 1;
 	
 	destroy(with), with = NULL;
 	
@@ -122,12 +122,12 @@ struct OpList * unshiftJoin3 (struct Op op, struct OpList *self, struct OpList *
 	else if (!b)
 		return unshiftJoin(op, self, a);
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + a->opCount + b->opCount + 1));
-	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->opCount);
-	memcpy(self->ops + self->opCount + 1, a->ops, sizeof(*self->ops) * a->opCount);
-	memcpy(self->ops + self->opCount + a->opCount + 1, b->ops, sizeof(*self->ops) * b->opCount);
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + a->count + b->count + 1));
+	memmove(self->ops + 1, self->ops, sizeof(*self->ops) * self->count);
+	memcpy(self->ops + self->count + 1, a->ops, sizeof(*self->ops) * a->count);
+	memcpy(self->ops + self->count + a->count + 1, b->ops, sizeof(*self->ops) * b->count);
 	self->ops[0] = op;
-	self->opCount += a->opCount + b->opCount + 1;
+	self->count += a->count + b->count + 1;
 	
 	destroy(a), a = NULL;
 	destroy(b), b = NULL;
@@ -137,7 +137,7 @@ struct OpList * unshiftJoin3 (struct Op op, struct OpList *self, struct OpList *
 
 struct OpList * shift (struct OpList *self)
 {
-	memmove(self->ops, self->ops + 1, sizeof(*self->ops) * --self->opCount);
+	memmove(self->ops, self->ops + 1, sizeof(*self->ops) * --self->count);
 	return self;
 }
 
@@ -146,8 +146,8 @@ struct OpList * append (struct OpList *self, struct Op op)
 	if (!self)
 		return create(op.native, op.value, op.text);
 	
-	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + 1));
-	self->ops[self->opCount++] = op;
+	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->count + 1));
+	self->ops[self->count++] = op;
 	return self;
 }
 
@@ -158,17 +158,17 @@ struct OpList * appendNoop (struct OpList *self)
 
 struct OpList * createLoop (struct OpList * initial, struct OpList * condition, struct OpList * step, struct OpList * body, int reverseCondition)
 {
-	if (condition && step && condition->opCount == 3 && !reverseCondition)
+	if (condition && step && condition->count == 3 && !reverseCondition)
 	{
 		if (condition->ops[1].native == Op.getLocal && (
 			condition->ops[0].native == Op.less ||
 			condition->ops[0].native == Op.lessOrEqual ))
-			if (step->opCount >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
+			if (step->count >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
 			{
 				struct Value stepValue;
-				if (step->opCount == 2 && (step->ops[0].native == Op.incrementRef || step->ops[0].native == Op.postIncrementRef))
+				if (step->count == 2 && (step->ops[0].native == Op.incrementRef || step->ops[0].native == Op.postIncrementRef))
 					stepValue = Value.integer(1);
-				else if (step->opCount == 3 && step->ops[0].native == Op.addAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
+				else if (step->count == 3 && step->ops[0].native == Op.addAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
 					stepValue = step->ops[2].value;
 				else
 					goto normal;
@@ -182,7 +182,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				
 				body = OpList.appendNoop(OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body));
 				body = OpList.unshift(Op.make(Op.value, stepValue, condition->ops[0].text), body);
-				body = OpList.unshift(Op.make(condition->ops[0].native == Op.less? Op.iterateLessRef: Op.iterateLessOrEqualRef, Value.integer(body->opCount), condition->ops[0].text), body);
+				body = OpList.unshift(Op.make(condition->ops[0].native == Op.less? Op.iterateLessRef: Op.iterateLessOrEqualRef, Value.integer(body->count), condition->ops[0].text), body);
 				OpList.destroy(condition), condition = NULL;
 				OpList.destroy(step), step = NULL;
 				return OpList.join(initial, body);
@@ -191,12 +191,12 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 		if (condition->ops[1].native == Op.getLocal && (
 			condition->ops[0].native == Op.more ||
 			condition->ops[0].native == Op.moreOrEqual ))
-			if (step->opCount >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
+			if (step->count >= 2 && step->ops[1].value.data.key.data.integer == condition->ops[1].value.data.key.data.integer)
 			{
 				struct Value stepValue;
-				if (step->opCount == 2 && (step->ops[0].native == Op.decrementRef || step->ops[0].native == Op.postDecrementRef))
+				if (step->count == 2 && (step->ops[0].native == Op.decrementRef || step->ops[0].native == Op.postDecrementRef))
 					stepValue = Value.integer(1);
-				else if (step->opCount == 3 && step->ops[0].native == Op.minusAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
+				else if (step->count == 3 && step->ops[0].native == Op.minusAssignRef && step->ops[2].native == Op.value && step->ops[2].value.type == Value(integerType) && step->ops[2].value.data.integer > 0)
 					stepValue = step->ops[2].value;
 				else
 					goto normal;
@@ -210,7 +210,7 @@ struct OpList * createLoop (struct OpList * initial, struct OpList * condition, 
 				
 				body = OpList.appendNoop(OpList.unshift(Op.make(Op.getLocalRef, condition->ops[1].value, condition->ops[1].text), body));
 				body = OpList.unshift(Op.make(Op.value, stepValue, condition->ops[0].text), body);
-				body = OpList.unshift(Op.make(condition->ops[0].native == Op.more? Op.iterateMoreRef: Op.iterateMoreOrEqualRef, Value.integer(body->opCount), condition->ops[0].text), body);
+				body = OpList.unshift(Op.make(condition->ops[0].native == Op.more? Op.iterateMoreRef: Op.iterateMoreOrEqualRef, Value.integer(body->count), condition->ops[0].text), body);
 				OpList.destroy(condition), condition = NULL;
 				OpList.destroy(step), step = NULL;
 				return OpList.join(initial, body);
@@ -227,10 +227,10 @@ normal:
 		if (!step)
 			step = OpList.appendNoop(NULL);
 		
-		skipOpCount = reverseCondition? condition->opCount - 1: 0;
+		skipOpCount = reverseCondition? condition->count - 1: 0;
 		body = OpList.appendNoop(OpList.join(condition, body));
-		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->opCount + (step? step->opCount: 0)), Text(empty)), step);
-		skipOpCount += step->opCount;
+		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->count + (step? step->count: 0)), Text(empty)), step);
+		skipOpCount += step->count;
 		initial = OpList.append(initial, Op.make(Op.iterate, Value.integer(skipOpCount), Text(empty)));
 		return OpList.join(OpList.join(initial, step), body);
 	}
@@ -243,7 +243,7 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment, u
 	if (!self)
 		return;
 	
-	for (index = 0, count = self->opCount; index < count; ++index)
+	for (index = 0, count = self->count; index < count; ++index)
 	{
 		if (self->ops[index].native == Op.function)
 		{
@@ -329,7 +329,7 @@ void dumpTo (struct OpList *self, FILE *file)
 	if (!self)
 		return;
 	
-	for (i = 0; i < self->opCount; ++i)
+	for (i = 0; i < self->count; ++i)
 	{
 		fprintf(file, "[%p] %s ", (void *)(self->ops + i), Op.toChars(self->ops[i].native));
 		
@@ -360,7 +360,7 @@ struct Text text (struct OpList *oplist)
 	if (!oplist)
 		return Text(empty);
 	
-	length = oplist->ops[oplist->opCount - 1].text.bytes + oplist->ops[oplist->opCount - 1].text.length - oplist->ops[0].text.bytes;
+	length = oplist->ops[oplist->count - 1].text.bytes + oplist->ops[oplist->count - 1].text.length - oplist->ops[0].text.bytes;
 	
 	return Text.make(
 		oplist->ops[0].text.bytes,

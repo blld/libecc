@@ -149,7 +149,7 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 	if (!oplist)
 		return NULL;
 	
-	if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
+	if (oplist->ops[0].native == Op.getLocal && oplist->count == 1)
 	{
 		if (oplist->ops[0].value.type == Value(keyType))
 		{
@@ -500,7 +500,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 		{
 			int count = 0;
 			
-			int isEval = oplist->opCount == 1 && oplist->ops[0].native == Op.getLocal && Key.isEqual(oplist->ops[0].value.data.key, Key(eval));
+			int isEval = oplist->count == 1 && oplist->ops[0].native == Op.getLocal && Key.isEqual(oplist->ops[0].value.data.key, Key(eval));
 			if (isEval)
 			{
 				text = Text.join(OpList.text(oplist), self->lexer->text);
@@ -844,7 +844,7 @@ static struct OpList * logicalAnd (struct Parser *self, int noIn)
 	while (acceptToken(self, Lexer(logicalAndToken)))
 		if (oplist && (nextOp = bitwiseOr(self, noIn)))
 		{
-			opCount = nextOp->opCount;
+			opCount = nextOp->count;
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalAnd, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
@@ -861,7 +861,7 @@ static struct OpList * logicalOr (struct Parser *self, int noIn)
 	while (acceptToken(self, Lexer(logicalOrToken)))
 		if (oplist && (nextOp = logicalAnd(self, noIn)))
 		{
-			opCount = nextOp->opCount;
+			opCount = nextOp->count;
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalOr, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
@@ -886,8 +886,8 @@ static struct OpList * conditional (struct Parser *self, int noIn)
 			
 			falseOps = assignment(self, noIn);
 			
-			trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->opCount), OpList.text(trueOps)));
-			oplist = OpList.unshift(Op.make(Op.jumpIfNot, Value.integer(trueOps->opCount), OpList.text(oplist)), oplist);
+			trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->count), OpList.text(trueOps)));
+			oplist = OpList.unshift(Op.make(Op.jumpIfNot, Value.integer(trueOps->count), OpList.text(oplist)), oplist);
 			oplist = OpList.join3(oplist, trueOps, falseOps);
 			
 			return oplist;
@@ -908,7 +908,7 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 	{
 		if (!oplist)
 			syntaxError(self, text, Chars.create("expected expression, got '='"));
-		else if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1)
+		else if (oplist->ops[0].native == Op.getLocal && oplist->count == 1)
 		{
 			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
 				syntaxError(self, text, Chars.create("can't assign to eval"));
@@ -991,10 +991,10 @@ static struct OpList * statementList (struct Parser *self)
 	
 	while (( statementOps = statement(self) ))
 	{
-		while (statementOps->opCount > 1 && statementOps->ops[0].native == Op.next)
+		while (statementOps->count > 1 && statementOps->ops[0].native == Op.next)
 			OpList.shift(statementOps);
 		
-		if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
+		if (statementOps->count == 1 && statementOps->ops[0].native == Op.next)
 			OpList.destroy(statementOps), statementOps = NULL;
 		else
 		{
@@ -1068,7 +1068,7 @@ static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 	{
 		varOps = variableDeclaration(self, noIn);
 		
-		if (oplist && varOps && varOps->opCount == 1 && varOps->ops[0].native == Op.next)
+		if (oplist && varOps && varOps->count == 1 && varOps->ops[0].native == Op.next)
 			OpList.destroy(varOps), varOps = NULL;
 		else
 			oplist = OpList.join(oplist, varOps);
@@ -1091,9 +1091,9 @@ static struct OpList * ifStatement (struct Parser *self)
 	if (acceptToken(self, Lexer(elseToken)))
 	{
 		falseOps = statement(self);
-		trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->opCount), OpList.text(trueOps)));
+		trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->count), OpList.text(trueOps)));
 	}
-	oplist = OpList.unshiftJoin3(Op.make(Op.jumpIfNot, Value.integer(trueOps->opCount), OpList.text(oplist)), oplist, trueOps, falseOps);
+	oplist = OpList.unshiftJoin3(Op.make(Op.jumpIfNot, Value.integer(trueOps->count), OpList.text(oplist)), oplist, trueOps, falseOps);
 	return oplist;
 }
 
@@ -1149,12 +1149,12 @@ static struct OpList * forStatement (struct Parser *self)
 	
 	if (oplist && acceptToken(self, Lexer(inToken)))
 	{
-		if (oplist && oplist->opCount == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
+		if (oplist && oplist->count == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
 			oplist->ops[0].native = Op.iterateInRef;
 			oplist->ops[1].native = Op.getLocalRef;
 		}
-		else if (oplist->opCount == 1 && oplist->ops[0].native == Op.next)
+		else if (oplist->count == 1 && oplist->ops[0].native == Op.next)
 		{
 			oplist->ops->native = Op.getLocalRef;
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value(undefined), self->lexer->text), oplist);
@@ -1172,7 +1172,7 @@ static struct OpList * forStatement (struct Parser *self)
 		popDepth(self);
 		
 		body = OpList.appendNoop(body);
-		return OpList.join(OpList.append(oplist, Op.make(Op.value, Value.integer(body->opCount), self->lexer->text)), body);
+		return OpList.join(OpList.append(oplist, Op.make(Op.value, Value.integer(body->count), self->lexer->text)), body);
 	}
 	else
 	{
@@ -1295,7 +1295,7 @@ static struct OpList * switchStatement (struct Parser *self)
 		if (acceptToken(self, Lexer(caseToken)))
 		{
 			conditionOps = OpList.join(conditionOps, expression(self, 0));
-			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->opCount: 0), Text(empty)));
+			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->count: 0), Text(empty)));
 			++conditionCount;
 			expectToken(self, ':');
 			oplist = OpList.join(oplist, statementList(self));
@@ -1304,7 +1304,7 @@ static struct OpList * switchStatement (struct Parser *self)
 		{
 			if (!defaultOps)
 			{
-				defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->opCount: 0), text);
+				defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->count: 0), text);
 				expectToken(self, ':');
 				oplist = OpList.join(oplist, statementList(self));
 			}
@@ -1316,9 +1316,9 @@ static struct OpList * switchStatement (struct Parser *self)
 	}
 	
 	if (!defaultOps && oplist)
-		defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->opCount: 0), text);
+		defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->count: 0), text);
 	
-	conditionOps = OpList.unshiftJoin(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->opCount: 0), Text(empty)), conditionOps, defaultOps);
+	conditionOps = OpList.unshiftJoin(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->count: 0), Text(empty)), conditionOps, defaultOps);
 	oplist = OpList.join(conditionOps, oplist);
 	
 	popDepth(self);
@@ -1379,7 +1379,7 @@ static struct OpList * statement (struct Parser *self)
 		if (!oplist)
 			return NULL;
 		
-		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->opCount), text), oplist);
+		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->count), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
 			syntaxError(self, self->lexer->text, Chars.create("expected catch or finally, got %s", Lexer.tokenChars(previewToken(self))));
@@ -1401,7 +1401,7 @@ static struct OpList * statement (struct Parser *self)
 			{
 				catchOps = OpList.unshift(Op.make(Op.pushEnvironment, Value.key(identiferOp.value.data.key), text), catchOps);
 				catchOps = OpList.append(catchOps, Op.make(Op.popEnvironment, Value(undefined), text));
-				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->opCount), text), catchOps);
+				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->count), text), catchOps);
 				oplist = OpList.join(oplist, catchOps);
 			}
 		}
@@ -1426,7 +1426,7 @@ static struct OpList * statement (struct Parser *self)
 		if (!oplist)
 			return NULL;
 		
-		if (oplist->ops[0].native == Op.getLocal && oplist->opCount == 1 && acceptToken(self, ':'))
+		if (oplist->ops[0].native == Op.getLocal && oplist->count == 1 && acceptToken(self, ':'))
 		{
 			if (previewToken(self) == Lexer(doToken)
 				|| previewToken(self) == Lexer(whileToken)
@@ -1446,7 +1446,7 @@ static struct OpList * statement (struct Parser *self)
 		
 		semicolon(self);
 		
-		index = oplist->opCount;
+		index = oplist->count;
 		while (index--)
 			if (oplist->ops[index].native == Op.call)
 				return OpList.unshift(Op.make(self->sourceDepth <=1 ? Op.autoreleaseExpression: Op.autoreleaseDiscard, Value(undefined), Text(empty)), oplist);
@@ -1585,10 +1585,10 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 			statementOps = statement(self);
 			if (statementOps)
 			{
-				while (statementOps->opCount > 1 && statementOps->ops[0].native == Op.next)
+				while (statementOps->count > 1 && statementOps->ops[0].native == Op.next)
 					OpList.shift(statementOps);
 				
-				if (statementOps->opCount == 1 && statementOps->ops[0].native == Op.next)
+				if (statementOps->count == 1 && statementOps->ops[0].native == Op.next)
 					OpList.destroy(statementOps), statementOps = NULL;
 				else
 				{
@@ -1619,7 +1619,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	if (discardOps)
 		oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
 	
-	if (!last || last->ops[last->opCount - 1].native != Op.result)
+	if (!last || last->ops[last->count - 1].native != Op.result)
 	{
 		if (self->sourceDepth <= 1)
 			last = OpList.appendNoop(last);
@@ -1685,7 +1685,7 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 		OpList.destroy(oplist), oplist = NULL;
 		oplist = malloc(sizeof(*oplist));
 		oplist->ops = malloc(sizeof(errorOps));
-		oplist->opCount = sizeof(errorOps) / sizeof(*errorOps);
+		oplist->count = sizeof(errorOps) / sizeof(*errorOps);
 		memcpy(oplist->ops, errorOps, sizeof(errorOps));
 	}
 	

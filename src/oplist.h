@@ -42,7 +42,7 @@ Interface(OpList,
 	(struct Text, text ,(struct OpList *oplist))
 	,
 	{
-		uint32_t opCount;
+		uint32_t count;
 		struct Op *ops;
 	}
 )
