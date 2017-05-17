@@ -1046,7 +1046,7 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	else if (Key.isEqual(value.data.key, Key(arguments)))
 		syntaxError(self, text, Chars.create("redefining arguments is deprecated"));
 	
-	Object.addMember(&self->function->environment, value.data.key, Value(undefined), 0);
+	Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(hidden));
 	
 	if (acceptToken(self, '='))
 	{

@@ -597,7 +597,7 @@ struct Value setLocal (struct Context * const context)
 {
 	struct Value *ref = getLocalRef(context).data.reference;
 	struct Value value = nextOp();
-	if (ref->flags & Value(sealed))
+	if (ref->flags & Value(frozen))
 		return value;
 	
 	retain(value);
@@ -622,7 +622,7 @@ struct Value setLocalSlot (struct Context * const context)
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
 	struct Value *ref = &context->environment->hashmap[slot].value;
-	if (ref->flags & Value(sealed))
+	if (ref->flags & Value(frozen))
 		return value;
 	
 	retain(value);
@@ -645,15 +645,14 @@ struct Value getParentSlotRef (struct Context * const context)
 
 struct Value getParentSlot (struct Context * const context)
 {
-	struct Value *ref = getParentSlotRef(context).data.reference;
-	return *ref;
+	return *getParentSlotRef(context).data.reference;
 }
 
 struct Value setParentSlot (struct Context * const context)
 {
 	struct Value *ref = getParentSlotRef(context).data.reference;
 	struct Value value = nextOp();
-	if (ref->flags & Value(sealed))
+	if (ref->flags & Value(frozen))
 		return value;
 	
 	retain(value);
@@ -884,9 +883,11 @@ struct Value equal (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.equals(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.equals(context, a, b);
+	}
 }
 
 struct Value notEqual (struct Context * const context)
@@ -897,9 +898,11 @@ struct Value notEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary != b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
+	else
+	{
+		Context.setText(context, text);
+		return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
+	}
 }
 
 struct Value identical (struct Context * const context)
@@ -910,9 +913,11 @@ struct Value identical (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.same(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.same(context, a, b);
+	}
 }
 
 struct Value notIdentical (struct Context * const context)
@@ -923,9 +928,11 @@ struct Value notIdentical (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary != b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.truth(!Value.isTrue(Value.same(context, a, b)));
+	else
+	{
+		Context.setText(context, text);
+		return Value.truth(!Value.isTrue(Value.same(context, a, b)));
+	}
 }
 
 struct Value less (struct Context * const context)
@@ -936,9 +943,11 @@ struct Value less (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.less(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.less(context, a, b);
+	}
 }
 
 struct Value lessOrEqual (struct Context * const context)
@@ -949,9 +958,11 @@ struct Value lessOrEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.lessOrEqual(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.lessOrEqual(context, a, b);
+	}
 }
 
 struct Value more (struct Context * const context)
@@ -962,9 +973,11 @@ struct Value more (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.more(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.more(context, a, b);
+	}
 }
 
 struct Value moreOrEqual (struct Context * const context)
@@ -975,9 +988,11 @@ struct Value moreOrEqual (struct Context * const context)
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
-	
-	Context.setText(context, text);
-	return Value.moreOrEqual(context, a, b);
+	else
+	{
+		Context.setText(context, text);
+		return Value.moreOrEqual(context, a, b);
+	}
 }
 
 struct Value instanceOf (struct Context * const context)
