@@ -42,8 +42,8 @@ struct OpList * join (struct OpList *self, struct OpList *with)
 	self->ops = realloc(self->ops, sizeof(*self->ops) * (self->opCount + with->opCount));
 	memcpy(self->ops + self->opCount, with->ops, sizeof(*self->ops) * with->opCount);
 	self->opCount += with->opCount;
-	free(with->ops), with->ops = NULL;
-	free(with), with = NULL;
+	
+	destroy(with), with = NULL;
 	
 	return self;
 }
@@ -61,10 +61,9 @@ struct OpList * join3 (struct OpList *self, struct OpList *a, struct OpList *b)
 	memcpy(self->ops + self->opCount, a->ops, sizeof(*self->ops) * a->opCount);
 	memcpy(self->ops + self->opCount + a->opCount, b->ops, sizeof(*self->ops) * b->opCount);
 	self->opCount += a->opCount + b->opCount;
-	free(a->ops), a->ops = NULL;
-	free(b->ops), b->ops = NULL;
-	free(a), a = NULL;
-	free(b), b = NULL;
+	
+	destroy(a), a = NULL;
+	destroy(b), b = NULL;
 	
 	return self;
 }
@@ -108,8 +107,8 @@ struct OpList * unshiftJoin (struct Op op, struct OpList *self, struct OpList *w
 	memcpy(self->ops + self->opCount + 1, with->ops, sizeof(*self->ops) * with->opCount);
 	self->ops[0] = op;
 	self->opCount += with->opCount + 1;
-	free(with->ops), with->ops = NULL;
-	free(with), with = NULL;
+	
+	destroy(with), with = NULL;
 	
 	return self;
 }
@@ -129,10 +128,9 @@ struct OpList * unshiftJoin3 (struct Op op, struct OpList *self, struct OpList *
 	memcpy(self->ops + self->opCount + a->opCount + 1, b->ops, sizeof(*self->ops) * b->opCount);
 	self->ops[0] = op;
 	self->opCount += a->opCount + b->opCount + 1;
-	free(a->ops), a->ops = NULL;
-	free(b->ops), b->ops = NULL;
-	free(a), a = NULL;
-	free(b), b = NULL;
+	
+	destroy(a), a = NULL;
+	destroy(b), b = NULL;
 	
 	return self;
 }
