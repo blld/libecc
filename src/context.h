@@ -54,6 +54,8 @@ Interface(Context,
 	(void, setText ,(struct Context * const, const struct Text *text))
 	(void, setTextIndex ,(struct Context * const, enum Context(Index) index))
 	(struct Text, textSeek ,(struct Context * const))
+	
+	(void, printBacktrace ,(struct Context * const context))
 	,
 	{
 		const struct Op * ops;

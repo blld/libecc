@@ -202,3 +202,20 @@ struct Text textSeek (struct Context * const self)
 	
 	return seek.ops->text;
 }
+
+void printBacktrace (struct Context * const context)
+{
+	int depth = context->depth, count;
+	struct Context frame;
+	
+	while (depth)
+	{
+		count = depth--;
+		frame = *context;
+		while (count--)
+			frame = *frame.parent;
+		
+		if (frame.text)
+			Ecc.printTextInput(frame.ecc, *frame.text, 0);
+	}
+}

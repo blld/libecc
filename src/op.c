@@ -56,29 +56,12 @@ void usage(void)
 	fprintf(stderr, "\t  c\n\n");
 }
 
-static void printBacktrace(struct Context * const context)
-{
-	int depth = context->depth, count;
-	struct Context frame;
-	
-	while (depth)
-	{
-		count = depth--;
-		frame = *context;
-		while (count--)
-			frame = *frame.parent;
-		
-		if (frame.text)
-			Ecc.printTextInput(frame.ecc, *frame.text, 0);
-	}
-}
-
 #define _ \
 	const struct Text *text = opText(offset);\
 	if (debug && text->bytes && text->length) {\
 		context->text = text;\
 		Env.newline();\
-		printBacktrace(context);\
+		Context.printBacktrace(context);\
 		Ecc.printTextInput(context->ecc, *context->text, 1);\
 		trap();\
 	}\
