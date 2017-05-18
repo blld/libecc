@@ -653,7 +653,8 @@ static struct Value subtract (struct Context * const context, struct Value a, st
 	return binary(toBinary(context, a).data.binary - toBinary(context, b).data.binary);
 }
 
-static struct Value compare (struct Context * const context, struct Value a, struct Value b)
+static
+struct Value compare (struct Context * const context, struct Value a, struct Value b)
 {
 	a = toPrimitive(context, a, Value(hintNumber));
 	Context.setTextIndex(context, Context(noIndex));

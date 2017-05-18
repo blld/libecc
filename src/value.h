@@ -138,7 +138,6 @@ Interface(Value,
 	(struct Value, same ,(struct Context * const, struct Value, struct Value))
 	(struct Value, add ,(struct Context * const, struct Value, struct Value))
 	(struct Value, subtract ,(struct Context * const, struct Value, struct Value))
-	(struct Value, compare ,(struct Context * const, struct Value, struct Value))
 	(struct Value, less ,(struct Context * const, struct Value, struct Value))
 	(struct Value, more ,(struct Context * const, struct Value, struct Value))
 	(struct Value, lessOrEqual ,(struct Context * const, struct Value, struct Value))
