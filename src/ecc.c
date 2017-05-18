@@ -237,7 +237,7 @@ void fatal (const char *format, ...)
 		Env.printError(sizeof(type)-1, type, "%s", buffer);
 	}
 	
-	abort();
+	exit(EXIT_FAILURE);
 }
 
 struct Input * findInput (struct Ecc *self, struct Text text)
