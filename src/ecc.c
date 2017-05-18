@@ -85,7 +85,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 useframe
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
-	volatile int result = EXIT_SUCCESS, defaultTrap = !self->envCount, trap = defaultTrap || flags & Ecc(primitiveResult), catch = 0;
+	volatile int result = EXIT_SUCCESS, trap = !self->envCount || flags & Ecc(primitiveResult), catch = 0;
 	struct Context context = {
 		.environment = &self->global->environment,
 		.ecc = self,
@@ -99,38 +99,35 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	
 	if (catch)
 	{
-		if (defaultTrap)
+		struct Value value;
+		struct Value name;
+		struct Value message;
+		
+		result = EXIT_FAILURE;
+		
+		value = self->result;
+		name = Value(undefined);
+		
+		if (value.type == Value(errorType))
 		{
-			struct Value value;
-			struct Value name;
-			struct Value message;
-			
-			result = EXIT_FAILURE;
-			
-			value = self->result;
-			name = Value(undefined);
-			
-			if (value.type == Value(errorType))
-			{
-				name = Value.toString(&context, Object.getMember(value.data.object, &context, Key(name)));
-				message = Value.toString(&context, Object.getMember(value.data.object, &context, Key(message)));
-			}
-			else
-				message = Value.toString(&context, value);
-			
-			if (name.type == Value(undefinedType))
-				name = Value.text(&Text(errorName));
-			
+			name = Value.toString(&context, Object.getMember(value.data.object, &context, Key(name)));
+			message = Value.toString(&context, Object.getMember(value.data.object, &context, Key(message)));
+		}
+		else
+			message = Value.toString(&context, value);
+		
+		if (name.type == Value(undefinedType))
+			name = Value.text(&Text(errorName));
+		
 #warning delete me
 //		FILE *blah = fopen("blah.txt", "w");
 //		fwrite(self->bytes, 1, self->length, blah);
-			fprintf(stderr, "--- src:\n%s", input->bytes);
-			
-			Env.newline();
-			Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
-			
-			printTextInput(self, self->text, 1);
-		}
+//			fprintf(stderr, "--- src:\n%s", input->bytes);
+		
+		Env.newline();
+		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
+		
+		printTextInput(self, self->text, 1);
 	}
 	else
 	{
@@ -152,9 +149,6 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	
 	if (trap)
 		popEnv(self);
-	
-	if (catch && !defaultTrap)
-		Ecc.jmpEnv(self, self->result);
 	
 	return result;
 }
