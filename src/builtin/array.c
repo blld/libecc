@@ -127,7 +127,6 @@ static struct Value join (struct Context * const context)
 	
 	Context.assertParameterCount(context, 1);
 	
-	object = Value.toObject(context, Context.this(context));
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		separator = Text.make(",", 1);
@@ -137,7 +136,7 @@ static struct Value join (struct Context * const context)
 		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
 	}
 	
-	Context.setTextIndex(context, Context(noIndex));
+	object = Value.toObject(context, Context.this(context));
 	
 	return Value.chars(toChars(context, object, separator));
 }
