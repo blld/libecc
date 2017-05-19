@@ -141,8 +141,8 @@ Interface(Op,
 	(struct Op, make ,(const Native(Function) native, struct Value value, struct Text text))
 	(const char *, toChars ,(const Native(Function) native))
 	
-	(struct Value, callFunctionArguments ,(struct Context * const, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments))
-	(struct Value, callFunctionVA ,(struct Context * const, int argumentOffset, struct Function *function, struct Value this, int argumentCount, va_list ap))
+	(struct Value, callFunctionArguments ,(struct Context * const, enum Context(Offset), struct Function *function, struct Value this, struct Object *arguments))
+	(struct Value, callFunctionVA ,(struct Context * const, enum Context(Offset), struct Function *function, struct Value this, int argumentCount, va_list ap))
 	
 	io_libecc_op_List
 	,

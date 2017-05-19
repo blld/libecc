@@ -65,13 +65,13 @@ static struct Value apply (struct Context * const context)
 	arguments = Context.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		return Op.callFunctionVA(context, 2, context->this.data.function, this, 0, NULL);
+		return Op.callFunctionVA(context, Context(applyOffset), context->this.data.function, this, 0, NULL);
 	else
 	{
 		if (!Value.isObject(arguments))
 			Context.typeError(context, Chars.create("arguments is not an object"));
 		
-		return Op.callFunctionArguments(context, 2, context->this.data.function, this, arguments.data.object);
+		return Op.callFunctionArguments(context, Context(applyOffset), context->this.data.function, this, arguments.data.object);
 	}
 }
 
@@ -98,10 +98,10 @@ static struct Value call (struct Context * const context)
 			arguments.elementCapacity = 0;
 		}
 		
-		return Op.callFunctionArguments(context, 1, context->this.data.function, this, &arguments);
+		return Op.callFunctionArguments(context, Context(callOffset), context->this.data.function, this, &arguments);
 	}
 	else
-		return Op.callFunctionVA(context, 1, context->this.data.function, Value(undefined), 0, NULL);
+		return Op.callFunctionVA(context, Context(callOffset), context->this.data.function, Value(undefined), 0, NULL);
 }
 
 static struct Value bindCall (struct Context * const context)

@@ -47,9 +47,14 @@ struct Value callFunction (struct Context * const self, struct Function *functio
 {
 	struct Value result;
 	va_list ap;
+	int offset = 0;
+	
+	if (argumentCount & Context(asAccessor)) {
+		offset = Context(accessorOffset);
+	}
 	
 	va_start(ap, argumentCount);
-	result = Op.callFunctionVA(self, 0, function, this, argumentCount, ap);
+	result = Op.callFunctionVA(self, offset, function, this, argumentCount & Context(countMask), ap);
 	va_end(ap);
 	
 	return result;
@@ -122,6 +127,13 @@ void setText (struct Context * const self, const struct Text *text)
 	self->text = text;
 }
 
+void setTexts (struct Context * const self, const struct Text *text, const struct Text *textAlt)
+{
+	self->textIndex = Context(savedIndex);
+	self->text = text;
+	self->textAlt = textAlt;
+}
+
 void setTextIndex (struct Context * const self, enum Context(Index) index)
 {
 	self->textIndex = index;
@@ -134,6 +146,7 @@ struct Text textSeek (struct Context * const self)
 	uint32_t breakArray = 0, argumentCount = 0;
 	struct Text callText;
 	enum Context(Index) index;
+	int isAccessor = 0;
 	
 	assert(self);
 	assert(self->ecc);
@@ -143,18 +156,23 @@ struct Text textSeek (struct Context * const self)
 	if (index == Context(savedIndex))
 		return *self->text;
 	
+	if (index == Context(savedIndexAlt))
+		return *self->textAlt;
+	
 	while (seek.ops->text.bytes == Text(nativeCode).bytes)
 	{
 		if (!seek.parent)
 			return seek.ops->text;
 		
-		if (seek.argumentOffset && index >= Context(thisIndex))
+		isAccessor = seek.argumentOffset == Context(accessorOffset);
+		
+		if (seek.argumentOffset > 0 && index >= Context(thisIndex))
 		{
 			++index;
 			++argumentCount;
 			breakArray <<= 1;
 			
-			if (seek.argumentOffset == 2)
+			if (seek.argumentOffset == Context(applyOffset))
 				breakArray |= 2;
 		}
 		seek = *seek.parent;
@@ -163,13 +181,11 @@ struct Text textSeek (struct Context * const self)
 	if (seek.ops->native == Op.noop)
 		--seek.ops;
 	
-	if (index > Context(noIndex))
+	if (index > Context(noIndex) && !isAccessor)
 	{
-		while (seek.ops->native != Op.call
-			&& seek.ops->native != Op.callMember
-			&& seek.ops->native != Op.callProperty
-			&& seek.ops->native != Op.eval
-			&& seek.ops->native != Op.construct)
+		while (seek.ops->text.bytes != seek.textCall->bytes
+			|| seek.ops->text.length != seek.textCall->length
+			)
 			--seek.ops;
 		
 		argumentCount += seek.ops->value.data.integer;

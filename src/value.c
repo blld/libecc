@@ -271,7 +271,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	aFunction = Object.getMember(object, context, aKey);
 	if (aFunction.type == Value(functionType))
 	{
-		struct Value result = Context.callFunction(context, aFunction.data.function, value, 0);
+		struct Value result = Context.callFunction(context, aFunction.data.function, value, 0 | Context(asAccessor));
 		if (isPrimitive(result))
 			return result;
 	}
@@ -279,7 +279,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	bFunction = Object.getMember(object, context, bKey);
 	if (bFunction.type == Value(functionType))
 	{
-		result = Context.callFunction(context, bFunction.data.function, value, 0);
+		result = Context.callFunction(context, bFunction.data.function, value, 0 | Context(asAccessor));
 		if (isPrimitive(result))
 			return result;
 	}
@@ -595,7 +595,7 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 		   )
 	{
 		a = toPrimitive(context, a, Value(hintAuto));
-		Context.setTextIndex(context, Context(noIndex));
+		Context.setTextIndex(context, Context(savedIndexAlt));
 		b = toPrimitive(context, b, Value(hintAuto));
 		
 		return equals(context, a, b);
@@ -627,12 +627,12 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 	return Value(false);
 }
 
-static struct Value add (struct Context * const context, struct Value a, struct Value b)
+struct Value add (struct Context * const context, struct Value a, struct Value b)
 {
 	if (!isNumber(a) || !isNumber(b))
 	{
 		a = toPrimitive(context, a, Value(hintAuto));
-		Context.setTextIndex(context, Context(noIndex));
+		Context.setTextIndex(context, Context(savedIndexAlt));
 		b = toPrimitive(context, b, Value(hintAuto));
 		
 		if (isString(a) || isString(b))
@@ -648,7 +648,7 @@ static struct Value add (struct Context * const context, struct Value a, struct 
 	return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
 }
 
-static struct Value subtract (struct Context * const context, struct Value a, struct Value b)
+struct Value subtract (struct Context * const context, struct Value a, struct Value b)
 {
 	return binary(toBinary(context, a).data.binary - toBinary(context, b).data.binary);
 }
@@ -657,7 +657,7 @@ static
 struct Value compare (struct Context * const context, struct Value a, struct Value b)
 {
 	a = toPrimitive(context, a, Value(hintNumber));
-	Context.setTextIndex(context, Context(noIndex));
+	Context.setTextIndex(context, Context(savedIndexAlt));
 	b = toPrimitive(context, b, Value(hintNumber));
 	
 	if (isString(a) && isString(b))

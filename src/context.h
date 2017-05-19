@@ -18,11 +18,23 @@
 	#include "value.h"
 	
 	enum Context(Index) {
+		Context(savedIndexAlt) = -2,
 		Context(savedIndex) = -1,
 		Context(noIndex) = 0,
 		Context(callIndex) = 1,
 		Context(funcIndex) = 2,
 		Context(thisIndex) = 3,
+	};
+	
+	enum Context(Offset) {
+		Context(accessorOffset) = -1,
+		Context(callOffset) = 1,
+		Context(applyOffset) = 2,
+	};
+	
+	enum Context(Special) {
+		Context(countMask) = 0x7f,
+		Context(asAccessor) = 1 << 8,
 	};
 
 #endif
@@ -52,6 +64,7 @@ Interface(Context,
 	(void, assertThisMask ,(struct Context * const, enum Value(Mask)))
 	
 	(void, setText ,(struct Context * const, const struct Text *text))
+	(void, setTexts ,(struct Context * const, const struct Text *text, const struct Text *textAlt))
 	(void, setTextIndex ,(struct Context * const, enum Context(Index) index))
 	(struct Text, textSeek ,(struct Context * const))
 	
@@ -69,6 +82,8 @@ Interface(Context,
 		
 		enum Context(Index) textIndex;
 		const struct Text *text;
+		const struct Text *textAlt;
+		const struct Text *textCall;
 		
 		int construct;
 		int argumentOffset;

@@ -268,14 +268,14 @@ static inline void populateEnvironment (struct Context * const context, struct O
 	}
 }
 
-struct Value callFunctionArguments (struct Context * const context, int argumentOffset, struct Function *function, struct Value this, struct Object *arguments)
+struct Value callFunctionArguments (struct Context * const context, enum Context(Offset) offset, struct Function *function, struct Value this, struct Object *arguments)
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
 		.this = this,
 		.parent = context,
 		.ecc = context->ecc,
-		.argumentOffset = argumentOffset,
+		.argumentOffset = offset,
 		.depth = context->depth + 1,
 	};
 	
@@ -306,14 +306,14 @@ struct Value callFunctionArguments (struct Context * const context, int argument
 	}
 }
 
-struct Value callFunctionVA (struct Context * const context, int argumentOffset, struct Function *function, struct Value this, int argumentCount, va_list ap)
+struct Value callFunctionVA (struct Context * const context, enum Context(Offset) offset, struct Function *function, struct Value this, int argumentCount, va_list ap)
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
 		.this = this,
 		.parent = context,
 		.ecc = context->ecc,
-		.argumentOffset = argumentOffset,
+		.argumentOffset = offset,
 		.depth = context->depth + 1,
 	};
 	
@@ -392,13 +392,10 @@ static inline struct Value callFunction (struct Context * const context, struct 
 	}
 }
 
-static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *text)
+static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct)
 {
 	if (value.type != Value(functionType))
-	{
-		Context.setText(context, text);
-		Context.typeError(context, Chars.create("'%.*s' is not a function", text->length, text->bytes));
-	}
+		Context.typeError(context, Chars.create("'%.*s' is not a function", context->text->length, context->text->bytes));
 	
 	if (value.data.function->flags & Function(useBoundThis))
 		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
@@ -408,9 +405,12 @@ static inline struct Value callValue (struct Context * const context, struct Val
 
 struct Value construct (struct Context * const context)
 {
+	const struct Text *textCall = opText(0);
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value, *prototype, object, function = nextOp();
+	
+	context->textCall = textCall;
 	
 	if (function.type != Value(functionType))
 		goto error;
@@ -427,7 +427,8 @@ struct Value construct (struct Context * const context)
 	else
 		object = Value.object(Object(prototype));
 	
-	value = callValue(context, function, object, argumentCount, 1, text);
+	Context.setText(context, text);
+	value = callValue(context, function, object, argumentCount, 1);
 	
 	if (Value.isObject(value))
 		return value;
@@ -441,10 +442,14 @@ error:
 
 struct Value call (struct Context * const context)
 {
+	const struct Text *textCall = opText(0);
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
-	return callValue(context, value, Value(undefined), argumentCount, 0, text);
+	
+	context->textCall = textCall;
+	Context.setText(context, text);
+	return callValue(context, value, Value(undefined), argumentCount, 0);
 }
 
 struct Value eval (struct Context * const context)
@@ -498,12 +503,13 @@ struct Value text (struct Context * const context)
 
 struct Value regexp (struct Context * const context)
 {
+	const struct Text *text = opText(0);
 	struct Error *error = NULL;
-	struct Chars *chars = Chars.createWithBytes(*opText(0).length, *opText(0).bytes);
+	struct Chars *chars = Chars.createWithBytes(text->length, text->bytes);
 	struct RegExp *regexp = RegExp.create(chars, &error);
 	if (error)
 	{
-		error->text.bytes = *opText(0).bytes + (error->text.bytes - chars->bytes);
+		error->text.bytes = text->bytes + (error->text.bytes - chars->bytes);
 		Ecc.jmpEnv(context->ecc, Value.error(error));
 	}
 	return Value.regexp(regexp);
@@ -708,6 +714,7 @@ struct Value setMember (struct Context * const context)
 
 struct Value callMember (struct Context * const context)
 {
+	const struct Text *textCall = opText(0);
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
 	struct Key key = opValue().data.key;
@@ -715,7 +722,9 @@ struct Value callMember (struct Context * const context)
 	
 	prepareObject(context, &object);
 	
-	return callValue(context, Object.getMember(object.data.object, context, key), object, argumentCount, 0, text);
+	context->textCall = textCall;
+	Context.setText(context, text);
+	return callValue(context, Object.getMember(object.data.object, context, key), object, argumentCount, 0);
 }
 
 struct Value deleteMember (struct Context * const context)
@@ -810,7 +819,8 @@ struct Value callProperty (struct Context * const context)
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	return callValue(context, Object.getProperty(object.data.object, context, property), object, argumentCount, 0, text);
+	Context.setText(context, text);
+	return callValue(context, Object.getProperty(object.data.object, context, property), object, argumentCount, 0);
 }
 
 struct Value deleteProperty (struct Context * const context)
@@ -858,132 +868,119 @@ struct Value typeOf (struct Context * const context)
 	return Value.toType(value);
 }
 
+#define prepareAB \
+	const struct Text *text = opText(1);\
+	struct Value a = nextOp();\
+	const struct Text *textAlt = opText(1);\
+	struct Value b = nextOp();\
+
 struct Value equal (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.equals(context, a, b);
 	}
 }
 
 struct Value notEqual (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary != b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.truth(!Value.isTrue(Value.equals(context, a, b)));
 	}
 }
 
 struct Value identical (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary == b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.same(context, a, b);
 	}
 }
 
 struct Value notIdentical (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary != b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.truth(!Value.isTrue(Value.same(context, a, b)));
 	}
 }
 
 struct Value less (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary < b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.less(context, a, b);
 	}
 }
 
 struct Value lessOrEqual (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary <= b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.lessOrEqual(context, a, b);
 	}
 }
 
 struct Value more (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary > b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.more(context, a, b);
 	}
 }
 
 struct Value moreOrEqual (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 		return Value.truth(a.data.binary >= b.data.binary);
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.moreOrEqual(context, a, b);
 	}
 }
 
 struct Value instanceOf (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
-	struct Object *object;
+	prepareAB
 	
 	if (!Value.isObject(a))
 		return Value(false);
@@ -993,13 +990,16 @@ struct Value instanceOf (struct Context * const context)
 	
 	b = Object.getMember(b.data.object, context, Key(prototype));
 	if (!Value.isObject(b))
-		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", text->length, text->bytes));
+		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", textAlt->length, textAlt->bytes));
 	
-	object = a.data.object;
-	while (( object = object->prototype ))
-		if (object == b.data.object)
-			return Value(true);
-	
+	{
+		struct Object *object;
+		
+		object = a.data.object;
+		while (( object = object->prototype ))
+			if (object == b.data.object)
+				return Value(true);
+	}
 	return Value(false);
 }
 
@@ -1019,9 +1019,7 @@ struct Value in (struct Context * const context)
 
 struct Value add (struct Context * const context)
 {
-	struct Value a = nextOp();
-	const struct Text *text = opText(0);
-	struct Value b = nextOp();
+	prepareAB
 	
 	if (a.type == Value(binaryType) && b.type == Value(binaryType))
 	{
@@ -1030,7 +1028,7 @@ struct Value add (struct Context * const context)
 	}
 	else
 	{
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		return Value.add(context, a, b);
 	}
 }
@@ -1254,11 +1252,12 @@ struct Value postDecrementRef (struct Context * const context)
 
 struct Value addAssignRef (struct Context * const context)
 {
-	const struct Text *text = opText(0);
+	const struct Text *text = opText(1);
 	struct Value *ref = nextOp().data.reference;
+	const struct Text *textAlt = opText(1);
 	struct Value a, b = nextOp();
 	
-	Context.setText(context, text);
+	Context.setTexts(context, text, textAlt);
 
 	a = *ref;
 	if (a.flags & (Value(readonly) | Value(accessor)))
@@ -1603,9 +1602,10 @@ struct Value switchOp (struct Context * const context)
 	
 	while (context->ops < nextOps)
 	{
+		const struct Text *textAlt = opText(1);
 		b = nextOp();
 		
-		Context.setText(context, text);
+		Context.setTexts(context, text, textAlt);
 		if (Value.isTrue(Value.equals(context, a, b)))
 		{
 			nextOps += nextOp().data.integer + 1;
