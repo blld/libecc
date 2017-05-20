@@ -203,15 +203,15 @@ static void cleanupObject(struct Object *object)
 	struct Value value;
 	
 	if (object->prototype && object->prototype->referenceCount)
-		--object->referenceCount;
+		--object->prototype->referenceCount;
 	
-	if (value.type == Value(stringType))
-		--value.data.string->value->referenceCount;
+	if (object->type == &String(type))
+		--((struct String *)object)->value->referenceCount;
 	
-	if (value.type == Value(regexpType))
+	if (object->type == &RegExp(type))
 	{
-		--value.data.regexp->pattern->referenceCount;
-		--value.data.regexp->source->referenceCount;
+		--((struct RegExp *)object)->pattern->referenceCount;
+		--((struct RegExp *)object)->source->referenceCount;
 	}
 	
 	if (object->elementCount)
