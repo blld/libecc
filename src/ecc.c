@@ -95,7 +95,10 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 		return EXIT_FAILURE;
 	
 	if (trap)
+	{
+		self->printLastThrow = 1;
 		catch = setjmp(*pushEnv(self));
+	}
 	
 	if (catch)
 	{
@@ -105,8 +108,6 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	else
 	{
-		self->printLastThrow = trap;
-		
 		if (flags & Ecc(globalThis))
 			context.this = Value.object(&self->global->environment);
 		
@@ -125,7 +126,10 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	
 	if (trap)
+	{
 		popEnv(self);
+		self->printLastThrow = 0;
+	}
 	
 	return result;
 }
