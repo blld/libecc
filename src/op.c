@@ -1207,7 +1207,8 @@ struct Value not (struct Context * const context)
 		a = Value.toBinary(context, release(a)); \
 	 \
 	result = OP; \
-	*ref = a; \
+	ref->data = a.data; \
+	ref->type = a.type; \
 	return Value.binary(result); \
 
 struct Value incrementRef (struct Context * const context)
@@ -1250,7 +1251,9 @@ struct Value postDecrementRef (struct Context * const context)
 		a = CONV(context, release(a)); \
 	\
 	OP; \
-	return *ref = a; \
+	ref->data = a.data; \
+	ref->type = a.type; \
+	return a; \
 
 #define assignBinaryOpRef(OP) assignOpRef(OP, Value(binaryType), Value.toBinary)
 #define assignIntegerOpRef(OP) assignOpRef(OP, Value(integerType), Value.toInteger)
