@@ -1275,7 +1275,9 @@ struct Value addAssignRef (struct Context * const context)
 	}
 	
 	a = retain(Value.add(context, release(a), b));
-	return *ref = a;
+	ref->data = a.data;
+	ref->type = a.type;
+	return a;
 }
 
 struct Value minusAssignRef (struct Context * const context)
@@ -1743,7 +1745,9 @@ struct Value iterateInRef (struct Context * const context)
 		
 		for (index = 0; index < object.data.object->elementCount; ++index)
 		{
-			if (!(object.data.object->element[index].value.check == 1))
+			union Object(Element) *element = object.data.object->element + index;
+			
+			if (element->value.check != 1)
 				continue;
 			
 			key = Value.chars(Chars.create("%d", index));
@@ -1755,11 +1759,12 @@ struct Value iterateInRef (struct Context * const context)
 		
 		for (index = 2; index < object.data.object->hashmapCount; ++index)
 		{
-			union Object(Hashmap) hashmap = object.data.object->hashmap[index];
-			if (!(hashmap.value.check == 1) || (hashmap.value.flags & Value(hidden)))
+			union Object(Hashmap) *hashmap = object.data.object->hashmap + index;
+			
+			if (hashmap->value.check != 1 || (hashmap->value.flags & Value(hidden)))
 				continue;
 			
-			key = Value.key(hashmap.value.key);
+			key = Value.key(hashmap->value.key);
 			ref->data = key.data;
 			ref->type = key.type;
 			
