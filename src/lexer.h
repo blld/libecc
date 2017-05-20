@@ -29,6 +29,7 @@
 		_( integer ,"number",)\
 		_( binary ,"number",)\
 		_( string ,,)\
+		_( escapedString ,"string",)\
 		_( identifier ,,)\
 		_( regexp ,,)\
 		\

@@ -95,7 +95,10 @@ void destroy (struct Input *self)
 	assert(self);
 	
 	while (self->escapedTextCount--)
-		free((char *)self->escapedTextList[self->escapedTextCount].bytes), self->escapedTextList[self->escapedTextCount].bytes = NULL;
+	{
+		free((char *)self->escapedTextList[self->escapedTextCount]->bytes), self->escapedTextList[self->escapedTextCount]->bytes = NULL;
+		free(self->escapedTextList[self->escapedTextCount]), self->escapedTextList[self->escapedTextCount] = NULL;
+	}
 	
 	free(self->escapedTextList), self->escapedTextList = NULL;
 	free(self->bytes), self->bytes = NULL;
@@ -122,7 +125,10 @@ void printText (struct Input *self, struct Text text, int fullLine)
 	}
 	
 	if (!fullLine || line < 0)
-		Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
+	{
+		if (text.length)
+			Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
+	}
 	else
 	{
 		const char *bytes;
@@ -156,13 +162,13 @@ void printText (struct Input *self, struct Text text, int fullLine)
 				else
 					mark[index] = bytes[index];
 			
-			if (isprint(bytes[index]) || isspace(bytes[index]))
+			if ((signed char)bytes[index] >= 0 || !index)
 				mark[index] = '^';
 			else
 			{
 				mark[index] = bytes[index];
 				if (index > 0)
-					mark[index - 1] = '^';
+					mark[index - 1] = '>';
 			}
 			
 			while (++index < text.bytes - bytes + text.length && index <= length)
@@ -193,8 +199,13 @@ int32_t findLine (struct Input *self, struct Text text)
 	return -1;
 }
 
-void addEscapedText (struct Input *self, struct Text escapedText)
+struct Text * addEscapedText (struct Input *self, struct Text escapedText)
 {
+	struct Text *text = malloc(sizeof(*text));
+	*text = escapedText;
+	
 	self->escapedTextList = realloc(self->escapedTextList, sizeof(*self->escapedTextList) * (self->escapedTextCount + 1));
-	self->escapedTextList[self->escapedTextCount++] = escapedText;
+	self->escapedTextList[self->escapedTextCount++] = text;
+	
+	return text;
 }

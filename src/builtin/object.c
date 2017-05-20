@@ -410,8 +410,14 @@ static struct Value defineProperty (struct Context * const context)
 	return Value(true);
 	
 sealedError:
-	Context.setTextIndex(context, Context(callIndex));
-	Context.typeError(context, Chars.create("property is non-configurable"));
+	Context.setTextArgumentIndex(context, 1);
+	if (element == UINT32_MAX)
+	{
+		const struct Text *text = Key.textOf(key);
+		Context.typeError(context, Chars.create("'%.*s' is non-configurable", text->length, text->bytes));
+	}
+	else
+		Context.typeError(context, Chars.create("'%u' is non-configurable", element));
 }
 
 static struct Value defineProperties (struct Context * const context)

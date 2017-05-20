@@ -331,13 +331,14 @@ void dumpTo (struct OpList *self, FILE *file)
 	
 	for (i = 0; i < self->count; ++i)
 	{
-		fprintf(file, "[%p] %s ", (void *)(self->ops + i), Op.toChars(self->ops[i].native));
+		char c = self->ops[i].text.flags & Text(statementFlag)? i? '!': 'T': '|';
+		fprintf(file, "[%p] %c %s ", (void *)(self->ops + i), c, Op.toChars(self->ops[i].native));
 		
 		if (self->ops[i].native == Op.function)
 		{
 			fprintf(file, "{");
 			OpList.dumpTo(self->ops[i].value.data.function->oplist, stderr);
-			fprintf(file, "}\n");
+			fprintf(file, "} ");
 		}
 		else if (self->ops[i].native == Op.getParentSlot || self->ops[i].native == Op.getParentSlotRef || self->ops[i].native == Op.setParentSlot)
 			fprintf(file, "[-%hu] %hu", (uint16_t)(self->ops[i].value.data.integer >> 16), (uint16_t)(self->ops[i].value.data.integer & 0xffff));

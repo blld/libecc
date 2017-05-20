@@ -32,7 +32,8 @@ static struct Value setLength (struct Context * const context)
 
 static struct Value poison (struct Context * const context)
 {
-	Context.typeError(context, Chars.create("'arguments', and 'callee' cannot be accessed in this context"));
+	Context.rewindStatement(context->parent);
+	Context.typeError(context, Chars.create("'callee' cannot be accessed in this context"));
 	return Value(undefined);
 }
 

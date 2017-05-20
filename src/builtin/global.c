@@ -35,6 +35,7 @@ static struct Value eval (struct Context * const context)
 	value = Value.toString(context, Context.argument(context, 0));
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	
+	Context.setTextIndex(context, Context(noIndex));
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
 	return context->ecc->result;

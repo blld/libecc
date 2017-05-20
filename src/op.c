@@ -59,10 +59,9 @@ void usage(void)
 #define _ \
 	const struct Text *text = opText(offset);\
 	if (debug && text->bytes && text->length) {\
-		context->text = text;\
 		Env.newline();\
 		Context.printBacktrace(context);\
-		Ecc.printTextInput(context->ecc, *context->text, 1);\
+		Ecc.printTextInput(context->ecc, *text, 1);\
 		trap();\
 	}\
 	return nextOp();
@@ -510,7 +509,7 @@ struct Value regexp (struct Context * const context)
 	if (error)
 	{
 		error->text.bytes = text->bytes + (error->text.bytes - chars->bytes);
-		Ecc.jmpEnv(context->ecc, Value.error(error));
+		Context.throw(context, Value.error(error));
 	}
 	return Value.regexp(regexp);
 }
@@ -813,12 +812,14 @@ struct Value setProperty (struct Context * const context)
 
 struct Value callProperty (struct Context * const context)
 {
+	const struct Text *textCall = opText(0);
 	int32_t argumentCount = opValue().data.integer;
 	const struct Text *text = &(++context->ops)->text;
 	struct Value object, property;
 	
 	prepareObjectProperty(context, &object, &property);
 	
+	context->textCall = textCall;
 	Context.setText(context, text);
 	return callValue(context, Object.getProperty(object.data.object, context, property), object, argumentCount, 0);
 }
@@ -1392,7 +1393,7 @@ struct Value try (struct Context * const context)
 	else if (rethrow)
 	{
 		context->ops = rethrowOps;
-		Ecc.jmpEnv(context->ecc, retain(value));
+		Context.throw(context, retain(value));
 	}
 	else if (breaker)
 	{
@@ -1407,7 +1408,7 @@ noreturn
 struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
-	Ecc.jmpEnv(context->ecc, retain(trapOp(context, 0)));
+	Context.throw(context, retain(trapOp(context, 0)));
 }
 
 struct Value next (struct Context * const context)

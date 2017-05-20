@@ -47,6 +47,7 @@ Interface(Context,
 	(void, syntaxError ,(struct Context * const, struct Chars *) noreturn)
 	(void, typeError ,(struct Context * const, struct Chars *) noreturn)
 	(void, uriError ,(struct Context * const, struct Chars *) noreturn)
+	(void, throw ,(struct Context * const, struct Value) noreturn)
 	
 	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
 	
@@ -66,8 +67,10 @@ Interface(Context,
 	(void, setText ,(struct Context * const, const struct Text *text))
 	(void, setTexts ,(struct Context * const, const struct Text *text, const struct Text *textAlt))
 	(void, setTextIndex ,(struct Context * const, enum Context(Index) index))
+	(void, setTextArgumentIndex ,(struct Context * const, int argumentIndex))
 	(struct Text, textSeek ,(struct Context * const))
 	
+	(void, rewindStatement ,(struct Context * const))
 	(void, printBacktrace ,(struct Context * const context))
 	,
 	{

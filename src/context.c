@@ -20,27 +20,57 @@
 
 void rangeError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(Error.rangeError(textSeek(self), chars)));
+	throw(self, Value.error(Error.rangeError(textSeek(self), chars)));
 }
 
 void referenceError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(Error.referenceError(textSeek(self), chars)));
+	throw(self, Value.error(Error.referenceError(textSeek(self), chars)));
 }
 
 void syntaxError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(Error.syntaxError(textSeek(self), chars)));
+	throw(self, Value.error(Error.syntaxError(textSeek(self), chars)));
 }
 
 void typeError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(Error.typeError(textSeek(self), chars)));
+	throw(self, Value.error(Error.typeError(textSeek(self), chars)));
 }
 
 void uriError (struct Context * const self, struct Chars *chars)
 {
-	Ecc.jmpEnv(self->ecc, Value.error(Error.uriError(textSeek(self), chars)));
+	throw(self, Value.error(Error.uriError(textSeek(self), chars)));
+}
+
+void throw (struct Context * const self, struct Value value)
+{
+	if (value.type == Value(errorType))
+		self->ecc->text = value.data.error->text;
+	
+	if (self->ecc->printLastThrow && self->ecc->envCount == 1)
+	{
+		struct Value name, message;
+		name = Value(undefined);
+		
+		if (value.type == Value(errorType))
+		{
+			name = Value.toString(self, Object.getMember(value.data.object, self, Key(name)));
+			message = Value.toString(self, Object.getMember(value.data.object, self, Key(message)));
+		}
+		else
+			message = Value.toString(self, value);
+		
+		if (name.type == Value(undefinedType))
+			name = Value.text(&Text(errorName));
+		
+		Env.newline();
+		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
+		printBacktrace(self);
+		Ecc.printTextInput(self->ecc, self->ecc->text, 1);
+	}
+	
+	Ecc.jmpEnv(self->ecc, value);
 }
 
 struct Value callFunction (struct Context * const self, struct Function *function, struct Value this, int argumentCount, ... )
@@ -139,6 +169,11 @@ void setTextIndex (struct Context * const self, enum Context(Index) index)
 	self->textIndex = index;
 }
 
+void setTextArgumentIndex (struct Context * const self, int argumentIndex)
+{
+	self->textIndex = argumentIndex + 4;
+}
+
 struct Text textSeek (struct Context * const self)
 {
 	const char *bytes;
@@ -219,19 +254,47 @@ struct Text textSeek (struct Context * const self)
 	return seek.ops->text;
 }
 
+void rewindStatement(struct Context * const context)
+{
+	while (!(context->ops->text.flags & Text(statementFlag)))
+		--context->ops;
+}
+
 void printBacktrace (struct Context * const context)
 {
-	int depth = context->depth, count;
+	int depth = context->depth, count, skip;
 	struct Context frame;
 	
-	while (depth)
+	if (depth > 12)
+	{
+		Env.printColor(0, Env(bold), "...");
+		fprintf(stderr, " (%d more)\n", depth - 12);
+		depth = 12;
+	}
+	
+	while (depth > 0)
 	{
 		count = depth--;
 		frame = *context;
-		while (count--)
-			frame = *frame.parent;
+		skip = 0;
 		
-		if (frame.text)
-			Ecc.printTextInput(frame.ecc, *frame.text, 0);
+		while (count--)
+		{
+			--skip;
+			
+			if (frame.argumentOffset == Context(callOffset) || frame.argumentOffset == Context(applyOffset))
+				skip = 2;
+			else if (frame.textIndex > Context(noIndex))
+				skip = 1;
+			
+			frame = *frame.parent;
+		}
+		
+		if (skip <= 0 && frame.ops->text.bytes != Text(nativeCode).bytes)
+		{
+			Context.rewindStatement(&frame);
+			if (frame.ops->text.length)
+				Ecc.printTextInput(frame.ecc, frame.ops->text, 0);
+		}
 	}
 }

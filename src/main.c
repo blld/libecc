@@ -183,10 +183,14 @@ static void testLexer (void)
 	,    "    ^" "~~~~~    ");
 	test("'\\b\\f\\n\\r\\t\\v'", "\b\f\n\r\t\v", NULL);
 	test("'\\x44'", "D", NULL);
+	test("'\\x44' + 2", "D2", NULL);
 	test("'\\u4F8B'", "例", NULL);
-	test("'例'", "例", NULL);
+	test("'例abc'", "例abc", NULL);
+	test("例", "SyntaxError: invalid character '\\228'", NULL);
 	test("/abc", "SyntaxError: unterminated regexp literal"
 	,    "^~~~");
+	test("/abc\n""  ", "SyntaxError: unterminated regexp literal"
+	,    "^~~~~" "  ");
 }
 
 static void testParser (void)
@@ -350,6 +354,8 @@ static void testEval (void)
 
 static void testConvertion (void)
 {
+	test("var a = { b: {'toString': undefined }}; a.b", "TypeError: cannot convert 'a.b' to primitive"
+	,    "                                        ^~~");
 	test("var a = { b:{ toString: function () { return this }}} , b = ''; (b + b) + a.b", "TypeError: cannot convert 'a.b' to primitive"
 	,    "                                                                          ^~~");
 	test("var a = { b:{ toString: function () { return this }}} , b = ''; (b + a.b) + b", "TypeError: cannot convert 'a.b' to primitive"
@@ -778,16 +784,16 @@ static void testObject (void)
 	,    "                                          ^~~~~~~~~~~~  ");
 	test("var o = {}; Object.defineProperty(o, 'p', { get: function(){}, value: 2 });", "TypeError: value & writable forbidden when a getter or setter are set"
 	,    "                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  ");
-	test("var o = {}; Object.defineProperty(o, 'p', { value: 123 }); Object.defineProperty(o, 'p', { enumerable: true });", "TypeError: property is non-configurable"
-	,    "                                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
-	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { value: 1 });", "TypeError: property is non-configurable"
-	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
-	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { get: function(){} });", "TypeError: property is non-configurable"
-	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
-	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { set: function(){} });", "TypeError: property is non-configurable"
-	,    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
-	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: false, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "TypeError: property is non-configurable"
-	,    "                                                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   ");
+	test("var o = {}; Object.defineProperty(o, 2, { value: 123 }); Object.defineProperty(o, 2, { enumerable: true });", "TypeError: '2' is non-configurable"
+	,    "                                                                                  ^                        ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { value: 1 });", "TypeError: 'p' is non-configurable"
+	,    "                                                                                            ^                 ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { get: function(){} });", "TypeError: 'p' is non-configurable"
+	,    "                                                                                            ^                 ");
+	test("var o = {}; Object.defineProperty(o, 'p', { set: function(){} }); Object.defineProperty(o, 'p', { set: function(){} });", "TypeError: 'p' is non-configurable"
+	,    "                                                                                            ^                          ");
+	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: false, writable: false });Object.defineProperty(o, 'p', { value: 'abc' }); o", "TypeError: 'p' is non-configurable"
+	,    "                                                                                                                          ^                       ");
 	test("var o = {}; Object.defineProperty(o, 'p', { value: 123, configurable: true, writable: false }); Object.defineProperty(o, 'p', { value: 'abc' }); o", "[object Object]", NULL);
 	test("var o = []; Object.defineProperties(o, { 1: { value: 123 }, 3: { value: '!' } }); o", ",123,,!", NULL);
 	test("var o = []; Object.defineProperties(o, 123); o", "", NULL);
@@ -948,8 +954,8 @@ static void testArray (void)
 	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'length') }; f()", "[object Object]", 0);
 	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'callee') }; f()", "[object Object]", 0);
 	test("function f(){ return Object.getOwnPropertyNames(arguments) }; f()", "length,callee", NULL);
-	test("function f(){ return arguments.callee }; f()", "TypeError: 'arguments', and 'callee' cannot be accessed in this context"
-	,    "                     ^~~~~~~~~              ");
+	test("function f(){ return arguments.callee }; f()", "TypeError: 'callee' cannot be accessed in this context"
+	,    "                     ^~~~~~~~~~~~~~~~       ");
 }
 
 static void testBoolean (void)
@@ -1255,6 +1261,8 @@ static int runTest (int verbosity)
 	Function.addValue(ecc->global, "global", Value.object(&ecc->global->environment), 0);
 	
 	testVerbosity = verbosity;
+	
+//	test("debugger", "undefined", NULL);
 	
 	testLexer();
 	testParser();

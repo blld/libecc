@@ -62,6 +62,7 @@ Interface(Ecc,
 		uint16_t inputCount;
 		
 		uint16_t maximumCallDepth;
+		int printLastThrow;
 	}
 )
 

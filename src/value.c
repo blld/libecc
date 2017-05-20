@@ -832,20 +832,28 @@ void dumpTo (struct Value value, FILE *file)
 		case Value(keyType):
 		{
 			const struct Text *text = Key.textOf(value.data.key);
+			putc('\'', file);
 			fwrite(text->bytes, sizeof(char), text->length, file);
+			putc('\'', file);
 			return;
 		}
 		
 		case Value(textType):
+			putc('\'', file);
 			fwrite(value.data.text->bytes, sizeof(char), value.data.text->length, file);
+			putc('\'', file);
 			return;
 		
 		case Value(charsType):
+			putc('\'', file);
 			fwrite(value.data.chars->bytes, sizeof(char), value.data.chars->length, file);
+			putc('\'', file);
 			return;
 		
 		case Value(stringType):
+			putc('\'', file);
 			fwrite(value.data.string->value->bytes, sizeof(char), value.data.string->value->length, file);
+			putc('\'', file);
 			return;
 		
 		case Value(objectType):

@@ -58,6 +58,10 @@
 	extern const struct Text Text(uriErrorName);
 	extern const struct Text Text(inputErrorName);
 
+	enum Text(Flags) {
+		Text(statementFlag) = 1 << 0,
+	};
+
 #endif
 
 
@@ -75,6 +79,7 @@ Interface(Text,
 	{
 		const char *bytes;
 		uint16_t length;
+		uint8_t flags;
 	}
 )
 

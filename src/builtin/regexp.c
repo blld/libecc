@@ -604,6 +604,7 @@ static struct Value constructor (struct Context * const context)
 	Chars.appendValue(&chars, context, Context.argument(context, 1));
 	
 	result = Value.regexp(create(Chars.endAppend(&chars), &error));
+	
 	if (error)
 	{
 		struct Context *c = context;
@@ -613,7 +614,7 @@ static struct Value constructor (struct Context * const context)
 		if (c->text)
 			error->text = *c->text;
 		
-		Ecc.jmpEnv(context->ecc, Value.error(error));
+		Context.throw(context, Value.error(error));
 	}
 	return result;
 }

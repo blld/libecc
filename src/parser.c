@@ -272,6 +272,14 @@ static struct OpList * propertyAssignment (struct Parser *self)
 		else
 			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	}
+	else if (previewToken(self) == Lexer(escapedStringToken))
+	{
+		int32_t element = Lexer.parseElement(*self->lexer->value.data.text);
+		if (element >= 0)
+			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
+		else
+			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(*self->lexer->value.data.text, 0)), self->lexer->text);
+	}
 	else if (previewToken(self) == Lexer(identifierToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else
@@ -331,6 +339,8 @@ static struct OpList * primary (struct Parser *self)
 	}
 	else if (previewToken(self) == Lexer(stringToken))
 		oplist = OpList.create(Op.text, Value(undefined), self->lexer->text);
+	else if (previewToken(self) == Lexer(escapedStringToken))
+		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else if (previewToken(self) == Lexer(binaryToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else if (previewToken(self) == Lexer(integerToken))
@@ -1326,7 +1336,7 @@ static struct OpList * switchStatement (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * statement (struct Parser *self)
+static struct OpList * allStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	struct Text text = self->lexer->text;
@@ -1455,6 +1465,14 @@ static struct OpList * statement (struct Parser *self)
 	}
 }
 
+static struct OpList * statement (struct Parser *self)
+{
+	struct OpList *oplist = allStatement(self);
+	if (oplist && oplist->count > 1)
+		oplist->ops[1].text.flags |= Text(statementFlag);
+	
+	return oplist;
+}
 
 // MARK: Function
 
@@ -1630,6 +1648,13 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	oplist = OpList.join(init, oplist);
 	oplist = OpList.join(oplist, last);
 	
+	if (oplist)
+	{
+		oplist->ops->text.flags |= Text(statementFlag);
+		if (oplist->count > 1)
+			oplist->ops[1].text.flags |= Text(statementFlag);
+	}
+	
 	Object.packValue(&self->function->environment);
 	
 	--self->sourceDepth;
@@ -1681,6 +1706,7 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 			{ Op.throw, Value(undefined), self->error->text },
 			{ Op.value, Value.error(self->error) },
 		};
+		errorOps->text.flags |= Text(statementFlag);
 		
 		OpList.destroy(oplist), oplist = NULL;
 		oplist = malloc(sizeof(*oplist));

@@ -99,48 +99,25 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	
 	if (catch)
 	{
-		struct Value value;
-		struct Value name;
-		struct Value message;
+//		fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
 		
 		result = EXIT_FAILURE;
-		
-		value = self->result;
-		name = Value(undefined);
-		
-		if (value.type == Value(errorType))
-		{
-			name = Value.toString(&context, Object.getMember(value.data.object, &context, Key(name)));
-			message = Value.toString(&context, Object.getMember(value.data.object, &context, Key(message)));
-		}
-		else
-			message = Value.toString(&context, value);
-		
-		if (name.type == Value(undefinedType))
-			name = Value.text(&Text(errorName));
-		
-#warning delete me
-//		FILE *blah = fopen("blah.txt", "w");
-//		fwrite(self->bytes, 1, self->length, blah);
-//			fprintf(stderr, "--- src:\n%s", input->bytes);
-		
-		Env.newline();
-		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
-		
-		printTextInput(self, self->text, 1);
 	}
 	else
 	{
+		self->printLastThrow = trap;
+		
 		if (flags & Ecc(globalThis))
 			context.this = Value.object(&self->global->environment);
 		
 		evalInputWithContext(self, input, &context);
 	}
 	
+	Context.rewindStatement(&context);
+	context.text = &context.ops->text;
+	
 	if (flags & Ecc(primitiveResult))
 	{
-		Context.setTextIndex(&context, Context(noIndex));
-		
 		if ((flags & Ecc(stringResult)) == Ecc(stringResult))
 			self->result = Value.toString(&context, self->result);
 		else

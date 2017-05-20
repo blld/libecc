@@ -188,6 +188,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						
 						if (haveEscape)
 						{
+							struct Text text;
 							char buffer[length];
 							uint32_t index = 0, bufferIndex = 0;
 							
@@ -246,9 +247,12 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							
 							--bufferIndex;
 							
-							self->text = Text.make(malloc(length), bufferIndex);
-							memcpy((char *)self->text.bytes, buffer, bufferIndex);
-							Input.addEscapedText(self->input, self->text);
+							text = Text.make(malloc(length + 1), bufferIndex);
+							memcpy((char *)text.bytes, buffer, bufferIndex);
+							((char *)text.bytes)[bufferIndex] = '\0';
+							
+							self->value = Value.text(Input.addEscapedText(self->input, text));
+							return Lexer(escapedStringToken);
 						}
 						
 						return Lexer(stringToken);
