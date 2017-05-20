@@ -523,6 +523,9 @@ static void testConditional (void)
 	test("var a = undefined, b; if (a) b = true; else b = false", "false", NULL);
 	test("var a = 1, b; if (a) b = true; else b = false", "true", NULL);
 	test("var b = 0, a = 10;do { ++b } while (a--); b;", "11", NULL);
+	test("var y = new Boolean(true); typeof (true && y)", "object", NULL);
+	test("var y = new Boolean(false); true && y", "false", NULL);
+	test("var y = new Boolean(true); true && y", "true", NULL);
 }
 
 static void testSwitch (void)

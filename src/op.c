@@ -1131,25 +1131,29 @@ struct Value bitwiseOr (struct Context * const context)
 struct Value logicalAnd (struct Context * const context)
 {
 	const int32_t opCount = opValue().data.integer;
-	if (!Value.isTrue(nextOp()))
+	struct Value value = nextOp();
+	
+	if (!Value.isTrue(value))
 	{
 		context->ops += opCount;
-		return Value(false);
+		return value;
 	}
 	else
-		return Value.truth(Value.isTrue(nextOp()));
+		return nextOp();
 }
 
 struct Value logicalOr (struct Context * const context)
 {
 	const int32_t opCount = opValue().data.integer;
-	if (Value.isTrue(nextOp()))
+	struct Value value = nextOp();
+	
+	if (Value.isTrue(value))
 	{
 		context->ops += opCount;
-		return Value(true);
+		return value;
 	}
 	else
-		return Value.truth(Value.isTrue(nextOp()));
+		return nextOp();
 }
 
 struct Value positive (struct Context * const context)
