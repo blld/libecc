@@ -959,6 +959,17 @@ static void testArray (void)
 	test("function f(){ return Object.getOwnPropertyNames(arguments) }; f()", "length,callee", NULL);
 	test("function f(){ return arguments.callee }; f()", "TypeError: 'callee' cannot be accessed in this context"
 	,    "                     ^~~~~~~~~~~~~~~~       ");
+	test("var a=[]; a.sort(123)", "TypeError: comparison function must be a function or undefined"
+	,    "                 ^~~ ");
+	test("var scores = [1, 2, 10, 21]; scores.sort()", "1,10,2,21", NULL);
+	test("var choses = ['mot', 'Mot', '1 Mot', '2 Mots']; choses.sort()", "1 Mot,2 Mots,Mot,mot", NULL);
+	test("var fruit = ['pommes','bananes','Cerises']; fruit.sort()", "Cerises,bananes,pommes", NULL);
+	test("var fruit = ['pommes','bananes','Cerises']; fruit.sort(undefined)", "Cerises,bananes,pommes", NULL);
+	test("var a = ['araignée',,,,'zèbre']; a.sort()", "araignée,zèbre,,,", NULL);
+	test("function f(x,y){return x<y?-1: x>y?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
+	test("function f(x,y){return arguments[0]<y?-1: x>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
+	test("function f(x){return x<arguments[1]?-1: x>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
+	test("function f(){return arguments[0]<arguments[1]?-1: arguments[0]>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
 }
 
 static void testBoolean (void)

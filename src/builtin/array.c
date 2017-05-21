@@ -11,6 +11,7 @@
 
 #include "../ecc.h"
 #include "../op.h"
+#include "../oplist.h"
 
 // MARK: - Private
 
@@ -308,6 +309,273 @@ static struct Value slice (struct Context * const context)
 	return Value.object(result);
 }
 
+struct Compare {
+	struct Context context;
+	struct Function *function;
+	struct Object *arguments;
+	struct Op *ops;
+};
+
+static
+struct Value defaultComparison (struct Context * const context)
+{
+	struct Value left, right, result;
+	
+	left = Context.variableArgument(context, 0);
+	right = Context.variableArgument(context, 1);
+	result = Value.less(context, Value.toString(context, left), Value.toString(context, right));
+	
+	return Value.integer(Value.isTrue(result)? -1: 0);
+}
+
+static inline
+int gcd(int m, int n)
+{
+	while (n)
+	{
+		int t = m % n;
+		m = n;
+		n = t;
+	}
+	return m;
+}
+
+static inline
+void rotate(struct Object *object, struct Context *context, uint32_t first, uint32_t half, uint32_t last)
+{
+	struct Value value, leftValue;
+	uint32_t n, shift, a, b;
+	
+	if (first == half || half == last)
+		return;
+	
+	n = gcd(last - first, half - first);
+	while (n--)
+	{
+		shift = half - first;
+		a = first + n;
+		b = a + shift;
+		leftValue = Object.getValue(object, context, &object->element[a].value);
+		while (b != first + n)
+		{
+			value = Object.getValue(object, context, &object->element[b].value);
+			Object.putValue(object, context, &object->element[a].value, value);
+			a = b;
+			if (last - b > shift)
+				b += shift;
+			else
+				b = half - (last - b);
+		}
+		Object.putValue(object, context, &object->element[a].value, leftValue);
+	}
+}
+
+static inline
+int compare (struct Compare *cmp, struct Value left, struct Value right)
+{
+	uint16_t hashmapCount;
+	
+	if (left.check != 1)
+		return 0;
+	else if (right.check != 1)
+		return 1;
+	
+	if (left.type == Value(undefinedType))
+		return 0;
+	else if (right.type == Value(undefinedType))
+		return 1;
+	
+	hashmapCount = cmp->context.environment->hashmapCount;
+	switch (hashmapCount) {
+		default:
+			memcpy(cmp->context.environment->hashmap + 5,
+				   cmp->function->environment.hashmap,
+				   sizeof(*cmp->context.environment->hashmap) * (hashmapCount - 5));
+		case 5:
+			cmp->context.environment->hashmap[3 + 1].value = right;
+		case 4:
+			cmp->context.environment->hashmap[3 + 0].value = left;
+		case 3:
+			break;
+		case 2:
+		case 1:
+		case 0:
+			assert(0);
+			break;
+	}
+	
+	cmp->context.ops = cmp->ops;
+	cmp->arguments->element[0].value = left;
+	cmp->arguments->element[1].value = right;
+	
+	return Value.toInteger(&cmp->context, cmp->context.ops->native(&cmp->context)).data.integer < 0;
+}
+
+static inline
+uint32_t search(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t last, struct Value right)
+{
+	struct Value left;
+	uint32_t half;
+	
+	while (first < last)
+	{
+		half = (first + last) >> 1;
+		left = Object.getValue(object, &cmp->context, &object->element[half].value);
+		if (compare(cmp, left, right))
+			first = half + 1;
+		else
+			last = half;
+	}
+	return first;
+}
+
+static inline
+void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t pivot, uint32_t last, uint32_t len1, uint32_t len2)
+{
+	uint32_t left, right, half1, half2;
+	
+	if (len1 == 0 || len2 == 0)
+		return;
+	
+	if (len1 + len2 == 2)
+	{
+		struct Value left, right;
+		left = Object.getValue(object, &cmp->context, &object->element[pivot].value);
+		right = Object.getValue(object, &cmp->context, &object->element[first].value);
+		if (compare(cmp, left, right))
+		{
+			Object.putValue(object, &cmp->context, &object->element[pivot].value, right);
+			Object.putValue(object, &cmp->context, &object->element[first].value, left);
+		}
+		return;
+	}
+	
+	if (len1 > len2)
+	{
+		half1 = len1 >> 1;
+		left = first + half1;
+		right = search(object, cmp, pivot, last, Object.getValue(object, &cmp->context, &object->element[first + half1].value));
+		half2 = right - pivot;
+	}
+	else
+	{
+		half2 = len2 >> 1;
+		left = search(object, cmp, first, pivot, Object.getValue(object, &cmp->context, &object->element[pivot + half2].value));
+		right = pivot + half2;
+		half1 = left - first;
+	}
+	rotate(object, &cmp->context, left, pivot, right);
+	
+	pivot = left + half2;
+	merge(object, cmp, first, left, pivot, half1, half2);
+	merge(object, cmp, pivot, right, last, len1 - half1, len2 - half2);
+}
+
+static inline void sortAndMerge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t last)
+{
+	uint32_t half;
+	
+	if (last - first < 8)
+	{
+		struct Value left, right;
+		uint32_t i, j;
+		
+		for (i = first + 1; i < last; ++i)
+		{
+			right = Object.getValue(object, &cmp->context, &object->element[i].value);
+			for (j = i; j > first; --j)
+			{
+				left = Object.getValue(object, &cmp->context, &object->element[j - 1].value);
+				if (compare(cmp, left, right))
+					break;
+				else
+					Object.putValue(object, &cmp->context, &object->element[j].value, left);
+			}
+			Object.putValue(object, &cmp->context, &object->element[j].value, right);
+		}
+		return;
+	}
+	
+	half = (first + last) >> 1;
+	sortAndMerge(object, cmp, first, half);
+	sortAndMerge(object, cmp, half, last);
+	merge(object, cmp, first, half, last, half - first, last - half);
+}
+
+static
+void sortInPlace (struct Context * const context, struct Object *object, struct Function *function, int first, int last)
+{
+	struct Op defaultOps = { defaultComparison, Value(undefined), Text(nativeCode) };
+	struct Compare cmp = {
+		{
+			.this = Value.object(object),
+			.parent = context,
+			.ecc = context->ecc,
+			.depth = context->depth + 1,
+		},
+		function,
+		NULL,
+		cmp.ops = function? function->oplist->ops: &defaultOps,
+	};
+	
+	if (function && function->flags & Function(needHeap))
+	{
+		struct Object *environment = Object.copy(&function->environment);
+		
+		cmp.context.environment = environment;
+		cmp.arguments = Arguments.createSized(2);
+		++cmp.arguments->referenceCount;
+		
+		environment->hashmap[2].value = Value.object(cmp.arguments);
+		
+		sortAndMerge(object, &cmp, first, last);
+	}
+	else
+	{
+		struct Object environment = function? function->environment: Object.identity;
+		struct Object arguments = Object.identity;
+		union Object(Hashmap) hashmap[function? function->environment.hashmapCapacity: 3];
+		union Object(Element) element[2];
+		
+		if (function)
+			memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
+		else
+			environment.hashmapCount = 3;
+		
+		cmp.context.environment = &environment;
+		cmp.arguments = &arguments;
+		
+		arguments.element = element;
+		arguments.elementCount = 2;
+		environment.hashmap = hashmap;
+		environment.hashmap[2].value = Value.object(&arguments);
+		
+		sortAndMerge(object, &cmp, first, last);
+	}
+}
+
+static struct Value sort (struct Context * const context)
+{
+	struct Object *this;
+	struct Value compare;
+	uint32_t count;
+	
+	Context.assertParameterCount(context, 1);
+	
+	this = Value.toObject(context, Context.this(context)).data.object;
+	count = Value.toInteger(context, Object.getMember(this, context, Key(length))).data.integer;
+	compare = Context.argument(context, 0);
+	
+	if (compare.type == Value(functionType))
+		sortInPlace(context, this, compare.data.function, 0, count);
+	else if (compare.type == Value(undefinedType))
+		sortInPlace(context, this, NULL, 0, count);
+	else
+		Context.typeError(context, Chars.create("comparison function must be a function or undefined"));
+	
+	return Value.object(this);
+}
+
 static struct Value getLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
@@ -374,6 +642,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
 	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
 	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
+	Function.addToObject(Array(prototype), "sort", sort, 1, flags);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
 	
 	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
