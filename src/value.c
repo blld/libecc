@@ -662,12 +662,16 @@ struct Value compare (struct Context * const context, struct Value a, struct Val
 	
 	if (isString(a) && isString(b))
 	{
-		uint32_t aLength = stringLength(a);
-		uint32_t bLength = stringLength(b);
-		if (aLength == bLength)
-			return truth(memcmp(stringBytes(a), stringBytes(b), aLength) < 0);
-		else
-			return truth(aLength < bLength);
+		uint16_t aLength = stringLength(a);
+		uint16_t bLength = stringLength(b);
+		
+		if (aLength < bLength && !memcmp(stringBytes(a), stringBytes(b), aLength))
+			return Value(true);
+		
+		if (aLength > bLength && !memcmp(stringBytes(a), stringBytes(b), bLength))
+			return Value(false);
+		
+		return truth(memcmp(stringBytes(a), stringBytes(b), aLength) < 0);
 	}
 	else
 	{
