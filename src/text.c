@@ -146,6 +146,21 @@ uint32_t nextCodepoint (struct Text *text)
 	}
 }
 
+uint16_t advance (struct Text *text, uint16_t offset)
+{
+	if (offset >= text->length)
+	{
+		text->bytes += text->length;
+		text->length = 0;
+	}
+	else
+	{
+		text->bytes += offset;
+		text->length -= offset;
+	}
+	return text->length;
+}
+
 uint16_t toUTF16Length (struct Text text)
 {
 	uint16_t windex = 0;

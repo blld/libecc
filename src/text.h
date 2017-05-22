@@ -72,6 +72,7 @@ Interface(Text,
 	
 	(uint16_t, nextCodepointLength ,(struct Text))
 	(uint32_t, nextCodepoint ,(struct Text *text))
+	(uint16_t, advance ,(struct Text *text, uint16_t offset))
 	
 	(uint16_t, toUTF16Length ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
