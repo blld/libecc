@@ -2,14 +2,12 @@
 //  namespace_io_libecc.h
 //  libecc
 //
-//  Created by Bouilland Aurélien on 25/07/2015.
-//  Copyright (c) 2015 Libeccio. All rights reserved.
+//  Copyright (c) 2019 Aurélien Bouilland
+//  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
 #ifndef io_libecc_namespace_h
 #define io_libecc_namespace_h
-
-#include "compatibility.h"
 
 #define Ecc         io_libecc_Ecc
 #define             io_libecc_Ecc(X) \

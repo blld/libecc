@@ -9,7 +9,7 @@
 #ifndef io_libecc_native_h
 #define io_libecc_native_h
 
-#include "namespace_io_libecc.h"
+#include "namespace.h"
 
 struct Value;
 struct Context;

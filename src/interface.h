@@ -27,7 +27,8 @@
 #ifndef io_libecc_interface_h
 #define io_libecc_interface_h
 
-	#include "namespace_io_libecc.h"
+	#include "compatibility.h"
+	#include "namespace.h"
 
 	#define io_libecc_interface_External(N, M) struct io_libecc_interface_UnwrapType(N) { io_libecc_interface_CAT(_end, io_libecc_interface_E_even M) const struct N identity; } extern const N;
 	#define io_libecc_interface_E_even(R, N, P) R io_libecc_interface_Unwrap io_libecc_interface_E(N, P) io_libecc_interface_E_odd
