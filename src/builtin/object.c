@@ -410,7 +410,7 @@ static struct Value defineProperty (struct Context * const context)
 	return Value(true);
 	
 sealedError:
-	Context.setTextArgumentIndex(context, 1);
+	Context.setTextIndexArgument(context, 1);
 	if (element == UINT32_MAX)
 	{
 		const struct Text *text = Key.textOf(key);

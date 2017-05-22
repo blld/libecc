@@ -67,7 +67,7 @@ Interface(Context,
 	(void, setText ,(struct Context * const, const struct Text *text))
 	(void, setTexts ,(struct Context * const, const struct Text *text, const struct Text *textAlt))
 	(void, setTextIndex ,(struct Context * const, enum Context(Index) index))
-	(void, setTextArgumentIndex ,(struct Context * const, int argumentIndex))
+	(void, setTextIndexArgument ,(struct Context * const, int argument))
 	(struct Text, textSeek ,(struct Context * const))
 	
 	(void, rewindStatement ,(struct Context * const))

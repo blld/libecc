@@ -169,9 +169,9 @@ void setTextIndex (struct Context * const self, enum Context(Index) index)
 	self->textIndex = index;
 }
 
-void setTextArgumentIndex (struct Context * const self, int argumentIndex)
+void setTextIndexArgument (struct Context * const self, int argument)
 {
-	self->textIndex = argumentIndex + 4;
+	self->textIndex = argument + 4;
 }
 
 struct Text textSeek (struct Context * const self)
