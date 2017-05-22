@@ -1131,7 +1131,21 @@ static void testString (void)
 	test("'123'[2]", "3", NULL);
 	test("'123'[3]", "undefined", NULL);
 	test("var a = '123'; a[1] = 5; a", "123", NULL);
+	test("var a = 'aべc'; a[1]", "べ", NULL);
 	test("var s = new String('abc'); s[1]", "b", NULL);
+	test("var s = ''; s.split()[0]", "", NULL);
+	test("var s = ''; s.split('abc')[0]", "", NULL);
+	test("var s = 'aべc'; s.split()[0]", "aべc", NULL);
+	test("var s = 'aべc'; s.split('')", "a,べ,c", NULL);
+	test("var s = 'Hello word. Sentence number.'; s.split(/\\d/)", "Hello word. Sentence number.", NULL);
+	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/\\d/)", "Hello , word. Sentence number ,.", NULL);
+	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/)", "Hello ,1, word. Sentence number ,2,.", NULL);
+	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/, 1)", "Hello ", NULL);
+	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/, 2)", "Hello ,1", NULL);
+	test("var s = 'test the split method to split content'; s.split('split')", "test the , method to , content", NULL);
+	test("var s = 'test the split method to split content'; s.split('split',1)", "test the ", NULL);
+	test("var s = 'test the split method to split content'; s.split('split',2)", "test the , method to ", NULL);
+	test("var s = 'test the split method to split content'; s.split('nosplit')", "test the split method to split content", NULL);
 }
 
 static void testDate (void)
@@ -1268,6 +1282,7 @@ static void testRegExp (void)
 	test("/[^1二3]/i.exec('2')", "2", NULL);
 	test("/[^1二3]/i.exec('二')", "null", NULL);
 	test("/([^1二3])/.exec('3')", "null", NULL);
+	test("/(\\d)/.exec('Hello 1 word. Sentence number 2.')", "1,1", NULL);
 }
 
 static int runTest (int verbosity)

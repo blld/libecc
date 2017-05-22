@@ -272,6 +272,144 @@ static struct Value slice (struct Context * const context)
 	}
 }
 
+static struct Value split (struct Context * const context)
+{
+	struct Value separatorValue, limitValue;
+	struct RegExp *regexp = NULL;
+	struct Object *array;
+	struct Chars *element;
+	struct Text text, separator;
+	uint32_t size = 0, limit = UINT32_MAX;
+	
+	Context.assertParameterCount(context, 2);
+	
+	context->this = Value.toString(context, Context.this(context));
+	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	
+	separatorValue = Context.argument(context, 0);
+	if (separatorValue.type == Value(undefinedType) || !text.length)
+	{
+		struct Object *array = Array.createSized(1);
+		array->element[0].value = context->this;
+		return Value.object(array);
+	}
+	else if (separatorValue.type == Value(regexpType))
+		regexp = separatorValue.data.regexp;
+	else
+	{
+		separatorValue = Value.toString(context, separatorValue);
+		separator = Text.make(Value.stringBytes(separatorValue), Value.stringLength(separatorValue));
+	}
+	
+	limitValue = Context.argument(context, 1);
+	if (limitValue.type != Value(undefinedType))
+	{
+		limit = Value.toInteger(context, limitValue).data.integer;
+		if (!limit)
+			return Value.object(Array.createSized(0));
+	}
+	
+	Context.setTextIndex(context, Context(callIndex));
+	
+	array = Array.create();
+	
+	if (regexp)
+	{
+		const char *capture[2 + regexp->count * 2];
+		const char *index[2 + regexp->count * 2];
+		
+		for (;;)
+		{
+			struct RegExp(State) state = { text.bytes, text.bytes + text.length, capture, index };
+			uint16_t index, count;
+			
+			if (size >= limit)
+				break;
+			
+			if (RegExp.matchWithState(regexp, &state))
+			{
+				element = Chars.createWithBytes(state.capture[1] - text.bytes - 1, text.bytes);
+				++element->referenceCount;
+				Object.addElement(array, size++, Value.chars(element), 0);
+				
+				for (index = 1, count = regexp->count; index < count; ++index)
+				{
+					if (size >= limit)
+						break;
+					
+					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+					++element->referenceCount;
+					Object.addElement(array, size++, Value.chars(element), 0);
+				}
+				Text.advance(&text, state.capture[1] - text.bytes);
+			}
+			else
+			{
+				element = Chars.createWithBytes(text.length, text.bytes);
+				++element->referenceCount;
+				Object.addElement(array, size++, Value.chars(element), 0);
+				break;
+			}
+		}
+		return Value.object(array);
+	}
+	else if (!separator.length)
+	{
+		uint16_t length;
+		
+		while (text.length)
+		{
+			if (size >= limit)
+				break;
+			
+			length = Text.nextCodepointLength(text);
+			element = Chars.createSized(length);
+			++element->referenceCount;
+			memcpy(element->bytes, text.bytes, length);
+			Object.addElement(array, size++, Value.chars(element), 0);
+			
+			Text.advance(&text, length);
+		}
+		
+		return Value.object(array);
+	}
+	else
+	{
+		struct Text seek = text;
+		ptrdiff_t length;
+		
+		while (seek.length >= separator.length)
+		{
+			if (size >= limit)
+				break;
+			
+			if (!memcmp(seek.bytes, separator.bytes, separator.length))
+			{
+				length = seek.bytes - text.bytes;
+				element = Chars.createSized(length);
+				++element->referenceCount;
+				memcpy(element->bytes, text.bytes, length);
+				Object.addElement(array, size++, Value.chars(element), 0);
+				
+				Text.advance(&text, length + separator.length);
+				seek = text;
+				continue;
+			}
+			Text.advance(&seek, Text.nextCodepointLength(seek));
+		}
+		
+		if (text.length && size < limit)
+		{
+			element = Chars.createSized(text.length);
+			++element->referenceCount;
+			memcpy(element->bytes, text.bytes, text.length);
+			Object.addElement(array, size++, Value.chars(element), 0);
+		}
+	}
+	
+	return Value.object(array);
+}
+
 static struct Value substring (struct Context * const context)
 {
 	struct Value from, to;
@@ -390,6 +528,7 @@ void setup ()
 	Function.addToObject(String(prototype), "indexOf", indexOf, -1, flags);
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, flags);
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
+	Function.addToObject(String(prototype), "split", split, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
 }
 
