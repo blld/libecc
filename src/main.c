@@ -1265,6 +1265,7 @@ static void testRegExp (void)
 	test("var r = /a/g; r.global", "true", NULL);
 	test("var r = /a/i; r.ignoreCase", "true", NULL);
 	test("var r = /a/m; r.multiline", "true", NULL);
+	test("/\\1/.source", "\\1", NULL);
 	test("/a|ab/.exec('abc')", "a", NULL);
 	test("/ab+c/.exec('abbbc')", "abbbc", NULL);
 	test("/あべ+せ/.exec('あべべべせ')", "あべべべせ", NULL);

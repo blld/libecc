@@ -77,7 +77,7 @@ const struct Object(Type) RegExp(type) = {
 };
 
 
-#if 1
+#if 0
 static
 void printNode (struct RegExp(Node) *n)
 {
@@ -232,21 +232,19 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			case 'w': return node(opWord, 1, NULL);
 			case 'W': return node(opWord, 0, NULL);
 			case 'c':
-			{
-				buffer[0] = *(p->c++) & 31;
-				return node(opBytes, 1, buffer);
-			}
+				buffer[0] &= 31;
+				break;
+			
 			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 			{
-				int c = *p->c - '0';
-				while (isdigit(*(++p->c)))
-					c = c * 10 + *p->c;
+				int c = buffer[0] - '0';
+				while (isdigit(*(p->c + 1)))
+					c = c * 10 + *(++p->c);
 				
 				return node(opReference, c, NULL);
 			}
 			case '0':
-			{
-				buffer[0] = *(++p->c) - '0';
+				buffer[0] = *p->c - '0';
 				if (buffer[0] >= 0 && buffer[0] <= 7)
 				{
 					if (*p->c >= '0' && *p->c <= '7')
@@ -256,40 +254,37 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 							buffer[0] = buffer[0] * 8 + *(++p->c) - '0';
 					}
 				}
-				return node(opBytes, 1, buffer);
-			}
+				break;
+			
 			case 'x':
-			{
-				if (isxdigit(p->c[1]) && isxdigit(p->c[2]))
+				if (isxdigit(p->c[0]) && isxdigit(p->c[1]))
 				{
-					buffer[0] = Lexer.uint8Hex(p->c[1], p->c[2]);
+					buffer[0] = Lexer.uint8Hex(p->c[0], p->c[1]);
 					p->c += 2;
-					return node(opBytes, 1, buffer);
 				}
-				buffer[0] = *(++p->c);
-				return node(opBytes, 1, buffer);
-			}
+				break;
+				
 			case 'u':
-				if (isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]) && isxdigit(p->c[4]))
+				if (isxdigit(p->c[0]) && isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]))
 				{
-					uint16_t c = Lexer.uint16Hex(p->c[1], p->c[2], p->c[3], p->c[4]);
+					uint16_t c = Lexer.uint16Hex(p->c[0], p->c[1], p->c[2], p->c[3]);
 					char *b = buffer;
 					
 					if (c < 0x80) *b++ = c;
 					else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-					else if (c - 0xd800 < 0x800) goto error;
+					else if (c - 0xd800 < 0x800) break;
 					else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
-					else goto error;
+					else break;
 					
 					p->c += 4;
 					return node(opBytes, (int16_t)(b - buffer) - 1, buffer);
 				}
-				error:
-				/* vvv */
+				break;
 				
 			default:
-				return node(opBytes, 1, buffer);
+				break;
 		}
+		return node(opBytes, 1, buffer);
 	}
 	else if (accept(p, '('))
 	{
@@ -537,10 +532,12 @@ start:
 			goto next;
 			
 		case opWord:
-			if (isalpha(*c) == n->offset)
+			if ((isalnum(*c) || *c == '_') != n->offset)
 				return 0;
 			
-			while (isalpha(*(++c)));
+			do
+				++c;
+			while (isalnum(*c) || *c == '_');
 			goto next;
 			
 		case opBytes:
