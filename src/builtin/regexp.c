@@ -37,16 +37,11 @@ enum Opcode {
 	opMatch,
 };
 
-struct Node {
+struct RegExp(Node) {
 	char *bytes;
 	int16_t offset;
 	uint8_t opcode;
 	uint8_t depth;
-};
-
-struct State {
-	const char **capture;
-	const char **index;
 };
 
 struct Parse {
@@ -63,7 +58,7 @@ struct Function * RegExp(constructor) = NULL;
 void finalize (struct Object *object)
 {
 	struct RegExp *self = (struct RegExp *)object;
-	struct Node *n = self->program;
+	struct RegExp(Node) *n = self->program;
 	while (n->opcode != opOver)
 	{
 		if (n->bytes)
@@ -82,12 +77,45 @@ const struct Object(Type) RegExp(type) = {
 };
 
 
+#if 1
+static
+void printNode (struct RegExp(Node) *n)
+{
+	switch (n->opcode)
+	{
+		case opNLookahead: fprintf(stderr, "!lookahead "); break;
+		case opLookahead: fprintf(stderr, "lookahead "); break;
+		case opReference: fprintf(stderr, "reference "); break;
+		case opStart: fprintf(stderr, "start "); break;
+		case opEnd: fprintf(stderr, "end "); break;
+		case opBoundary: fprintf(stderr, "boundary "); break;
+		case opSplit: fprintf(stderr, "split "); break;
+		case opRedo: fprintf(stderr, "redo "); break;
+		case opSave: fprintf(stderr, "save "); break;
+		case opAny: fprintf(stderr, "any "); break;
+		case opOneOf: fprintf(stderr, "oneof "); break;
+		case opDigit: fprintf(stderr, "digit "); break;
+		case opSpace: fprintf(stderr, "space "); break;
+		case opWord: fprintf(stderr, "word "); break;
+		case opBytes: fprintf(stderr, "bytes "); break;
+		case opJump: fprintf(stderr, "jump "); break;
+		case opMatch: fprintf(stderr, "match "); break;
+		case opOver: fprintf(stderr, "over "); break;
+	}
+	fprintf(stderr, "%d", n->offset);
+	if (n->bytes && n->opcode != opRedo)
+		fprintf(stderr, " `%s`", n->bytes);
+	
+	putc('\n', stderr);
+}
+#endif
+
 //MARK: parsing
 
 static
-struct Node *node (enum Opcode opcode, long offset, const char *bytes)
+struct RegExp(Node) *node (enum Opcode opcode, long offset, const char *bytes)
 {
-	struct Node *n = calloc(2, sizeof(*n));
+	struct RegExp(Node) *n = calloc(2, sizeof(*n));
 	
 	n[0].bytes = bytes && strlen(bytes)? strdup(bytes): NULL;
 	n[0].offset = offset;
@@ -97,7 +125,7 @@ struct Node *node (enum Opcode opcode, long offset, const char *bytes)
 }
 
 static
-uint16_t nlen (struct Node *n)
+uint16_t nlen (struct RegExp(Node) *n)
 {
 	uint16_t len = 0;
 	if (n)
@@ -107,7 +135,7 @@ uint16_t nlen (struct Node *n)
 }
 
 static
-struct Node *join (struct Node *a, struct Node *b)
+struct RegExp(Node) *join (struct RegExp(Node) *a, struct RegExp(Node) *b)
 {
 	uint16_t lena = 0, lenb = 0;
 	
@@ -171,10 +199,10 @@ int getU(struct Parse *p, char buffer[5])
 	return l;
 }
 
-static struct Node *disjunction (struct Parse *p, struct Error **error);
+static struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error);
 
 static
-struct Node *term (struct Parse *p, struct Error **error)
+struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 {
 	char buffer[5] = { 0 };
 	
@@ -265,7 +293,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 	}
 	else if (accept(p, '('))
 	{
-		struct Node *n;
+		struct RegExp(Node) *n;
 		unsigned char count = 0;
 		char modifier = '\0';
 		
@@ -326,7 +354,7 @@ struct Node *term (struct Parse *p, struct Error **error)
 	else if (!*p->c)
 	{
 		char *bytes = calloc(2, 1);
-		struct Node *n = node(opBytes, 1, NULL);
+		struct RegExp(Node) *n = node(opBytes, 1, NULL);
 		n->bytes = bytes;
 		p->c += 1;
 		return n;
@@ -338,9 +366,9 @@ struct Node *term (struct Parse *p, struct Error **error)
 }
 
 static
-struct Node *alternative (struct Parse *p, struct Error **error)
+struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 {
-	struct Node *n = NULL, *t;
+	struct RegExp(Node) *n = NULL, *t;
 	
 	for (;;)
 	{
@@ -395,9 +423,9 @@ struct Node *alternative (struct Parse *p, struct Error **error)
 }
 
 static
-struct Node *disjunction (struct Parse *p, struct Error **error)
+struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error)
 {
-	struct Node *n = alternative(p, error), *d;
+	struct RegExp(Node) *n = alternative(p, error), *d;
 	if (accept(p, '|'))
 	{
 		uint16_t len;
@@ -411,7 +439,7 @@ struct Node *disjunction (struct Parse *p, struct Error **error)
 }
 
 static
-struct Node *pattern (struct Parse *p, struct Error **error)
+struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 {
 	assert(*p->c == '/');
 	++p->c;
@@ -423,10 +451,10 @@ struct Node *pattern (struct Parse *p, struct Error **error)
 //MARK: matching
 
 static
-int match (struct State * const s, struct Node *n, const char *c);
+int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c);
 
 static inline
-int forkMatch (struct State * const s, struct Node *n, const char *c, int16_t offset)
+int forkMatch (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c, int16_t offset)
 {
 	int result;
 	
@@ -440,7 +468,7 @@ int forkMatch (struct State * const s, struct Node *n, const char *c, int16_t of
 	return result;
 }
 
-int match (struct State * const s, struct Node *n, const char *c)
+int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c)
 {
 	goto start;
 next:
@@ -502,7 +530,7 @@ start:
 			goto next;
 			
 		case opSpace:
-			if (isspace(*c) == n->offset)
+			if (isspace(*c) != n->offset)
 				return 0;
 			
 			while (isspace(*(++c)));
@@ -520,6 +548,9 @@ start:
 				return 0;
 			
 			c += n->offset;
+			if (c > s->end)
+				return 0;
+			
 			goto next;
 			
 		case opOneOf:
@@ -533,6 +564,9 @@ start:
 				if (!memcmp(c, set, len))
 				{
 					c += len;
+					if (c > s->end)
+						return 0;
+					
 					goto next;
 				}
 				set += len;
@@ -554,6 +588,9 @@ start:
 				set += len;
 			}
 			c += charLength(c);
+			if (c > s->end)
+				return 0;
+			
 			goto next;
 		}
 			
@@ -626,77 +663,29 @@ static struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(regexpType));
 	
-	if (((struct Node *)(self->program))[0].opcode == opMatch)
+	if (self->program[0].opcode == opMatch)
 		return Value.text(&Text(emptyRegExp));
 	else
 		return Value.chars(self->pattern);
 }
 
-#if 0
-static
-void printNode (struct Node *n)
-{
-	switch (n->opcode)
-	{
-		case opNLookahead: fprintf(stderr, "lookahead "); break;
-		case opLookahead: fprintf(stderr, "!lookahead "); break;
-		case opReference: fprintf(stderr, "reference "); break;
-		case opStart: fprintf(stderr, "start "); break;
-		case opEnd: fprintf(stderr, "end "); break;
-		case opBoundary: fprintf(stderr, "boundary "); break;
-		case opSplit: fprintf(stderr, "split "); break;
-		case opRedo: fprintf(stderr, "redo "); break;
-		case opSave: fprintf(stderr, "save "); break;
-		case opAny: fprintf(stderr, "any "); break;
-		case opOneOf: fprintf(stderr, "oneof "); break;
-		case opDigit: fprintf(stderr, "digit "); break;
-		case opSpace: fprintf(stderr, "space "); break;
-		case opWord: fprintf(stderr, "word "); break;
-		case opBytes: fprintf(stderr, "bytes "); break;
-		case opJump: fprintf(stderr, "jump "); break;
-		case opMatch: fprintf(stderr, "match "); break;
-		case opOver: fprintf(stderr, "over "); break;
-	}
-	fprintf(stderr, "%d", n->offset);
-	if (n->bytes && n->opcode != opRedo)
-		fprintf(stderr, " `%s`", n->bytes);
-	
-	putc('\n', stderr);
-}
-#endif
-
 static struct Value exec (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value;
-	int result = 0;
 	
 	Context.assertParameterCount(context, 2);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	{
-		int offset = 0, length = Value.stringLength(value);
+		uint16_t length = Value.stringLength(value);
 		const char *bytes = Value.stringBytes(value);
 		const char *capture[2 + self->count * 2];
 		const char *index[2 + self->count * 2];
-		struct State s = { capture, index };
+		struct RegExp(State) state = { bytes, bytes + length, capture, index };
 		
-#if 0
-		struct Node *n = self->program;
-		while (n->opcode != opOver)
-			printNode(n++);
-#endif
-		
-		while (!result && offset < length)
-		{
-			memset(capture, 0, sizeof(capture));
-			memset(index, 0, sizeof(index));
-			result = match(&s, self->program, capture[0] = bytes + offset);
-			offset += charLength(bytes);
-		}
-		
-		if (result)
+		if (matchWithState(self, &state))
 		{
 			struct Object *array = Array.createSized(self->count);
 			int index, count;
@@ -708,9 +697,8 @@ static struct Value exec (struct Context * const context)
 			}
 			return Value.object(array);
 		}
-		else
-			return Value(null);
 	}
+	return Value(null);
 }
 
 // MARK: - Methods
@@ -790,4 +778,26 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	Object.addMember(&self->object, Key(lastIndex), Value.integer(0), Value(hidden) | Value(sealed));
 	
 	return self;
+}
+
+int matchWithState (struct RegExp *self, struct RegExp(State) *state)
+{
+	const char *chars = state->start;
+	int result = 0;
+	
+#if 0
+	struct RegExp(Node) *n = self->program;
+	while (n->opcode != opOver)
+		printNode(n++);
+#endif
+	
+	while (!result && chars < state->end)
+	{
+		memset(state->capture, 0, sizeof(*state->capture) * (2 + self->count * 2));
+		memset(state->index, 0, sizeof(*state->index) * (2 + self->count * 2));
+		result = match(state, self->program, state->capture[0] = chars);
+		chars += charLength(chars);
+	}
+	
+	return result;
 }

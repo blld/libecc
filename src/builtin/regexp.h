@@ -21,6 +21,15 @@
 	extern struct Function * RegExp(constructor);
 	extern const struct Object(Type) RegExp(type);
 
+	struct RegExp(State) {
+		const char * const start;
+		const char * const end;
+		const char **capture;
+		const char **index;
+	};
+
+	struct RegExp(Node);
+
 #endif
 
 
@@ -30,16 +39,18 @@ Interface(RegExp,
 	(void, teardown ,(void))
 	
 	(struct RegExp *, create ,(struct Chars *pattern, struct Error **))
+	
+	(int, matchWithState ,(struct RegExp *, struct RegExp(State) *))
 	,
 	{
 		struct Object object;
 		struct Chars *pattern;
 		struct Chars *source;
-		void *program;
-		int count;
-		int global;
-		int ignoreCase;
-		int multiline;
+		struct RegExp(Node) *program;
+		uint8_t count;
+		uint8_t global:1;
+		uint8_t ignoreCase:1;
+		uint8_t multiline:1;
 	}
 )
 
