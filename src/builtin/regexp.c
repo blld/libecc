@@ -186,7 +186,9 @@ struct Node *term (struct Parse *p, struct Error **error)
 		return node(opEnd, 0, NULL);
 	else if (accept(p, '\\'))
 	{
-		switch (*p->c)
+		buffer[0] = *(p->c++);
+		
+		switch (buffer[0])
 		{
 			case 'b': return node(opBoundary, 1, NULL);
 			case 'B': return node(opBoundary, 0, NULL);
@@ -240,7 +242,6 @@ struct Node *term (struct Parse *p, struct Error **error)
 				return node(opBytes, 1, buffer);
 			}
 			case 'u':
-			{
 				if (isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]) && isxdigit(p->c[4]))
 				{
 					uint16_t c = Lexer.uint16Hex(p->c[1], p->c[2], p->c[3], p->c[4]);
@@ -256,11 +257,10 @@ struct Node *term (struct Parse *p, struct Error **error)
 					return node(opBytes, (int16_t)(b - buffer) - 1, buffer);
 				}
 				error:
-				buffer[0] = *(++p->c);
-				return node(opBytes, 1, buffer);
-			}
+				/* vvv */
+				
 			default:
-				break;
+				return node(opBytes, 1, buffer);
 		}
 	}
 	else if (accept(p, '('))
