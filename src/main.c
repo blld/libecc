@@ -1059,105 +1059,6 @@ static void testNumber (void)
 	test("Number(undefined)", "NaN", NULL);
 }
 
-static void testString (void)
-{
-	test("String", "function String() [native code]", NULL);
-	test("Object.prototype.toString.call(String.prototype)", "[object String]", NULL);
-	test("String.prototype.constructor", "function String() [native code]", NULL);
-	test("String.prototype", "", NULL);
-	test("''.toString.call(123)", "TypeError: not a string"
-	,    "                 ^~~ ");
-	test("''.valueOf.call(123)", "TypeError: not a string"
-	,    "                ^~~ ");
-	test("'aべcaべc'.length", "6", NULL);
-	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
-	,    "                     べ  べ     ^~~~~~~~~~~~~          ");
-	test("'abせd'.slice()", "abせd", NULL);
-	test("'abせd'.slice(1)", "bせd", NULL);
-	test("'abせd'.slice(undefined,2)", "ab", NULL);
-	test("'abせd'.slice(1,2)", "b", NULL);
-	test("'abせd'.slice(-2)", "せd", NULL);
-	test("'abせd'.slice(undefined,-2)", "ab", NULL);
-	test("'abせd'.slice(-2,-1)", "せ", NULL);
-	test("'abせd'.slice(2,1)", "", NULL);
-	test("'abせd'.slice(2048)", "", NULL);
-	test("'abせd'.slice(0,2048)", "abせd", NULL);
-	test("'abせd'.slice(-2048)", "abせd", NULL);
-	test("'abせd'.slice(0,-2048)", "", NULL);
-	test("'abせd'.substring()", "abせd", NULL);
-	test("'abせd'.substring(1)", "bせd", NULL);
-	test("'abせd'.substring(undefined,2)", "ab", NULL);
-	test("'abせd'.substring(1,2)", "b", NULL);
-	test("'abせd'.substring(-2)", "abせd", NULL);
-	test("'abせd'.substring(undefined,-2)", "", NULL);
-	test("'abせd'.substring(-2,-1)", "", NULL);
-	test("'abせd'.substring(2,1)", "b", NULL);
-	test("'abせd'.substring(2048)", "", NULL);
-	test("'abせd'.substring(0,2048)", "abせd", NULL);
-	test("'abせd'.substring(-2048)", "abせd", NULL);
-	test("'abせd'.substring(0,-2048)", "", NULL);
-	test("'abせd'.charAt()", "a", NULL);
-	test("'abせd'.charAt(0)", "a", NULL);
-	test("'abせd'.charAt(2)", "せ", NULL);
-	test("'abせd'.charAt(3)", "d", NULL);
-	test("'abせd'.charAt(-1)", "", NULL);
-	test("'abせd'.charAt(2048)", "", NULL);
-	test("'abせd'.charCodeAt()", "97", NULL);
-	test("'abせd'.charCodeAt(0)", "97", NULL);
-	test("'abせd'.charCodeAt(2)", "12379", NULL);
-	test("'abせd'.charCodeAt(3)", "100", NULL);
-	test("'abせd'.charCodeAt(-1)", "NaN", NULL);
-	test("'abせd'.charCodeAt(2048)", "NaN", NULL);
-	test("'abせd'.concat()", "abせd", NULL);
-	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull", NULL);
-	test("'aべundefined'.indexOf()", "2", NULL);
-	test("'aべcaべc'.indexOf()", "-1", NULL);
-	test("'aべcaべc'.indexOf('c')", "2", NULL);
-	test("'aべcaべc'.indexOf('aべ')", "0", NULL);
-	test("'aべcaべc'.indexOf('べc')", "1", NULL);
-	test("'aべcaべc'.indexOf('c')", "2", NULL);
-	test("'aべcaべc'.indexOf('c', 2)", "2", NULL);
-	test("'aべcaべc'.indexOf('c', 3)", "5", NULL);
-	test("''.indexOf.length", "1", NULL);
-	test("'aべundefined'.lastIndexOf()", "2", NULL);
-	test("'aべcaべc'.lastIndexOf()", "-1", NULL);
-	test("'aべcaべc'.lastIndexOf('c')", "5", NULL);
-	test("'aべcaべc'.lastIndexOf('aべ')", "3", NULL);
-	test("'aべcaべc'.lastIndexOf('べc')", "4", NULL);
-	test("'aべcaべc'.lastIndexOf('c')", "5", NULL);
-	test("'aべcaべc'.lastIndexOf('c', 2)", "2", NULL);
-	test("'aべcaべc'.lastIndexOf('c', 3)", "2", NULL);
-	test("''.lastIndexOf.length", "1", NULL);
-	test("'123'[2]", "3", NULL);
-	test("'123'[3]", "undefined", NULL);
-	test("var a = '123'; a[1] = 5; a", "123", NULL);
-	test("var a = 'aべc'; a[1]", "べ", NULL);
-	test("var s = new String('abc'); s[1]", "b", NULL);
-	test("''.split()[0]", "", NULL);
-	test("''.split('abc')[0]", "", NULL);
-	test("'aべc'.split()[0]", "aべc", NULL);
-	test("'aべc'.split('')", "a,べ,c", NULL);
-	test("'Hello word. Sentence number.'.split(/\\d/)", "Hello word. Sentence number.", NULL);
-	test("'Hello 1 word. Sentence number 2.'.split(/\\d/)", "Hello , word. Sentence number ,.", NULL);
-	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/)", "Hello ,1, word. Sentence number ,2,.", NULL);
-	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 1)", "Hello ", NULL);
-	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 2)", "Hello ,1", NULL);
-	test("'test the split method to split content'.split('split')", "test the , method to , content", NULL);
-	test("'test the split method to split content'.split('split',1)", "test the ", NULL);
-	test("'test the split method to split content'.split('split',2)", "test the , method to ", NULL);
-	test("'test the split method to split content'.split('nosplit')", "test the split method to split content", NULL);
-	test("'aabc'.split(/a*/)", ",b,c", NULL);
-	test("'aabc'.split(/a*?/)", "a,a,b,c", NULL);
-	test("'aabc'.split(/a*?/,2)", "a,a", NULL);
-	test("'aabc'.split(/(a*?)/)", "a,,a,,b,,c", NULL);
-	test("'abcac'.split(/(a(b)?c)*/)", ",ac,,", NULL);
-	test("'zzaczz'.split(/(a(b?)c)*/)", "z,,,z,ac,,z,,,z", NULL);
-	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[1]", "undefined", NULL);
-	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[7]", "undefined", NULL);
-	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
-	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
-}
-
 static void testDate (void)
 {
 	test("Date", "function Date() [native code]", NULL);
@@ -1259,6 +1160,105 @@ static void testDate (void)
 	test("Date.parse('1984/08/31 01:23:45  +0000')", "NaN", NULL);
 }
 
+static void testString (void)
+{
+	test("String", "function String() [native code]", NULL);
+	test("Object.prototype.toString.call(String.prototype)", "[object String]", NULL);
+	test("String.prototype.constructor", "function String() [native code]", NULL);
+	test("String.prototype", "", NULL);
+	test("''.toString.call(123)", "TypeError: not a string"
+	,    "                 ^~~ ");
+	test("''.valueOf.call(123)", "TypeError: not a string"
+	,    "                ^~~ ");
+	test("'aべcaべc'.length", "6", NULL);
+	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
+	,    "                     べ  べ     ^~~~~~~~~~~~~          ");
+	test("'abせd'.slice()", "abせd", NULL);
+	test("'abせd'.slice(1)", "bせd", NULL);
+	test("'abせd'.slice(undefined,2)", "ab", NULL);
+	test("'abせd'.slice(1,2)", "b", NULL);
+	test("'abせd'.slice(-2)", "せd", NULL);
+	test("'abせd'.slice(undefined,-2)", "ab", NULL);
+	test("'abせd'.slice(-2,-1)", "せ", NULL);
+	test("'abせd'.slice(2,1)", "", NULL);
+	test("'abせd'.slice(2048)", "", NULL);
+	test("'abせd'.slice(0,2048)", "abせd", NULL);
+	test("'abせd'.slice(-2048)", "abせd", NULL);
+	test("'abせd'.slice(0,-2048)", "", NULL);
+	test("'abせd'.substring()", "abせd", NULL);
+	test("'abせd'.substring(1)", "bせd", NULL);
+	test("'abせd'.substring(undefined,2)", "ab", NULL);
+	test("'abせd'.substring(1,2)", "b", NULL);
+	test("'abせd'.substring(-2)", "abせd", NULL);
+	test("'abせd'.substring(undefined,-2)", "", NULL);
+	test("'abせd'.substring(-2,-1)", "", NULL);
+	test("'abせd'.substring(2,1)", "b", NULL);
+	test("'abせd'.substring(2048)", "", NULL);
+	test("'abせd'.substring(0,2048)", "abせd", NULL);
+	test("'abせd'.substring(-2048)", "abせd", NULL);
+	test("'abせd'.substring(0,-2048)", "", NULL);
+	test("'abせd'.charAt()", "a", NULL);
+	test("'abせd'.charAt(0)", "a", NULL);
+	test("'abせd'.charAt(2)", "せ", NULL);
+	test("'abせd'.charAt(3)", "d", NULL);
+	test("'abせd'.charAt(-1)", "", NULL);
+	test("'abせd'.charAt(2048)", "", NULL);
+	test("'abせd'.charCodeAt()", "97", NULL);
+	test("'abせd'.charCodeAt(0)", "97", NULL);
+	test("'abせd'.charCodeAt(2)", "12379", NULL);
+	test("'abせd'.charCodeAt(3)", "100", NULL);
+	test("'abせd'.charCodeAt(-1)", "NaN", NULL);
+	test("'abせd'.charCodeAt(2048)", "NaN", NULL);
+	test("'abせd'.concat()", "abせd", NULL);
+	test("'abせd'.concat(123, 'あ', null)", "abせd123あnull", NULL);
+	test("'aべundefined'.indexOf()", "2", NULL);
+	test("'aべcaべc'.indexOf()", "-1", NULL);
+	test("'aべcaべc'.indexOf('c')", "2", NULL);
+	test("'aべcaべc'.indexOf('aべ')", "0", NULL);
+	test("'aべcaべc'.indexOf('べc')", "1", NULL);
+	test("'aべcaべc'.indexOf('c')", "2", NULL);
+	test("'aべcaべc'.indexOf('c', 2)", "2", NULL);
+	test("'aべcaべc'.indexOf('c', 3)", "5", NULL);
+	test("''.indexOf.length", "1", NULL);
+	test("'aべundefined'.lastIndexOf()", "2", NULL);
+	test("'aべcaべc'.lastIndexOf()", "-1", NULL);
+	test("'aべcaべc'.lastIndexOf('c')", "5", NULL);
+	test("'aべcaべc'.lastIndexOf('aべ')", "3", NULL);
+	test("'aべcaべc'.lastIndexOf('べc')", "4", NULL);
+	test("'aべcaべc'.lastIndexOf('c')", "5", NULL);
+	test("'aべcaべc'.lastIndexOf('c', 2)", "2", NULL);
+	test("'aべcaべc'.lastIndexOf('c', 3)", "2", NULL);
+	test("''.lastIndexOf.length", "1", NULL);
+	test("'123'[2]", "3", NULL);
+	test("'123'[3]", "undefined", NULL);
+	test("var a = '123'; a[1] = 5; a", "123", NULL);
+	test("var a = 'aべc'; a[1]", "べ", NULL);
+	test("var s = new String('abc'); s[1]", "b", NULL);
+	test("''.split()[0]", "", NULL);
+	test("''.split('abc')[0]", "", NULL);
+	test("'aべc'.split()[0]", "aべc", NULL);
+	test("'aべc'.split('')", "a,べ,c", NULL);
+	test("'Hello word. Sentence number.'.split(/\\d/)", "Hello word. Sentence number.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/\\d/)", "Hello , word. Sentence number ,.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/)", "Hello ,1, word. Sentence number ,2,.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 1)", "Hello ", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 2)", "Hello ,1", NULL);
+	test("'test the split method to split content'.split('split')", "test the , method to , content", NULL);
+	test("'test the split method to split content'.split('split',1)", "test the ", NULL);
+	test("'test the split method to split content'.split('split',2)", "test the , method to ", NULL);
+	test("'test the split method to split content'.split('nosplit')", "test the split method to split content", NULL);
+	test("'aabc'.split(/a*/)", ",b,c", NULL);
+	test("'aabc'.split(/a*?/)", "a,a,b,c", NULL);
+	test("'aabc'.split(/a*?/,2)", "a,a", NULL);
+	test("'aabc'.split(/(a*?)/)", "a,,a,,b,,c", NULL);
+	test("'abcac'.split(/(a(b)?c)*/)", ",ac,,", NULL);
+	test("'zzaczz'.split(/(a(b?)c)*/)", "z,,,z,ac,,z,,,z", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[1]", "undefined", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[7]", "undefined", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
+	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
+}
+
 static void testRegExp (void)
 {
 	test("RegExp", "function RegExp() [native code]", NULL);
@@ -1351,8 +1351,8 @@ static int runTest (int verbosity)
 	testArray();
 	testBoolean();
 	testNumber();
-	testString();
 	testDate();
+	testString();
 	testRegExp();
 	
 	Env.newline();
