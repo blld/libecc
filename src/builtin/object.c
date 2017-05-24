@@ -737,11 +737,11 @@ struct Object * copy (const struct Object *original)
 	
 	*self = *original;
 	
-	byteSize = sizeof(*self->element) * self->elementCapacity;
+	byteSize = sizeof(*self->element) * self->elementCount;
 	self->element = malloc(byteSize);
 	memcpy(self->element, original->element, byteSize);
 	
-	byteSize = sizeof(*self->hashmap) * self->hashmapCapacity;
+	byteSize = sizeof(*self->hashmap) * self->hashmapCount;
 	self->hashmap = malloc(byteSize);
 	memcpy(self->hashmap, original->hashmap, byteSize);
 	
