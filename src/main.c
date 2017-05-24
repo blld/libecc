@@ -131,7 +131,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 		
 		assert(textStart >= 0 && textStart <= strlen(test));
 		
-		if (input && (input->length - textStart == 0 || input->bytes[textStart] == ')') && textLength == 1)
+		if (input && (input->length - textStart == 0 || (!ecc->text.length && input->bytes[textStart] == ')')) && textLength == 1)
 			textLength = 0;
 		
 		if (!input || ecc->text.bytes - input->bytes != textStart || ecc->text.length != textLength)
@@ -1133,19 +1133,29 @@ static void testString (void)
 	test("var a = '123'; a[1] = 5; a", "123", NULL);
 	test("var a = 'aべc'; a[1]", "べ", NULL);
 	test("var s = new String('abc'); s[1]", "b", NULL);
-	test("var s = ''; s.split()[0]", "", NULL);
-	test("var s = ''; s.split('abc')[0]", "", NULL);
-	test("var s = 'aべc'; s.split()[0]", "aべc", NULL);
-	test("var s = 'aべc'; s.split('')", "a,べ,c", NULL);
-	test("var s = 'Hello word. Sentence number.'; s.split(/\\d/)", "Hello word. Sentence number.", NULL);
-	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/\\d/)", "Hello , word. Sentence number ,.", NULL);
-	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/)", "Hello ,1, word. Sentence number ,2,.", NULL);
-	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/, 1)", "Hello ", NULL);
-	test("var s = 'Hello 1 word. Sentence number 2.'; s.split(/(\\d)/, 2)", "Hello ,1", NULL);
-	test("var s = 'test the split method to split content'; s.split('split')", "test the , method to , content", NULL);
-	test("var s = 'test the split method to split content'; s.split('split',1)", "test the ", NULL);
-	test("var s = 'test the split method to split content'; s.split('split',2)", "test the , method to ", NULL);
-	test("var s = 'test the split method to split content'; s.split('nosplit')", "test the split method to split content", NULL);
+	test("''.split()[0]", "", NULL);
+	test("''.split('abc')[0]", "", NULL);
+	test("'aべc'.split()[0]", "aべc", NULL);
+	test("'aべc'.split('')", "a,べ,c", NULL);
+	test("'Hello word. Sentence number.'.split(/\\d/)", "Hello word. Sentence number.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/\\d/)", "Hello , word. Sentence number ,.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/)", "Hello ,1, word. Sentence number ,2,.", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 1)", "Hello ", NULL);
+	test("'Hello 1 word. Sentence number 2.'.split(/(\\d)/, 2)", "Hello ,1", NULL);
+	test("'test the split method to split content'.split('split')", "test the , method to , content", NULL);
+	test("'test the split method to split content'.split('split',1)", "test the ", NULL);
+	test("'test the split method to split content'.split('split',2)", "test the , method to ", NULL);
+	test("'test the split method to split content'.split('nosplit')", "test the split method to split content", NULL);
+	test("'aabc'.split(/a*/)", ",b,c", NULL);
+	test("'aabc'.split(/a*?/)", "a,a,b,c", NULL);
+	test("'aabc'.split(/a*?/,2)", "a,a", NULL);
+	test("'aabc'.split(/(a*?)/)", "a,,a,,b,,c", NULL);
+	test("'abcac'.split(/(a(b)?c)*/)", ",ac,,", NULL);
+	test("'zzaczz'.split(/(a(b?)c)*/)", "z,,,z,ac,,z,,,z", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[1]", "undefined", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[7]", "undefined", NULL);
+	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
+	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
 }
 
 static void testDate (void)
@@ -1261,11 +1271,18 @@ static void testRegExp (void)
 	,    "  ^");
 	test("/[/", "SyntaxError: expect ']'"
 	,    "  ^");
+	test("/a]ab/.exec('abc')", "SyntaxError: invalid character"
+	,    "  ^               ");
+	test("/a)ab/.exec('abc')", "SyntaxError: invalid character"
+	,    "  ^               ");
 	test("var r = /a/; r instanceof RegExp", "true", NULL);
 	test("var r = /a/g; r.global", "true", NULL);
 	test("var r = /a/i; r.ignoreCase", "true", NULL);
 	test("var r = /a/m; r.multiline", "true", NULL);
 	test("/\\1/.source", "\\1", NULL);
+	test("/a+?b/.exec('aabc')", "aab", NULL);
+	test("/a\?\?\?/.exec('abc')", "SyntaxError: invalid character"
+	,    "    ^             ");
 	test("/a|ab/.exec('abc')", "a", NULL);
 	test("/ab+c/.exec('abbbc')", "abbbc", NULL);
 	test("/あべ+せ/.exec('あべべべせ')", "あべべべせ", NULL);
@@ -1273,8 +1290,10 @@ static void testRegExp (void)
 	test("/((a)|(ab))((c)|(bc))/.exec('abc')", "abc,a,a,,bc,,bc", NULL);
 	test("/(aa|aabaac|ba|b|c)*/.exec('aabaac')", "aaba,ba", NULL);
 	test("/(z)((a+)?(b+)?(c))*/.exec('zaacbbbcac')", "zaacbbbcac,z,ac,a,,c", NULL);
+	test("typeof /(z)((a+)?(b+)?(c))*/.exec('zaacbbbcac')[4]", "undefined", NULL);
 	test("/(a*)*/.exec('b')", ",", NULL);
 	test("/(?=(a+))/i.exec('baaabac')", ",aaa", NULL);
+	test("typeof /(?=(a+))/i.exec('baaabac')[0]", "string", NULL);
 	test("/[1二3]/i.exec('1')", "1", NULL);
 	test("/[1二3]/i.exec('2')", "null", NULL);
 	test("/[1二3]/i.exec('二')", "二", NULL);
@@ -1284,6 +1303,23 @@ static void testRegExp (void)
 	test("/[^1二3]/i.exec('二')", "null", NULL);
 	test("/([^1二3])/.exec('3')", "null", NULL);
 	test("/(\\d)/.exec('Hello 1 word. Sentence number 2.')", "1,1", NULL);
+	test("/a*/.exec('aabc')", "aa", NULL);
+	test("/a*?/.exec('aabc')", "", NULL);
+	test("/a*?b/.exec('aabc')", "aab", NULL);
+	test("/(a*?)/.exec('aabc')", ",", NULL);
+	test("/(a(b?)c)*/.exec('zaczz')", ",,", NULL);
+	test("/(a*)b\\1+/.exec('baaaac')", "b,", NULL);
+	test("/a{0}b/.exec('ab')", "b", NULL);
+	test("/[ab]{0}/.exec('acaba')", "", NULL);
+	test("/[ab]{1}/.exec('acabaaba')", "a", NULL);
+	test("/[ab]{0,1}/.exec('acabaaba')", "a", NULL);
+	test("/[ab]{0,1}?/.exec('acabaaba')", "", NULL);
+	test("/[ab]{1,1}/.exec('acabaaba')", "a", NULL);
+	test("/[ab]{2}/.exec('acabaaba')", "ab", NULL);
+	test("/[ab]{2,}/.exec('acabaaba')", "abaaba", NULL);
+	test("/[ab]{0,2}/.exec('acabaaba')", "a", NULL);
+	test("/[ab]{2,5}/.exec('acabaaba')", "abaab", NULL);
+	test("var r=/(a*)*/.exec('b'); (typeof r[0])+','+(typeof r[1])", "string,undefined", NULL);
 }
 
 static int runTest (int verbosity)

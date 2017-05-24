@@ -15,15 +15,14 @@
 
 enum Opcode {
 	opOver = 0,
-	
-	opNLookahead,
-	opLookahead,
-	opReference,
+	opNLookahead = 1,
+	opLookahead = 2,
 	opStart,
 	opEnd,
 	opBoundary,
 	
 	opSplit,
+	opReference,
 	opRedo,
 	opSave,
 	opAny,
@@ -48,6 +47,10 @@ struct Parse {
 	const char *c;
 	const char *end;
 	uint16_t count;
+};
+
+enum Flags {
+	infiniteLoop = 1 << 1,
 };
 
 // MARK: - Private
@@ -103,9 +106,20 @@ void printNode (struct RegExp(Node) *n)
 		case opOver: fprintf(stderr, "over "); break;
 	}
 	fprintf(stderr, "%d", n->offset);
-	if (n->bytes && n->opcode != opRedo)
-		fprintf(stderr, " `%s`", n->bytes);
-	
+	if (n->bytes)
+	{
+		if (n->opcode == opRedo)
+		{
+			char *c = n->bytes + 1;
+			fprintf(stderr, " {%u-%u} (:", n->bytes[0], n->bytes[1]);
+			while (*(++c))
+				fprintf(stderr, "%u,", *c);
+			
+			fprintf(stderr, ")");
+		}
+		else if (n->opcode != opRedo)
+			fprintf(stderr, " `%s`", n->bytes);
+	}
 	putc('\n', stderr);
 }
 #endif
@@ -113,7 +127,7 @@ void printNode (struct RegExp(Node) *n)
 //MARK: parsing
 
 static
-struct RegExp(Node) *node (enum Opcode opcode, long offset, const char *bytes)
+struct RegExp(Node) * node (enum Opcode opcode, long offset, const char *bytes)
 {
 	struct RegExp(Node) *n = calloc(2, sizeof(*n));
 	
@@ -122,6 +136,23 @@ struct RegExp(Node) *node (enum Opcode opcode, long offset, const char *bytes)
 	n[0].opcode = opcode;
 	
 	return n;
+}
+
+static
+void toss (struct RegExp(Node) *node)
+{
+	struct RegExp(Node) *n = node;
+	
+	if (!node)
+		return;
+	
+	while (n->opcode != opOver)
+	{
+		free(n->bytes), n->bytes = NULL;
+		++n;
+	}
+	
+	free(node), node = NULL;
 }
 
 static
@@ -328,17 +359,17 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		int not = accept(p, '^');
 		const char *start = p->c;
 		
-		while (*(++p->c) != ']')
+		while (*(p->c++) != ']')
 		{
 			if (p->c >= p->end)
 			{
 				*error = Error.syntaxError(Text.make(p->c - 1, 1), Chars.create("expect ']'"));
 				return NULL;
 			}
-			++p->c;
 		}
+		
 		{
-			int16_t len = p->c - start;
+			int16_t len = p->c - start - 1;
 			char buffer[len + 1];
 			memcpy(buffer, start, len);
 			buffer[len] = '\0';
@@ -354,7 +385,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		p->c += 1;
 		return n;
 	}
-	else if (strchr("^$\\.*+?()[]{}|", *p->c))
+	else if (strchr("*+?)]}|", *p->c))
 		return NULL;
 	
 	return node(opBytes, getU(p, buffer), buffer);
@@ -363,7 +394,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 static
 struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 {
-	struct RegExp(Node) *n = NULL, *t;
+	struct RegExp(Node) *n = NULL, *t = NULL;
 	
 	for (;;)
 	{
@@ -372,48 +403,120 @@ struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 		
 		if (t->opcode > opBoundary)
 		{
-			int header = 0;
+			int noop = 0, lazy = 0;
 			
-			switch (*(p->c++))
+			uint8_t quantifier =
+				accept(p, '?')? '?':
+				accept(p, '*')? '*':
+				accept(p, '+')? '+':
+				accept(p, '{')? '{':
+				'\0',
+				min = 1,
+				max = 1;
+			
+			switch (quantifier)
 			{
 				case '?':
-					t = join(node(opSplit, nlen(t) + 1, NULL), t);
+					min = 0, max = 1;
 					break;
 					
 				case '*':
-					t = join(node(opSplit, nlen(t) + 2, NULL), t);
-					header = 1;
-					/* vvv */
+					min = 0, max = 0;
+					break;
 					
 				case '+':
-				{
-					uint16_t index, count = nlen(t), length = 0;
-					char buffer[count];
-					
-					for (index = 0; index < count; ++index)
-						if (t[index].opcode == opSave)
-							buffer[length++] = (unsigned char)t[index].offset;
-					
-					buffer[length] = '\0';
-					t = join(t, node(opRedo, header - nlen(t), buffer));
+					min = 1, max = 0;
 					break;
-				}
 					
 				case '{':
 				{
-					//TOOD
+					
+					if (isdigit(*p->c))
+					{
+						min = *(p->c++) - '0';
+						while (isdigit(*p->c))
+							min = min * 10 + *(p->c++) - '0';
+					}
+					else
+					{
+						*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("expect number"));
+						goto error;
+					}
+					
+					if (accept(p, ','))
+					{
+						if (isdigit(*p->c))
+						{
+							max = *(p->c++) - '0';
+							while (isdigit(*p->c))
+								max = max * 10 + *(p->c++) - '0';
+							
+							if (!max)
+								noop = 1;
+						}
+						else
+							max = 0;
+					}
+					else if (!min)
+						noop = 1;
+					else
+						max = min;
+					
+					if (!accept(p, '}'))
+					{
+						*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("expect '}'"));
+						goto error;
+					}
 					break;
 				}
-				default:
-					--p->c;
 			}
 			
-//			if (accept(p, '?'))
-//			{
-//			}
+			lazy = accept(p, '?');
+			if (noop)
+			{
+				toss(t);
+				continue;
+			}
+			
+			if (max != 1)
+			{
+				struct RegExp(Node) *redo;
+				uint16_t index, count = nlen(t), length = 2;
+				char buffer[count + 2];
+				
+				for (index = 0; index < count; ++index)
+					if (t[index].opcode == opSave)
+						buffer[length++] = (uint8_t)t[index].offset;
+				
+				buffer[0] = min;
+				buffer[1] = max;
+				buffer[length] = '\0';
+				
+				if (lazy)
+					redo = join(node(opRedo, 2, NULL), node(opJump, -nlen(t) - 1, NULL));
+				else
+					redo = node(opRedo, -nlen(t), NULL);
+				
+				redo->bytes = malloc(length + 1);
+				memcpy(redo->bytes, buffer, length + 1);
+				
+				t = join(t, redo);
+			}
+			
+			if (min == 0)
+			{
+				if (lazy)
+					t = join(node(opSplit, 2, NULL), join(node(opJump, nlen(t) + 1, NULL), t));
+				else
+					t = join(node(opSplit, nlen(t) + 1, NULL), t);
+			}
 		}
 		n = join(n, t);
 	}
+	return n;
+	
+error:
+	toss(t);
 	return n;
 }
 
@@ -448,7 +551,22 @@ struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 static
 int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c);
 
-static inline
+static
+void clear (struct RegExp(State) * const s, const char *c, uint8_t *bytes)
+{
+	uint8_t index;
+	
+	if (!bytes)
+		return;
+	
+	while (*bytes)
+	{
+		index = *bytes++;
+		s->index[index] = index % 2? 0: c;
+	}
+}
+
+static
 int forkMatch (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c, int16_t offset)
 {
 	int result;
@@ -490,27 +608,65 @@ start:
 			return 0;
 			
 		case opSplit:
+			if (c == n->bytes)
+			{
+				s->flags |= infiniteLoop;
+				return 0;
+			}
+			else
+				n->bytes = (char *)c;
+			
 			if (forkMatch(s, n, c, 1))
 				return 1;
 			
 			goto jump;
 			
+		case opReference:
+		{
+			ptrdiff_t len;
+			
+			if (c == n->bytes)
+			{
+				s->flags |= infiniteLoop;
+				return 0;
+			}
+			else
+				n->bytes = (char *)c;
+			
+			len = s->capture[n->offset * 2 + 1]? s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]: 0;
+			if (len && memcmp(c, s->capture[n->offset * 2], len))
+				return 0;
+			
+			c += len;
+			if (c > s->end)
+				return 0;
+			
+			goto next;
+		}
+			
 		case opRedo:
+			if (n->bytes[1] && n->depth >= n->bytes[1])
+				return 0;
+			
+			s->flags &= ~infiniteLoop;
+			
 			if (forkMatch(s, n, c, n->offset))
 			{
-				if (n->bytes)
-				{
-					size_t index, count;
-					for (index = 0, count = strlen(n->bytes); index < count; ++index)
-						s->index[(unsigned char)n->bytes[index]] = c;
-				}
+				clear(s, c, (uint8_t *)n->bytes + 2);
 				return 1;
 			}
+			
+			if (n->depth + 1 < n->bytes[0])
+				return 0;
+			
+			if (s->flags & infiniteLoop)
+				clear(s, c, (uint8_t *)n->bytes + 2);
+			
 			goto next;
 			
 		case opSave:
 			if (forkMatch(s, n, c, 1)) {
-				if (s->capture[n->offset] < c && c >= s->index[n->offset]) {
+				if (s->capture[n->offset] < c && c > s->index[n->offset]) {
 					s->capture[n->offset] = c;
 				}
 				return 1;
@@ -591,14 +747,8 @@ start:
 			goto next;
 		}
 			
-		case opReference:
-			if (memcmp(c, s->capture[n->offset * 2], s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]))
-				return 0;
-			
-			return 1;
-			
 		case opAny:
-			if (*c == '\r' || *c == '\n')
+			if (*c != '\r' && *c != '\n')
 				goto next;
 			
 			return 0;
@@ -681,6 +831,7 @@ static struct Value exec (struct Context * const context)
 		const char *capture[2 + self->count * 2];
 		const char *index[2 + self->count * 2];
 		struct RegExp(State) state = { bytes, bytes + length, capture, index };
+		struct Chars *element;
 		
 		if (matchWithState(self, &state))
 		{
@@ -689,8 +840,15 @@ static struct Value exec (struct Context * const context)
 			
 			for (index = 0, count = self->count; index < count; ++index)
 			{
-				struct Chars *chars = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
-				array->element[index].value = Value.chars(chars);
+				if (capture[index * 2])
+				{
+					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+#warning TODO: referenceCount
+					++element->referenceCount;
+					array->element[index].value = Value.chars(element);
+				}
+				else
+					array->element[index].value = Value(undefined);
 			}
 			return Value.object(array);
 		}
@@ -767,6 +925,8 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 			}
 			break;
 		}
+	else if (!*error)
+		*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid character"));
 	
 	Object.addMember(&self->object, Key(source), Value.chars(self->source), Value(readonly) | Value(hidden) | Value(sealed));
 	Object.addMember(&self->object, Key(global), Value.truth(self->global), Value(readonly) | Value(hidden) | Value(sealed));
@@ -781,8 +941,10 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 {
 	const char *chars = state->start;
 	int result = 0;
+	uint16_t index, count;
 	
 #if 0
+	fprintf(stderr, "\n%.*s\n", self->pattern->length, self->pattern->bytes);
 	struct RegExp(Node) *n = self->program;
 	while (n->opcode != opOver)
 		printNode(n++);
@@ -792,8 +954,18 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 	{
 		memset(state->capture, 0, sizeof(*state->capture) * (2 + self->count * 2));
 		memset(state->index, 0, sizeof(*state->index) * (2 + self->count * 2));
-		result = match(state, self->program, state->capture[0] = chars);
+		result = match(state, self->program, state->capture[0] = state->index[0] = chars);
 		chars += charLength(chars);
+	}
+	
+	/* XXX: cleanup */
+	
+	for (index = 0, count = nlen(self->program); index < count; ++index)
+	{
+		if (self->program[index].opcode == opSplit || self->program[index].opcode == opReference)
+			self->program[index].bytes = NULL;
+		
+		self->program[index].depth = 0;
 	}
 	
 	return result;

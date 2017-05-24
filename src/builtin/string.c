@@ -317,10 +317,11 @@ static struct Value split (struct Context * const context)
 	{
 		const char *capture[2 + regexp->count * 2];
 		const char *index[2 + regexp->count * 2];
+		struct Text seek = text;
 		
 		for (;;)
 		{
-			struct RegExp(State) state = { text.bytes, text.bytes + text.length, capture, index };
+			struct RegExp(State) state = { seek.bytes, seek.bytes + seek.length, capture, index };
 			uint16_t index, count;
 			
 			if (size >= limit)
@@ -328,8 +329,13 @@ static struct Value split (struct Context * const context)
 			
 			if (RegExp.matchWithState(regexp, &state))
 			{
-				element = Chars.createWithBytes(state.capture[1] - text.bytes - 1, text.bytes);
-				++element->referenceCount;
+				if (state.capture[1] <= text.bytes)
+				{
+					Text.advance(&seek, 1);
+					continue;
+				}
+				
+				element = Chars.createWithBytes(state.capture[0] - text.bytes, text.bytes);
 				Object.addElement(array, size++, Value.chars(element), 0);
 				
 				for (index = 1, count = regexp->count; index < count; ++index)
@@ -337,16 +343,21 @@ static struct Value split (struct Context * const context)
 					if (size >= limit)
 						break;
 					
-					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
-					++element->referenceCount;
-					Object.addElement(array, size++, Value.chars(element), 0);
+					if (capture[index * 2])
+					{
+						element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+						Object.addElement(array, size++, Value.chars(element), 0);
+					}
+					else
+						Object.addElement(array, size++, Value(undefined), 0);
 				}
+				
 				Text.advance(&text, state.capture[1] - text.bytes);
+				seek = text;
 			}
 			else
 			{
 				element = Chars.createWithBytes(text.length, text.bytes);
-				++element->referenceCount;
 				Object.addElement(array, size++, Value.chars(element), 0);
 				break;
 			}
@@ -364,7 +375,6 @@ static struct Value split (struct Context * const context)
 			
 			length = Text.nextCodepointLength(text);
 			element = Chars.createSized(length);
-			++element->referenceCount;
 			memcpy(element->bytes, text.bytes, length);
 			Object.addElement(array, size++, Value.chars(element), 0);
 			
@@ -387,7 +397,6 @@ static struct Value split (struct Context * const context)
 			{
 				length = seek.bytes - text.bytes;
 				element = Chars.createSized(length);
-				++element->referenceCount;
 				memcpy(element->bytes, text.bytes, length);
 				Object.addElement(array, size++, Value.chars(element), 0);
 				
@@ -401,7 +410,6 @@ static struct Value split (struct Context * const context)
 		if (text.length && size < limit)
 		{
 			element = Chars.createSized(text.length);
-			++element->referenceCount;
 			memcpy(element->bytes, text.bytes, text.length);
 			Object.addElement(array, size++, Value.chars(element), 0);
 		}

@@ -26,6 +26,7 @@
 		const char * const end;
 		const char **capture;
 		const char **index;
+		int flags;
 	};
 
 	struct RegExp(Node);
