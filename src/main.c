@@ -1257,6 +1257,8 @@ static void testString (void)
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[7]", "undefined", NULL);
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
 	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
+	test("'ΐßﬓlibecc'.toUpperCase()", "Ϊ́SSՄՆLIBECC", NULL);
+	test("'ẞAB'.toLowerCase()", "ßab", NULL);
 }
 
 static void testRegExp (void)

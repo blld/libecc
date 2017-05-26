@@ -463,6 +463,46 @@ static struct Value substring (struct Context * const context)
 	}
 }
 
+static struct Value toLowerCase (struct Context * const context)
+{
+	struct Chars *chars;
+	struct Text text;
+	
+	Context.assertParameterCount(context, 0);
+	
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context, Context.this(context));
+	
+	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	{
+		char buffer[text.length * 2];
+		char *end = Text.toLower(text, buffer);
+		chars = Chars.createWithBytes(end - buffer, buffer);
+	}
+	
+	return Value.chars(chars);
+}
+
+static struct Value toUpperCase (struct Context * const context)
+{
+	struct Chars *chars;
+	struct Text text;
+	
+	Context.assertParameterCount(context, 0);
+	
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context, Context.this(context));
+		
+		text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	{
+		char buffer[text.length * 3];
+		char *end = Text.toUpper(text, buffer);
+		chars = Chars.createWithBytes(end - buffer, buffer);
+	}
+	
+	return Value.chars(chars);
+}
+
 static struct Value constructor (struct Context * const context)
 {
 	struct Value value;
@@ -538,6 +578,8 @@ void setup ()
 	Function.addToObject(String(prototype), "slice", slice, 2, flags);
 	Function.addToObject(String(prototype), "split", split, 2, flags);
 	Function.addToObject(String(prototype), "substring", substring, 2, flags);
+	Function.addToObject(String(prototype), "toLowerCase", toLowerCase, 0, flags);
+	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, flags);
 }
 
 void teardown (void)

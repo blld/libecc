@@ -76,6 +76,9 @@ Interface(Text,
 	
 	(uint16_t, toUTF16Length ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
+	
+	(char *, toLower ,(struct Text, char *length2x))
+	(char *, toUpper ,(struct Text, char *length3x))
 	,
 	{
 		const char *bytes;
