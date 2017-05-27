@@ -775,19 +775,38 @@ jump:
 static struct Value constructor (struct Context * const context)
 {
 	struct Error *error = NULL;
-	struct Value result;
+	struct Value pattern, flags;
 	struct Chars *chars;
+	struct RegExp *regexp;
 	
 	Context.assertParameterCount(context, 2);
 	
-	Chars.beginAppend(&chars);
-	Chars.append(&chars, "/");
-	Chars.appendValue(&chars, context, Context.argument(context, 0));
-	Chars.append(&chars, "/");
-	Chars.appendValue(&chars, context, Context.argument(context, 1));
+	pattern = Context.argument(context, 0);
+	flags = Context.argument(context, 1);
 	
-	result = Value.regexp(create(Chars.endAppend(&chars), &error));
+	if (pattern.type == Value(regexpType) && flags.type == Value(undefinedType))
+	{
+		if (context->construct)
+			chars = pattern.data.regexp->pattern;
+		else
+			return pattern;
+	}
+	else
+	{
+		Chars.beginAppend(&chars);
+		Chars.append(&chars, "/");
+		
+		if (pattern.type == Value(regexpType))
+			Chars.appendValue(&chars, context, Value.chars(pattern.data.regexp->source));
+		else
+			Chars.appendValue(&chars, context, pattern);
+		
+		Chars.append(&chars, "/");
+		Chars.appendValue(&chars, context, flags);
+		Chars.endAppend(&chars);
+	}
 	
+	regexp = create(chars, &error);
 	if (error)
 	{
 		struct Context *c = context;
@@ -799,7 +818,7 @@ static struct Value constructor (struct Context * const context)
 		
 		Context.throw(context, Value.error(error));
 	}
-	return result;
+	return Value.regexp(regexp);
 }
 
 static struct Value toString (struct Context * const context)

@@ -418,7 +418,7 @@ struct Value construct (struct Context * const context)
 	if (!prototype)
 		goto error;
 	
-	if (Value.isObject(*prototype))
+	if (prototype->type == Value(objectType))
 	{
 		++prototype->data.object->referenceCount;
 		object = Value.object(Object.create(prototype->data.object));

@@ -1259,6 +1259,12 @@ static void testString (void)
 	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
 	test("'ΐßﬓlibecc'.toUpperCase()", "Ϊ́SSՄՆLIBECC", NULL);
 	test("'ẞAB'.toLowerCase()", "ßab", NULL);
+	test("var s='abc'; String(s)", "abc", NULL);
+	test("var s='abc'; new String(s)", "abc", NULL);
+	test("var s='abc'; typeof String(s)", "string", NULL);
+	test("var s='abc'; typeof new String(s)", "object", NULL);
+	test("var s='abc'; String(s) === s", "true", NULL);
+	test("var s='abc'; new String(s) === s", "false", NULL);
 }
 
 static void testRegExp (void)
@@ -1322,6 +1328,14 @@ static void testRegExp (void)
 	test("/[ab]{0,2}/.exec('acabaaba')", "a", NULL);
 	test("/[ab]{2,5}/.exec('acabaaba')", "abaab", NULL);
 	test("var r=/(a*)*/.exec('b'); (typeof r[0])+','+(typeof r[1])", "string,undefined", NULL);
+	test("var r=/abc/gi; RegExp(r)", "/abc/gi", NULL);
+	test("var r=/abc/gi; RegExp(r, 'm')", "/abc/m", NULL);
+	test("var r=/abc/gi; RegExp(r) === r", "true", NULL);
+	test("var r=/abc/gi; RegExp(r, 'm') === r", "false", NULL);
+	test("var r=/abc/gi; new RegExp(r)", "/abc/gi", NULL);
+	test("var r=/abc/gi; new RegExp(r, 'm')", "/abc/m", NULL);
+	test("var r=/abc/gi; new RegExp(r) === r", "false", NULL);
+	test("var r=/abc/gi; new RegExp(r, 'm') === r", "false", NULL);
 }
 
 static int runTest (int verbosity)

@@ -719,11 +719,11 @@ struct Object * finalize (struct Object *self)
 {
 	assert(self);
 	
-	free(self->hashmap), self->hashmap = NULL;
-	free(self->element), self->element = NULL;
-	
 	if (self->type->finalize)
 		self->type->finalize(self);
+	
+	free(self->hashmap), self->hashmap = NULL;
+	free(self->element), self->element = NULL;
 	
 	return self;
 }
