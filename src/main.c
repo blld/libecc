@@ -1253,6 +1253,8 @@ static void testString (void)
 	test("'aabc'.split(/(a*?)/)", "a,,a,,b,,c", NULL);
 	test("'abcac'.split(/(a(b)?c)*/)", ",ac,,", NULL);
 	test("'zzaczz'.split(/(a(b?)c)*/)", "z,,,z,ac,,z,,,z", NULL);
+	test("'This island is beautiful'.split(/is/)", "Th, ,land , beautiful", NULL);
+	test("'This island is beautiful'.split(/\\bis\\b/)", "This island , beautiful", NULL);
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[1]", "undefined", NULL);
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[7]", "undefined", NULL);
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
@@ -1336,6 +1338,9 @@ static void testRegExp (void)
 	test("var r=/abc/gi; new RegExp(r, 'm')", "/abc/m", NULL);
 	test("var r=/abc/gi; new RegExp(r) === r", "false", NULL);
 	test("var r=/abc/gi; new RegExp(r, 'm') === r", "false", NULL);
+	test("/^test$/.exec('test')", "test", NULL);
+	test("/^test$/.exec(' test')", "null", NULL);
+	test("/^test$/.exec('test ')", "null", NULL);
 }
 
 static int runTest (int verbosity)

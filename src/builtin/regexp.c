@@ -79,7 +79,6 @@ const struct Object(Type) RegExp(type) = {
 	.finalize = finalize,
 };
 
-
 #if 0
 static
 void printNode (struct RegExp(Node) *n)
@@ -178,11 +177,13 @@ struct RegExp(Node) *join (struct RegExp(Node) *a, struct RegExp(Node) *b)
 	while (a[++lena].opcode != opOver);
 	while (b[++lenb].opcode != opOver);
 	
-	if (lena == 1 && lenb == 1 && a->opcode == opBytes && b->opcode == opBytes)
+	if (lenb == 1 && a[lena - 1].opcode == opBytes && b->opcode == opBytes)
 	{
-		a->bytes = realloc(a->bytes, a->offset + b->offset + 1);
-		memcpy(a->bytes + a->offset, b->bytes, b->offset + 1);
-		a->offset += b->offset;
+		struct RegExp(Node) *c = a + lena - 1;
+		
+		c->bytes = realloc(c->bytes, c->offset + b->offset + 1);
+		memcpy(c->bytes + c->offset, b->bytes, b->offset + 1);
+		c->offset += b->offset;
 		free(b->bytes), b->bytes = NULL;
 	}
 	else
@@ -547,6 +548,11 @@ struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 
 //MARK: matching
 
+int isword (const char *c)
+{
+	return isalnum(*c) || *c == '_';
+}
+
 static
 int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c);
 
@@ -598,13 +604,27 @@ start:
 			return 0;
 			
 		case opStart:
-			return 0;
+			if (c != s->start)
+				return 0;
+			
+			goto next;
 			
 		case opEnd:
-			return 0;
+			if (c != s->end)
+				return 0;
+			
+			goto next;
 			
 		case opBoundary:
-			return 0;
+			if (c == s->start || c == s->end)
+			{
+				if (isword(c) != n->offset)
+					return 0;
+			}
+			else if ((isword(c - 1) != isword(c)) != n->offset)
+				return 0;
+			
+			goto next;
 			
 		case opSplit:
 			if (c == n->bytes)
@@ -687,12 +707,12 @@ start:
 			goto next;
 			
 		case opWord:
-			if ((isalnum(*c) || *c == '_') != n->offset)
+			if (isword(c) != n->offset)
 				return 0;
 			
 			do
 				++c;
-			while (isalnum(*c) || *c == '_');
+			while (isword(c));
 			goto next;
 			
 		case opBytes:
