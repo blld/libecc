@@ -103,6 +103,8 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	if (catch)
 	{
 //		fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
+//		FILE *f = fopen("error.txt", "w");
+//		fprintf(f, "%.*s", input->length, input->bytes);
 		
 		result = EXIT_FAILURE;
 	}

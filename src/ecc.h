@@ -61,7 +61,7 @@ Interface(Ecc,
 		struct Input **inputs;
 		uint16_t inputCount;
 		
-		uint16_t maximumCallDepth;
+		int16_t maximumCallDepth;
 		int printLastThrow;
 	}
 )

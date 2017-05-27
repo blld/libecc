@@ -75,22 +75,21 @@ Interface(Context,
 	,
 	{
 		const struct Op * ops;
-		struct Value this;
-		struct Object *refObject;
-		int breaker;
-		
+		struct Object * refObject;
 		struct Object * environment;
-		struct Context * parent;
-		struct Ecc * ecc;
+		struct Context * const parent;
+		struct Ecc * const ecc;
+		struct Value this;
 		
+		const struct Text * text;
+		const struct Text * textAlt;
+		const struct Text * textCall;
 		enum Context(Index) textIndex;
-		const struct Text *text;
-		const struct Text *textAlt;
-		const struct Text *textCall;
 		
-		int construct;
-		int argumentOffset;
-		int depth;
+		int16_t breaker;
+		int16_t const depth;
+		int8_t const construct:1;
+		int8_t const argumentOffset:3;
 	}
 )
 
