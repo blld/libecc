@@ -1020,6 +1020,7 @@ static void testNumber (void)
 	test("-0x7fffffff | 0", "-2147483647", NULL);
 	test("-0xffffffff | 0", "1", NULL);
 	test("-0x1fffffff0 | 0", "16", NULL);
+	test("2147483648.1 << 0", "-2147483648", NULL);
 	test("0123", "83", NULL);
 	test("-0123", "-83", NULL);
 	test("parseInt('0123')", "123", NULL);

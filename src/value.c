@@ -359,7 +359,9 @@ struct Value toInteger (struct Context * const context, struct Value value)
 		return integer(0);
 	
 	binary = fmod(binary, modulus);
-	if (binary < 0)
+	if (binary >= 0)
+		binary = floor(binary);
+	else
 		binary = ceil(binary) + modulus;
 	
 	if (binary > INT32_MAX)
