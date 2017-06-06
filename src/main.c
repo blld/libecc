@@ -1261,13 +1261,14 @@ static void testString (void)
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
 	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
 	test("'ΐßﬓlibecc'.toUpperCase()", "Ϊ́SSՄՆLIBECC", NULL);
-	test("'ẞAB'.toLowerCase()", "ßab", NULL);
+	test("'ẞAİB'.toLowerCase()", "ßai̇b", NULL);
 	test("var s='abc'; String(s)", "abc", NULL);
 	test("var s='abc'; new String(s)", "abc", NULL);
 	test("var s='abc'; typeof String(s)", "string", NULL);
 	test("var s='abc'; typeof new String(s)", "object", NULL);
 	test("var s='abc'; String(s) === s", "true", NULL);
 	test("var s='abc'; new String(s) === s", "false", NULL);
+	test("Array.prototype.join.call('test', '*')", "t*e*s*t", NULL);
 }
 
 static void testRegExp (void)

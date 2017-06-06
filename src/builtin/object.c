@@ -919,10 +919,9 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 	else if (self->flags & Object(sealed))
 		Context.typeError(context, Chars.create("object is not extensible"));
 	else
-		ref->flags = 0;
+		value.flags = 0;
 	
-	ref->data = value.data;
-	ref->type = value.type;
+	*ref = value;
 	
 	return ref;
 }

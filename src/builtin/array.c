@@ -66,10 +66,7 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 	Chars.beginAppend(&chars);
 	for (index = 0; index < count; ++index)
 	{
-		if (index < object->elementCount)
-			value = Object.getValue(this.data.object, context, &object->element[index].value);
-		else
-			value = Value(undefined);
+		value = Object.getElement(this.data.object, context, index);
 		
 		if (index)
 			Chars.append(&chars, "%.*s", separator.length, separator.bytes);
@@ -255,7 +252,7 @@ static struct Value unshift (struct Context * const context)
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = count; index < length; ++index)
-		Object.putValue(object, context, &this.data.object->element[index].value, Object.getValue(object, context, &this.data.object->element[index - count].value));
+		Object.putValue(object, context, &object->element[index].value, Object.getValue(object, context, &object->element[index - count].value));
 	
 	for (index = 0; index < count; ++index)
 		object->element[index].value = Context.variableArgument(context, index);
@@ -471,7 +468,8 @@ void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t 
 	merge(object, cmp, pivot, right, last, len1 - half1, len2 - half2);
 }
 
-static inline void sortAndMerge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t last)
+static
+void sortAndMerge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t last)
 {
 	uint32_t half;
 	
