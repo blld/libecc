@@ -809,7 +809,6 @@ char * toLower (struct Text i, char *o /* length x 2 */)
 		
 		memcpy(o, p, l);
 		o += l;
-		p += l;
 	}
 	
 	return o;
@@ -840,7 +839,6 @@ char * toUpper (struct Text i, char *o /* length x 3 */)
 		
 		memcpy(o, p, l);
 		o += l;
-		p += l;
 	}
 	
 	return o;
