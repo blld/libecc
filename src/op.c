@@ -1553,7 +1553,8 @@ struct Value result (struct Context * const context)
 struct Value repopulate (struct Context * const context)
 {
 	uint32_t index, count, arguments = opValue().data.integer + 3;
-	const struct Op *nextOps = context->ops + nextOp().data.integer;
+	int32_t offset = nextOp().data.integer;
+	const struct Op *nextOps = context->ops + offset;
 	
 	{
 		union Object(Hashmap) hashmap[context->environment->hashmapCapacity];
