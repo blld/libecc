@@ -278,7 +278,7 @@ static struct Value split (struct Context * const context)
 	struct RegExp *regexp = NULL;
 	struct Object *array;
 	struct Chars *element;
-	struct Text text, separator;
+	struct Text text, separator = { 0 };
 	uint32_t size = 0, limit = UINT32_MAX;
 	
 	Context.assertParameterCount(context, 2);
