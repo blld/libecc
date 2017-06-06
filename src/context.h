@@ -77,8 +77,8 @@ Interface(Context,
 		const struct Op * ops;
 		struct Object * refObject;
 		struct Object * environment;
-		struct Context * const parent;
-		struct Ecc * const ecc;
+		struct Context * parent;
+		struct Ecc * ecc;
 		struct Value this;
 		
 		const struct Text * text;
@@ -87,9 +87,9 @@ Interface(Context,
 		enum Context(Index) textIndex;
 		
 		int16_t breaker;
-		int16_t const depth;
-		int8_t const construct:1;
-		int8_t const argumentOffset:3;
+		int16_t depth;
+		int8_t construct:1;
+		int8_t argumentOffset:3;
 	}
 )
 
