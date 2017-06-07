@@ -295,7 +295,7 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment, u
 								if (op.native == Op.call && self->ops[index - 2].native == Op.result)
 								{
 									self->ops[index - 1] = Op.make(Op.repopulate, op.value, op.text);
-									self->ops[index] = Op.make(Op.value, Value.integer(-index), self->ops[index].text);
+									self->ops[index] = Op.make(Op.value, Value.integer(-index - 1), self->ops[index].text);
 								}
 							}
 							
