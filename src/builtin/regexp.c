@@ -693,17 +693,17 @@ start:
 			return 0;
 			
 		case opDigit:
-			if (isdigit(*c) != n->offset)
+			if ((!isdigit(*c)) == n->offset)
 				return 0;
 			
-			while (isdigit(*(++c)));
+			while ((!isdigit(*(++c))) != n->offset);
 			goto next;
 			
 		case opSpace:
-			if (isspace(*c) != n->offset)
+			if ((!isspace(*c)) == n->offset)
 				return 0;
 			
-			while (isspace(*(++c)));
+			while ((!isspace(*(++c))) != n->offset);
 			goto next;
 			
 		case opWord:
