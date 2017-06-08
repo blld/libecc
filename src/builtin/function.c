@@ -18,8 +18,22 @@
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
 
+static
+void mark (struct Object *object)
+{
+	struct Function *self = (struct Function *)object;
+	
+	Pool.markObject(&self->object);
+	Pool.markObject(&self->environment);
+	
+	if (self->pair)
+		Pool.markObject(&self->pair->object);
+}
+
 const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
+	.mark = mark,
+	/* XXX: don't finalize */
 };
 
 static struct Chars * toChars (struct Context * const context, struct Value value)

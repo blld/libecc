@@ -752,8 +752,6 @@ void destroy (struct Object *self)
 {
 	assert(self);
 	
-	finalize(self);
-	
 	free(self), self = NULL;
 }
 

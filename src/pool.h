@@ -32,6 +32,7 @@ Interface(Pool,
 	
 	(void, unmarkAll ,(void))
 	(void, markValue ,(struct Value value))
+	(void, markObject ,(struct Object *object))
 	
 	(void, collectUnmarked ,(void))
 	(void, collectUnreferencedFromIndices ,(uint32_t indices[3]))

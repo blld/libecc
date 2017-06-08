@@ -21,6 +21,7 @@
 	{
 		const struct Text *text;
 		
+		void (*mark)(struct Object *);
 		void (*finalize)(struct Object *);
 	};
 

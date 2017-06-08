@@ -16,8 +16,26 @@
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
 
+static
+void mark (struct Object *object)
+{
+	struct String *self = (struct String *)object;
+	
+	Pool.markValue(Value.chars(self->value));
+}
+
+static
+void finalize (struct Object *object)
+{
+	struct String *self = (struct String *)object;
+	
+	--self->value->referenceCount;
+}
+
 const struct Object(Type) String(type) = {
-	.text = &Text(stringType),
+	.text = &Text(stringType),	
+	.mark = mark,
+	.finalize = finalize,
 };
 
 

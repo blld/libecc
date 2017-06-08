@@ -58,6 +58,16 @@ enum Flags {
 struct Object * RegExp(prototype) = NULL;
 struct Function * RegExp(constructor) = NULL;
 
+static
+void mark (struct Object *object)
+{
+	struct RegExp *self = (struct RegExp *)object;
+	
+	Pool.markValue(Value.chars(self->pattern));
+	Pool.markValue(Value.chars(self->source));
+}
+
+static
 void finalize (struct Object *object)
 {
 	struct RegExp *self = (struct RegExp *)object;
@@ -71,11 +81,14 @@ void finalize (struct Object *object)
 	}
 	
 	free(self->program), self->program = NULL;
+	
+	--self->pattern->referenceCount;
+	--self->source->referenceCount;
 }
 
 const struct Object(Type) RegExp(type) = {
 	.text = &Text(regexpType),
-	
+	.mark = mark,
 	.finalize = finalize,
 };
 

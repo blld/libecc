@@ -12,25 +12,13 @@
 // MARK: - Private
 
 static void markValue (struct Value value);
-static void markObject (struct Object *object);
+static void cleanupObject(struct Object *object);
 
 static struct Pool *self = NULL;
 
 // MARK: - Static Members
 
-static void markFunction (struct Function *function)
-{
-	if (function->object.flags & Object(mark))
-		return;
-	
-	markObject(&function->object);
-	markObject(&function->environment);
-	
-	if (function->pair)
-		markFunction(function->pair);
-}
-
-static void markObject (struct Object *object)
+void markObject (struct Object *object)
 {
 	uint32_t index, count;
 	
@@ -49,6 +37,9 @@ static void markObject (struct Object *object)
 	for (index = 2, count = object->hashmapCount; index < count; ++index)
 		if (object->hashmap[index].value.check == 1)
 			markValue(object->hashmap[index].value);
+	
+	if (object->type->mark)
+		object->type->mark(object);
 }
 
 static void markChars (struct Chars *chars)
@@ -161,26 +152,11 @@ void unmarkAll (void)
 
 void markValue (struct Value value)
 {
-	if (value.type == Value(functionType))
-		markFunction(value.data.function);
-	else if (value.type >= Value(objectType))
-	{
-		if (value.type == Value(stringType))
-			markChars(value.data.string->value);
-		
-		if (value.type == Value(regexpType))
-		{
-			markChars(value.data.regexp->pattern);
-			markChars(value.data.regexp->source);
-		}
-		
+	if (value.type >= Value(objectType))
 		markObject(value.data.object);
-	}
 	else if (value.type == Value(charsType))
 		markChars(value.data.chars);
 }
-
-static void cleanupObject(struct Object *object);
 
 static void releaseObject(struct Object *object)
 {
@@ -223,11 +199,15 @@ static void cleanupObject(struct Object *object)
 		while (object->hashmapCount--)
 			if ((value = object->hashmap[object->hashmapCount].value).check == 1)
 				releaseValue(value);
+	
+	Object.finalize(object);
 }
 
 void collectUnmarked (void)
 {
 	uint32_t index;
+	
+	// finalize & destroy
 	
 	index = self->functionCount;
 	while (index--)
@@ -241,6 +221,7 @@ void collectUnmarked (void)
 	while (index--)
 		if (!(self->objectList[index]->flags & Object(mark)))
 		{
+			Object.finalize(self->objectList[index]);
 			Object.destroy(self->objectList[index]);
 			self->objectList[index] = self->objectList[--self->objectCount];
 		}
@@ -258,12 +239,14 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 {
 	uint32_t index;
 	
+	// finalize
+	
 	index = self->objectCount;
 	while (index-- > indices[1])
 		if (self->objectList[index]->referenceCount <= 0)
 			cleanupObject(self->objectList[index]);
 	
-	//
+	// destroy
 	
 	index = self->functionCount;
 	while (index-- > indices[0])
