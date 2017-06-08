@@ -841,16 +841,18 @@ char * toLower (struct Text i, char *o /* length x 2 */)
 		memcpy(buffer, i.bytes, l);
 		buffer[l] = '\0';
 		advance(&i, l);
+		p = buffer;
 		
-		p = strstr(uppers, buffer);
-		if (p)
+		if (l > 1 || isupper(*p))
 		{
-			while (p[l] == (char)255) ++l;
-			p = lowers + (p - uppers);
-			while (p[l - 1] == (char)255) --l;
+			p = strstr(uppers, p);
+			if (p)
+			{
+				while (p[l] == (char)255) ++l;
+				p = lowers + (p - uppers);
+				while (p[l - 1] == (char)255) --l;
+			}
 		}
-		else
-			p = buffer;
 		
 		memcpy(o, p, l);
 		o += l;
@@ -871,16 +873,18 @@ char * toUpper (struct Text i, char *o /* length x 3 */)
 		memcpy(buffer, i.bytes, l);
 		buffer[l] = '\0';
 		advance(&i, l);
+		p = buffer;
 		
-		p = strstr(lowers, buffer);
-		if (p)
+		if (l > 1 || islower(*p))
 		{
-			while (p[l] == (char)255) ++l;
-			p = uppers + (p - lowers);
-			while (p[l - 1] == (char)255) --l;
+			p = strstr(lowers, p);
+			if (p)
+			{
+				while (p[l] == (char)255) ++l;
+				p = uppers + (p - lowers);
+				while (p[l - 1] == (char)255) --l;
+			}
 		}
-		else
-			p = buffer;
 		
 		memcpy(o, p, l);
 		o += l;

@@ -1261,7 +1261,7 @@ static void testString (void)
 	test("typeof 'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)[12]", "string", NULL);
 	test("'A<B>bold</B>and<CODE>coded</CODE>'.split(/<(\\/)?([^<>]+)>/)", "A,,B,bold,/,B,and,,CODE,coded,/,CODE,", NULL);
 	test("'ΐßﬓlibecc'.toUpperCase()", "Ϊ́SSՄՆLIBECC", NULL);
-	test("'ẞAİB'.toLowerCase()", "ßai̇b", NULL);
+	test("'ẞLIBECCİB'.toLowerCase()", "ßlibecci̇b", NULL);
 	test("var s='abc'; String(s)", "abc", NULL);
 	test("var s='abc'; new String(s)", "abc", NULL);
 	test("var s='abc'; typeof String(s)", "string", NULL);
