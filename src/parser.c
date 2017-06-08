@@ -274,7 +274,8 @@ static struct OpList * propertyAssignment (struct Parser *self)
 	}
 	else if (previewToken(self) == Lexer(escapedStringToken))
 	{
-		int32_t element = Lexer.parseElement(*self->lexer->value.data.text);
+		struct Text text = Text.make(self->lexer->value.data.chars->bytes, self->lexer->value.data.chars->length);
+		int32_t element = Lexer.parseElement(text);
 		if (element >= 0)
 			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
 		else
@@ -1469,7 +1470,7 @@ static struct OpList * statement (struct Parser *self)
 {
 	struct OpList *oplist = allStatement(self);
 	if (oplist && oplist->count > 1)
-		oplist->ops[1].text.flags |= Text(statementFlag);
+		oplist->ops[1].text.flags |= Text(breakFlag);
 	
 	return oplist;
 }
@@ -1650,9 +1651,9 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 	
 	if (oplist)
 	{
-		oplist->ops->text.flags |= Text(statementFlag);
+		oplist->ops->text.flags |= Text(breakFlag);
 		if (oplist->count > 1)
-			oplist->ops[1].text.flags |= Text(statementFlag);
+			oplist->ops[1].text.flags |= Text(breakFlag);
 	}
 	
 	Object.packValue(&self->function->environment);
@@ -1706,7 +1707,7 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 			{ Op.throw, Value(undefined), self->error->text },
 			{ Op.value, Value.error(self->error) },
 		};
-		errorOps->text.flags |= Text(statementFlag);
+		errorOps->text.flags |= Text(breakFlag);
 		
 		OpList.destroy(oplist), oplist = NULL;
 		oplist = malloc(sizeof(*oplist));

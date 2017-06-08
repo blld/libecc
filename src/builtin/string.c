@@ -20,39 +20,70 @@ const struct Object(Type) String(type) = {
 	.text = &Text(stringType),
 };
 
-static inline int32_t positionIndex (const char *chars, int32_t length, int32_t position, int enableReverse)
+
+static inline
+struct Text positionText (const char *chars, uint16_t length, int32_t position, int enableReverse)
 {
-	int32_t byte;
+	struct Text text = Text.make(chars, length), prev = text;
+	uint32_t codepoint;
+	
 	if (position >= 0)
 	{
-		byte = 0;
-		while (position--)
-			while (byte < length && (chars[++byte] & 0xc0) == 0x80);
+		while (position-- > 0)
+		{
+			prev = text;
+			codepoint = Text.nextCodepoint(&text);
+			
+			if (codepoint > 0xffff && !position--)
+			{
+				/* simulate 16-bit surrogate */
+				text = prev;
+				text.flags = Text(breakFlag);
+			}
+		}
 	}
 	else if (enableReverse)
 	{
-		byte = length;
-		position = -position;
-		while (position--)
-			while (byte && (chars[--byte] & 0xc0) == 0x80);
-	}
-	else
-		byte = 0;
-	
-	return byte;
-}
-
-static inline int32_t indexPosition (const char *chars, int32_t length, int32_t index)
-{
-	int32_t byte = 0, position = 0;
-	while (index--)
-	{
-		if (byte < length)
+		text.bytes += text.length;
+		
+		while (position++ < 0)
 		{
-			++position;
-			while ((chars[++byte] & 0xc0) == 0x80);
+			prev = text;
+			codepoint = Text.prevCodepoint(&text);
+			
+			if (codepoint > 0xffff && !position--)
+			{
+				/* simulate 16-bit surrogate */
+				text = prev;
+				text.flags = Text(breakFlag);
+			}
 		}
 	}
+	else
+		text.length = 0;
+	
+	return text;
+}
+
+static inline
+uint16_t unitPosition (const char *chars, uint16_t max, uint16_t unit)
+{
+	struct Text text = Text.make(chars, max);
+	uint16_t position = 0;
+	uint32_t codepoint;
+	
+	while (unit--)
+	{
+		if (text.length)
+		{
+			++position;
+			codepoint = Text.nextCodepoint(&text);
+			
+			if (codepoint > 0xffff) /* simulate 16-bit surrogate */
+				++position;
+		}
+	}
+	
 	return position;
 }
 
@@ -74,8 +105,9 @@ static struct Value valueOf (struct Context * const context)
 
 static struct Value charAt (struct Context * const context)
 {
-	int32_t position, index, length;
+	uint16_t position, length;
 	const char *chars;
+	struct Text text;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(stringType));
@@ -84,23 +116,46 @@ static struct Value charAt (struct Context * const context)
 	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(context, Context.argument(context, 0)).data.integer;
-	index = positionIndex(chars, length, position, 0);
-	length = positionIndex(chars, length, position + 1, 0) - index;
 	
-	if (length <= 0)
+	text = positionText(chars, length, position, 0);
+	if (!text.length)
 		return Value.text(&Text(empty));
 	else
 	{
-		struct Chars *result = Chars.createSized(length);
-		memcpy(result->bytes, chars + index, length);
+		struct Chars *result;
+		uint8_t units;
+		uint32_t cp = Text.codepoint(text, &units);
+		
+		if (cp < 0x010000)
+		{
+			result = Chars.createSized(units);
+			memcpy(result->bytes, text.bytes, units);
+		}
+		else
+		{
+			/* simulate 16-bit surrogate */
+			
+			cp -= 0x010000;
+			if (text.bytes == positionText(chars, length, position + 1, 0).bytes)
+				cp = ((cp >> 10) & 0x3ff) + 0xd800;
+			else
+				cp = ((cp >>  0) & 0x3ff) + 0xdc00;
+			
+			result = Chars.createSized(3);
+			*(result->bytes + 0) = 224 + cp / 4096;
+			*(result->bytes + 1) = 128 + cp / 64 % 64;
+			*(result->bytes + 2) = 128 + cp % 64;
+		}
+		
 		return Value.chars(result);
 	}
 }
 
 static struct Value charCodeAt (struct Context * const context)
 {
-	int32_t position, index, length;
+	int32_t position, length;
 	const char *chars;
+	struct Text text;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(stringType));
@@ -109,15 +164,26 @@ static struct Value charCodeAt (struct Context * const context)
 	length = Value.stringLength(context->this);
 	
 	position = Value.toInteger(context, Context.argument(context, 0)).data.integer;
-	index = positionIndex(chars, length, position, 0);
-	length = positionIndex(chars, length, position + 1, 0) - index;
 	
-	if (length <= 0)
+	text = positionText(chars, length, position, 0);
+	if (!text.length)
 		return Value.binary(NAN);
 	else
 	{
-		struct Text text = { chars + index, length };
-		return Value.binary(Text.nextCodepoint(&text));
+		uint32_t cp = Text.codepoint(text, NULL);
+		
+		if (cp < 0x010000)
+			return Value.binary(cp);
+		else
+		{
+			/* simulate 16-bit surrogate */
+			
+			cp -= 0x010000;
+			if (text.bytes == positionText(chars, length, position + 1, 0).bytes)
+				return Value.binary(((cp >> 10) & 0x3ff) + 0xd800);
+			else
+				return Value.binary(((cp >>  0) & 0x3ff) + 0xdc00);
+		}
 	}
 }
 
@@ -140,8 +206,10 @@ static struct Value concat (struct Context * const context)
 
 static struct Value indexOf (struct Context * const context)
 {
+	struct Text text;
 	struct Value search;
-	int32_t position, index, offset, length, searchLength, argumentCount;
+	int32_t position, index, length, searchLength, argumentCount;
+	uint32_t cp;
 	const char *chars, *searchChars;
 	
 	Context.assertVariableParameter(context);
@@ -156,29 +224,33 @@ static struct Value indexOf (struct Context * const context)
 	searchChars = Value.stringBytes(search);
 	searchLength = Value.stringLength(search);
 	
-	length -= searchLength;
 	position = argumentCount >= 2? Value.toInteger(context, Context.variableArgument(context, 1)).data.integer: 0;
-	index = positionIndex(chars, length, position, 0);
-	
-	for (; index <= length; ++index)
+	text = positionText(chars, length, position, 0);
+	if (text.flags & Text(breakFlag))
 	{
-		if ((chars[index] & 0xc0) == 0x80)
-			continue;
-		
-		if (chars[index] == searchChars[0])
+		Text.nextCodepoint(&text);
+		++position;
+	}
+	
+	while (text.length)
+	{
+		if (text.bytes[0] == searchChars[0])
 		{
-			offset = 0;
+			index = 0;
 			do
 			{
-				if (offset >= searchLength - 1)
+				if (index >= searchLength - 1)
 					return Value.integer(position);
 				
-				++offset;
+				++index;
 			}
-			while (chars[index + offset] == searchChars[offset]);
+			while (text.bytes[index] == searchChars[index]);
 		}
 		
 		++position;
+		cp = Text.nextCodepoint(&text);
+		if (cp > 0xffff)
+			++position;
 	}
 	
 	return Value.integer(-1);
@@ -186,8 +258,10 @@ static struct Value indexOf (struct Context * const context)
 
 static struct Value lastIndexOf (struct Context * const context)
 {
+	struct Text text;
 	struct Value search;
-	int32_t position, index, offset, length, searchLength, argumentCount;
+	int32_t position, index, length, searchLength, argumentCount;
+	uint32_t cp;
 	const char *chars, *searchChars;
 	
 	Context.assertVariableParameter(context);
@@ -200,36 +274,43 @@ static struct Value lastIndexOf (struct Context * const context)
 	
 	search = argumentCount >= 1? Value.toString(context, Context.variableArgument(context, 0)): Value.text(&Text(undefined));
 	searchChars = Value.stringBytes(search);
-	searchLength = Value.stringLength(search) - 1;
+	searchLength = Value.stringLength(search);
 	
 	if (argumentCount < 2 || Context.variableArgument(context, 1).type == Value(undefinedType))
-		position = indexPosition(chars, length, length);
+		position = unitPosition(chars, length, length);
 	else
 		position = Value.toInteger(context, Context.variableArgument(context, 1)).data.integer;
 	
-	position -= indexPosition(searchChars, searchLength, searchLength);
-	index = positionIndex(chars, length, position, 0);
-	
-	for (; index >= 0; --index)
+	position -= unitPosition(searchChars, searchLength, searchLength) - 1;
+	text = positionText(chars, length, position, 0);
+	if (text.flags & Text(breakFlag))
 	{
-		if ((chars[index] & 0xc0) == 0x80)
-			continue;
-		
-		if (chars[index] == searchChars[0])
+		Text.nextCodepoint(&text);
+		++position;
+	}
+	text.length = text.bytes - chars;
+	
+	do
+	{
+		if (text.bytes[0] == searchChars[0])
 		{
-			offset = 0;
+			index = 0;
 			do
 			{
-				if (offset >= searchLength - 1)
+				if (index >= searchLength - 1)
 					return Value.integer(position);
 				
-				++offset;
+				++index;
 			}
-			while (chars[index + offset] == searchChars[offset]);
+			while (text.bytes[index] == searchChars[index]);
 		}
 		
 		--position;
+		cp = Text.prevCodepoint(&text);
+		if (cp > 0xffff)
+			--position;
 	}
+	while (text.length);
 	
 	return Value.integer(-1);
 }
@@ -237,7 +318,7 @@ static struct Value lastIndexOf (struct Context * const context)
 static struct Value slice (struct Context * const context)
 {
 	struct Value from, to;
-	int32_t start, end, length;
+	ptrdiff_t start, end, length;
 	const char *chars;
 	
 	Context.assertParameterCount(context, 2);
@@ -252,13 +333,13 @@ static struct Value slice (struct Context * const context)
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
-		start = positionIndex(chars, length, Value.toInteger(context, from).data.integer, 1);
+		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 1).bytes - chars;
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
-		end = positionIndex(chars, length, Value.toInteger(context, to).data.integer, 1);
+		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 1).bytes - chars;
 	
 	length = end - start;
 	
@@ -366,19 +447,18 @@ static struct Value split (struct Context * const context)
 	}
 	else if (!separator.length)
 	{
-		uint16_t length;
+		uint8_t units;
 		
 		while (text.length)
 		{
 			if (size >= limit)
 				break;
 			
-			length = Text.nextCodepointLength(text);
-			element = Chars.createSized(length);
-			memcpy(element->bytes, text.bytes, length);
+			Text.codepoint(text, &units);
+			element = Chars.createSized(units);
+			memcpy(element->bytes, text.bytes, units);
 			Object.addElement(array, size++, Value.chars(element), 0);
-			
-			Text.advance(&text, length);
+			Text.advance(&text, units);
 		}
 		
 		return Value.object(array);
@@ -404,7 +484,7 @@ static struct Value split (struct Context * const context)
 				seek = text;
 				continue;
 			}
-			Text.advance(&seek, Text.nextCodepointLength(seek));
+			Text.nextCodepoint(&seek);
 		}
 		
 		if (text.length && size < limit)
@@ -421,7 +501,7 @@ static struct Value split (struct Context * const context)
 static struct Value substring (struct Context * const context)
 {
 	struct Value from, to;
-	int32_t start, end, length;
+	ptrdiff_t start, end, temp, length;
 	const char *chars;
 	
 	Context.assertParameterCount(context, 2);
@@ -436,17 +516,17 @@ static struct Value substring (struct Context * const context)
 	if (from.type == Value(undefinedType))
 		start = 0;
 	else
-		start = positionIndex(chars, length, Value.toInteger(context, from).data.integer, 0);
+		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 0).bytes - chars;
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
 		end = length;
 	else
-		end = positionIndex(chars, length, Value.toInteger(context, to).data.integer, 0);
+		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 0). bytes - chars;
 	
 	if (start > end)
 	{
-		int32_t temp = start;
+		temp = start;
 		start = end;
 		end = temp;
 	}
@@ -523,34 +603,19 @@ static struct Value constructor (struct Context * const context)
 
 static struct Value fromCharCode (struct Context * const context)
 {
-	uint16_t c, index, count, length = 0;
 	struct Chars *chars;
-	char *b;
+	uint16_t index, count;
 	
 	Context.assertVariableParameter(context);
 	
-	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
-	{
-		c = Value.toInteger(context, Context.variableArgument(context, index)).data.integer;
-		if (c < 0x80) length += 1;
-		else if (c < 0x800) length += 2;
-		else if (c <= 0xffff) length += 3;
-		else length += 1;
-	}
+	count = Context.variableArgumentCount(context);
 	
-	chars = Chars.createSized(length);
-	b = chars->bytes;
+	Chars.beginAppendSized(&chars, count);
 	
-	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
-	{
-		c = Value.toInteger(context, Context.variableArgument(context, index)).data.integer;
-		if (c < 0x80) *b++ = c;
-		else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-		else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
-		else *b++ = '\0';
-	}
+	for (index = 0; index < count; ++index)
+		Chars.appendCodepoint(&chars, Value.toInteger(context, Context.variableArgument(context, index)).data.integer);
 	
-	return Value.chars(chars);
+	return Value.chars(Chars.endAppend(&chars));
 }
 
 // MARK: - Static Members
@@ -595,7 +660,7 @@ struct String * create (struct Chars *chars)
 	Pool.addObject(&self->object);
 	
 	Object.initialize(&self->object, String(prototype));
-	Object.addMember(&self->object, Key(length), Value.integer(indexPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
+	Object.addMember(&self->object, Key(length), Value.integer(unitPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
 	++chars->referenceCount;
@@ -605,17 +670,18 @@ struct String * create (struct Chars *chars)
 
 struct Value valueAtPosition (struct String *self, uint32_t position)
 {
-	int32_t index, length;
+	struct Text text;
+	uint8_t units;
 	
-	index = positionIndex(self->value->bytes, self->value->length, position, 0);
-	length = positionIndex(self->value->bytes, self->value->length, position + 1, 0) - index;
+	text = positionText(self->value->bytes, self->value->length, position, 0);
+	Text.codepoint(text, &units);
 	
-	if (length <= 0)
+	if (units <= 0)
 		return Value(undefined);
 	else
 	{
-		struct Chars *result = Chars.createSized(length);
-		memcpy(result->bytes, self->value->bytes + index, length);
+		struct Chars *result = Chars.createSized(units);
+		memcpy(result->bytes, text.bytes, units);
 		return Value.chars(result);
 	}
 }

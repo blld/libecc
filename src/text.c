@@ -666,88 +666,133 @@ struct Text join (struct Text from, struct Text to)
 	return make(from.bytes, to.bytes - from.bytes + to.length);
 }
 
-uint16_t nextCodepointLength (struct Text text)
+uint32_t codepoint (struct Text text, uint8_t *units)
 {
+	uint32_t cp = 0;
+	
 	switch (text.length)
 	{
 		default:
 		case 4:
 			if ((text.bytes[0] & 0xf8) == 0xf0 && (text.bytes[1] & 0xc0) == 0x80 && (text.bytes[2] & 0xc0) == 0x80 && (text.bytes[3] & 0xc0) == 0x80)
-				return 4;
+			{
+				cp  = (text.bytes[0] & 0x07) << 18;
+				cp |= (text.bytes[1] & 0x3f) << 12;
+				cp |= (text.bytes[2] & 0x3f) << 6;
+				cp |= (text.bytes[3] & 0x3f);
+				if (units)
+					*units = 4;
+				
+				break;
+			}
 		
 		case 3:
 			if ((text.bytes[0] & 0xf0) == 0xe0 && (text.bytes[1] & 0xc0) == 0x80 && (text.bytes[2] & 0xc0) == 0x80 )
-				return 3;
+			{
+				cp  = (text.bytes[0] & 0x0f) << 12;
+				cp |= (text.bytes[1] & 0x3f) << 6;
+				cp |= (text.bytes[2] & 0x3f);
+				if (units)
+					*units = 3;
+				
+				break;
+			}
 		
 		case 2:
 			if ((text.bytes[0] & 0xe0) == 0xc0 && (text.bytes[1] & 0xc0) == 0x80)
-				return 2;
+			{
+				cp  = (text.bytes[0] & 0x1f) << 6;
+				cp |= (text.bytes[1] & 0x3f);
+				if (units)
+					*units = 2;
+				
+				break;
+			}
 		
 		case 1:
-			return 1;
+			if (units)
+				*units = 1;
+			
+			cp = *text.bytes;
+			break;
 		
 		case 0:
-			return 0;
+			if (units)
+				*units = 0;
+			
+			break;
 	}
+	
+	return cp;
 }
 
 uint32_t nextCodepoint (struct Text *text)
 {
-	uint32_t cp;
+	uint8_t units;
+	uint32_t cp = codepoint(*text, &units);
+	advance(text, units);
+	return cp;
+}
+
+uint32_t prevCodepoint (struct Text *text)
+{
+	uint32_t cp = 0;
 	
 	switch (text->length)
 	{
 		default:
 		case 4:
-			if ((text->bytes[0] & 0xf8) == 0xf0 && (text->bytes[1] & 0xc0) == 0x80 && (text->bytes[2] & 0xc0) == 0x80 && (text->bytes[3] & 0xc0) == 0x80)
+			if ((text->bytes[-4] & 0xf8) == 0xf0 && (text->bytes[-3] & 0xc0) == 0x80 && (text->bytes[-2] & 0xc0) == 0x80 && (text->bytes[-1] & 0xc0) == 0x80)
 			{
-				cp  = (*text->bytes++ & 0x07) << 18;
-				cp |= (*text->bytes++ & 0x3f) << 12;
-				cp |= (*text->bytes++ & 0x3f) << 6;
-				cp |= (*text->bytes++ & 0x3f);
+				cp  = (*(--text->bytes) & 0x3f);
+				cp |= (*(--text->bytes) & 0x3f) << 6;
+				cp |= (*(--text->bytes) & 0x3f) << 12;
+				cp |= (*(--text->bytes) & 0x07) << 18;
 				text->length -= 4;
-				return cp;
+				break;
 			}
-		
+			
 		case 3:
-			if ((text->bytes[0] & 0xf0) == 0xe0 && (text->bytes[1] & 0xc0) == 0x80 && (text->bytes[2] & 0xc0) == 0x80 )
+			if ((text->bytes[-3] & 0xf0) == 0xe0 && (text->bytes[-2] & 0xc0) == 0x80 && (text->bytes[-1] & 0xc0) == 0x80 )
 			{
-				cp  = (*text->bytes++ & 0x0f) << 12;
-				cp |= (*text->bytes++ & 0x3f) << 6;
-				cp |= (*text->bytes++ & 0x3f);
+				cp  = (*(--text->bytes) & 0x3f);
+				cp |= (*(--text->bytes) & 0x3f) << 6;
+				cp |= (*(--text->bytes) & 0x0f) << 12;
 				text->length -= 3;
-				return cp;
+				break;
 			}
-		
+			
 		case 2:
-			if ((text->bytes[0] & 0xe0) == 0xc0 && (text->bytes[1] & 0xc0) == 0x80)
+			if ((text->bytes[-2] & 0xe0) == 0xc0 && (text->bytes[-1] & 0xc0) == 0x80)
 			{
-				cp  = (*text->bytes++ & 0x1f) << 6;
-				cp |= (*text->bytes++ & 0x3f);
+				cp  = (*(text->bytes++) & 0x3f);
+				cp |= (*(text->bytes++) & 0x1f) << 6;
 				text->length -= 2;
-				return cp;
+				break;
 			}
-		
+			
 		case 1:
+			cp = *(--text->bytes);
 			--text->length;
-			return *text->bytes++;
-		
+			break;
+			
 		case 0:
-			return 0;
+			break;
 	}
+	return cp;
 }
 
-uint16_t advance (struct Text *text, uint16_t offset)
+uint16_t advance (struct Text *text, uint16_t units)
 {
-	if (offset >= text->length)
+	if (units >= text->length)
 	{
 		text->bytes += text->length;
 		text->length = 0;
 	}
 	else
 	{
-		text->bytes += offset;
-		text->length -= offset;
+		text->bytes += units;
+		text->length -= units;
 	}
 	return text->length;
 }
@@ -757,7 +802,7 @@ uint16_t toUTF16Length (struct Text text)
 	uint16_t windex = 0;
 	
 	while (text.length)
-		windex += nextCodepoint(&text) > 0x010000? 2: 1;
+		windex += nextCodepoint(&text) >= 0x010000? 2: 1;
 	
 	return windex;
 }
@@ -771,7 +816,7 @@ uint16_t toUTF16 (struct Text text, uint16_t *wbuffer)
 	{
 		cp = nextCodepoint(&text);
 		
-		if (cp > 0x010000)
+		if (cp >= 0x010000)
 		{
 			cp -= 0x010000;
 			wbuffer[windex++] = ((cp >> 10) & 0x3ff) + 0xd800;

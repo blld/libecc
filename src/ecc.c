@@ -239,8 +239,20 @@ void printTextInput (struct Ecc *self, struct Text text, int fullLine)
 
 void garbageCollect(struct Ecc *self)
 {
+	uint16_t index, count;
+	
 	Pool.unmarkAll();
 	Pool.markValue(Value.object(Arguments(prototype)));
 	Pool.markValue(Value.function(self->global));
+	
+	for (index = 0, count = self->inputCount; index < count; ++index)
+	{
+		struct Input *input = self->inputs[index];
+		uint16_t a = input->attachedCount;
+		
+		while (a--)
+			Pool.markValue(input->attached[a]);
+	}
+	
 	Pool.collectUnmarked();
 }

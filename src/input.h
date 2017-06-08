@@ -15,7 +15,7 @@
 #include "interface.h"
 #define io_libecc_input_h
 
-	#include "text.h"
+	#include "value.h"
 	#include "env.h"
 
 #endif
@@ -30,7 +30,7 @@ Interface(Input,
 	(void, printText, (struct Input *, struct Text text, int fullLine))
 	(int32_t, findLine, (struct Input *, struct Text text))
 	
-	(struct Text *, addEscapedText, (struct Input *, struct Text escapedText))
+	(void, attachValue, (struct Input *, struct Value value))
 	,
 	{
 		char name[FILENAME_MAX];
@@ -42,8 +42,8 @@ Interface(Input,
 		uint16_t lineCapacity;
 		uint32_t *lines;
 		
-		struct Text **escapedTextList;
-		uint16_t escapedTextCount;
+		struct Value *attached;
+		uint16_t attachedCount;
 	}
 )
 

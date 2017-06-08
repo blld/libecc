@@ -73,7 +73,12 @@ struct Chars * createWithBytes (uint16_t length, const char *bytes)
 
 void beginAppend (struct Chars **chars)
 {
-	struct Chars *self = malloc(sizeof(*self));
+	beginAppendSized(chars, 0);
+}
+
+void beginAppendSized (struct Chars **chars, uint16_t sized)
+{
+	struct Chars *self = malloc(sizeof(*self) + sized);
 	*self = Chars.identity;
 	self->flags |= Chars(inAppend);
 	*chars = self;
@@ -110,7 +115,21 @@ static
 inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 {
 	struct Chars *self = *chars;
+	uint32_t lo = Text.codepoint(text, NULL), hi;
 	
+	if (lo >= 0xDC00 && lo <= 0xDFFF)
+	{
+		struct Text prev = Text.make(self->bytes, self->length);
+		prev.bytes += prev.length;
+		hi = Text.prevCodepoint(&prev);
+		if (hi >= 0xD800 && hi <= 0xDBFF)
+		{
+			/* merge 16-bit surrogate */
+			self->length = prev.length;
+			return appendCodepoint(chars, 0x10000 | ((hi & 0x03FF) << 10) | (lo & 0x03FF));
+		}
+	}
+
 	self = realloc(self, sizeof(*self) + self->length + text.length);
 	memcpy(self->bytes + self->length, text.bytes, text.length);
 	self->length += text.length;
@@ -123,6 +142,41 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 	}
 	
 	return self;
+}
+
+struct Chars * appendCodepoint (struct Chars **chars, uint32_t cp)
+{
+	char buffer[5] = { 0 };
+	struct Text text = Text.make(buffer, 0);
+	
+	if (cp < 0x80)
+	{
+		buffer[0] = cp;
+		text.length = 1;
+	}
+	else if (cp < 0x800)
+	{
+		buffer[0] = 0xC0 | (cp >> 6);
+		buffer[1] = 0x80 | (cp & 0x3F);
+		text.length = 2;
+	}
+	else if (cp < 0x10000)
+	{
+		buffer[0] = 0xE0 | (cp >> 12);
+		buffer[1] = 0x80 | (cp >> 6 & 0x3F);
+		buffer[2] = 0x80 | (cp & 0x3F);
+		text.length = 3;
+	}
+	else
+	{
+		buffer[0] = 0xF0 | (cp >> 18);
+		buffer[1] = 0x80 | (cp >> 12 & 0x3F);
+		buffer[2] = 0x80 | (cp >> 6 & 0x3F);
+		buffer[3] = 0x80 | (cp & 0x3F);
+		text.length = 4;
+	}
+	
+	return appendText(chars, text);
 }
 
 struct Chars * appendValue (struct Chars **chars, struct Context * const context, struct Value value)
@@ -200,7 +254,7 @@ struct Chars * normalizeBinary (struct Chars * chars)
 		chars->bytes[chars->length - 1] = 0;
 		--chars->length;
 	}
-	if (chars->length > 4 && chars->bytes[chars->length - 4] == 'e' && chars->bytes[chars->length - 2] == '0')
+	else if (chars->length > 4 && chars->bytes[chars->length - 4] == 'e' && chars->bytes[chars->length - 2] == '0')
 	{
 		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
 		chars->bytes[chars->length - 1] = 0;

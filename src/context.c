@@ -256,7 +256,7 @@ struct Text textSeek (struct Context * const self)
 
 void rewindStatement(struct Context * const context)
 {
-	while (!(context->ops->text.flags & Text(statementFlag)))
+	while (!(context->ops->text.flags & Text(breakFlag)))
 		--context->ops;
 }
 

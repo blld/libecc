@@ -94,13 +94,7 @@ void destroy (struct Input *self)
 {
 	assert(self);
 	
-	while (self->escapedTextCount--)
-	{
-		free((char *)self->escapedTextList[self->escapedTextCount]->bytes), self->escapedTextList[self->escapedTextCount]->bytes = NULL;
-		free(self->escapedTextList[self->escapedTextCount]), self->escapedTextList[self->escapedTextCount] = NULL;
-	}
-	
-	free(self->escapedTextList), self->escapedTextList = NULL;
+	free(self->attached), self->attached = NULL;
 	free(self->bytes), self->bytes = NULL;
 	free(self->lines), self->lines = NULL;
 	free(self), self = NULL;
@@ -199,13 +193,8 @@ int32_t findLine (struct Input *self, struct Text text)
 	return -1;
 }
 
-struct Text * addEscapedText (struct Input *self, struct Text escapedText)
+void attachValue (struct Input *self, struct Value value)
 {
-	struct Text *text = malloc(sizeof(*text));
-	*text = escapedText;
-	
-	self->escapedTextList = realloc(self->escapedTextList, sizeof(*self->escapedTextList) * (self->escapedTextCount + 1));
-	self->escapedTextList[self->escapedTextCount++] = text;
-	
-	return text;
+	self->attached = realloc(self->attached, sizeof(*self->attached) * (self->attachedCount + 1));
+	self->attached[self->attachedCount++] = value;
 }

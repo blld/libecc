@@ -188,68 +188,58 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						
 						if (haveEscape)
 						{
-							struct Text text;
-							char buffer[length];
-							uint32_t index = 0, bufferIndex = 0;
+							struct Chars *chars;
+							uint32_t index;
 							
 							++bytes;
+							--length;
 							
-							for (; index <= length; ++index, ++bufferIndex)
+							Chars.beginAppendSized(&chars, length);
+							
+							for (index = 0; index <= length; ++index)
 								if (bytes[index] == '\\' && bytes[++index] != '\\')
 								{
 									switch (bytes[index])
 									{
-										case '0': buffer[bufferIndex] = '\0'; break;
-										case 'b': buffer[bufferIndex] = '\b'; break;
-										case 'f': buffer[bufferIndex] = '\f'; break;
-										case 'n': buffer[bufferIndex] = '\n'; break;
-										case 'r': buffer[bufferIndex] = '\r'; break;
-										case 't': buffer[bufferIndex] = '\t'; break;
-										case 'v': buffer[bufferIndex] = '\v'; break;
+										case '0': Chars.appendCodepoint(&chars, '\0'); break;
+										case 'b': Chars.appendCodepoint(&chars, '\b'); break;
+										case 'f': Chars.appendCodepoint(&chars, '\f'); break;
+										case 'n': Chars.appendCodepoint(&chars, '\n'); break;
+										case 'r': Chars.appendCodepoint(&chars, '\r'); break;
+										case 't': Chars.appendCodepoint(&chars, '\t'); break;
+										case 'v': Chars.appendCodepoint(&chars, '\v'); break;
 										case 'x':
 											if (isxdigit(bytes[index + 1]) && isxdigit(bytes[index + 2]))
 											{
-												buffer[bufferIndex] = uint8Hex(bytes[index + 1], bytes[index + 2]);
+												Chars.appendCodepoint(&chars, uint8Hex(bytes[index + 1], bytes[index + 2]));
 												index += 2;
 												break;
 											}
-											self->text = Text.make(self->text.bytes + bufferIndex, 4);
+											self->text = Text.make(self->text.bytes + index - 1, 4);
 											return syntaxError(self, Chars.create("malformed hexadecimal character escape sequence"));
 										
 										case 'u':
 											if (isxdigit(bytes[index + 1]) && isxdigit(bytes[index + 2]) && isxdigit(bytes[index + 3]) && isxdigit(bytes[index + 4]))
 											{
-												uint16_t c = uint16Hex(bytes[index+ 1], bytes[index + 2], bytes[index + 3], bytes[index + 4]);
-												char *b = buffer + bufferIndex;
-												unsigned max = 0xffff;
-												
-												if (c < 0x80) *b++ = c;
-												else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-												else if (c <= max) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
-												else goto error;
-												
-												bufferIndex = (unsigned int)(b - buffer) - 1;
+												Chars.appendCodepoint(&chars, uint16Hex(bytes[index+ 1], bytes[index + 2], bytes[index + 3], bytes[index + 4]));
 												index += 4;
 												break;
 											}
-											error:
-											self->text = Text.make(self->text.bytes + bufferIndex, 6);
+											self->text = Text.make(self->text.bytes + index - 1, 6);
 											return syntaxError(self, Chars.create("malformed Unicode character escape sequence"));
 										
 										default:
-											buffer[bufferIndex] = bytes[index];
+											Chars.appendCodepoint(&chars, bytes[index]);
 									}
 								}
 								else
-									buffer[bufferIndex] = bytes[index];
+									Chars.appendCodepoint(&chars, bytes[index]);
 							
-							--bufferIndex;
+							++chars->referenceCount;
+							self->value = Value.chars(Chars.endAppend(&chars));
 							
-							text = Text.make(malloc(length + 1), bufferIndex);
-							memcpy((char *)text.bytes, buffer, bufferIndex);
-							((char *)text.bytes)[bufferIndex] = '\0';
+							Input.attachValue(self->input, self->value);
 							
-							self->value = Value.text(Input.addEscapedText(self->input, text));
 							return Lexer(escapedStringToken);
 						}
 						

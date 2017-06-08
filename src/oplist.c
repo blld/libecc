@@ -331,7 +331,7 @@ void dumpTo (struct OpList *self, FILE *file)
 	
 	for (i = 0; i < self->count; ++i)
 	{
-		char c = self->ops[i].text.flags & Text(statementFlag)? i? '!': 'T': '|';
+		char c = self->ops[i].text.flags & Text(breakFlag)? i? '!': 'T': '|';
 		fprintf(file, "[%p] %c %s ", (void *)(self->ops + i), c, Op.toChars(self->ops[i].native));
 		
 		if (self->ops[i].native == Op.function)

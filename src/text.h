@@ -59,7 +59,7 @@
 	extern const struct Text Text(inputErrorName);
 
 	enum Text(Flags) {
-		Text(statementFlag) = 1 << 0,
+		Text(breakFlag) = 1 << 0,
 	};
 
 #endif
@@ -70,15 +70,16 @@ Interface(Text,
 	(struct Text, make ,(const char *bytes, uint16_t length))
 	(struct Text, join ,(struct Text from, struct Text to))
 	
-	(uint16_t, nextCodepointLength ,(struct Text))
+	(uint32_t, codepoint ,(struct Text, uint8_t *units))
 	(uint32_t, nextCodepoint ,(struct Text *text))
-	(uint16_t, advance ,(struct Text *text, uint16_t offset))
+	(uint32_t, prevCodepoint ,(struct Text *text))
+	(uint16_t, advance ,(struct Text *text, uint16_t units))
 	
 	(uint16_t, toUTF16Length ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
 	
-	(char *, toLower ,(struct Text, char *length2x))
-	(char *, toUpper ,(struct Text, char *length3x))
+	(char *, toLower ,(struct Text, char *x2buffer))
+	(char *, toUpper ,(struct Text, char *x3buffer))
 	,
 	{
 		const char *bytes;

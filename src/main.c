@@ -1269,6 +1269,23 @@ static void testString (void)
 	test("var s='abc'; String(s) === s", "true", NULL);
 	test("var s='abc'; new String(s) === s", "false", NULL);
 	test("Array.prototype.join.call('test', '*')", "t*e*s*t", NULL);
+	test("'あ𐐷せ'.length", "4", NULL);
+	test("'a𐐷せ'.charAt(1)", "\xED\xA0\x81", NULL);
+	test("'あ𐐷せ'.charAt(2)", "\xED\xB0\xB7", NULL);
+	test("'あ𐐷せ'.charCodeAt(1)", "55297", NULL);
+	test("'あ𐐷せ'.charCodeAt(2)", "56375", NULL);
+	test("'\\uD801\\uDC37'", "𐐷", NULL);
+	test("'𐐷'.charAt(0) + '𐐷'.charAt(1)", "𐐷", NULL);
+	test("String.fromCharCode(0xD801, 0xDC37)", "𐐷", NULL);
+	test("'あ𐐷𐐷せ'.indexOf('𐐷')", "1", NULL);
+	test("'あ𐐷𐐷せ'.indexOf('𐐷', 1)", "1", NULL);
+	test("'あ𐐷𐐷せ'.indexOf('𐐷', 2)", "3", NULL);
+	test("'あ𐐷𐐷せ'.lastIndexOf('𐐷')", "3", NULL);
+	test("'あ𐐷𐐷せ'.lastIndexOf('𐐷', 2)", "1", NULL);
+	test("'あ𐐷𐐷せ'.lastIndexOf('𐐷', 3)", "3", NULL);
+	test("'a\\0b'.charAt(2)", "b", NULL);
+	test("global.escapedText = function(){ return '\\uD801\\uDC37' }; global.escapedText()", "𐐷", NULL);
+	test("global.escapedText()", "𐐷", NULL);
 }
 
 static void testRegExp (void)

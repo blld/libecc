@@ -304,8 +304,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 					
 					if (c < 0x80) *b++ = c;
 					else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-					else if (c <= 0xffff) *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
-					else break;
+					else *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
 					
 					p->c += 4;
 					return node(opBytes, (int16_t)(b - buffer) - 1, buffer);
