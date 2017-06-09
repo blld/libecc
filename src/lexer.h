@@ -104,7 +104,7 @@ Interface(Lexer,
 	
 	(enum Lexer(Token), nextToken, (struct Lexer *))
 	
-	(const char *, tokenChars ,(enum Lexer(Token) token))
+	(const char *, tokenChars ,(enum Lexer(Token) token, char buffer[4]))
 	
 	(struct Value, parseBinary ,(struct Text text))
 	(struct Value, parseInteger ,(struct Text text, int base))

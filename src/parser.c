@@ -26,31 +26,14 @@ static struct OpList * sourceElements (struct Parser *, enum Lexer(Token) endTok
 
 // MARK: Token
 
-static inline enum Lexer(Token) previewToken (struct Parser *self)
+static inline
+enum Lexer(Token) previewToken (struct Parser *self)
 {
 	return self->previewToken;
 }
 
-static void error (struct Parser *self, struct Error *error)
-{
-	if (!self->error)
-	{
-		self->error = error;
-		self->previewToken = Lexer(errorToken);
-	}
-}
-
-static void syntaxError (struct Parser *self, struct Text text, struct Chars *message)
-{
-	error(self, Error.syntaxError(text, message));
-}
-
-static void referenceError (struct Parser *self, struct Text text, struct Chars *message)
-{
-	error(self, Error.referenceError(text, message));
-}
-
-static inline enum Lexer(Token) nextToken (struct Parser *self)
+static inline
+enum Lexer(Token) nextToken (struct Parser *self)
 {
 	if (self->previewToken != Lexer(errorToken))
 	{
@@ -62,7 +45,43 @@ static inline enum Lexer(Token) nextToken (struct Parser *self)
 	return self->previewToken;
 }
 
-static inline int acceptToken (struct Parser *self, enum Lexer(Token) token)
+static
+void parseError (struct Parser *self, struct Error *error)
+{
+	if (!self->error)
+	{
+		self->error = error;
+		self->previewToken = Lexer(errorToken);
+	}
+}
+
+static
+void syntaxError (struct Parser *self, struct Text text, struct Chars *message)
+{
+	parseError(self, Error.syntaxError(text, message));
+}
+
+static
+void referenceError (struct Parser *self, struct Text text, struct Chars *message)
+{
+	parseError(self, Error.referenceError(text, message));
+}
+
+static
+struct OpList * tokenError (struct Parser *self, const char *t)
+{
+	char b[4];
+	
+	if (!previewToken(self) || previewToken(self) >= Lexer(errorToken))
+		syntaxError(self, self->lexer->text, Chars.create("expected %s, got %s", t, Lexer.tokenChars(previewToken(self), b)));
+	else
+		syntaxError(self, self->lexer->text, Chars.create("expected %s, got '%.*s'", t, self->lexer->text.length, self->lexer->text.bytes));
+	
+	return NULL;
+}
+
+static inline
+int acceptToken (struct Parser *self, enum Lexer(Token) token)
 {
 	if (previewToken(self) != token)
 		return 0;
@@ -71,15 +90,15 @@ static inline int acceptToken (struct Parser *self, enum Lexer(Token) token)
 	return 1;
 }
 
-static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
+static inline
+int expectToken (struct Parser *self, enum Lexer(Token) token)
 {
 	if (previewToken(self) != token)
 	{
-		if (token && token < Lexer(errorToken))
-			syntaxError(self, self->lexer->text, Chars.create("expected '%c', got %s", token, Lexer.tokenChars(previewToken(self))));
-		else
-			syntaxError(self, self->lexer->text, Chars.create("expected %s, got %s", Lexer.tokenChars(token), Lexer.tokenChars(previewToken(self))));
 		
+		char b[4];
+		const char *type = Lexer.tokenChars(token, b);
+		tokenError(self, type);
 		return 0;
 	}
 	
@@ -87,16 +106,11 @@ static inline int expectToken (struct Parser *self, enum Lexer(Token) token)
 	return 1;
 }
 
-static inline struct OpList * expectationError (struct Parser *self, const char *type)
-{
-	syntaxError(self, self->lexer->text, Chars.create("expected %s, got %s", type, Lexer.tokenChars(previewToken(self))));
-	return NULL;
-}
-
 
 // MARK: Depth
 
-static void pushDepth (struct Parser *self, struct Key key, char depth)
+static
+void pushDepth (struct Parser *self, struct Key key, char depth)
 {
 	self->depths = realloc(self->depths, (self->depthCount + 1) * sizeof(*self->depths));
 	self->depths[self->depthCount].key = key;
@@ -104,7 +118,8 @@ static void pushDepth (struct Parser *self, struct Key key, char depth)
 	++self->depthCount;
 }
 
-static void popDepth (struct Parser *self)
+static
+void popDepth (struct Parser *self)
 {
 	--self->depthCount;
 }
@@ -144,7 +159,8 @@ struct OpList * useInteger (struct OpList * oplist)
 	return oplist;
 }
 
-static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
+static
+struct OpList * expressionRef (struct Parser *self, struct OpList *oplist, const char *name)
 {
 	if (!oplist)
 		return NULL;
@@ -171,7 +187,8 @@ static struct OpList * expressionRef (struct Parser *self, struct OpList *oplist
 	return oplist;
 }
 
-static void semicolon (struct Parser *self)
+static
+void semicolon (struct Parser *self)
 {
 	if (previewToken(self) == ';')
 	{
@@ -184,7 +201,8 @@ static void semicolon (struct Parser *self)
 	syntaxError(self, self->lexer->text, Chars.create("missing ; before statement"));
 }
 
-static struct Op identifier (struct Parser *self)
+static
+struct Op identifier (struct Parser *self)
 {
 	struct Value value = self->lexer->value;
 	struct Text text = self->lexer->text;
@@ -194,7 +212,8 @@ static struct Op identifier (struct Parser *self)
 	return Op.make(Op.value, value, text);
 }
 
-static struct OpList * array (struct Parser *self)
+static
+struct OpList * array (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
@@ -225,7 +244,8 @@ static struct OpList * array (struct Parser *self)
 	return OpList.unshift(Op.make(Op.array, Value.integer(count), text), oplist);
 }
 
-static struct OpList * propertyAssignment (struct Parser *self)
+static
+struct OpList * propertyAssignment (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	int isGetter = 0, isSetter = 0;
@@ -301,7 +321,8 @@ static struct OpList * propertyAssignment (struct Parser *self)
 	return OpList.join(oplist, assignment(self, 0));
 }
 
-static struct OpList * object (struct Parser *self)
+static
+struct OpList * object (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	uint32_t count = 0;
@@ -327,7 +348,8 @@ static struct OpList * object (struct Parser *self)
 	return OpList.unshift(Op.make(Op.object, Value.integer(count), text), oplist);
 }
 
-static struct OpList * primary (struct Parser *self)
+static
+struct OpList * primary (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	
@@ -379,7 +401,7 @@ static struct OpList * primary (struct Parser *self)
 			self->lexer->allowRegex = 0;
 			
 			if (previewToken(self) != Lexer(regexpToken))
-				syntaxError(self, self->lexer->text, Chars.create("expected RegExp, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				tokenError(self, "RegExp");
 		}
 		
 		if (previewToken(self) == Lexer(regexpToken))
@@ -393,7 +415,8 @@ static struct OpList * primary (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * arguments (struct Parser *self, int *count)
+static
+struct OpList * arguments (struct Parser *self, int *count)
 {
 	struct OpList *oplist = NULL, *argumentOps;
 	*count = 0;
@@ -402,7 +425,7 @@ static struct OpList * arguments (struct Parser *self, int *count)
 		{
 			argumentOps = assignment(self, 0);
 			if (!argumentOps)
-				syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				tokenError(self, "expression");
 			
 			++*count;
 			oplist = OpList.join(oplist, argumentOps);
@@ -411,7 +434,8 @@ static struct OpList * arguments (struct Parser *self, int *count)
 	return oplist;
 }
 
-static struct OpList * member (struct Parser *self)
+static
+struct OpList * member (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
 	struct Text text;
@@ -447,7 +471,8 @@ static struct OpList * member (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * new (struct Parser *self)
+static
+struct OpList * new (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	struct Text text = self->lexer->text;
@@ -471,7 +496,8 @@ static struct OpList * new (struct Parser *self)
 		return primary(self);
 }
 
-static struct OpList * leftHandSide (struct Parser *self)
+static
+struct OpList * leftHandSide (struct Parser *self)
 {
 	struct OpList *oplist = new(self);
 	struct Text text = OpList.text(oplist);
@@ -483,7 +509,7 @@ static struct OpList * leftHandSide (struct Parser *self)
 		{
 			if (!oplist)
 			{
-				syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+				tokenError(self, "expression");
 				return oplist;
 			}
 			
@@ -539,7 +565,8 @@ static struct OpList * leftHandSide (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * postfix (struct Parser *self)
+static
+struct OpList * postfix (struct Parser *self)
 {
 	struct OpList *oplist = leftHandSide(self);
 	struct Text text = self->lexer->text;
@@ -552,7 +579,8 @@ static struct OpList * postfix (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * unary (struct Parser *self)
+static
+struct OpList * unary (struct Parser *self)
 {
 	struct OpList *oplist, *alt;
 	struct Text text = self->lexer->text;
@@ -571,7 +599,7 @@ static struct OpList * unary (struct Parser *self)
 		else if (oplist)
 			referenceError(self, OpList.text(oplist), Chars.create("invalid delete operand"));
 		else
-			syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+			tokenError(self, "expression");
 		
 		return oplist;
 	}
@@ -595,7 +623,7 @@ static struct OpList * unary (struct Parser *self)
 		return postfix(self);
 	
 	if (!alt)
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	
 	oplist = OpList.unshift(Op.make(native, Value(undefined), Text.join(text, alt->ops->text)), alt);
 	
@@ -605,7 +633,8 @@ static struct OpList * unary (struct Parser *self)
 		return oplist;
 }
 
-static struct OpList * multiplicative (struct Parser *self)
+static
+struct OpList * multiplicative (struct Parser *self)
 {
 	struct OpList *oplist = unary(self), *alt;
 	
@@ -637,11 +666,12 @@ static struct OpList * multiplicative (struct Parser *self)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 }
 
-static struct OpList * additive (struct Parser *self)
+static
+struct OpList * additive (struct Parser *self)
 {
 	struct OpList *oplist = multiplicative(self), *alt;
 	while (1)
@@ -670,11 +700,12 @@ static struct OpList * additive (struct Parser *self)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 }
 
-static struct OpList * shift (struct Parser *self)
+static
+struct OpList * shift (struct Parser *self)
 {
 	struct OpList *oplist = additive(self), *alt;
 	while (1)
@@ -705,11 +736,12 @@ static struct OpList * shift (struct Parser *self)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 }
 
-static struct OpList * relational (struct Parser *self, int noIn)
+static
+struct OpList * relational (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = shift(self), *alt;
 	while (1)
@@ -743,11 +775,12 @@ static struct OpList * relational (struct Parser *self, int noIn)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 }
 
-static struct OpList * equality (struct Parser *self, int noIn)
+static
+struct OpList * equality (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = relational(self, noIn), *alt;
 	while (1)
@@ -777,11 +810,12 @@ static struct OpList * equality (struct Parser *self, int noIn)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 }
 
-static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
+static
+struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = equality(self, noIn), *alt;
 	while (previewToken(self) == '&')
@@ -798,12 +832,13 @@ static struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 	return oplist;
 }
 
-static struct OpList * bitwiseXor (struct Parser *self, int noIn)
+static
+struct OpList * bitwiseXor (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseAnd(self, noIn), *alt;
 	while (previewToken(self) == '^')
@@ -820,12 +855,13 @@ static struct OpList * bitwiseXor (struct Parser *self, int noIn)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 	return oplist;
 }
 
-static struct OpList * bitwiseOr (struct Parser *self, int noIn)
+static
+struct OpList * bitwiseOr (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = bitwiseXor(self, noIn), *alt;
 	while (previewToken(self) == '|')
@@ -842,16 +878,17 @@ static struct OpList * bitwiseOr (struct Parser *self, int noIn)
 			}
 			OpList.destroy(oplist);
 		}
-		return expectationError(self, "expression");
+		return tokenError(self, "expression");
 	}
 	return oplist;
 }
 
-static struct OpList * logicalAnd (struct Parser *self, int noIn)
+static
+struct OpList * logicalAnd (struct Parser *self, int noIn)
 {
 	int32_t opCount;
 	struct OpList *oplist = bitwiseOr(self, noIn), *nextOp = NULL;
-	struct Text text = self->lexer->text;
+	
 	while (acceptToken(self, Lexer(logicalAndToken)))
 		if (oplist && (nextOp = bitwiseOr(self, noIn)))
 		{
@@ -859,16 +896,17 @@ static struct OpList * logicalAnd (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalAnd, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
+			tokenError(self, "expression");
 	
 	return oplist;
 }
 
-static struct OpList * logicalOr (struct Parser *self, int noIn)
+static
+struct OpList * logicalOr (struct Parser *self, int noIn)
 {
 	int32_t opCount;
 	struct OpList *oplist = logicalAnd(self, noIn), *nextOp = NULL;
-	struct Text text = self->lexer->text;
+	
 	while (acceptToken(self, Lexer(logicalOrToken)))
 		if (oplist && (nextOp = logicalAnd(self, noIn)))
 		{
@@ -876,15 +914,16 @@ static struct OpList * logicalOr (struct Parser *self, int noIn)
 			oplist = OpList.unshiftJoin(Op.make(Op.logicalOr, Value.integer(opCount), OpList.text(oplist)), oplist, nextOp);
 		}
 		else
-			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
+			tokenError(self, "expression");
 	
 	return oplist;
 }
 
-static struct OpList * conditional (struct Parser *self, int noIn)
+static
+struct OpList * conditional (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = logicalOr(self, noIn);
-	struct Text text = self->lexer->text;
+	
 	if (acceptToken(self, '?'))
 	{
 		if (oplist)
@@ -904,12 +943,13 @@ static struct OpList * conditional (struct Parser *self, int noIn)
 			return oplist;
 		}
 		else
-			syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
+			tokenError(self, "expression");
 	}
 	return oplist;
 }
 
-static struct OpList * assignment (struct Parser *self, int noIn)
+static
+struct OpList * assignment (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = conditional(self, noIn), *opassign = NULL;
 	struct Text text = self->lexer->text;
@@ -941,7 +981,7 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 			return OpList.join(oplist, opassign);
 		}
 		
-		syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		tokenError(self, "expression");
 	}
 	else if (acceptToken(self, Lexer(multiplyAssignToken)))
 		native = Op.multiplyAssignRef;
@@ -973,17 +1013,17 @@ static struct OpList * assignment (struct Parser *self, int noIn)
 		if (( opassign = assignment(self, noIn) ))
 			oplist->ops->text = Text.join(oplist->ops->text, opassign->ops->text);
 		else
-			syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+			tokenError(self, "expression");
 		
 		return OpList.unshiftJoin(Op.make(native, Value(undefined), oplist->ops->text), expressionRef(self, oplist, "invalid assignment left-hand side"), opassign);
 	}
 	
 	syntaxError(self, text, Chars.create("expected expression, got '%.*s'", text.length, text.bytes));
-	
 	return NULL;
 }
 
-static struct OpList * expression (struct Parser *self, int noIn)
+static
+struct OpList * expression (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = assignment(self, noIn);
 	while (acceptToken(self, ','))
@@ -995,7 +1035,8 @@ static struct OpList * expression (struct Parser *self, int noIn)
 
 // MARK: Statements
 
-static struct OpList * statementList (struct Parser *self)
+static
+struct OpList * statementList (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *statementOps = NULL, *discardOps = NULL;
 	uint16_t discardCount = 0;
@@ -1032,7 +1073,8 @@ static struct OpList * statementList (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * block (struct Parser *self)
+static
+struct OpList * block (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	expectToken(self, '{');
@@ -1045,7 +1087,8 @@ static struct OpList * block (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * variableDeclaration (struct Parser *self, int noIn)
+static
+struct OpList * variableDeclaration (struct Parser *self, int noIn)
 {
 	struct Value value = self->lexer->value;
 	struct Text text = self->lexer->text;
@@ -1065,14 +1108,15 @@ static struct OpList * variableDeclaration (struct Parser *self, int noIn)
 		if (opassign)
 			return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), Text(empty)), OpList.create(Op.setLocal, value, Text.join(text, opassign->ops->text)), opassign);
 		
-		syntaxError(self, self->lexer->text, Chars.create("expected expression, got '%.*s'", self->lexer->text.length, self->lexer->text.bytes));
+		tokenError(self, "expression");
 		return NULL;
 	}
 	else
 		return OpList.create(Op.next, value, text);
 }
 
-static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
+static
+struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 {
 	struct OpList *oplist = NULL, *varOps;
 	do
@@ -1089,7 +1133,8 @@ static struct OpList * variableDeclarationList (struct Parser *self, int noIn)
 	return oplist;
 }
 
-static struct OpList * ifStatement (struct Parser *self)
+static
+struct OpList * ifStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *trueOps = NULL, *falseOps = NULL;
 	expectToken(self, '(');
@@ -1108,7 +1153,8 @@ static struct OpList * ifStatement (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * doStatement (struct Parser *self)
+static
+struct OpList * doStatement (struct Parser *self)
 {
 	struct OpList *oplist, *condition;
 	
@@ -1125,7 +1171,8 @@ static struct OpList * doStatement (struct Parser *self)
 	return OpList.createLoop(NULL, condition, NULL, oplist, 1);
 }
 
-static struct OpList * whileStatement (struct Parser *self)
+static
+struct OpList * whileStatement (struct Parser *self)
 {
 	struct OpList *oplist, *condition;
 	
@@ -1140,7 +1187,8 @@ static struct OpList * whileStatement (struct Parser *self)
 	return OpList.createLoop(NULL, condition, NULL, oplist, 0);
 }
 
-static struct OpList * forStatement (struct Parser *self)
+static
+struct OpList * forStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *condition = NULL, *increment = NULL, *body = NULL;
 	
@@ -1207,7 +1255,8 @@ static struct OpList * forStatement (struct Parser *self)
 	}
 }
 
-static struct OpList * continueStatement (struct Parser *self, struct Text text)
+static
+struct OpList * continueStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
 	struct Key label = Key(none);
@@ -1240,7 +1289,8 @@ static struct OpList * continueStatement (struct Parser *self, struct Text text)
 	return oplist;
 }
 
-static struct OpList * breakStatement (struct Parser *self, struct Text text)
+static
+struct OpList * breakStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
 	struct Key label = Key(none);
@@ -1268,7 +1318,8 @@ static struct OpList * breakStatement (struct Parser *self, struct Text text)
 	return oplist;
 }
 
-static struct OpList * returnStatement (struct Parser *self, struct Text text)
+static
+struct OpList * returnStatement (struct Parser *self, struct Text text)
 {
 	struct OpList *oplist = NULL;
 	
@@ -1287,7 +1338,8 @@ static struct OpList * returnStatement (struct Parser *self, struct Text text)
 	return oplist;
 }
 
-static struct OpList * switchStatement (struct Parser *self)
+static
+struct OpList * switchStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL, *conditionOps = NULL, *defaultOps = NULL;
 	struct Text text = Text(empty);
@@ -1337,7 +1389,8 @@ static struct OpList * switchStatement (struct Parser *self)
 	return oplist;
 }
 
-static struct OpList * allStatement (struct Parser *self)
+static
+struct OpList * allStatement (struct Parser *self)
 {
 	struct OpList *oplist = NULL;
 	struct Text text = self->lexer->text;
@@ -1393,7 +1446,7 @@ static struct OpList * allStatement (struct Parser *self)
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->count), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
-			syntaxError(self, self->lexer->text, Chars.create("expected catch or finally, got %s", Lexer.tokenChars(previewToken(self))));
+			tokenError(self, "catch or finally");
 		
 		if (acceptToken(self, Lexer(catchToken)))
 		{
@@ -1466,7 +1519,8 @@ static struct OpList * allStatement (struct Parser *self)
 	}
 }
 
-static struct OpList * statement (struct Parser *self)
+static
+struct OpList * statement (struct Parser *self)
 {
 	struct OpList *oplist = allStatement(self);
 	if (oplist && oplist->count > 1)
@@ -1477,7 +1531,8 @@ static struct OpList * statement (struct Parser *self)
 
 // MARK: Function
 
-static struct OpList * parameters (struct Parser *self, int *count)
+static
+struct OpList * parameters (struct Parser *self, int *count)
 {
 	struct Op op;
 	*count = 0;
@@ -1502,7 +1557,8 @@ static struct OpList * parameters (struct Parser *self, int *count)
 	return NULL;
 }
 
-static struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
+static
+struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
 {
 	struct Value value;
 	struct Text text = self->lexer->text, textParameter;
@@ -1586,7 +1642,8 @@ static struct OpList * function (struct Parser *self, int isDeclaration, int isG
 
 // MARK: Source
 
-static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
+static
+struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
 {
 	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL, *discardOps = NULL;
 	uint16_t discardCount = 0, functionDiscard = 0;
@@ -1629,7 +1686,7 @@ static struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) en
 				}
 			}
 			else
-				syntaxError(self, self->lexer->text, Chars.create("expected statement, got %s", Lexer.tokenChars(previewToken(self))));
+				tokenError(self, "statement");
 		}
 	
 	if (init)

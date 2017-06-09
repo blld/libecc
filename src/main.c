@@ -197,7 +197,7 @@ static void testParser (void)
 {
 	test("debugger()", "SyntaxError: missing ; before statement"
 	,    "        ^ ");
-	test("delete throw", "SyntaxError: expected expression, got 'throw'"
+	test("delete throw", "SyntaxError: expected expression, got throw"
 	,    "       ^~~~~");
 	test("{", "SyntaxError: expected '}', got end of script"
 	,    " ^");

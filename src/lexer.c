@@ -13,7 +13,8 @@
 
 // MARK: - Static Members
 
-static inline void addLine(struct Lexer *self, uint32_t offset)
+static inline
+void addLine(struct Lexer *self, uint32_t offset)
 {
 	if (self->input->lineCount + 1 >= self->input->lineCapacity)
 	{
@@ -23,7 +24,8 @@ static inline void addLine(struct Lexer *self, uint32_t offset)
 	self->input->lines[++self->input->lineCount] = offset;
 }
 
-static inline char previewChar(struct Lexer *self)
+static inline
+unsigned char previewChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
 		return self->input->bytes[self->offset];
@@ -31,11 +33,12 @@ static inline char previewChar(struct Lexer *self)
 		return 0;
 }
 
-static inline char nextChar(struct Lexer *self)
+static inline
+unsigned char nextChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
 	{
-		int c = self->input->bytes[self->offset++];
+		unsigned char c = self->input->bytes[self->offset++];
 		
 		if ((c == '\r' && previewChar(self) != '\n') || c == '\n')
 		{
@@ -50,7 +53,8 @@ static inline char nextChar(struct Lexer *self)
 		return 0;
 }
 
-static inline int acceptChar(struct Lexer *self, char c)
+static inline
+int acceptChar(struct Lexer *self, char c)
 {
 	if (previewChar(self) == c)
 	{
@@ -61,12 +65,14 @@ static inline int acceptChar(struct Lexer *self, char c)
 		return 0;
 }
 
-static inline char eof(struct Lexer *self)
+static inline
+char eof(struct Lexer *self)
 {
 	return self->offset >= self->input->length;
 }
 
-static inline enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *message)
+static inline
+enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *message)
 {
 	struct Error *error = Error.syntaxError(self->text, message);
 	self->value = Value.error(error);
@@ -96,7 +102,7 @@ void destroy (struct Lexer *self)
 
 enum Lexer(Token) nextToken (struct Lexer *self)
 {
-	int c;
+	unsigned char c;
 	assert(self);
 	
 	self->value = Value(undefined);
@@ -457,40 +463,40 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						size_t length;
 						enum Lexer(Token) token;
 					} keywords[] = {
-						#define _(X, Y) { #X, sizeof(#X) - 1, Lexer(X##Token) },
-						_(break,)
-						_(case,)
-						_(catch,)
-						_(continue,)
-						_(debugger,)
-						_(default,)
-						_(delete,)
-						_(do,)
-						_(else,)
-						_(finally,)
-						_(for,)
-						_(function,)
-						_(if,)
-						_(in,)
-						_(instanceof,)
-						_(new,)
-						_(return,)
-						_(switch,)
-						_(typeof,)
-						_(throw,)
-						_(try,)
-						_(var,)
-						_(void,)
-						_(while,)
-						_(with,)
+						#define _(X) { #X, sizeof(#X) - 1, Lexer(X##Token) },
+						_(break)
+						_(case)
+						_(catch)
+						_(continue)
+						_(debugger)
+						_(default)
+						_(delete)
+						_(do)
+						_(else)
+						_(finally)
+						_(for)
+						_(function)
+						_(if)
+						_(in)
+						_(instanceof)
+						_(new)
+						_(return)
+						_(switch)
+						_(typeof)
+						_(throw)
+						_(try)
+						_(var)
+						_(void)
+						_(while)
+						_(with)
 						
-						_(void,)
-						_(typeof,)
+						_(void)
+						_(typeof)
 						
-						_(null,)
-						_(true,)
-						_(false,)
-						_(this,)
+						_(null)
+						_(true)
+						_(false)
+						_(this)
 						#undef _
 					};
 					
@@ -550,11 +556,8 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 	return Lexer(noToken);
 }
 
-const char * tokenChars (enum Lexer(Token) token)
+const char * tokenChars (enum Lexer(Token) token, char buffer[4])
 {
-	// <!> non reentrant
-	
-	static char buffer[4] = { '\'', 0, '\'', 0 };
 	int index;
 	
 	struct {
@@ -568,7 +571,10 @@ const char * tokenChars (enum Lexer(Token) token)
 	
 	if (token > Lexer(noToken) && token < Lexer(errorToken))
 	{
+		buffer[0] = '\'';
 		buffer[1] = token;
+		buffer[2] = '\'';
+		buffer[3] = '\0';
 		return buffer;
 	}
 	
