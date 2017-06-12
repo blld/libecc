@@ -753,7 +753,7 @@ uint32_t prevCodepoint (struct Text *text)
 			}
 			
 		case 3:
-			if ((text->bytes[-3] & 0xf0) == 0xe0 && (text->bytes[-2] & 0xc0) == 0x80 && (text->bytes[-1] & 0xc0) == 0x80 )
+			if ((text->bytes[-3] & 0xf0) == 0xe0 && (text->bytes[-2] & 0xc0) == 0x80 && (text->bytes[-1] & 0xc0) == 0x80)
 			{
 				cp  = (*(--text->bytes) & 0x3f);
 				cp |= (*(--text->bytes) & 0x3f) << 6;
@@ -765,8 +765,8 @@ uint32_t prevCodepoint (struct Text *text)
 		case 2:
 			if ((text->bytes[-2] & 0xe0) == 0xc0 && (text->bytes[-1] & 0xc0) == 0x80)
 			{
-				cp  = (*(text->bytes++) & 0x3f);
-				cp |= (*(text->bytes++) & 0x1f) << 6;
+				cp  = (*(--text->bytes) & 0x3f);
+				cp |= (*(--text->bytes) & 0x1f) << 6;
 				text->length -= 2;
 				break;
 			}

@@ -126,10 +126,14 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 		{
 			/* merge 16-bit surrogate */
 			self->length = prev.length;
-			return appendCodepoint(chars, 0x10000 | ((hi & 0x03FF) << 10) | (lo & 0x03FF));
+			self = appendCodepoint(chars, 0x10000 | ((hi & 0x03FF) << 10) | (lo & 0x03FF));
+			Text.nextCodepoint(&text);
 		}
 	}
-
+	
+	if (!text.length)
+		return self;
+	
 	self = realloc(self, sizeof(*self) + self->length + text.length);
 	memcpy(self->bytes + self->length, text.bytes, text.length);
 	self->length += text.length;
@@ -147,36 +151,9 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 struct Chars * appendCodepoint (struct Chars **chars, uint32_t cp)
 {
 	char buffer[5] = { 0 };
-	struct Text text = Text.make(buffer, 0);
-	
-	if (cp < 0x80)
-	{
-		buffer[0] = cp;
-		text.length = 1;
-	}
-	else if (cp < 0x800)
-	{
-		buffer[0] = 0xC0 | (cp >> 6);
-		buffer[1] = 0x80 | (cp & 0x3F);
-		text.length = 2;
-	}
-	else if (cp < 0x10000)
-	{
-		buffer[0] = 0xE0 | (cp >> 12);
-		buffer[1] = 0x80 | (cp >> 6 & 0x3F);
-		buffer[2] = 0x80 | (cp & 0x3F);
-		text.length = 3;
-	}
-	else
-	{
-		buffer[0] = 0xF0 | (cp >> 18);
-		buffer[1] = 0x80 | (cp >> 12 & 0x3F);
-		buffer[2] = 0x80 | (cp >> 6 & 0x3F);
-		buffer[3] = 0x80 | (cp & 0x3F);
-		text.length = 4;
-	}
-	
-	return appendText(chars, text);
+	struct Text text = Text.make(buffer, writeCodepoint(buffer, cp));
+	appendText(chars, text);
+	return *chars;
 }
 
 struct Chars * appendValue (struct Chars **chars, struct Context * const context, struct Value value)
@@ -337,4 +314,50 @@ void destroy (struct Chars *self)
 	assert(self);
 	
 	free(self), self = NULL;
+}
+
+uint8_t codepointLength (uint32_t cp)
+{
+	if (cp < 0x80)
+		return 1;
+	else if (cp < 0x800)
+		return 2;
+	else if (cp < 0x10000)
+		return 3;
+	else
+		return 4;
+	
+	return 0;
+}
+
+uint8_t writeCodepoint (char *bytes, uint32_t cp)
+{
+	if (cp < 0x80)
+	{
+		bytes[0] = cp;
+		return 1;
+	}
+	else if (cp < 0x800)
+	{
+		bytes[0] = 0xC0 | (cp >> 6);
+		bytes[1] = 0x80 | (cp & 0x3F);
+		return 2;
+	}
+	else if (cp < 0x10000)
+	{
+		bytes[0] = 0xE0 | (cp >> 12);
+		bytes[1] = 0x80 | (cp >> 6 & 0x3F);
+		bytes[2] = 0x80 | (cp & 0x3F);
+		return 3;
+	}
+	else
+	{
+		bytes[0] = 0xF0 | (cp >> 18);
+		bytes[1] = 0x80 | (cp >> 12 & 0x3F);
+		bytes[2] = 0x80 | (cp >> 6 & 0x3F);
+		bytes[3] = 0x80 | (cp & 0x3F);
+		return 4;
+	}
+	
+	return 0;
 }

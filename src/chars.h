@@ -44,6 +44,9 @@ Interface(Chars,
 	(struct Chars *, normalizeBinary ,(struct Chars *))
 	
 	(void, destroy ,(struct Chars *))
+	
+	(uint8_t, codepointLength ,(uint32_t cp))
+	(uint8_t, writeCodepoint ,(char *, uint32_t cp))
 	,
 	{
 		uint16_t length;

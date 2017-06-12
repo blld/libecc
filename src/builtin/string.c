@@ -62,20 +62,20 @@ struct Text positionText (const char *chars, uint16_t length, int32_t position, 
 	}
 	else if (enableReverse)
 	{
-		text.bytes += text.length;
+		text.bytes += length;
 		
 		while (position++ < 0)
 		{
-			prev = text;
 			codepoint = Text.prevCodepoint(&text);
 			
-			if (codepoint > 0xffff && !position--)
+			if (codepoint > 0xffff && position++ >= 0)
 			{
 				/* simulate 16-bit surrogate */
-				text = prev;
 				text.flags = Text(breakFlag);
 			}
 		}
+		
+		text.length = length - (text.bytes - chars);
 	}
 	else
 		text.length = 0;
@@ -154,15 +154,13 @@ static struct Value charAt (struct Context * const context)
 			/* simulate 16-bit surrogate */
 			
 			cp -= 0x010000;
-			if (text.bytes == positionText(chars, length, position + 1, 0).bytes)
-				cp = ((cp >> 10) & 0x3ff) + 0xd800;
-			else
+			if (text.flags & Text(breakFlag))
 				cp = ((cp >>  0) & 0x3ff) + 0xdc00;
+			else
+				cp = ((cp >> 10) & 0x3ff) + 0xd800;
 			
 			result = Chars.createSized(3);
-			*(result->bytes + 0) = 224 + cp / 4096;
-			*(result->bytes + 1) = 128 + cp / 64 % 64;
-			*(result->bytes + 2) = 128 + cp % 64;
+			Chars.writeCodepoint(result->bytes, cp);
 		}
 		
 		return Value.chars(result);
@@ -197,10 +195,10 @@ static struct Value charCodeAt (struct Context * const context)
 			/* simulate 16-bit surrogate */
 			
 			cp -= 0x010000;
-			if (text.bytes == positionText(chars, length, position + 1, 0).bytes)
-				return Value.binary(((cp >> 10) & 0x3ff) + 0xd800);
-			else
+			if (text.flags & Text(breakFlag))
 				return Value.binary(((cp >>  0) & 0x3ff) + 0xdc00);
+			else
+				return Value.binary(((cp >> 10) & 0x3ff) + 0xd800);
 		}
 	}
 }
@@ -336,8 +334,11 @@ static struct Value lastIndexOf (struct Context * const context)
 static struct Value slice (struct Context * const context)
 {
 	struct Value from, to;
-	ptrdiff_t start, end, length;
+	struct Text start, end;
 	const char *chars;
+	ptrdiff_t length;
+	uint16_t head = 0, tail = 0;
+	uint32_t cp = 0;
 	
 	Context.assertParameterCount(context, 2);
 	
@@ -349,24 +350,48 @@ static struct Value slice (struct Context * const context)
 	
 	from = Context.argument(context, 0);
 	if (from.type == Value(undefinedType))
-		start = 0;
+		start = Text.make(chars, length);
 	else
-		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 1).bytes - chars;
+		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 1);
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
-		end = length;
+		end = Text.make(chars + length, 0);
 	else
-		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 1).bytes - chars;
+		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 1);
 	
-	length = end - start;
+	if (start.flags & Text(breakFlag))
+		cp = Text.nextCodepoint(&start);
 	
-	if (length <= 0)
+	length = end.bytes - start.bytes;
+	
+	if (start.flags & Text(breakFlag))
+		head = 3;
+	
+	if (end.flags & Text(breakFlag))
+		tail = 3;
+	
+	if (head + length + tail <= 0)
 		return Value.text(&Text(empty));
 	else
 	{
-		struct Chars *result = Chars.createSized(length);
-		memcpy(result->bytes, chars + start, length);
+		struct Chars *result = Chars.createSized(length + head + tail);
+		
+		if (start.flags & Text(breakFlag))
+		{
+			/* simulate 16-bit surrogate */
+			Chars.writeCodepoint(result->bytes, cp = (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+		}
+		
+		if (length > 0)
+			memcpy(result->bytes + head, start.bytes, length);
+		
+		if (end.flags & Text(breakFlag))
+		{
+			/* simulate 16-bit surrogate */
+			Chars.writeCodepoint(result->bytes + head + length, (((Text.codepoint(end, NULL) - 0x010000) >> 10) & 0x3ff) + 0xd800);
+		}
+		
 		return Value.chars(result);
 	}
 }
@@ -465,6 +490,7 @@ static struct Value split (struct Context * const context)
 	}
 	else if (!separator.length)
 	{
+		uint32_t cp;
 		uint8_t units;
 		
 		while (text.length)
@@ -472,10 +498,25 @@ static struct Value split (struct Context * const context)
 			if (size >= limit)
 				break;
 			
-			Text.codepoint(text, &units);
-			element = Chars.createSized(units);
-			memcpy(element->bytes, text.bytes, units);
-			Object.addElement(array, size++, Value.chars(element), 0);
+			cp = Text.codepoint(text, &units);
+			if (cp >= 0x010000)
+			{
+				/* simulate 16-bit surrogate */
+				
+				element = Chars.createSized(3);
+				Chars.writeCodepoint(element->bytes, (((cp - 0x010000) >> 10) & 0x3ff) + 0xd800);
+				Object.addElement(array, size++, Value.chars(element), 0);
+				
+				element = Chars.createSized(3);
+				Chars.writeCodepoint(element->bytes, (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+				Object.addElement(array, size++, Value.chars(element), 0);
+			}
+			else
+			{
+				element = Chars.createSized(units);
+				memcpy(element->bytes, text.bytes, units);
+				Object.addElement(array, size++, Value.chars(element), 0);
+			}
 			Text.advance(&text, units);
 		}
 		
@@ -519,8 +560,10 @@ static struct Value split (struct Context * const context)
 static struct Value substring (struct Context * const context)
 {
 	struct Value from, to;
-	ptrdiff_t start, end, temp, length;
+	struct Text start, end;
 	const char *chars;
+	uint16_t length, head = 0, tail = 0;
+	uint32_t cp = 0;
 	
 	Context.assertParameterCount(context, 2);
 	
@@ -532,31 +575,55 @@ static struct Value substring (struct Context * const context)
 	
 	from = Context.argument(context, 0);
 	if (from.type == Value(undefinedType))
-		start = 0;
+		start = Text.make(chars, length);
 	else
-		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 0).bytes - chars;
+		start = positionText(chars, length, Value.toInteger(context, from).data.integer, 0);
 	
 	to = Context.argument(context, 1);
 	if (to.type == Value(undefinedType))
-		end = length;
+		end = Text.make(chars + length, 0);
 	else
-		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 0). bytes - chars;
+		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 0);
 	
-	if (start > end)
+	if (start.bytes > end.bytes)
 	{
-		temp = start;
+		struct Text temp = start;
 		start = end;
 		end = temp;
 	}
 	
-	length = end - start;
+	if (start.flags & Text(breakFlag))
+		cp = Text.nextCodepoint(&start);
 	
-	if (length <= 0)
+	length = end.bytes - start.bytes;
+	
+	if (start.flags & Text(breakFlag))
+		head = 3;
+	
+	if (end.flags & Text(breakFlag))
+		tail = 3;
+	
+	if (head + length + tail <= 0)
 		return Value.text(&Text(empty));
 	else
 	{
-		struct Chars *result = Chars.createSized(length);
-		memcpy(result->bytes, chars + start, length);
+		struct Chars *result = Chars.createSized(length + head + tail);
+		
+		if (start.flags & Text(breakFlag))
+		{
+			/* simulate 16-bit surrogate */
+			Chars.writeCodepoint(result->bytes, (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+		}
+		
+		if (length > 0)
+			memcpy(result->bytes + head, start.bytes, length);
+		
+		if (end.flags & Text(breakFlag))
+		{
+			/* simulate 16-bit surrogate */
+			Chars.writeCodepoint(result->bytes + head + length, (((Text.codepoint(end, NULL) - 0x010000) >> 10) & 0x3ff) + 0xd800);
+		}
+		
 		return Value.chars(result);
 	}
 }
@@ -689,17 +756,37 @@ struct String * create (struct Chars *chars)
 struct Value valueAtPosition (struct String *self, uint32_t position)
 {
 	struct Text text;
+	uint32_t cp;
 	uint8_t units;
 	
 	text = positionText(self->value->bytes, self->value->length, position, 0);
-	Text.codepoint(text, &units);
+	cp = Text.codepoint(text, &units);
 	
 	if (units <= 0)
 		return Value(undefined);
 	else
 	{
-		struct Chars *result = Chars.createSized(units);
-		memcpy(result->bytes, text.bytes, units);
+		struct Chars *result;
+		
+		if (cp < 0x010000)
+		{
+			result = Chars.createSized(units);
+			memcpy(result->bytes, text.bytes, units);
+		}
+		else
+		{
+			/* simulate 16-bit surrogate */
+			
+			cp -= 0x010000;
+			if (text.flags & Text(breakFlag))
+				cp = ((cp >>  0) & 0x3ff) + 0xdc00;
+			else
+				cp = ((cp >> 10) & 0x3ff) + 0xd800;
+			
+			result = Chars.createSized(3);
+			Chars.writeCodepoint(result->bytes, cp);
+		}
+		
 		return Value.chars(result);
 	}
 }
