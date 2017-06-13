@@ -491,6 +491,10 @@ static void testEquality (void)
 	test("0 === NaN", "false", NULL);
 	test("'foo' === NaN", "false", NULL);
 	test("NaN === NaN", "false", NULL);
+	test("1 == new Number(1)", "true", NULL);
+	test("new Number(1) == new Number(1)", "false", NULL);
+	test("'abc' == new String('abc')", "true", NULL);
+	test("new String('abc') == new String('abc')", "false", NULL);
 }
 
 static void testRelational (void)

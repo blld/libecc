@@ -593,7 +593,9 @@ struct Value toType (struct Value value)
 
 struct Value equals (struct Context * const context, struct Value a, struct Value b)
 {
-	if (isNumber(a) && isNumber(b))
+	if (isObject(a) && isObject(b))
+		return truth(a.data.object == b.data.object);
+	else if (isNumber(a) && isNumber(b))
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
@@ -604,8 +606,6 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 		
 		return truth(!memcmp(stringBytes(a), stringBytes(b), aLength));
 	}
-	else if (isObject(a) && isObject(b))
-		return truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
 		return Value(true);
 	else if (a.type == Value(nullType) && b.type == Value(undefinedType))
