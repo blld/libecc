@@ -235,11 +235,11 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 											return syntaxError(self, Chars.create("malformed Unicode character escape sequence"));
 										
 										default:
-											Chars.appendCodepoint(&chars, bytes[index]);
+											Chars.append(&chars, "%c", bytes[index]);
 									}
 								}
 								else
-									Chars.appendCodepoint(&chars, bytes[index]);
+									Chars.append(&chars, "%c", bytes[index]);
 							
 							++chars->referenceCount;
 							self->value = Value.chars(Chars.endAppend(&chars));
