@@ -79,26 +79,30 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
     return v;
 }
 
-static void propertyTypeError(struct Context * const context, struct Value *ref, struct Value this, const char *description)
+static void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
 {
-	if (Value.isObject(this))
+	const char *postfix =
+		ref->flags & Value(accessor) && !(ref->flags & Value(asData))
+		?	"is read-only accessor"
+		:	"is read-only property";
+	
+	do
 	{
 		union Object(Hashmap) *hashmap = (union Object(Hashmap) *)ref;
 		union Object(Element) *element = (union Object(Element) *)ref;
 		
-		if (hashmap >= this.data.object->hashmap && hashmap < this.data.object->hashmap + this.data.object->hashmapCount)
+		if (hashmap >= this->hashmap && hashmap < this->hashmap + this->hashmapCount)
 		{
 			const struct Text *keyText = Key.textOf(hashmap->value.key);
-			Context.typeError(context, Chars.create("'%.*s' %s", keyText->length, keyText->bytes, description));
+			Context.typeError(context, Chars.create("'%.*s' %s", keyText->length, keyText->bytes, postfix));
 		}
-		else if (element >= this.data.object->element && element < this.data.object->element + this.data.object->elementCount)
-			Context.typeError(context, Chars.create("'%d' %s", element - this.data.object->element, description));
-	}
-	else
-	{
-		struct Text text = Context.textSeek(context);
-		Context.typeError(context, Chars.create("'%.*s' %s", text.length, text.bytes, description));
-	}
+		else if (element >= this->element && element < this->element + this->elementCount)
+			Context.typeError(context, Chars.create("'%d' %s", element - this->element, postfix));
+		
+	} while (( this = this->prototype ));
+	
+	struct Text text = Context.textSeek(context);
+	Context.typeError(context, Chars.create("'%.*s' %s", text.length, text.bytes, postfix));
 }
 
 //
@@ -122,7 +126,7 @@ static struct Value valueOf (struct Context * const context)
 static struct Value hasOwnProperty (struct Context * const context)
 {
 	struct Object *self;
-	struct Value value;
+	struct Value value, *ref;
 	struct Key key;
 	uint32_t index;
 	
@@ -137,10 +141,8 @@ static struct Value hasOwnProperty (struct Context * const context)
 	
 	if (memberOwn(self, key))
 		return Value(true);
-	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(length)))))
-		return Value.truth(self->type == &Arguments(type) || self->type == &Array(type));
-	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
-		return Value.truth(self->type == &Arguments(type));
+	else if ((ref = member(self, key)) && ref->flags & Value(asOwn))
+		return Value(true);
 	
 	return Value(false);
 }
@@ -206,9 +208,9 @@ static struct Value getPrototypeOf (struct Context * const context)
 	
 	Context.assertParameterCount(context, 1);
 	
-	object = checkObject(context, 0);
+	object = Value.toObject(context, Context.argument(context, 0)).data.object;
 	
-	return object->prototype? Value.object(object->prototype): Value(undefined);
+	return object->prototype? Value.objectValue(object->prototype): Value(undefined);
 }
 
 static struct Value getOwnPropertyDescriptor (struct Context * const context)
@@ -219,13 +221,16 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 	
 	Context.assertParameterCount(context, 2);
 	
-	object = checkObject(context, 0);
+	object = Value.toObject(context, Context.argument(context, 0)).data.object;
 	value = Context.argument(context, 1);
 	ref = propertyOwn(object, context, value);
 	
-	if (object->type == &Arguments(type))
-		if (Value.isTrue(Value.same(context, value, Value.text(&Text(callee)))))
-			ref = member(object, Key(callee));
+	if (!ref)
+	{
+		ref = property(object, context, value);
+		if (!(ref->flags & Value(asOwn)))
+			ref = NULL;
+	}
 	
 	if (ref)
 	{
@@ -233,9 +238,17 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 		
 		if (ref->flags & Value(accessor))
 		{
-			addMember(result, ref->flags & Value(getter)? Key(get): Key(set), Value.function(ref->data.function), 0);
-			if (ref->data.function->pair)
-				addMember(result, ref->flags & Value(getter)? Key(set): Key(get), Value.function(ref->data.function->pair), 0);
+			if (ref->flags & Value(asData))
+			{
+				addMember(result, Key(value), Object.getValue(object, context, ref), 0);
+				addMember(result, Key(writable), Value.truth(!(ref->flags & Value(readonly))), 0);
+			}
+			else
+			{
+				addMember(result, ref->flags & Value(getter)? Key(get): Key(set), Value.function(ref->data.function), 0);
+				if (ref->data.function->pair)
+					addMember(result, ref->flags & Value(getter)? Key(set): Key(get), Value.function(ref->data.function->pair), 0);
+			}
 		}
 		else
 		{
@@ -248,25 +261,13 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 		
 		return Value.object(result);
 	}
-	else if (Value.isTrue(Value.same(context, value, Value.text(&Text(length)))))
-	{
-		if (object->type == &Arguments(type) || object->type == &Array(type))
-		{
-			struct Object *result = create(Object(prototype));
-			addMember(result, Key(value), Value.binary(object->elementCount), 0);
-			addMember(result, Key(writable), Value(true), 0);
-			addMember(result, Key(enumerable), Value(false), 0);
-			addMember(result, Key(configurable), Value(true), 0);
-			return Value.object(result);
-		}
-	}
 	
 	return Value(undefined);
 }
 
 static struct Value getOwnPropertyNames (struct Context * const context)
 {
-	struct Object *object;
+	struct Object *object, *parent;
 	struct Object *result;
 	uint32_t index, length;
 	
@@ -280,11 +281,16 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 		if (object->element[index].value.check == 1)
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
-	if (object->type == &Arguments(type) || object->type == &Array(type))
-		addElement(result, length++, Value.key(Key(length)), 0);
-	
-	if (object->type == &Arguments(type))
-		addElement(result, length++, Value.key(Key(callee)), 0);
+	parent = object;
+	while (( parent = parent->prototype ))
+	{
+		for (index = 2; index < parent->hashmapCount; ++index)
+		{
+			struct Value value = parent->hashmap[index].value;
+			if (value.check == 1 && value.flags & Value(asOwn))
+				addElement(result, length++, Value.key(value.key), 0);
+		}
+	}
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].value.check == 1)
@@ -304,7 +310,6 @@ static struct Value defineProperty (struct Context * const context)
 	
 	object = checkObject(context, 0);
 	property = Value.toString(context, Context.argument(context, 1));
-	current = Object.propertyOwn(object, context, property);
 	descriptor = checkObject(context, 2);
 	
 	getter = member(descriptor, Key(get));
@@ -362,13 +367,15 @@ static struct Value defineProperty (struct Context * const context)
 	
 	element = getElementOrKey(property, context, &key);
 	
-	if ((object->type == &Array(type) || object->type == &Arguments(type)) && element == UINT32_MAX && Key.isEqual(key, Key(length)))
+	current = Object.propertyOwn(object, context, property);
+	if (!current)
 	{
-		Context.setTextIndex(context, Context(callIndex));
-		putProperty(object, context, property, value);
-		return Value(true);
+		current = Object.property(object, context, property);
+		if (current && !(current->flags & Value(asOwn)))
+			current = NULL;
 	}
-	else if (!current)
+	
+	if (!current)
 	{
 		addProperty(object, context, property, value, 0);
 		return Value(true);
@@ -383,7 +390,18 @@ static struct Value defineProperty (struct Context * const context)
 			if (current->flags & Value(accessor))
 			{
 				if (!(getter || setter))
+				{
+					if (current->flags & Value(asData))
+					{
+						struct Function *currentSetter = current->flags & Value(getter)? current->data.function->pair: current->data.function;
+						if (currentSetter)
+						{
+							Context.callFunction(context, currentSetter, Value.object(object), 1, value);
+							return Value(true);
+						}
+					}
 					goto sealedError;
+				}
 				else
 				{
 					struct Function *currentGetter = current->flags & Value(getter)? current->data.function: current->data.function->pair;
@@ -622,7 +640,7 @@ static struct Value keys (struct Context * const context)
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
 	
 	assert(sizeof(*Object(prototype)->hashmap) == 32);
 	
@@ -631,26 +649,26 @@ void setup ()
 		NULL, Value.object(Object(prototype)),
 		NULL);
 	
-	Function.addMethod(Object(constructor), "getPrototypeOf", getPrototypeOf, 1, flags);
-	Function.addMethod(Object(constructor), "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, flags);
-	Function.addMethod(Object(constructor), "getOwnPropertyNames", getOwnPropertyNames, 1, flags);
-	Function.addMethod(Object(constructor), "create", objectCreate, 2, flags);
-	Function.addMethod(Object(constructor), "defineProperty", defineProperty, 3, flags);
-	Function.addMethod(Object(constructor), "defineProperties", defineProperties, 2, flags);
-	Function.addMethod(Object(constructor), "seal", seal, 1, flags);
-	Function.addMethod(Object(constructor), "freeze", freeze, 1, flags);
-	Function.addMethod(Object(constructor), "preventExtensions", preventExtensions, 1, flags);
-	Function.addMethod(Object(constructor), "isSealed", isSealed, 1, flags);
-	Function.addMethod(Object(constructor), "isFrozen", isFrozen, 1, flags);
-	Function.addMethod(Object(constructor), "isExtensible", isExtensible, 1, flags);
-	Function.addMethod(Object(constructor), "keys", keys, 1, flags);
+	Function.addMethod(Object(constructor), "getPrototypeOf", getPrototypeOf, 1, h);
+	Function.addMethod(Object(constructor), "getOwnPropertyDescriptor", getOwnPropertyDescriptor, 2, h);
+	Function.addMethod(Object(constructor), "getOwnPropertyNames", getOwnPropertyNames, 1, h);
+	Function.addMethod(Object(constructor), "create", objectCreate, 2, h);
+	Function.addMethod(Object(constructor), "defineProperty", defineProperty, 3, h);
+	Function.addMethod(Object(constructor), "defineProperties", defineProperties, 2, h);
+	Function.addMethod(Object(constructor), "seal", seal, 1, h);
+	Function.addMethod(Object(constructor), "freeze", freeze, 1, h);
+	Function.addMethod(Object(constructor), "preventExtensions", preventExtensions, 1, h);
+	Function.addMethod(Object(constructor), "isSealed", isSealed, 1, h);
+	Function.addMethod(Object(constructor), "isFrozen", isFrozen, 1, h);
+	Function.addMethod(Object(constructor), "isExtensible", isExtensible, 1, h);
+	Function.addMethod(Object(constructor), "keys", keys, 1, h);
 	
-	Function.addToObject(Object(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, flags);
-	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(Object(prototype), "hasOwnProperty", hasOwnProperty, 1, flags);
-	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, flags);
-	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, flags);
+	Function.addToObject(Object(prototype), "toString", toString, 0, h);
+	Function.addToObject(Object(prototype), "toLocaleString", toString, 0, h);
+	Function.addToObject(Object(prototype), "valueOf", valueOf, 0, h);
+	Function.addToObject(Object(prototype), "hasOwnProperty", hasOwnProperty, 1, h);
+	Function.addToObject(Object(prototype), "isPrototypeOf", isPrototypeOf, 1, h);
+	Function.addToObject(Object(prototype), "propertyIsEnumerable", propertyIsEnumerable, 1, h);
 }
 
 void teardown (void)
@@ -896,15 +914,14 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 {
 	if (ref->flags & Value(accessor))
 	{
-		if (!context)
-			Ecc.fatal("cannot use setter outside context");
+		assert(context);
 		
 		if (ref->flags & Value(setter))
 			Context.callFunction(context, ref->data.function, Value.object(self), 1 | Context(asAccessor), value);
 		else if (ref->data.function->pair)
 			Context.callFunction(context, ref->data.function->pair, Value.object(self), 1 | Context(asAccessor), value);
 		else
-			propertyTypeError(context, ref, Value.object(self), "is read-only accessor");
+			readonlyError(context, ref, self);
 		
 		return ref;
 	}
@@ -912,7 +929,7 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			propertyTypeError(context, ref, Value.object(self), "is read-only property");
+			readonlyError(context, ref, self);
 	}
 	else if (self->flags & Object(sealed))
 		Context.typeError(context, Chars.create("object is not extensible"));

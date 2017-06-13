@@ -56,9 +56,9 @@ void setup (void)
 	{
 		Key(prototype) = makeWithCString("prototype");
 		Key(constructor) = makeWithCString("constructor");
-		Key(length) = Key.makeWithText(Text(length), 0);
+		Key(length) = makeWithCString("length");
 		Key(arguments) = makeWithCString("arguments");
-		Key(callee) = Key.makeWithText(Text(callee), 0);
+		Key(callee) = makeWithCString("callee");
 		Key(name) = makeWithCString("name");
 		Key(message) = makeWithCString("message");
 		Key(toString) = makeWithCString("toString");

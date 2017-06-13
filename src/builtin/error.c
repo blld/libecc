@@ -188,7 +188,7 @@ static void setupBuiltinObject (struct Function **constructor, const Native(Func
 
 void setup (void)
 {
-	const enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
 	
 	setupBuiltinObject(&Error(constructor), errorConstructor, 1, &Error(prototype), &Text(errorName));
 	setupBuiltinObject(&Error(rangeConstructor), rangeErrorConstructor, 1, &Error(rangePrototype), &Text(rangeErrorName));
@@ -197,9 +197,9 @@ void setup (void)
 	setupBuiltinObject(&Error(typeConstructor), typeErrorConstructor, 1, &Error(typePrototype), &Text(typeErrorName));
 	setupBuiltinObject(&Error(uriConstructor), uriErrorConstructor, 1, &Error(uriPrototype), &Text(uriErrorName));
 	
-	Function.addToObject(Error(prototype), "toString", toString, 0, flags);
+	Function.addToObject(Error(prototype), "toString", toString, 0, h);
 	
-	Object.addMember(Error(prototype), Key(message), Value.text(&Text(empty)), flags);
+	Object.addMember(Error(prototype), Key(message), Value.text(&Text(empty)), h);
 }
 
 void teardown (void)

@@ -808,6 +808,8 @@ static void testObject (void)
 	,    "                                    ^   ");
 	test("var o = []; Object.defineProperties(1); o", "TypeError: not an object"
 	,    "                                    ^    ");
+	test("({}).toString.call(Object.getPrototypeOf('abc'))", "[object String]", NULL);
+	test("Object.getOwnPropertyDescriptor('abc', 'length').value", "3", NULL);
 }
 
 static void testError (void)
@@ -954,8 +956,10 @@ static void testArray (void)
 	test("[].join.call({1:'@', length:12})", ",@,,,,,,,,,,", NULL);
 	test("[].toString.call({1:'@'})", "[object Object]", NULL);
 	test("function f(){ return arguments.hasOwnProperty('length') }; f()", "true", NULL);
-	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'length') }; f()", "[object Object]", 0);
-	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'callee') }; f()", "[object Object]", 0);
+	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'length') }; f()", "[object Object]", NULL);
+	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'callee') }; f()", "[object Object]", NULL);
+	test("function f(){ return Object.getOwnPropertyDescriptor(arguments, 'callee') }; f().get()", "TypeError: 'callee' cannot be accessed in this context"
+	,    "                                                                             ^~~~~~~~~");
 	test("function f(){ return Object.getOwnPropertyNames(arguments) }; f()", "length,callee", NULL);
 	test("function f(){ return arguments.callee }; f()", "TypeError: 'callee' cannot be accessed in this context"
 	,    "                     ^~~~~~~~~~~~~~~~       ");

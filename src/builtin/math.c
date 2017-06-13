@@ -270,39 +270,39 @@ struct Object * Math(object) = NULL;
 
 void setup ()
 {
-	enum Value(Flags) flags;
+	const enum Value(Flags) r = Value(readonly);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
 	
 	Math(object) = Object.createTyped(&Math(type));
 	
-	flags = Value(hidden) | Value(readonly) | Value(frozen);
-	Object.addMember(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), flags);
-	Object.addMember(Math(object), Key.makeWithCString("LN10"), Value.binary(2.30258509299404568402), flags);
-	Object.addMember(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), flags);
-	Object.addMember(Math(object), Key.makeWithCString("LOG2E"), Value.binary(1.44269504088896340736), flags);
-	Object.addMember(Math(object), Key.makeWithCString("LOG10E"), Value.binary(0.434294481903251827651), flags);
-	Object.addMember(Math(object), Key.makeWithCString("PI"), Value.binary(3.14159265358979323846), flags);
-	Object.addMember(Math(object), Key.makeWithCString("SQRT1_2"), Value.binary(0.707106781186547524401), flags);
-	Object.addMember(Math(object), Key.makeWithCString("SQRT2"), Value.binary(1.41421356237309504880), flags);
+	Object.addMember(Math(object), Key.makeWithCString("E"), Value.binary(2.71828182845904523536), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("LN10"), Value.binary(2.30258509299404568402), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("LN2"), Value.binary(0.693147180559945309417), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("LOG2E"), Value.binary(1.44269504088896340736), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("LOG10E"), Value.binary(0.434294481903251827651), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("PI"), Value.binary(3.14159265358979323846), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("SQRT1_2"), Value.binary(0.707106781186547524401), r|h|s);
+	Object.addMember(Math(object), Key.makeWithCString("SQRT2"), Value.binary(1.41421356237309504880), r|h|s);
 	
-	flags = Value(hidden);
-	Function.addToObject(Math(object), "abs", mathAbs, 1, flags);
-	Function.addToObject(Math(object), "acos", mathACos, 1, flags);
-	Function.addToObject(Math(object), "asin", mathASin, 1, flags);
-	Function.addToObject(Math(object), "atan", mathATan, 1, flags);
-	Function.addToObject(Math(object), "atan2", mathATan2, 2, flags);
-	Function.addToObject(Math(object), "ceil", mathCeil, 1, flags);
-	Function.addToObject(Math(object), "cos", mathCos, 1, flags);
-	Function.addToObject(Math(object), "exp", mathExp, 1, flags);
-	Function.addToObject(Math(object), "floor", mathFloor, 1, flags);
-	Function.addToObject(Math(object), "log", mathLog, 1, flags);
-	Function.addToObject(Math(object), "max", mathMax, -2, flags);
-	Function.addToObject(Math(object), "min", mathMin, -2, flags);
-	Function.addToObject(Math(object), "pow", mathPow, 2, flags);
-	Function.addToObject(Math(object), "random", mathRandom, 0, flags);
-	Function.addToObject(Math(object), "round", mathRound, 1, flags);
-	Function.addToObject(Math(object), "sin", mathSin, 1, flags);
-	Function.addToObject(Math(object), "sqrt", mathSqrt, 1, flags);
-	Function.addToObject(Math(object), "tan", mathTan, 1, flags);
+	Function.addToObject(Math(object), "abs", mathAbs, 1, h);
+	Function.addToObject(Math(object), "acos", mathACos, 1, h);
+	Function.addToObject(Math(object), "asin", mathASin, 1, h);
+	Function.addToObject(Math(object), "atan", mathATan, 1, h);
+	Function.addToObject(Math(object), "atan2", mathATan2, 2, h);
+	Function.addToObject(Math(object), "ceil", mathCeil, 1, h);
+	Function.addToObject(Math(object), "cos", mathCos, 1, h);
+	Function.addToObject(Math(object), "exp", mathExp, 1, h);
+	Function.addToObject(Math(object), "floor", mathFloor, 1, h);
+	Function.addToObject(Math(object), "log", mathLog, 1, h);
+	Function.addToObject(Math(object), "max", mathMax, -2, h);
+	Function.addToObject(Math(object), "min", mathMin, -2, h);
+	Function.addToObject(Math(object), "pow", mathPow, 2, h);
+	Function.addToObject(Math(object), "random", mathRandom, 0, h);
+	Function.addToObject(Math(object), "round", mathRound, 1, h);
+	Function.addToObject(Math(object), "sin", mathSin, 1, h);
+	Function.addToObject(Math(object), "sqrt", mathSqrt, 1, h);
+	Function.addToObject(Math(object), "tan", mathTan, 1, h);
 	
 	srand((unsigned)time(NULL));
 }

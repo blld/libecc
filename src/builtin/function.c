@@ -210,21 +210,32 @@ static struct Value constructor (struct Context * const context)
 	return context->ecc->result;
 }
 
+static struct Value getLength (struct Context * const context)
+{
+	Context.assertParameterCount(context, 0);
+	
+	return Value.integer(context->this.data.function->parameterCount);
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
 
 void setup ()
 {
+	const enum Value(Flags) h = Value(hidden);
+	
 	Function.setupBuiltinObject(
 		&Function(constructor), constructor, -1,
 		&Function(prototype), Value.function(createWithNative(prototypeConstructor, 0)),
 		&Function(type));
 	
-	Function.addToObject(Function(prototype), "toString", toString, 0, 0);
-	Function.addToObject(Function(prototype), "apply", apply, 2, 0);
-	Function.addToObject(Function(prototype), "call", call, -1, 0);
-	Function.addToObject(Function(prototype), "bind", bind, -1, 0);
+	Function(constructor)->object.prototype = Function(prototype);
+	
+	Function.addToObject(Function(prototype), "toString", toString, 0, h);
+	Function.addToObject(Function(prototype), "apply", apply, 2, h);
+	Function.addToObject(Function(prototype), "call", call, -1, h);
+	Function.addToObject(Function(prototype), "bind", bind, -1, h);
 }
 
 void teardown (void)

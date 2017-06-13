@@ -972,7 +972,7 @@ static struct Value constructor (struct Context * const context)
 
 void setup (void)
 {
-	const enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
 	
 	setupLocalOffset();
 	
@@ -981,53 +981,53 @@ void setup (void)
 		&Date(prototype), Value.date(create(NAN)),
 		&Date(type));
 	
-	Function.addMethod(Date(constructor), "parse", parse, 1, flags);
-	Function.addMethod(Date(constructor), "UTC", UTC, -7, flags);
-	Function.addMethod(Date(constructor), "now", now, 0, flags);
+	Function.addMethod(Date(constructor), "parse", parse, 1, h);
+	Function.addMethod(Date(constructor), "UTC", UTC, -7, h);
+	Function.addMethod(Date(constructor), "now", now, 0, h);
 	
-	Function.addToObject(Date(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Date(prototype), "toDateString", toDateString, 0, flags);
-	Function.addToObject(Date(prototype), "toTimeString", toTimeString, 0, flags);
-	Function.addToObject(Date(prototype), "toLocaleString", toString, 0, flags);
-	Function.addToObject(Date(prototype), "toLocaleDateString", toDateString, 0, flags);
-	Function.addToObject(Date(prototype), "toLocaleTimeString", toTimeString, 0, flags);
-	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(Date(prototype), "getTime", valueOf, 0, flags);
-	Function.addToObject(Date(prototype), "getFullYear", getFullYear, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCFullYear", getUTCFullYear, 0, flags);
-	Function.addToObject(Date(prototype), "getMonth", getMonth, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCMonth", getUTCMonth, 0, flags);
-	Function.addToObject(Date(prototype), "getDate", getDate, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCDate", getUTCDate, 0, flags);
-	Function.addToObject(Date(prototype), "getDay", getDay, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCDay", getUTCDay, 0, flags);
-	Function.addToObject(Date(prototype), "getHours", getHours, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCHours", getUTCHours, 0, flags);
-	Function.addToObject(Date(prototype), "getMinutes", getMinutes, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCMinutes", getUTCMinutes, 0, flags);
-	Function.addToObject(Date(prototype), "getSeconds", getSeconds, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCSeconds", getUTCSeconds, 0, flags);
-	Function.addToObject(Date(prototype), "getMilliseconds", getMilliseconds, 0, flags);
-	Function.addToObject(Date(prototype), "getUTCMilliseconds", getUTCMilliseconds, 0, flags);
-	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, flags);
-	Function.addToObject(Date(prototype), "setTime", setTime, 1, flags);
-	Function.addToObject(Date(prototype), "setMilliseconds", setMilliseconds, 1, flags);
-	Function.addToObject(Date(prototype), "setUTCMilliseconds", setUTCMilliseconds, 1, flags);
-	Function.addToObject(Date(prototype), "setSeconds", setSeconds, 2, flags);
-	Function.addToObject(Date(prototype), "setUTCSeconds", setUTCSeconds, 2, flags);
-	Function.addToObject(Date(prototype), "setMinutes", setMinutes, 3, flags);
-	Function.addToObject(Date(prototype), "setUTCMinutes", setUTCMinutes, 3, flags);
-	Function.addToObject(Date(prototype), "setHours", setHours, 4, flags);
-	Function.addToObject(Date(prototype), "setUTCHours", setUTCHours, 4, flags);
-	Function.addToObject(Date(prototype), "setDate", setDate, 1, flags);
-	Function.addToObject(Date(prototype), "setUTCDate", setUTCDate, 1, flags);
-	Function.addToObject(Date(prototype), "setMonth", setMonth, 2, flags);
-	Function.addToObject(Date(prototype), "setUTCMonth", setUTCMonth, 2, flags);
-	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, flags);
-	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, flags);
-	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, flags);
-	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, flags);
-	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, flags);
+	Function.addToObject(Date(prototype), "toString", toString, 0, h);
+	Function.addToObject(Date(prototype), "toDateString", toDateString, 0, h);
+	Function.addToObject(Date(prototype), "toTimeString", toTimeString, 0, h);
+	Function.addToObject(Date(prototype), "toLocaleString", toString, 0, h);
+	Function.addToObject(Date(prototype), "toLocaleDateString", toDateString, 0, h);
+	Function.addToObject(Date(prototype), "toLocaleTimeString", toTimeString, 0, h);
+	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, h);
+	Function.addToObject(Date(prototype), "getTime", valueOf, 0, h);
+	Function.addToObject(Date(prototype), "getFullYear", getFullYear, 0, h);
+	Function.addToObject(Date(prototype), "getUTCFullYear", getUTCFullYear, 0, h);
+	Function.addToObject(Date(prototype), "getMonth", getMonth, 0, h);
+	Function.addToObject(Date(prototype), "getUTCMonth", getUTCMonth, 0, h);
+	Function.addToObject(Date(prototype), "getDate", getDate, 0, h);
+	Function.addToObject(Date(prototype), "getUTCDate", getUTCDate, 0, h);
+	Function.addToObject(Date(prototype), "getDay", getDay, 0, h);
+	Function.addToObject(Date(prototype), "getUTCDay", getUTCDay, 0, h);
+	Function.addToObject(Date(prototype), "getHours", getHours, 0, h);
+	Function.addToObject(Date(prototype), "getUTCHours", getUTCHours, 0, h);
+	Function.addToObject(Date(prototype), "getMinutes", getMinutes, 0, h);
+	Function.addToObject(Date(prototype), "getUTCMinutes", getUTCMinutes, 0, h);
+	Function.addToObject(Date(prototype), "getSeconds", getSeconds, 0, h);
+	Function.addToObject(Date(prototype), "getUTCSeconds", getUTCSeconds, 0, h);
+	Function.addToObject(Date(prototype), "getMilliseconds", getMilliseconds, 0, h);
+	Function.addToObject(Date(prototype), "getUTCMilliseconds", getUTCMilliseconds, 0, h);
+	Function.addToObject(Date(prototype), "getTimezoneOffset", getTimezoneOffset, 0, h);
+	Function.addToObject(Date(prototype), "setTime", setTime, 1, h);
+	Function.addToObject(Date(prototype), "setMilliseconds", setMilliseconds, 1, h);
+	Function.addToObject(Date(prototype), "setUTCMilliseconds", setUTCMilliseconds, 1, h);
+	Function.addToObject(Date(prototype), "setSeconds", setSeconds, 2, h);
+	Function.addToObject(Date(prototype), "setUTCSeconds", setUTCSeconds, 2, h);
+	Function.addToObject(Date(prototype), "setMinutes", setMinutes, 3, h);
+	Function.addToObject(Date(prototype), "setUTCMinutes", setUTCMinutes, 3, h);
+	Function.addToObject(Date(prototype), "setHours", setHours, 4, h);
+	Function.addToObject(Date(prototype), "setUTCHours", setUTCHours, 4, h);
+	Function.addToObject(Date(prototype), "setDate", setDate, 1, h);
+	Function.addToObject(Date(prototype), "setUTCDate", setUTCDate, 1, h);
+	Function.addToObject(Date(prototype), "setMonth", setMonth, 2, h);
+	Function.addToObject(Date(prototype), "setUTCMonth", setUTCMonth, 2, h);
+	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, h);
+	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, h);
+	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, h);
+	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, h);
+	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, h);
 }
 
 void teardown (void)

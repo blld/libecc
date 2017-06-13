@@ -72,6 +72,8 @@
 		Value(sealed) = 1 << 2,
 		Value(getter) = 1 << 3,
 		Value(setter) = 1 << 4,
+		Value(asOwn) = 1 << 5,
+		Value(asData) = 1 << 6,
 		
 		Value(frozen) = Value(readonly) | Value(sealed),
 		Value(accessor) = Value(getter) | Value(setter),
@@ -131,6 +133,7 @@ Interface(Value,
 	(const char *, stringBytes ,(struct Value))
 	
 	(struct Value, toObject ,(struct Context * const, struct Value))
+	(struct Value, objectValue ,(struct Object *))
 	
 	(struct Value, toType ,(struct Value))
 	

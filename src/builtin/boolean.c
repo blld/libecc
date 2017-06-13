@@ -63,15 +63,15 @@ static struct Value constructor (struct Context * const context)
 
 void setup ()
 {
-	enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
 	
 	Function.setupBuiltinObject(
 		&Boolean(constructor), constructor, 1,
 		&Boolean(prototype), Value.boolean(create(0)),
 		&Boolean(type));
 	
-	Function.addToObject(Boolean(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, flags);
+	Function.addToObject(Boolean(prototype), "toString", toString, 0, h);
+	Function.addToObject(Boolean(prototype), "valueOf", valueOf, 0, h);
 }
 
 void teardown (void)

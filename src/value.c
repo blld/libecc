@@ -523,6 +523,34 @@ error:
 	}
 }
 
+struct Value objectValue (struct Object *object)
+{
+	if (!object)
+		return Value(undefined);
+	else if (object->type == &Function(type))
+		return Value.function((struct Function *)object);
+	else if (object->type == &String(type))
+		return Value.string((struct String *)object);
+	else if (object->type == &Boolean(type))
+		return Value.boolean((struct Boolean *)object);
+	else if (object->type == &Number(type))
+		return Value.number((struct Number *)object);
+	else if (object->type == &Date(type))
+		return Value.date((struct Date *)object);
+	else if (object->type == &RegExp(type))
+		return Value.regexp((struct RegExp *)object);
+	else if (object->type == &Error(type))
+		return Value.error((struct Error *)object);
+	else if (object->type == &Object(type)
+			|| object->type == &Array(type)
+			|| object->type == &Arguments(type)
+			|| object->type == &Math(type)
+			)
+		return Value.object((struct Object *)object);
+	else
+		return Value.host(object);
+}
+
 struct Value toType (struct Value value)
 {
 	switch ((enum Value(Type))value.type)

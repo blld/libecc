@@ -253,38 +253,41 @@ void teardown (void)
 
 struct Function * create (void)
 {
-	enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) r = Value(readonly);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
 	
 	struct Function * self = Function.create(Object(prototype));
 	self->environment.type = &Global(type);
 	
-	Function.addValue(self, "NaN", Value.binary(NAN), flags | Value(frozen));
-	Function.addValue(self, "Infinity", Value.binary(INFINITY), flags | Value(frozen));
-	Function.addValue(self, "undefined", Value(undefined), flags | Value(frozen));
-	Function.addFunction(self, "eval", eval, 1, flags);
-	Function.addFunction(self, "parseInt", parseInt, 2, flags);
-	Function.addFunction(self, "parseFloat", parseFloat, 1, flags);
-	Function.addFunction(self, "isNaN", isNaN, 1, flags);
-	Function.addFunction(self, "isFinite", isFinite, 1, flags);
-	Function.addFunction(self, "decodeURI", decodeURI, 1, flags);
-	Function.addFunction(self, "decodeURIComponent", decodeURIComponent, 1, flags);
-	Function.addFunction(self, "encodeURI", encodeURI, 1, flags);
-	Function.addFunction(self, "encodeURIComponent", encodeURIComponent, 1, flags);
-	Function.addValue(self, "Object", Value.function(Object(constructor)), flags);
-	Function.addValue(self, "Function", Value.function(Function(constructor)), flags);
-	Function.addValue(self, "Array", Value.function(Array(constructor)), flags);
-	Function.addValue(self, "String", Value.function(String(constructor)), flags);
-	Function.addValue(self, "Boolean", Value.function(Boolean(constructor)), flags);
-	Function.addValue(self, "Number", Value.function(Number(constructor)), flags);
-	Function.addValue(self, "Date", Value.function(Date(constructor)), flags);
-	Function.addValue(self, "RegExp", Value.function(RegExp(constructor)), flags);
-	Function.addValue(self, "Error", Value.function(Error(constructor)), flags);
-	Function.addValue(self, "RangeError", Value.function(Error(rangeConstructor)), flags);
-	Function.addValue(self, "ReferenceError", Value.function(Error(referenceConstructor)), flags);
-	Function.addValue(self, "SyntaxError", Value.function(Error(syntaxConstructor)), flags);
-	Function.addValue(self, "TypeError", Value.function(Error(typeConstructor)), flags);
-	Function.addValue(self, "URIError", Value.function(Error(uriConstructor)), flags);
-	Function.addValue(self, "Math", Value.object(Math(object)), flags);
+	Function.addValue(self, "NaN", Value.binary(NAN), r|h|s);
+	Function.addValue(self, "Infinity", Value.binary(INFINITY), r|h|s);
+	Function.addValue(self, "undefined", Value(undefined), r|h|s);
+	
+	Function.addFunction(self, "eval", eval, 1, h);
+	Function.addFunction(self, "parseInt", parseInt, 2, h);
+	Function.addFunction(self, "parseFloat", parseFloat, 1, h);
+	Function.addFunction(self, "isNaN", isNaN, 1, h);
+	Function.addFunction(self, "isFinite", isFinite, 1, h);
+	Function.addFunction(self, "decodeURI", decodeURI, 1, h);
+	Function.addFunction(self, "decodeURIComponent", decodeURIComponent, 1, h);
+	Function.addFunction(self, "encodeURI", encodeURI, 1, h);
+	Function.addFunction(self, "encodeURIComponent", encodeURIComponent, 1, h);
+	Function.addValue(self, "Object", Value.function(Object(constructor)), h);
+	Function.addValue(self, "Function", Value.function(Function(constructor)), h);
+	Function.addValue(self, "Array", Value.function(Array(constructor)), h);
+	Function.addValue(self, "String", Value.function(String(constructor)), h);
+	Function.addValue(self, "Boolean", Value.function(Boolean(constructor)), h);
+	Function.addValue(self, "Number", Value.function(Number(constructor)), h);
+	Function.addValue(self, "Date", Value.function(Date(constructor)), h);
+	Function.addValue(self, "RegExp", Value.function(RegExp(constructor)), h);
+	Function.addValue(self, "Error", Value.function(Error(constructor)), h);
+	Function.addValue(self, "RangeError", Value.function(Error(rangeConstructor)), h);
+	Function.addValue(self, "ReferenceError", Value.function(Error(referenceConstructor)), h);
+	Function.addValue(self, "SyntaxError", Value.function(Error(syntaxConstructor)), h);
+	Function.addValue(self, "TypeError", Value.function(Error(typeConstructor)), h);
+	Function.addValue(self, "URIError", Value.function(Error(uriConstructor)), h);
+	Function.addValue(self, "Math", Value.object(Math(object)), h);
 	#warning JSON
 	
 	return self;

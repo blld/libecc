@@ -622,28 +622,29 @@ static struct Value constructor (struct Context * const context)
 
 void setup (void)
 {
-	enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
 	
 	Function.setupBuiltinObject(
 		&Array(constructor), constructor, -1,
 		&Array(prototype), Value.object(createSized(0)),
 		&Array(type));
 	
-	Function.addMethod(Array(constructor), "isArray", isArray, 1, flags);
+	Function.addMethod(Array(constructor), "isArray", isArray, 1, h);
 	
-	Function.addToObject(Array(prototype), "toString", toString, 0, flags);
-	Function.addToObject(Array(prototype), "toLocaleString", toString, 0, flags);
-	Function.addToObject(Array(prototype), "concat", concat, -1, flags);
-	Function.addToObject(Array(prototype), "join", join, 1, flags);
-	Function.addToObject(Array(prototype), "pop", pop, 0, flags);
-	Function.addToObject(Array(prototype), "push", push, -1, flags);
-	Function.addToObject(Array(prototype), "reverse", reverse, 0, flags);
-	Function.addToObject(Array(prototype), "shift", shift, 0, flags);
-	Function.addToObject(Array(prototype), "slice", slice, 2, flags);
-	Function.addToObject(Array(prototype), "sort", sort, 1, flags);
-	Function.addToObject(Array(prototype), "unshift", unshift, -1, flags);
+	Function.addToObject(Array(prototype), "toString", toString, 0, h);
+	Function.addToObject(Array(prototype), "toLocaleString", toString, 0, h);
+	Function.addToObject(Array(prototype), "concat", concat, -1, h);
+	Function.addToObject(Array(prototype), "join", join, 1, h);
+	Function.addToObject(Array(prototype), "pop", pop, 0, h);
+	Function.addToObject(Array(prototype), "push", push, -1, h);
+	Function.addToObject(Array(prototype), "reverse", reverse, 0, h);
+	Function.addToObject(Array(prototype), "shift", shift, 0, h);
+	Function.addToObject(Array(prototype), "slice", slice, 2, h);
+	Function.addToObject(Array(prototype), "sort", sort, 1, h);
+	Function.addToObject(Array(prototype), "unshift", unshift, -1, h);
 	
-	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
+	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), h|s | Value(asOwn) | Value(asData));
 }
 
 void teardown (void)

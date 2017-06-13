@@ -43,10 +43,13 @@ static struct Value callee (struct Context * const context)
 
 void setup (void)
 {
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
+	
 	Arguments(prototype) = Object.createTyped(&Arguments(type));
 	
-	Object.addMember(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), Value(hidden) | Value(sealed));
-	Object.addMember(Arguments(prototype), Key(callee), Function.accessor(callee, callee), Value(hidden) | Value(sealed));
+	Object.addMember(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), h|s | Value(asOwn) | Value(asData));
+	Object.addMember(Arguments(prototype), Key(callee), Function.accessor(callee, callee), h|s | Value(asOwn));
 }
 
 void teardown (void)

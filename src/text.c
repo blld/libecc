@@ -24,8 +24,6 @@ textMake(number, "number");
 textMake(string, "string");
 textMake(object, "object");
 textMake(function, "function");
-textMake(length, "length");
-textMake(callee, "callee");
 textMake(zero, "0");
 textMake(one, "1");
 textMake(nan, "NaN");

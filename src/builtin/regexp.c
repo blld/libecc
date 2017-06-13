@@ -910,15 +910,15 @@ static struct Value exec (struct Context * const context)
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) h = Value(hidden);
 	
 	Function.setupBuiltinObject(
 		&RegExp(constructor), constructor, 2,
 		&RegExp(prototype), Value.regexp(create(Chars.create("//"), NULL)),
 		&RegExp(type));
 	
-	Function.addToObject(RegExp(prototype), "toString", toString, 0, flags);
-	Function.addToObject(RegExp(prototype), "exec", exec, 2, flags);
+	Function.addToObject(RegExp(prototype), "toString", toString, 0, h);
+	Function.addToObject(RegExp(prototype), "exec", exec, 2, h);
 }
 
 void teardown (void)

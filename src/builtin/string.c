@@ -703,33 +703,47 @@ static struct Value fromCharCode (struct Context * const context)
 	return Value.chars(Chars.endAppend(&chars));
 }
 
+static struct Value getLength (struct Context * const context)
+{
+	struct Chars *chars;
+	
+	Context.assertParameterCount(context, 0);
+	
+	chars = context->this.data.string->value;
+	return Value.integer(unitPosition(chars->bytes, chars->length, chars->length));
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
 
 void setup ()
 {
-	const enum Value(Flags) flags = Value(hidden);
+	const enum Value(Flags) r = Value(readonly);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
 	
 	Function.setupBuiltinObject(
 		&String(constructor), constructor, 1,
 		&String(prototype), Value.string(create(Chars.createSized(0))),
 		&String(type));
 	
-	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, flags);
+	Function.addMethod(String(constructor), "fromCharCode", fromCharCode, -1, h);
 	
-	Function.addToObject(String(prototype), "toString", toString, 0, flags);
-	Function.addToObject(String(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(String(prototype), "charAt", charAt, 1, flags);
-	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, flags);
-	Function.addToObject(String(prototype), "concat", concat, -1, flags);
-	Function.addToObject(String(prototype), "indexOf", indexOf, -1, flags);
-	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, flags);
-	Function.addToObject(String(prototype), "slice", slice, 2, flags);
-	Function.addToObject(String(prototype), "split", split, 2, flags);
-	Function.addToObject(String(prototype), "substring", substring, 2, flags);
-	Function.addToObject(String(prototype), "toLowerCase", toLowerCase, 0, flags);
-	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, flags);
+	Function.addToObject(String(prototype), "toString", toString, 0, h);
+	Function.addToObject(String(prototype), "valueOf", valueOf, 0, h);
+	Function.addToObject(String(prototype), "charAt", charAt, 1, h);
+	Function.addToObject(String(prototype), "charCodeAt", charCodeAt, 1, h);
+	Function.addToObject(String(prototype), "concat", concat, -1, h);
+	Function.addToObject(String(prototype), "indexOf", indexOf, -1, h);
+	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, h);
+	Function.addToObject(String(prototype), "slice", slice, 2, h);
+	Function.addToObject(String(prototype), "split", split, 2, h);
+	Function.addToObject(String(prototype), "substring", substring, 2, h);
+	Function.addToObject(String(prototype), "toLowerCase", toLowerCase, 0, h);
+	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, h);
+	
+	Object.addMember(String(prototype), Key(length), Function.accessor(getLength, NULL), r|h|s | Value(asOwn) | Value(asData));
 }
 
 void teardown (void)
@@ -745,7 +759,6 @@ struct String * create (struct Chars *chars)
 	Pool.addObject(&self->object);
 	
 	Object.initialize(&self->object, String(prototype));
-	Object.addMember(&self->object, Key(length), Value.integer(unitPosition(chars->bytes, chars->length, chars->length)), Value(readonly));
 	
 	self->value = chars;
 	++chars->referenceCount;

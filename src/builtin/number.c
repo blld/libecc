@@ -143,27 +143,27 @@ static struct Value constructor (struct Context * const context)
 
 void setup ()
 {
-	enum Value(Flags) flags;
+	const enum Value(Flags) r = Value(readonly);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
 	
 	Function.setupBuiltinObject(
 		&Number(constructor), constructor, 1,
 		&Number(prototype), Value.number(create(0)),
 		&Number(type));
 	
-	flags = Value(hidden) | Value(readonly) | Value(frozen);
-	Function.addMember(Number(constructor), "MAX_VALUE", Value.binary(DBL_MAX), flags);
-	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN * DBL_EPSILON), flags);
-	Function.addMember(Number(constructor), "NaN", Value.binary(NAN), flags);
-	Function.addMember(Number(constructor), "NEGATIVE_INFINITY", Value.binary(-INFINITY), flags);
-	Function.addMember(Number(constructor), "POSITIVE_INFINITY", Value.binary(INFINITY), flags);
+	Function.addMember(Number(constructor), "MAX_VALUE", Value.binary(DBL_MAX), r|h|s);
+	Function.addMember(Number(constructor), "MIN_VALUE", Value.binary(DBL_MIN * DBL_EPSILON), r|h|s);
+	Function.addMember(Number(constructor), "NaN", Value.binary(NAN), r|h|s);
+	Function.addMember(Number(constructor), "NEGATIVE_INFINITY", Value.binary(-INFINITY), r|h|s);
+	Function.addMember(Number(constructor), "POSITIVE_INFINITY", Value.binary(INFINITY), r|h|s);
 	
-	flags = Value(hidden);
-	Function.addToObject(Number(prototype), "toString", toString, 1, flags);
-	Function.addToObject(Number(prototype), "toLocaleString", toString, 1, flags);
-	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, flags);
-	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, flags);
-	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, flags);
-	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, flags);
+	Function.addToObject(Number(prototype), "toString", toString, 1, h);
+	Function.addToObject(Number(prototype), "toLocaleString", toString, 1, h);
+	Function.addToObject(Number(prototype), "valueOf", valueOf, 0, h);
+	Function.addToObject(Number(prototype), "toFixed", toFixed, 1, h);
+	Function.addToObject(Number(prototype), "toExponential", toExponential, 1, h);
+	Function.addToObject(Number(prototype), "toPrecision", toPrecision, 1, h);
 }
 
 void teardown (void)
