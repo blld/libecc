@@ -210,13 +210,6 @@ static struct Value constructor (struct Context * const context)
 	return context->ecc->result;
 }
 
-static struct Value getLength (struct Context * const context)
-{
-	Context.assertParameterCount(context, 0);
-	
-	return Value.integer(context->this.data.function->parameterCount);
-}
-
 // MARK: - Static Members
 
 // MARK: - Methods
