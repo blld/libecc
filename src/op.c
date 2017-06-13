@@ -983,9 +983,6 @@ struct Value instanceOf (struct Context * const context)
 {
 	prepareAB
 	
-	if (!Value.isObject(a))
-		return Value(false);
-	
 	if (b.type != Value(functionType))
 		Context.typeError(context, Chars.create("'%.*s' not a function", text->length, text->bytes));
 	
@@ -993,6 +990,7 @@ struct Value instanceOf (struct Context * const context)
 	if (!Value.isObject(b))
 		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", textAlt->length, textAlt->bytes));
 	
+	if (Value.isObject(a))
 	{
 		struct Object *object;
 		
