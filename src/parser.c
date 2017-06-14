@@ -1445,6 +1445,7 @@ struct OpList * allStatement (struct Parser *self)
 		if (!oplist)
 			return NULL;
 		
+		oplist = OpList.appendNoop(oplist);
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->count), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))

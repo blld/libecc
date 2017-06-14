@@ -417,6 +417,7 @@ static void testException (void)
 	test("(function (){ try { return 'a'; } finally { return 'b'; } })()", "b", NULL);
 	test("try { throw 'a' }", "SyntaxError: expected catch or finally, got end of script"
 	,    "                 ^");
+	test("var c = 0; try{ c += 1; } finally{ c *= 2; } c", "2", NULL);
 }
 
 static void testOperator (void)
