@@ -1358,7 +1358,7 @@ struct OpList * switchStatement (struct Parser *self)
 		if (acceptToken(self, Lexer(caseToken)))
 		{
 			conditionOps = OpList.join(conditionOps, expression(self, 0));
-			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(oplist? oplist->count: 0), Text(empty)));
+			conditionOps = OpList.append(conditionOps, Op.make(Op.value, Value.integer(2 + (oplist? oplist->count: 0)), Text(empty)));
 			++conditionCount;
 			expectToken(self, ':');
 			oplist = OpList.join(oplist, statementList(self));
@@ -1367,7 +1367,7 @@ struct OpList * switchStatement (struct Parser *self)
 		{
 			if (!defaultOps)
 			{
-				defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->count: 0), text);
+				defaultOps = OpList.create(Op.jump, Value.integer(1 + (oplist? oplist->count: 0)), text);
 				expectToken(self, ':');
 				oplist = OpList.join(oplist, statementList(self));
 			}
@@ -1378,9 +1378,11 @@ struct OpList * switchStatement (struct Parser *self)
 			syntaxError(self, text, Chars.create("invalid switch statement"));
 	}
 	
-	if (!defaultOps && oplist)
-		defaultOps = OpList.create(Op.jump, Value.integer(oplist? oplist->count: 0), text);
+	if (!defaultOps)
+		defaultOps = OpList.create(Op.noop, Value(none), Text(empty));
 	
+	oplist = OpList.appendNoop(oplist);
+	defaultOps = OpList.append(defaultOps, Op.make(Op.jump, Value.integer(oplist? oplist->count : 0), Text(empty)));
 	conditionOps = OpList.unshiftJoin(Op.make(Op.switchOp, Value.integer(conditionOps? conditionOps->count: 0), Text(empty)), conditionOps, defaultOps);
 	oplist = OpList.join(conditionOps, oplist);
 	

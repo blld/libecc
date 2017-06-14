@@ -1604,28 +1604,34 @@ struct Value switchOp (struct Context * const context)
 {
 	int32_t offset = opValue().data.integer;
 	const struct Op *nextOps = context->ops + offset;
-	struct Value a, b;
+	struct Value value, caseValue;
 	const struct Text *text = opText(1);
 	
-	a = trapOp(context, 1);
+	value = trapOp(context, 1);
 	
 	while (context->ops < nextOps)
 	{
 		const struct Text *textAlt = opText(1);
-		b = nextOp();
+		caseValue = nextOp();
 		
 		Context.setTexts(context, text, textAlt);
-		if (Value.isTrue(Value.equals(context, a, b)))
+		if (Value.isTrue(Value.same(context, value, caseValue)))
 		{
-			nextOps += nextOp().data.integer + 1;
-			context->ops = nextOps;
+			context->ops = nextOps + nextOp().data.integer;
 			break;
 		}
 		else
 			++context->ops;
 	}
 	
-	return nextOp();
+	value = nextOp();
+	if (context->breaker && --context->breaker)
+		return value;
+	else
+	{
+		context->ops = nextOps + 2 + nextOps[2].value.data.integer;
+		return nextOp();
+	}
 }
 
 // MARK: Iteration

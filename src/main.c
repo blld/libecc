@@ -364,8 +364,7 @@ static void testConvertion (void)
 	,    "                                                                         ^~~ ");
 	test("var a = { b:{ toString: function () { return this }}} , b = ''; b + (a.b + b)", "TypeError: cannot convert 'a.b' to primitive"
 	,    "                                                                     ^~~     ");
-	test("var a = { b:{ toString: function () { return this }}}; switch(a.b){ case 'b': }", "TypeError: cannot convert 'a.b' to primitive"
-	,    "                                                              ^~~              ");
+	test("var a = { b:{ toString: function () { return this }}}; switch(a.b){ case 'b': }", "undefined", NULL);
 	test("var a = { b:{ toString: function () { return this }}}, b = []; b.join[a.b](b)", "TypeError: cannot convert 'a.b' to primitive"
 	,    "                                                                      ^~~    ");
 	test("var a = { toString: function () { return this } }, b = [], c = [a]; b.join[c[0]]", "TypeError: cannot convert 'c[0]' to primitive"
