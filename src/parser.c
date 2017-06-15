@@ -1490,20 +1490,11 @@ struct OpList * allStatement (struct Parser *self)
 		
 		if (oplist->ops[0].native == Op.getLocal && oplist->count == 1 && acceptToken(self, ':'))
 		{
-			if (previewToken(self) == Lexer(doToken)
-				|| previewToken(self) == Lexer(whileToken)
-				|| previewToken(self) == Lexer(forToken)
-				|| previewToken(self) == Lexer(switchToken)
-				)
-			{
-				pushDepth(self, oplist->ops[0].value.data.key, 0);
-				free(oplist), oplist = NULL;
-				oplist = statement(self);
-				popDepth(self);
-				return oplist;
-			}
-			else
-				return statement(self);
+			pushDepth(self, oplist->ops[0].value.data.key, 0);
+			free(oplist), oplist = NULL;
+			oplist = statement(self);
+			popDepth(self);
+			return oplist;
 		}
 		
 		semicolon(self);
