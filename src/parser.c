@@ -1096,9 +1096,9 @@ struct OpList * variableDeclaration (struct Parser *self, int noIn)
 		return NULL;
 	
 	if (Key.isEqual(value.data.key, Key(eval)))
-		syntaxError(self, text, Chars.create("redefining eval is deprecated"));
+		syntaxError(self, text, Chars.create("redefining eval is not allowed"));
 	else if (Key.isEqual(value.data.key, Key(arguments)))
-		syntaxError(self, text, Chars.create("redefining arguments is deprecated"));
+		syntaxError(self, text, Chars.create("redefining arguments is not allowed"));
 	
 	Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(hidden));
 	
@@ -1535,9 +1535,9 @@ struct OpList * parameters (struct Parser *self, int *count)
 			if (op.value.data.key.data.integer)
 			{
 				if (Key.isEqual(op.value.data.key, Key(eval)))
-					syntaxError(self, op.text, Chars.create("redefining eval is deprecated"));
+					syntaxError(self, op.text, Chars.create("redefining eval is not allowed"));
 				else if (Key.isEqual(op.value.data.key, Key(arguments)))
-					syntaxError(self, op.text, Chars.create("redefining arguments is deprecated"));
+					syntaxError(self, op.text, Chars.create("redefining arguments is not allowed"));
 				
 				Object.deleteMember(&self->function->environment, op.value.data.key);
 				Object.addMember(&self->function->environment, op.value.data.key, Value(undefined), Value(hidden));
@@ -1569,9 +1569,9 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 			identifierOp = identifier(self);
 			
 			if (Key.isEqual(identifierOp.value.data.key, Key(eval)))
-				syntaxError(self, identifierOp.text, Chars.create("redefining eval is deprecated"));
+				syntaxError(self, identifierOp.text, Chars.create("redefining eval is not allowed"));
 			else if (Key.isEqual(identifierOp.value.data.key, Key(arguments)))
-				syntaxError(self, identifierOp.text, Chars.create("redefining arguments is deprecated"));
+				syntaxError(self, identifierOp.text, Chars.create("redefining arguments is not allowed"));
 		}
 		else if (isDeclaration)
 		{

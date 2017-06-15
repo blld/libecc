@@ -211,17 +211,17 @@ static void testParser (void)
 	,    "    ^~");
 	test("var h = ;","SyntaxError: expected expression, got ';'"
 	,    "        ^");
-	test("function eval(){}", "SyntaxError: redefining eval is deprecated"
+	test("function eval(){}", "SyntaxError: redefining eval is not allowed"
 	,    "         ^~~~    ");
-	test("function arguments(){}", "SyntaxError: redefining arguments is deprecated"
+	test("function arguments(){}", "SyntaxError: redefining arguments is not allowed"
 	,    "         ^~~~~~~~~    ");
-	test("function a(eval){}", "SyntaxError: redefining eval is deprecated"
+	test("function a(eval){}", "SyntaxError: redefining eval is not allowed"
 	,    "           ^~~~   ");
-	test("function a(arguments){}", "SyntaxError: redefining arguments is deprecated"
+	test("function a(arguments){}", "SyntaxError: redefining arguments is not allowed"
 	,    "           ^~~~~~~~~   ");
-	test("var eval", "SyntaxError: redefining eval is deprecated"
+	test("var eval", "SyntaxError: redefining eval is not allowed"
 	,    "    ^~~~");
-	test("var arguments", "SyntaxError: redefining arguments is deprecated"
+	test("var arguments", "SyntaxError: redefining arguments is not allowed"
 	,    "    ^~~~~~~~~");
 	test("eval = 123", "SyntaxError: can't assign to eval"
 	,    "     ^    ");
