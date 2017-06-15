@@ -1442,9 +1442,6 @@ struct OpList * allStatement (struct Parser *self)
 	else if (acceptToken(self, Lexer(tryToken)))
 	{
 		oplist = block(self);
-		if (!oplist)
-			return NULL;
-		
 		oplist = OpList.appendNoop(oplist);
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->count), text), oplist);
 		
