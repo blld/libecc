@@ -1462,13 +1462,10 @@ struct OpList * allStatement (struct Parser *self)
 			expectToken(self, ')');
 			
 			catchOps = block(self);
-			if (catchOps)
-			{
-				catchOps = OpList.unshift(Op.make(Op.pushEnvironment, Value.key(identiferOp.value.data.key), text), catchOps);
-				catchOps = OpList.append(catchOps, Op.make(Op.popEnvironment, Value(undefined), text));
-				catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->count), text), catchOps);
-				oplist = OpList.join(oplist, catchOps);
-			}
+			catchOps = OpList.unshift(Op.make(Op.pushEnvironment, Value.key(identiferOp.value.data.key), text), catchOps);
+			catchOps = OpList.append(catchOps, Op.make(Op.popEnvironment, Value(undefined), text));
+			catchOps = OpList.unshift(Op.make(Op.jump, Value.integer(catchOps->count), text), catchOps);
+			oplist = OpList.join(oplist, catchOps);
 		}
 		else
 			oplist = OpList.append(OpList.append(oplist, Op.make(Op.jump, Value.integer(1), text)), Op.make(Op.noop, Value(undefined), text));
