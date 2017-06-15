@@ -688,6 +688,7 @@ static void testLoop (void)
 	,    "^~~~~     ");
 	test("while (1) break abc;", "SyntaxError: label not found"
 	,    "                ^~~ ");
+	test("var a; do a = 1; while (false); a", "1", NULL);
 }
 
 static void testThis (void)

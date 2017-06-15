@@ -1636,7 +1636,7 @@ struct Value switchOp (struct Context * const context)
 
 // MARK: Iteration
 
-#define stepIteration(value, nextOps) \
+#define stepIteration(value, nextOps, then) \
 	{ \
 		value = nextOp(); \
 		if (context->breaker && --context->breaker) \
@@ -1644,7 +1644,7 @@ struct Value switchOp (struct Context * const context)
 			if (--context->breaker) \
 				return value; /* return breaker */\
 			else \
-				break; \
+				then; \
 		} \
 		else \
 			context->ops = nextOps; \
@@ -1662,12 +1662,20 @@ struct Value iterate (struct Context * const context)
 	const struct Op *endOps = startOps;
 	const struct Op *nextOps = startOps + 1;
 	struct Value value;
+	int32_t skipOp = opValue().data.integer;
 	
-	context->ops += opValue().data.integer;
+	if (skipOp)
+	{
+		context->ops += skipOp;
+		stepIteration(value, nextOps, goto done);
+	}
+	else
+		context->ops = nextOps;
 	
-	for (; Value.isTrue(nextOp()); nextOp())
-		stepIteration(value, nextOps);
+	while (Value.isTrue(nextOp()))
+		stepIteration(value, nextOps, break);
 	
+done:
 	context->ops = endOps;
 	return nextOp();
 }
@@ -1707,16 +1715,14 @@ static struct Value iterateIntegerRef (
 			goto deoptimize;
 		
 		for (; compareInteger(indexRef->data.integer, countRef->data.integer); indexRef->data.integer += step)
-			stepIteration(value, nextOps);
-		
-		goto done;
+			stepIteration(value, nextOps, goto done);
 	}
 	
 deoptimize:
 	for (; Value.isTrue(compareValue(context, *indexRef, *countRef))
 		 ; *indexRef = valueStep(context, *indexRef, stepValue)
 		 )
-		stepIteration(value, nextOps);
+		stepIteration(value, nextOps, break);
 	
 done:
 	context->ops = endOps;
@@ -1766,7 +1772,7 @@ struct Value iterateInRef (struct Context * const context)
 			ref->data = key.data;
 			ref->type = key.type;
 			
-			stepIteration(value, startOps);
+			stepIteration(value, startOps, break);
 		}
 		
 		for (index = 2; index < object.data.object->hashmapCount; ++index)
@@ -1780,7 +1786,7 @@ struct Value iterateInRef (struct Context * const context)
 			ref->data = key.data;
 			ref->type = key.type;
 			
-			stepIteration(value, startOps);
+			stepIteration(value, startOps, break);
 		}
 	}
 	

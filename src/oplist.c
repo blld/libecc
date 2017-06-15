@@ -224,15 +224,12 @@ normal:
 		if (!condition)
 			condition = OpList.create(Op.value, Value.truth(1), Text(empty));
 		
-		if (!step)
-			step = OpList.appendNoop(NULL);
-		
-		skipOpCount = reverseCondition? condition->count - 1: 0;
-		body = OpList.appendNoop(OpList.join(condition, body));
-		step = OpList.unshift(Op.make(Op.jump, Value.integer(body->count + (step? step->count: 0)), Text(empty)), step);
-		skipOpCount += step->count;
+		skipOpCount = reverseCondition? condition->count + 1: 0;
+		body = OpList.appendNoop(OpList.join(body, step));
+		body = OpList.join(condition, body);
+		body = OpList.unshift(Op.make(Op.jump, Value.integer(body->count), Text(empty)), body);
 		initial = OpList.append(initial, Op.make(Op.iterate, Value.integer(skipOpCount), Text(empty)));
-		return OpList.join(OpList.join(initial, step), body);
+		return OpList.join(initial, body);
 	}
 }
 
