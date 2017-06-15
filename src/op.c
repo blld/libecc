@@ -1752,42 +1752,54 @@ struct Value iterateMoreOrEqualRef (struct Context * const context)
 struct Value iterateInRef (struct Context * const context)
 {
 	struct Value *ref = nextOp().data.reference;
-	struct Value object = nextOp();
+	struct Value target = nextOp();
 	struct Value value = nextOp(), key;
+	struct Object *object;
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
+	uint32_t index;
 	
-	if (Value.isObject(object))
+	if (Value.isObject(target))
 	{
-		uint32_t index;
+		object = target.data.object;
 		
-		for (index = 0; index < object.data.object->elementCount; ++index)
+		do
 		{
-			union Object(Element) *element = object.data.object->element + index;
+			for (index = 0; index < object->elementCount; ++index)
+			{
+				union Object(Element) *element = object->element + index;
+				
+				if (element->value.check != 1)
+					continue;
+				
+				if (object != target.data.object && &element->value != Object.element(target.data.object, index))
+					continue;
+				
+				key = Value.chars(Chars.create("%d", index));
+				ref->data = key.data;
+				ref->type = key.type;
+				
+				stepIteration(value, startOps, break);
+			}
 			
-			if (element->value.check != 1)
-				continue;
-			
-			key = Value.chars(Chars.create("%d", index));
-			ref->data = key.data;
-			ref->type = key.type;
-			
-			stepIteration(value, startOps, break);
+			for (index = 2; index < object->hashmapCount; ++index)
+			{
+				union Object(Hashmap) *hashmap = object->hashmap + index;
+				
+				if (hashmap->value.check != 1 || (hashmap->value.flags & Value(hidden)))
+					continue;
+				
+				if (object != target.data.object && &hashmap->value != Object.member(target.data.object, hashmap->value.key))
+					continue;
+				
+				key = Value.text(Key.textOf(hashmap->value.key));
+				ref->data = key.data;
+				ref->type = key.type;
+				
+				stepIteration(value, startOps, break);
+			}
 		}
-		
-		for (index = 2; index < object.data.object->hashmapCount; ++index)
-		{
-			union Object(Hashmap) *hashmap = object.data.object->hashmap + index;
-			
-			if (hashmap->value.check != 1 || (hashmap->value.flags & Value(hidden)))
-				continue;
-			
-			key = Value.text(Key.textOf(hashmap->value.key));
-			ref->data = key.data;
-			ref->type = key.type;
-			
-			stepIteration(value, startOps, break);
-		}
+		while (( object = object->prototype ));
 	}
 	
 	context->ops = endOps;
