@@ -288,13 +288,13 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 		{
 			struct Value value = parent->hashmap[index].value;
 			if (value.check == 1 && value.flags & Value(asOwn))
-				addElement(result, length++, Value.key(value.key), 0);
+				addElement(result, length++, Value.text(Key.textOf(value.key)), 0);
 		}
 	}
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].value.check == 1)
-			addElement(result, length++, Value.key(object->hashmap[index].value.key), 0);
+			addElement(result, length++, Value.text(Key.textOf(object->hashmap[index].value.key)), 0);
 	
 	return Value.object(result);
 }
@@ -629,7 +629,7 @@ static struct Value keys (struct Context * const context)
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(hidden)))
-			addElement(result, length++, Value.key(object->hashmap[index].value.key), 0);
+			addElement(result, length++, Value.text(Key.textOf(object->hashmap[index].value.key)), 0);
 	
 	return Value.object(result);
 }

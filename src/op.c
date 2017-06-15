@@ -1782,7 +1782,7 @@ struct Value iterateInRef (struct Context * const context)
 			if (hashmap->value.check != 1 || (hashmap->value.flags & Value(hidden)))
 				continue;
 			
-			key = Value.key(hashmap->value.key);
+			key = Value.text(Key.textOf(hashmap->value.key));
 			ref->data = key.data;
 			ref->type = key.type;
 			

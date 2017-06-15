@@ -61,7 +61,7 @@ struct Value key (struct Key key)
 	return (struct Value){
 		.data = { .key = key },
 		.type = Value(keyType),
-		.check = 1,
+		.check = 0,
 	};
 }
 

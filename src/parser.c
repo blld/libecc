@@ -1223,6 +1223,7 @@ struct OpList * forStatement (struct Parser *self)
 			referenceError(self, OpList.text(oplist), Chars.create("invalid for/in left-hand side"));
 		
 		oplist = OpList.join(oplist, expression(self, 0));
+		oplist->ops[0].text = OpList.text(oplist);
 		expectToken(self, ')');
 		
 		self->preferInteger = 0;
@@ -1513,7 +1514,7 @@ struct OpList * statement (struct Parser *self)
 {
 	struct OpList *oplist = allStatement(self);
 	if (oplist && oplist->count > 1)
-		oplist->ops[1].text.flags |= Text(breakFlag);
+		oplist->ops[oplist->ops[0].text.length? 0: 1].text.flags |= Text(breakFlag);
 	
 	return oplist;
 }
