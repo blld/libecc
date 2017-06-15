@@ -1142,12 +1142,13 @@ struct OpList * ifStatement (struct Parser *self)
 	expectToken(self, ')');
 	trueOps = statement(self);
 	if (!trueOps)
-		return oplist;
+		trueOps = OpList.appendNoop(NULL);
 	
 	if (acceptToken(self, Lexer(elseToken)))
 	{
 		falseOps = statement(self);
-		trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->count), OpList.text(trueOps)));
+		if (falseOps)
+			trueOps = OpList.append(trueOps, Op.make(Op.jump, Value.integer(falseOps->count), OpList.text(trueOps)));
 	}
 	oplist = OpList.unshiftJoin3(Op.make(Op.jumpIfNot, Value.integer(trueOps->count), OpList.text(oplist)), oplist, trueOps, falseOps);
 	return oplist;
