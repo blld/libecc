@@ -162,7 +162,8 @@ const char * toChars (const Native(Function) native)
 
 // MARK: call
 
-static inline struct Value callOps (struct Context * const context, struct Object *environment)
+static inline
+struct Value callOps (struct Context * const context, struct Object *environment)
 {
 	if (context->depth >= context->ecc->maximumCallDepth)
 		Context.rangeError(context, Chars.create("maximum depth exceeded"));
@@ -171,7 +172,8 @@ static inline struct Value callOps (struct Context * const context, struct Objec
 	return context->ops->native(context);
 }
 
-static inline struct Value callOpsRelease (struct Context * const context, struct Object *environment)
+static inline
+struct Value callOpsRelease (struct Context * const context, struct Object *environment)
 {
 	struct Value result;
 	uint16_t index, count;
@@ -184,7 +186,8 @@ static inline struct Value callOpsRelease (struct Context * const context, struc
 	return result;
 }
 
-static inline void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int32_t parameterCount)
+static inline
+void populateEnvironmentWithArguments (struct Object *environment, struct Object *arguments, int32_t parameterCount)
 {
 	int32_t index = 0;
 	int argumentCount = arguments->elementCount;
@@ -201,11 +204,12 @@ static inline void populateEnvironmentWithArguments (struct Object *environment,
 	}
 }
 
-static inline void populateEnvironmentWithArgumentsVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
+static inline
+void populateEnvironmentAndArgumentsWithVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
 {
 	int32_t index = 0;
-	
 	struct Object *arguments = Arguments.createSized(argumentCount);
+	
 	environment->hashmap[2].value = retain(Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
@@ -217,15 +221,28 @@ static inline void populateEnvironmentWithArgumentsVA (struct Object *environmen
 			environment->hashmap[index + 3].value = arguments->element[index].value = retain(va_arg(ap, struct Value));
 		
 		for (; index < argumentCount; ++index)
-			arguments->element[index].value = va_arg(ap, struct Value);
+			arguments->element[index].value = retain(va_arg(ap, struct Value));
 	}
 }
 
-static inline void populateEnvironmentWithArgumentsOps (struct Context * const context, struct Object *environment, struct Object *arguments, int32_t parameterCount, int32_t argumentCount)
+static inline
+void populateEnvironmentWithVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
+{
+	int32_t index = 0;
+	if (argumentCount <= parameterCount)
+		for (; index < argumentCount; ++index)
+			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
+	else
+		for (; index < parameterCount; ++index)
+			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
+}
+
+static inline
+void populateStackEnvironmentAndArgumentsWithOps (struct Context * const context, struct Object *environment, struct Object *arguments, int32_t parameterCount, int32_t argumentCount)
 {
 	int32_t index = 0;
 	
-	environment->hashmap[2].value = retain(Value.object(arguments));
+	environment->hashmap[2].value = Value.object(arguments);
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -240,18 +257,23 @@ static inline void populateEnvironmentWithArgumentsOps (struct Context * const c
 	}
 }
 
-static inline void populateEnvironmentVA (struct Object *environment, int32_t parameterCount, int32_t argumentCount, va_list ap)
+static inline
+void populateEnvironmentAndArgumentsWithOps (struct Context * const context, struct Object *environment, struct Object *arguments, int32_t parameterCount, int32_t argumentCount)
 {
-	int32_t index = 0;
-	if (argumentCount <= parameterCount)
+	populateStackEnvironmentAndArgumentsWithOps(context, environment, arguments, parameterCount, argumentCount);
+	
+	retain(Value.object(arguments));
+	
+	if (argumentCount > parameterCount)
+	{
+		int32_t index = parameterCount;
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
-	else
-		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].value = retain(va_arg(ap, struct Value));
+			retain(arguments->element[index].value);
+	}
 }
 
-static inline void populateEnvironment (struct Context * const context, struct Object *environment, int32_t parameterCount, int32_t argumentCount)
+static inline
+void populateEnvironmentWithOps (struct Context * const context, struct Object *environment, int32_t parameterCount, int32_t argumentCount)
 {
 	int32_t index = 0;
 	if (argumentCount <= parameterCount)
@@ -321,9 +343,9 @@ struct Value callFunctionVA (struct Context * const context, enum Context(Offset
 		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
-			populateEnvironmentWithArgumentsVA(environment, function->parameterCount, argumentCount, ap);
+			populateEnvironmentAndArgumentsWithVA(environment, function->parameterCount, argumentCount, ap);
 		else
-			populateEnvironmentVA(environment, function->parameterCount, argumentCount, ap);
+			populateEnvironmentWithVA(environment, function->parameterCount, argumentCount, ap);
 		
 		return callOps(&subContext, environment);
 	}
@@ -335,13 +357,14 @@ struct Value callFunctionVA (struct Context * const context, enum Context(Offset
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
 		
-		populateEnvironmentVA(&environment, function->parameterCount, argumentCount, ap);
+		populateEnvironmentWithVA(&environment, function->parameterCount, argumentCount, ap);
 		
 		return callOpsRelease(&subContext, &environment);
 	}
 }
 
-static inline struct Value callFunction (struct Context * const context, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
+static inline
+struct Value callFunction (struct Context * const context, struct Function * const function, struct Value this, int32_t argumentCount, int construct)
 {
 	struct Context subContext = {
 		.ops = function->oplist->ops,
@@ -357,9 +380,9 @@ static inline struct Value callFunction (struct Context * const context, struct 
 		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
-			populateEnvironmentWithArgumentsOps(context, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
+			populateEnvironmentAndArgumentsWithOps(context, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
 		else
-			populateEnvironment(context, environment, function->parameterCount, argumentCount);
+			populateEnvironmentWithOps(context, environment, function->parameterCount, argumentCount);
 		
 		return callOps(&subContext, environment);
 	}
@@ -374,7 +397,7 @@ static inline struct Value callFunction (struct Context * const context, struct 
 		environment.hashmap = hashmap;
 		arguments.element = element;
 		arguments.elementCount = argumentCount;
-		populateEnvironmentWithArgumentsOps(context, &environment, &arguments, function->parameterCount, argumentCount);
+		populateStackEnvironmentAndArgumentsWithOps(context, &environment, &arguments, function->parameterCount, argumentCount);
 		
 		return callOpsRelease(&subContext, &environment);
 	}
@@ -385,13 +408,14 @@ static inline struct Value callFunction (struct Context * const context, struct 
 		
 		memcpy(hashmap, function->environment.hashmap, sizeof(hashmap));
 		environment.hashmap = hashmap;
-		populateEnvironment(context, &environment, function->parameterCount, argumentCount);
+		populateEnvironmentWithOps(context, &environment, function->parameterCount, argumentCount);
 		
 		return callOpsRelease(&subContext, &environment);
 	}
 }
 
-static inline struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct)
+static inline
+struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct)
 {
 	if (value.type != Value(functionType))
 		Context.typeError(context, Chars.create("'%.*s' is not a function", context->text->length, context->text->bytes));
