@@ -1616,7 +1616,10 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	if (isDeclaration)
 		Object.addMember(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
+	{
 		Object.addMember(&function->environment, identifierOp.value.data.key, value, Value(hidden));
+		Object.packValue(&function->environment);
+	}
 	
 	if (isGetter)
 		value.flags |= Value(getter);

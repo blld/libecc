@@ -660,6 +660,7 @@ static void testFunction (void)
 	test("function f1(x, x) { return x; } f1(1, 2)", "2", NULL);
 	test("function f(n,a,b){ if (n > 0) return f(n - 1, b, a + b); else return a }; f(10, 0, 1)", "55", NULL);
 	test("function f(n,a,b){ if (arguments[0] > 0) return f(arguments[0] - 1, arguments[2], arguments[1] + arguments[2]); else return arguments[1] }; f(10, 0, 1)", "55", NULL);
+	test("var f = function exp(x){ if (x == 1) return x; else return exp(x - 1) * x; }; f(3)", "6", NULL);
 }
 
 static void testLoop (void)
