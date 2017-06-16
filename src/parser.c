@@ -1584,7 +1584,6 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	parentFunction->flags |= Function(needHeap);
 	
 	function = Function.create(&self->function->environment);
-	Function.linkPrototype(function, Value.object(Object.create(Object(prototype))));
 	
 	Object.addMember(&function->environment, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
 	

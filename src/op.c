@@ -540,10 +540,20 @@ struct Value regexp (struct Context * const context)
 
 struct Value function (struct Context * const context)
 {
+	struct Object *prototype;
 	struct Value value = opValue(), result;
+	
 	struct Function *function = Function.copy(value.data.function);
+	function->object.prototype = &value.data.function->object;
 	function->environment.prototype = context->environment;
+	
+	prototype = Object.create(Object(prototype));
+	Function.linkPrototype(function, Value.object(prototype));
+	
+	++prototype->referenceCount;
 	++context->environment->referenceCount;
+	++function->object.referenceCount;
+	
 	result = Value.function(function);
 	result.flags = value.flags;
 	return result;
