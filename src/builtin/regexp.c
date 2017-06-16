@@ -282,7 +282,9 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			case 'w': return node(opWord, 1, NULL);
 			case 'W': return node(opWord, 0, NULL);
 			case 'c':
-				buffer[0] = *(p->c++) % 32;
+				if (tolower(*p->c) >= 'a' && tolower(*p->c) <= 'z')
+					buffer[0] = *(p->c++) % 32;
+				
 				break;
 			
 			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
