@@ -1498,7 +1498,7 @@ struct OpList * allStatement (struct Parser *self)
 			return oplist;
 		}
 		
-		semicolon(self);
+		acceptToken(self, ';');
 		
 		index = oplist->count;
 		while (index--)
