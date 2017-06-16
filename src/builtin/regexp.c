@@ -994,7 +994,7 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 			break;
 		}
 	else if (!*error)
-		*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid character"));
+		*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid character '%c'", isgraph(*p.c)? *p.c: '?'));
 	
 	Object.addMember(&self->object, Key(source), Value.chars(self->source), Value(readonly) | Value(hidden) | Value(sealed));
 	Object.addMember(&self->object, Key(global), Value.truth(self->global), Value(readonly) | Value(hidden) | Value(sealed));
