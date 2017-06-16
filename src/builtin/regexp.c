@@ -256,7 +256,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 {
 	char buffer[5] = { 0 };
 	
-	if (*p->c == '/')
+	if (p->c >= p->end - 1)
 		return NULL;
 	else if (accept(p, '^'))
 		return node(opStart, 0, NULL);
@@ -556,10 +556,14 @@ struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error)
 static
 struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 {
+	struct RegExp(Node) * n;
+	
 	assert(*p->c == '/');
 	++p->c;
+	n = join(disjunction(p, error), node(opMatch, 0, NULL));
+	assert(*p->c == '/');
 	
-	return join(disjunction(p, error), node(opMatch, 0, NULL));
+	return n;
 }
 
 
