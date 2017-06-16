@@ -1329,9 +1329,8 @@ static void testRegExp (void)
 	,    "  ^");
 	test("/[/", "SyntaxError: expect ']'"
 	,    "  ^");
-	test("/a]ab/.exec('abc')", "SyntaxError: invalid character"
-	,    "  ^               ");
-	test("/a)ab/.exec('abc')", "SyntaxError: invalid character"
+	test("/a]ab/.exec('abc')", "null", NULL);
+	test("/a)ab/.exec('abc')", "SyntaxError: invalid character ')'"
 	,    "  ^               ");
 	test("var r = /a/; r instanceof RegExp", "true", NULL);
 	test("var r = /a/g; r.global", "true", NULL);
@@ -1339,7 +1338,7 @@ static void testRegExp (void)
 	test("var r = /a/m; r.multiline", "true", NULL);
 	test("/\\1/.source", "\\1", NULL);
 	test("/a+?b/.exec('aabc')", "aab", NULL);
-	test("/a\?\?\?/.exec('abc')", "SyntaxError: invalid character"
+	test("/a\?\?\?/.exec('abc')", "SyntaxError: invalid character '?'"
 	,    "    ^             ");
 	test("/a|ab/.exec('abc')", "a", NULL);
 	test("/ab+c/.exec('abbbc')", "abbbc", NULL);
