@@ -846,7 +846,9 @@ static struct Value constructor (struct Context * const context)
 			Chars.appendValue(&chars, context, pattern);
 		
 		Chars.append(&chars, "/");
-		Chars.appendValue(&chars, context, flags);
+		if (flags.type != Value(undefinedType))
+			Chars.appendValue(&chars, context, flags);
+		
 		Chars.endAppend(&chars);
 	}
 	
