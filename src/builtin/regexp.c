@@ -885,7 +885,7 @@ static struct Value exec (struct Context * const context)
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value;
 	
-	Context.assertParameterCount(context, 2);
+	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
@@ -920,6 +920,26 @@ static struct Value exec (struct Context * const context)
 	return Value(null);
 }
 
+static struct Value test (struct Context * const context)
+{
+	struct RegExp *self = context->this.data.regexp;
+	struct Value value;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisType(context, Value(regexpType));
+	
+	value = Value.toString(context, Context.argument(context, 0));
+	{
+		uint16_t length = Value.stringLength(value);
+		const char *bytes = Value.stringBytes(value);
+		const char *capture[2 + self->count * 2];
+		const char *index[2 + self->count * 2];
+		struct RegExp(State) state = { bytes, bytes + length, capture, index };
+		
+		return Value.truth(matchWithState(self, &state));
+	}
+}
+
 // MARK: - Methods
 
 void setup ()
@@ -932,7 +952,8 @@ void setup ()
 		&RegExp(type));
 	
 	Function.addToObject(RegExp(prototype), "toString", toString, 0, h);
-	Function.addToObject(RegExp(prototype), "exec", exec, 2, h);
+	Function.addToObject(RegExp(prototype), "exec", exec, 1, h);
+	Function.addToObject(RegExp(prototype), "test", test, 1, h);
 }
 
 void teardown (void)
