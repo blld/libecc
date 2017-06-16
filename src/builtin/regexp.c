@@ -13,6 +13,8 @@
 #include "../ecc.h"
 #include "../lexer.h"
 
+#define DUMP_REGEXP 0
+
 enum Opcode {
 	opOver = 0,
 	opNLookahead = 1,
@@ -92,30 +94,32 @@ const struct Object(Type) RegExp(type) = {
 	.finalize = finalize,
 };
 
-#if 0
+#if DUMP_REGEXP
 static
 void printNode (struct RegExp(Node) *n)
 {
 	switch (n->opcode)
 	{
+		case opOver: fprintf(stderr, "over "); break;
 		case opNLookahead: fprintf(stderr, "!lookahead "); break;
 		case opLookahead: fprintf(stderr, "lookahead "); break;
-		case opReference: fprintf(stderr, "reference "); break;
 		case opStart: fprintf(stderr, "start "); break;
 		case opEnd: fprintf(stderr, "end "); break;
 		case opBoundary: fprintf(stderr, "boundary "); break;
+		
 		case opSplit: fprintf(stderr, "split "); break;
+		case opReference: fprintf(stderr, "reference "); break;
 		case opRedo: fprintf(stderr, "redo "); break;
 		case opSave: fprintf(stderr, "save "); break;
 		case opAny: fprintf(stderr, "any "); break;
-		case opOneOf: fprintf(stderr, "oneof "); break;
+		case opOneOf: fprintf(stderr, "one of "); break;
+		case opNeitherOf: fprintf(stderr, "neither of "); break;
 		case opDigit: fprintf(stderr, "digit "); break;
 		case opSpace: fprintf(stderr, "space "); break;
 		case opWord: fprintf(stderr, "word "); break;
 		case opBytes: fprintf(stderr, "bytes "); break;
 		case opJump: fprintf(stderr, "jump "); break;
 		case opMatch: fprintf(stderr, "match "); break;
-		case opOver: fprintf(stderr, "over "); break;
 	}
 	fprintf(stderr, "%d", n->offset);
 	if (n->bytes)
@@ -123,11 +127,12 @@ void printNode (struct RegExp(Node) *n)
 		if (n->opcode == opRedo)
 		{
 			char *c = n->bytes + 1;
-			fprintf(stderr, " {%u-%u} (:", n->bytes[0], n->bytes[1]);
+			fprintf(stderr, " {%u-%u}", n->bytes[0], n->bytes[1]);
+			if (*(c + 1))
+				fprintf(stderr, " clear:");
+			
 			while (*(++c))
 				fprintf(stderr, "%u,", *c);
-			
-			fprintf(stderr, ")");
 		}
 		else if (n->opcode != opRedo)
 			fprintf(stderr, " `%s`", n->bytes);
@@ -940,6 +945,10 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	p.c = s->bytes;
 	p.end = s->bytes + s->length;
 	
+#if DUMP_REGEXP
+	fprintf(stderr, "\n%.*s\n", s->length, s->bytes);
+#endif
+	
 	self->pattern = s;
 	self->program = pattern(&p, error);
 	self->count = p.count + 1;
@@ -993,8 +1002,7 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 	int result = 0;
 	uint16_t index, count;
 	
-#if 0
-	fprintf(stderr, "\n%.*s\n", self->pattern->length, self->pattern->bytes);
+#if DUMP_REGEXP
 	struct RegExp(Node) *n = self->program;
 	while (n->opcode != opOver)
 		printNode(n++);
