@@ -559,14 +559,11 @@ struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error)
 static
 struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 {
-	struct RegExp(Node) * n;
-	
 	assert(*p->c == '/');
+	assert(*(p->end - 1) == '/');
+	
 	++p->c;
-	n = join(disjunction(p, error), node(opMatch, 0, NULL));
-	assert(*p->c == '/');
-	
-	return n;
+	return join(disjunction(p, error), node(opMatch, 0, NULL));
 }
 
 
@@ -855,13 +852,8 @@ static struct Value constructor (struct Context * const context)
 	regexp = create(chars, &error);
 	if (error)
 	{
-		struct Context *c = context;
-		while (!c->text && c->parent)
-			c = c->parent;
-		
-		if (c->text)
-			error->text = *c->text;
-		
+		context->ecc->ofLine = Text.make(chars->bytes, chars->length);
+		Context.setText(context, &Text(nativeCode));
 		Context.throw(context, Value.error(error));
 	}
 	return Value.regexp(regexp);
@@ -974,6 +966,8 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	
 	p.c = s->bytes;
 	p.end = s->bytes + s->length;
+	while (p.end > p.c && *(p.end - 1) != '/')
+		p.end--;
 	
 #if DUMP_REGEXP
 	fprintf(stderr, "\n%.*s\n", s->length, s->bytes);

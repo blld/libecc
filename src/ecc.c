@@ -232,9 +232,16 @@ struct Input * findInput (struct Ecc *self, struct Text text)
 
 void printTextInput (struct Ecc *self, struct Text text, int fullLine)
 {
+	struct Text ofLine;
+	
 	assert(self);
 	
-	Input.printText(findInput(self, text), text, fullLine);
+	if (text.bytes >= self->ofLine.bytes && text.bytes < self->ofLine.bytes + self->ofLine.length)
+		ofLine = self->ofLine;
+	else
+		ofLine = Text(empty);
+	
+	Input.printText(findInput(self, text), text, ofLine, fullLine);
 }
 
 void garbageCollect(struct Ecc *self)

@@ -100,11 +100,18 @@ void destroy (struct Input *self)
 	free(self), self = NULL;
 }
 
-void printText (struct Input *self, struct Text text, int fullLine)
+void printText (struct Input *self, struct Text text, struct Text ofLine, int fullLine)
 {
 	int32_t line = -1;
+	const char *bytes = NULL;
+	uint16_t length = 0;
 	
-	if (!self)
+	if (ofLine.length)
+	{
+		bytes = ofLine.bytes;
+		length = ofLine.length;
+	}
+	else if (!self)
 		Env.printColor(0, Env(dim), "(unknown input)");
 	else
 	{
@@ -115,33 +122,35 @@ void printText (struct Input *self, struct Text text, int fullLine)
 		
 		line = findLine(self, text);
 		if (line >= 0)
+		{
+			uint16_t start = self->lines[line];
+			
 			Env.printColor(0, Env(bold), " line:%d", line);
+			
+			bytes = self->bytes;
+			do
+			{
+				if (!isblank(bytes[length]) && !isgraph(bytes[length]) && bytes[length] >= 0)
+					break;
+				
+				++length;
+			} while (start + length < self->length);
+		}
 	}
 	
-	if (!fullLine || line < 0)
+	if (!fullLine)
 	{
 		if (text.length)
 			Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
 	}
+	else if (!length)
+	{
+		Env.newline();
+		Env.printColor(0, 0, "%.*s", text.length, text.bytes);
+	}
 	else
 	{
-		const char *bytes;
-		ptrdiff_t length = 0;
-		uint32_t start;
-		
 		Env.newline();
-		
-		start = self->lines[line];
-		bytes = self->bytes + start;
-		
-		do
-		{
-			if (!isblank(bytes[length]) && !isgraph(bytes[length]) && bytes[length] >= 0)
-				break;
-			
-			++length;
-		} while (start + length < self->length);
-		
 		Env.print("%.*s", length, bytes);
 		Env.newline();
 		
