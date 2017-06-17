@@ -691,7 +691,12 @@ char * toUpper (struct Text i, char *o /* length x 3 */)
 
 int isSpace (struct Text(Char) c)
 {
-	return isspace(c.codepoint) || c.codepoint == 0xA0 || c.codepoint == 0xFEFF;
+	return
+		isspace(c.codepoint)
+		|| c.codepoint == 0xA0
+		|| c.codepoint == 0xFEFF
+		|| isLineFeed(c)
+		;
 }
 
 int isDigit (struct Text(Char) c)
@@ -706,5 +711,10 @@ int isWord (struct Text(Char) c)
 
 int isLineFeed (struct Text(Char) c)
 {
-	return c.codepoint == '\n' || c.codepoint == '\r' || c.codepoint == 0x2028 || c.codepoint == 0x2029;
+	return
+		c.codepoint == '\n'
+		|| c.codepoint == '\r'
+		|| c.codepoint == 0x2028
+		|| c.codepoint == 0x2029
+		;
 }
