@@ -271,8 +271,8 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 			{
 				int c = buffer[0] - '0';
-				while (isdigit(*(p->c + 1)))
-					c = c * 10 + *(++p->c);
+				while (isdigit(*(p->c)))
+					c = c * 10 + *(p->c++) - '0';
 				
 				return node(opReference, c, NULL);
 			}
@@ -680,12 +680,14 @@ start:
 			goto next;
 			
 		case opSave:
+			s->capture[n->offset] = text.bytes;
 			if (forkMatch(s, n, text, 1)) {
 				if (s->capture[n->offset] < text.bytes && text.bytes > s->index[n->offset]) {
 					s->capture[n->offset] = text.bytes;
 				}
 				return 1;
 			}
+			s->capture[n->offset] = NULL;
 			return 0;
 			
 		case opDigit:

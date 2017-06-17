@@ -1388,6 +1388,7 @@ static void testRegExp (void)
 	test("/^test$/.exec('test')", "test", NULL);
 	test("/^test$/.exec(' test')", "null", NULL);
 	test("/^test$/.exec('test ')", "null", NULL);
+	test("/(A)\\1/.exec('AA')", "AA,A", NULL);
 }
 
 static int runTest (int verbosity)
