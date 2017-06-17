@@ -127,7 +127,7 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, int fu
 			
 			Env.printColor(0, Env(bold), " line:%d", line);
 			
-			bytes = self->bytes;
+			bytes = self->bytes + start;
 			do
 			{
 				if (!isblank(bytes[length]) && !isgraph(bytes[length]) && bytes[length] >= 0)
