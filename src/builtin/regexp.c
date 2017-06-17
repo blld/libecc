@@ -277,7 +277,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				return node(opReference, c, NULL);
 			}
 			case '0':
-				buffer[0] = *p->c - '0';
+				buffer[0] -= '0';
 				if (buffer[0] >= 0 && buffer[0] <= 7)
 				{
 					if (*p->c >= '0' && *p->c <= '7')
