@@ -838,7 +838,7 @@ static struct Value toString (struct Context * const context)
 static struct Value exec (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value;
+	struct Value value, lastIndex;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
@@ -851,6 +851,15 @@ static struct Value exec (struct Context * const context)
 		const char *index[2 + self->count * 2];
 		struct RegExp(State) state = { bytes, bytes + length, capture, index };
 		struct Chars *element;
+		
+		if (self->global)
+		{
+			lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+			if ((uint32_t)lastIndex.data.integer > length)
+				lastIndex.data.integer = length;
+			
+			state.start += (uint32_t)lastIndex.data.integer;
+		}
 		
 		if (matchWithState(self, &state))
 		{
@@ -869,6 +878,10 @@ static struct Value exec (struct Context * const context)
 				else
 					array->element[index].value = Value(undefined);
 			}
+			
+			if (self->global)
+				Object.putMember(&self->object, context, Key(lastIndex), Value.integer((int32_t)(capture[1] - bytes)));
+			
 			return Value.object(array);
 		}
 	}
@@ -878,7 +891,7 @@ static struct Value exec (struct Context * const context)
 static struct Value test (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value;
+	struct Value value, lastIndex;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
@@ -891,7 +904,21 @@ static struct Value test (struct Context * const context)
 		const char *index[2 + self->count * 2];
 		struct RegExp(State) state = { bytes, bytes + length, capture, index };
 		
-		return Value.truth(matchWithState(self, &state));
+		if (self->global)
+		{
+			lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+			if ((uint32_t)lastIndex.data.integer > length)
+				lastIndex.data.integer = length;
+			
+			state.start += (uint32_t)lastIndex.data.integer;
+		}
+		
+		value = Value.truth(matchWithState(self, &state));
+		
+		if (self->global)
+			Object.putMember(&self->object, context, Key(lastIndex), Value.integer((int32_t)(capture[1] - bytes)));
+		
+		return value;
 	}
 }
 
