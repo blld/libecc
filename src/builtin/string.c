@@ -43,16 +43,16 @@ static inline
 struct Text positionText (const char *chars, uint16_t length, int32_t position, int enableReverse)
 {
 	struct Text text = Text.make(chars, length), prev = text;
-	uint32_t codepoint;
+	struct Text(Char) c;
 	
 	if (position >= 0)
 	{
 		while (position-- > 0)
 		{
 			prev = text;
-			codepoint = Text.nextCodepoint(&text);
+			c = Text.nextCharacter(&text);
 			
-			if (codepoint > 0xffff && !position--)
+			if (c.codepoint > 0xffff && !position--)
 			{
 				/* simulate 16-bit surrogate */
 				text = prev;
@@ -66,9 +66,9 @@ struct Text positionText (const char *chars, uint16_t length, int32_t position, 
 		
 		while (position++ < 0)
 		{
-			codepoint = Text.prevCodepoint(&text);
+			c = Text.prevCharacter(&text);
 			
-			if (codepoint > 0xffff && position++ >= 0)
+			if (c.codepoint > 0xffff && position++ >= 0)
 			{
 				/* simulate 16-bit surrogate */
 				text.flags = Text(breakFlag);
@@ -88,16 +88,16 @@ uint16_t unitPosition (const char *chars, uint16_t max, uint16_t unit)
 {
 	struct Text text = Text.make(chars, max);
 	uint16_t position = 0;
-	uint32_t codepoint;
+	struct Text(Char) c;
 	
 	while (unit--)
 	{
 		if (text.length)
 		{
 			++position;
-			codepoint = Text.nextCodepoint(&text);
+			c = Text.nextCharacter(&text);
 			
-			if (codepoint > 0xffff) /* simulate 16-bit surrogate */
+			if (c.codepoint > 0xffff) /* simulate 16-bit surrogate */
 				++position;
 		}
 	}
@@ -141,26 +141,25 @@ static struct Value charAt (struct Context * const context)
 	else
 	{
 		struct Chars *result;
-		uint8_t units;
-		uint32_t cp = Text.codepoint(text, &units);
+		struct Text(Char) c = Text.character(text);
 		
-		if (cp < 0x010000)
+		if (c.codepoint < 0x010000)
 		{
-			result = Chars.createSized(units);
-			memcpy(result->bytes, text.bytes, units);
+			result = Chars.createSized(c.units);
+			memcpy(result->bytes, text.bytes, c.units);
 		}
 		else
 		{
 			/* simulate 16-bit surrogate */
 			
-			cp -= 0x010000;
+			c.codepoint -= 0x010000;
 			if (text.flags & Text(breakFlag))
-				cp = ((cp >>  0) & 0x3ff) + 0xdc00;
+				c.codepoint = ((c.codepoint >>  0) & 0x3ff) + 0xdc00;
 			else
-				cp = ((cp >> 10) & 0x3ff) + 0xd800;
+				c.codepoint = ((c.codepoint >> 10) & 0x3ff) + 0xd800;
 			
 			result = Chars.createSized(3);
-			Chars.writeCodepoint(result->bytes, cp);
+			Chars.writeCodepoint(result->bytes, c.codepoint);
 		}
 		
 		return Value.chars(result);
@@ -186,19 +185,19 @@ static struct Value charCodeAt (struct Context * const context)
 		return Value.binary(NAN);
 	else
 	{
-		uint32_t cp = Text.codepoint(text, NULL);
+		struct Text(Char) c = Text.character(text);
 		
-		if (cp < 0x010000)
-			return Value.binary(cp);
+		if (c.codepoint < 0x010000)
+			return Value.binary(c.codepoint);
 		else
 		{
 			/* simulate 16-bit surrogate */
 			
-			cp -= 0x010000;
+			c.codepoint -= 0x010000;
 			if (text.flags & Text(breakFlag))
-				return Value.binary(((cp >>  0) & 0x3ff) + 0xdc00);
+				return Value.binary(((c.codepoint >>  0) & 0x3ff) + 0xdc00);
 			else
-				return Value.binary(((cp >> 10) & 0x3ff) + 0xd800);
+				return Value.binary(((c.codepoint >> 10) & 0x3ff) + 0xd800);
 		}
 	}
 }
@@ -225,7 +224,6 @@ static struct Value indexOf (struct Context * const context)
 	struct Text text;
 	struct Value search;
 	int32_t position, index, length, searchLength, argumentCount;
-	uint32_t cp;
 	const char *chars, *searchChars;
 	
 	Context.assertVariableParameter(context);
@@ -244,7 +242,7 @@ static struct Value indexOf (struct Context * const context)
 	text = positionText(chars, length, position, 0);
 	if (text.flags & Text(breakFlag))
 	{
-		Text.nextCodepoint(&text);
+		Text.nextCharacter(&text);
 		++position;
 	}
 	
@@ -264,8 +262,7 @@ static struct Value indexOf (struct Context * const context)
 		}
 		
 		++position;
-		cp = Text.nextCodepoint(&text);
-		if (cp > 0xffff)
+		if (Text.nextCharacter(&text).codepoint > 0xffff)
 			++position;
 	}
 	
@@ -277,7 +274,6 @@ static struct Value lastIndexOf (struct Context * const context)
 	struct Text text;
 	struct Value search;
 	int32_t position, index, length, searchLength, argumentCount;
-	uint32_t cp;
 	const char *chars, *searchChars;
 	
 	Context.assertVariableParameter(context);
@@ -301,7 +297,7 @@ static struct Value lastIndexOf (struct Context * const context)
 	text = positionText(chars, length, position, 0);
 	if (text.flags & Text(breakFlag))
 	{
-		Text.nextCodepoint(&text);
+		Text.nextCharacter(&text);
 		++position;
 	}
 	text.length = text.bytes - chars;
@@ -322,8 +318,7 @@ static struct Value lastIndexOf (struct Context * const context)
 		}
 		
 		--position;
-		cp = Text.prevCodepoint(&text);
-		if (cp > 0xffff)
+		if (Text.prevCharacter(&text).codepoint > 0xffff)
 			--position;
 	}
 	while (text.length);
@@ -338,7 +333,7 @@ static struct Value slice (struct Context * const context)
 	const char *chars;
 	ptrdiff_t length;
 	uint16_t head = 0, tail = 0;
-	uint32_t cp = 0;
+	uint32_t headcp = 0;
 	
 	Context.assertParameterCount(context, 2);
 	
@@ -361,7 +356,7 @@ static struct Value slice (struct Context * const context)
 		end = positionText(chars, length, Value.toInteger(context, to).data.integer, 1);
 	
 	if (start.flags & Text(breakFlag))
-		cp = Text.nextCodepoint(&start);
+		headcp = Text.nextCharacter(&start).codepoint;
 	
 	length = end.bytes - start.bytes;
 	
@@ -380,7 +375,7 @@ static struct Value slice (struct Context * const context)
 		if (start.flags & Text(breakFlag))
 		{
 			/* simulate 16-bit surrogate */
-			Chars.writeCodepoint(result->bytes, cp = (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+			Chars.writeCodepoint(result->bytes, (((headcp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
 		}
 		
 		if (length > 0)
@@ -389,7 +384,7 @@ static struct Value slice (struct Context * const context)
 		if (end.flags & Text(breakFlag))
 		{
 			/* simulate 16-bit surrogate */
-			Chars.writeCodepoint(result->bytes + head + length, (((Text.codepoint(end, NULL) - 0x010000) >> 10) & 0x3ff) + 0xd800);
+			Chars.writeCodepoint(result->bytes + head + length, (((Text.character(end).codepoint - 0x010000) >> 10) & 0x3ff) + 0xd800);
 		}
 		
 		return Value.chars(result);
@@ -490,34 +485,33 @@ static struct Value split (struct Context * const context)
 	}
 	else if (!separator.length)
 	{
-		uint32_t cp;
-		uint8_t units;
+		struct Text(Char) c;
 		
 		while (text.length)
 		{
 			if (size >= limit)
 				break;
 			
-			cp = Text.codepoint(text, &units);
-			if (cp >= 0x010000)
+			c = Text.character(text);
+			if (c.codepoint >= 0x010000)
 			{
 				/* simulate 16-bit surrogate */
 				
 				element = Chars.createSized(3);
-				Chars.writeCodepoint(element->bytes, (((cp - 0x010000) >> 10) & 0x3ff) + 0xd800);
+				Chars.writeCodepoint(element->bytes, (((c.codepoint - 0x010000) >> 10) & 0x3ff) + 0xd800);
 				Object.addElement(array, size++, Value.chars(element), 0);
 				
 				element = Chars.createSized(3);
-				Chars.writeCodepoint(element->bytes, (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+				Chars.writeCodepoint(element->bytes, (((c.codepoint - 0x010000) >> 0) & 0x3ff) + 0xdc00);
 				Object.addElement(array, size++, Value.chars(element), 0);
 			}
 			else
 			{
-				element = Chars.createSized(units);
-				memcpy(element->bytes, text.bytes, units);
+				element = Chars.createSized(c.units);
+				memcpy(element->bytes, text.bytes, c.units);
 				Object.addElement(array, size++, Value.chars(element), 0);
 			}
-			Text.advance(&text, units);
+			Text.advance(&text, c.units);
 		}
 		
 		return Value.object(array);
@@ -543,7 +537,7 @@ static struct Value split (struct Context * const context)
 				seek = text;
 				continue;
 			}
-			Text.nextCodepoint(&seek);
+			Text.nextCharacter(&seek);
 		}
 		
 		if (text.length && size < limit)
@@ -563,7 +557,7 @@ static struct Value substring (struct Context * const context)
 	struct Text start, end;
 	const char *chars;
 	uint16_t length, head = 0, tail = 0;
-	uint32_t cp = 0;
+	uint32_t headcp = 0;
 	
 	Context.assertParameterCount(context, 2);
 	
@@ -593,7 +587,7 @@ static struct Value substring (struct Context * const context)
 	}
 	
 	if (start.flags & Text(breakFlag))
-		cp = Text.nextCodepoint(&start);
+		headcp = Text.nextCharacter(&start).codepoint;
 	
 	length = end.bytes - start.bytes;
 	
@@ -612,7 +606,7 @@ static struct Value substring (struct Context * const context)
 		if (start.flags & Text(breakFlag))
 		{
 			/* simulate 16-bit surrogate */
-			Chars.writeCodepoint(result->bytes, (((cp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+			Chars.writeCodepoint(result->bytes, (((headcp - 0x010000) >> 0) & 0x3ff) + 0xdc00);
 		}
 		
 		if (length > 0)
@@ -621,7 +615,7 @@ static struct Value substring (struct Context * const context)
 		if (end.flags & Text(breakFlag))
 		{
 			/* simulate 16-bit surrogate */
-			Chars.writeCodepoint(result->bytes + head + length, (((Text.codepoint(end, NULL) - 0x010000) >> 10) & 0x3ff) + 0xd800);
+			Chars.writeCodepoint(result->bytes + head + length, (((Text.character(end).codepoint - 0x010000) >> 10) & 0x3ff) + 0xd800);
 		}
 		
 		return Value.chars(result);
@@ -768,36 +762,35 @@ struct String * create (struct Chars *chars)
 
 struct Value valueAtPosition (struct String *self, uint32_t position)
 {
+	struct Text(Char) c;
 	struct Text text;
-	uint32_t cp;
-	uint8_t units;
 	
 	text = positionText(self->value->bytes, self->value->length, position, 0);
-	cp = Text.codepoint(text, &units);
+	c = Text.character(text);
 	
-	if (units <= 0)
+	if (c.units <= 0)
 		return Value(undefined);
 	else
 	{
 		struct Chars *result;
 		
-		if (cp < 0x010000)
+		if (c.codepoint < 0x010000)
 		{
-			result = Chars.createSized(units);
-			memcpy(result->bytes, text.bytes, units);
+			result = Chars.createSized(c.units);
+			memcpy(result->bytes, text.bytes, c.units);
 		}
 		else
 		{
 			/* simulate 16-bit surrogate */
 			
-			cp -= 0x010000;
+			c.codepoint -= 0x010000;
 			if (text.flags & Text(breakFlag))
-				cp = ((cp >>  0) & 0x3ff) + 0xdc00;
+				c.codepoint = ((c.codepoint >>  0) & 0x3ff) + 0xdc00;
 			else
-				cp = ((cp >> 10) & 0x3ff) + 0xd800;
+				c.codepoint = ((c.codepoint >> 10) & 0x3ff) + 0xd800;
 			
 			result = Chars.createSized(3);
-			Chars.writeCodepoint(result->bytes, cp);
+			Chars.writeCodepoint(result->bytes, c.codepoint);
 		}
 		
 		return Value.chars(result);

@@ -115,19 +115,19 @@ static
 inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 {
 	struct Chars *self = *chars;
-	uint32_t lo = Text.codepoint(text, NULL), hi;
+	struct Text(Char) lo = Text.character(text), hi;
 	
-	if (lo >= 0xDC00 && lo <= 0xDFFF)
+	if (lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
 	{
 		struct Text prev = Text.make(self->bytes, self->length);
 		prev.bytes += prev.length;
-		hi = Text.prevCodepoint(&prev);
-		if (hi >= 0xD800 && hi <= 0xDBFF)
+		hi = Text.prevCharacter(&prev);
+		if (hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
-			/* merge 16-bit surrogate */
+			/* merge 16-bit surrogates */
 			self->length = prev.length;
-			self = appendCodepoint(chars, 0x10000 | ((hi & 0x03FF) << 10) | (lo & 0x03FF));
-			Text.nextCodepoint(&text);
+			self = appendCodepoint(chars, 0x10000 | ((hi.codepoint & 0x03FF) << 10) | (lo.codepoint & 0x03FF));
+			Text.nextCharacter(&text);
 		}
 	}
 	

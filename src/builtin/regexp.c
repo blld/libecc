@@ -148,7 +148,11 @@ struct RegExp(Node) * node (enum Opcode opcode, long offset, const char *bytes)
 {
 	struct RegExp(Node) *n = calloc(2, sizeof(*n));
 	
-	n[0].bytes = bytes && strlen(bytes)? strdup(bytes): NULL;
+	if (offset && bytes)
+	{
+		n[0].bytes = calloc(offset + 1, 1);
+		memcpy(n[0].bytes, bytes, offset);
+	}
 	n[0].offset = offset;
 	n[0].opcode = opcode;
 	
@@ -224,37 +228,14 @@ int accept(struct Parse *p, char c)
 	return 0;
 }
 
-static
-int charLength(const char *c)
-{
-	if ((c[0] & 0xf8) == 0xf0 && (c[1] & 0xc0) == 0x80 && (c[2] & 0xc0) == 0x80 && (c[3] & 0xc0) == 0x80)
-		return 4;
-	else if ((c[0] & 0xf0) == 0xe0 && (c[1] & 0xc0) == 0x80 && (c[2] & 0xc0) == 0x80)
-		return 3;
-	else if ((c[0] & 0xe0) == 0xc0 && (c[1] & 0xc0) == 0x80)
-		return 2;
-	else
-		return 1;
-}
-
-static
-int getU(struct Parse *p, char buffer[5])
-{
-	int i = 0, l = charLength(p->c);
-	do
-		buffer[i] = p->c[i];
-	while (++i < l);
-	buffer[l] = '\0';
-	p->c += l;
-	return l;
-}
-
 static struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error);
 
 static
 struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 {
+	struct RegExp(Node) *n;
 	char buffer[5] = { 0 };
+	struct Text(Char) c;
 	
 	if (p->c >= p->end - 1)
 		return NULL;
@@ -307,27 +288,22 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 					}
 				}
 				break;
-			
+				
 			case 'x':
 				if (isxdigit(p->c[0]) && isxdigit(p->c[1]))
 				{
-					buffer[0] = Lexer.uint8Hex(p->c[0], p->c[1]);
+					uint8_t units = Chars.writeCodepoint(buffer, Lexer.uint8Hex(p->c[0], p->c[1]));
 					p->c += 2;
+					return node(opBytes, units, buffer);
 				}
 				break;
 				
 			case 'u':
 				if (isxdigit(p->c[0]) && isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]))
 				{
-					uint16_t c = Lexer.uint16Hex(p->c[0], p->c[1], p->c[2], p->c[3]);
-					char *b = buffer;
-					
-					if (c < 0x80) *b++ = c;
-					else if (c < 0x800) *b++ = 192 + c / 64, *b++ = 128 + c % 64;
-					else *b++ = 224 + c / 4096, *b++ = 128 + c / 64 % 64, *b++ = 128 + c % 64;
-					
+					uint8_t units = Chars.writeCodepoint(buffer, Lexer.uint16Hex(p->c[0], p->c[1], p->c[2], p->c[3]));
 					p->c += 4;
-					return node(opBytes, (int16_t)(b - buffer) - 1, buffer);
+					return node(opBytes, units, buffer);
 				}
 				break;
 				
@@ -338,7 +314,6 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 	}
 	else if (accept(p, '('))
 	{
-		struct RegExp(Node) *n;
 		unsigned char count = 0;
 		char modifier = '\0';
 		
@@ -396,21 +371,16 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			memcpy(buffer, start, len);
 			buffer[len] = '\0';
 			accept(p, ']');
-			return node(not? opNeitherOf: opOneOf, 0, buffer);
+			return node(not? opNeitherOf: opOneOf, len, buffer);
 		}
 	}
-	else if (!*p->c)
-	{
-		char *bytes = calloc(2, 1);
-		struct RegExp(Node) *n = node(opBytes, 1, NULL);
-		n->bytes = bytes;
-		p->c += 1;
-		return n;
-	}
-	else if (strchr("*+?)}|", *p->c))
+	else if (*p->c && strchr("*+?)}|", *p->c))
 		return NULL;
 	
-	return node(opBytes, getU(p, buffer), buffer);
+	c = Text.character(Text.make(p->c, p->end - p->c));
+	n = node(opBytes, c.units, p->c);
+	p->c += c.units;
+	return n;
 }
 
 static
@@ -571,13 +541,8 @@ struct RegExp(Node) * pattern (struct Parse *p, struct Error **error)
 
 //MARK: matching
 
-int isword (const char *c)
-{
-	return isalnum(*c) || *c == '_';
-}
-
 static
-int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c);
+int match (struct RegExp(State) * const s, struct RegExp(Node) *n, struct Text text);
 
 static
 void clear (struct RegExp(State) * const s, const char *c, uint8_t *bytes)
@@ -595,7 +560,7 @@ void clear (struct RegExp(State) * const s, const char *c, uint8_t *bytes)
 }
 
 static
-int forkMatch (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c, int16_t offset)
+int forkMatch (struct RegExp(State) * const s, struct RegExp(Node) *n, struct Text text, int16_t offset)
 {
 	int result;
 	
@@ -604,12 +569,13 @@ int forkMatch (struct RegExp(State) * const s, struct RegExp(Node) *n, const cha
 	else
 		++n->depth;
 	
-	result = match(s, n + offset, c);
+	result = match(s, n + offset, text);
 	--n->depth;
 	return result;
 }
 
-int match (struct RegExp(State) * const s, struct RegExp(Node) *n, const char *c)
+
+int match (struct RegExp(State) * const s, struct RegExp(Node) *n, struct Text text)
 {
 	goto start;
 next:
@@ -621,68 +587,75 @@ start:
 	{
 		case opNLookahead:
 		case opLookahead:
-			if (forkMatch(s, n, c, 1) == (n->opcode - 1))
+			if (forkMatch(s, n, text, 1) == (n->opcode - 1))
 				goto jump;
 			
 			return 0;
 			
 		case opStart:
-			if (c != s->start)
+			if (text.bytes != s->start)
 				return 0;
 			
 			goto next;
 			
 		case opEnd:
-			if (c != s->end)
+			if (text.bytes != s->end)
 				return 0;
 			
 			goto next;
 			
 		case opBoundary:
-			if (c == s->start || c == s->end)
+			if (text.bytes == s->start || text.bytes == s->end)
 			{
-				if (isword(c) != n->offset)
+				if (Text.isWord(Text.character(text)) != n->offset)
 					return 0;
 			}
-			else if ((isword(c - 1) != isword(c)) != n->offset)
-				return 0;
-			
+			else
+			{
+				struct Text prev = text;
+				if ((Text.isWord(Text.prevCharacter(&prev))
+					!=
+					Text.isWord(Text.character(text))) != n->offset
+					)
+					return 0;
+			}
 			goto next;
 			
 		case opSplit:
-			if (c == n->bytes)
+			if (text.bytes == n->bytes)
 			{
 				s->flags |= infiniteLoop;
 				return 0;
 			}
 			else
-				n->bytes = (char *)c;
+				n->bytes = (char *)text.bytes;
 			
-			if (forkMatch(s, n, c, 1))
+			if (forkMatch(s, n, text, 1))
 				return 1;
 			
 			goto jump;
 			
 		case opReference:
 		{
-			ptrdiff_t len;
+			uint16_t len;
 			
-			if (c == n->bytes)
+			if (text.bytes == n->bytes)
 			{
 				s->flags |= infiniteLoop;
 				return 0;
 			}
 			else
-				n->bytes = (char *)c;
+				n->bytes = (char *)text.bytes;
 			
 			len = s->capture[n->offset * 2 + 1]? s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]: 0;
-			if (len && memcmp(c, s->capture[n->offset * 2], len))
-				return 0;
 			
-			c += len;
-			if (c > s->end)
-				return 0;
-			
+			if (len)
+			{
+				if (text.length < len || memcmp(text.bytes, s->capture[n->offset * 2], len))
+					return 0;
+				
+				Text.advance(&text, len);
+			}
 			goto next;
 		}
 			
@@ -692,9 +665,9 @@ start:
 			
 			s->flags &= ~infiniteLoop;
 			
-			if (forkMatch(s, n, c, n->offset))
+			if (forkMatch(s, n, text, n->offset))
 			{
-				clear(s, c, (uint8_t *)n->bytes + 2);
+				clear(s, text.bytes, (uint8_t *)n->bytes + 2);
 				return 1;
 			}
 			
@@ -702,95 +675,81 @@ start:
 				return 0;
 			
 			if (s->flags & infiniteLoop)
-				clear(s, c, (uint8_t *)n->bytes + 2);
+				clear(s, text.bytes, (uint8_t *)n->bytes + 2);
 			
 			goto next;
 			
 		case opSave:
-			if (forkMatch(s, n, c, 1)) {
-				if (s->capture[n->offset] < c && c > s->index[n->offset]) {
-					s->capture[n->offset] = c;
+			if (forkMatch(s, n, text, 1)) {
+				if (s->capture[n->offset] < text.bytes && text.bytes > s->index[n->offset]) {
+					s->capture[n->offset] = text.bytes;
 				}
 				return 1;
 			}
 			return 0;
 			
 		case opDigit:
-			if ((!isdigit(*c)) == n->offset)
+			if (text.length < 1 || Text.isDigit(Text.nextCharacter(&text)) != n->offset)
 				return 0;
 			
-			while ((!isdigit(*(++c))) != n->offset);
 			goto next;
 			
 		case opSpace:
-			if ((!isspace(*c)) == n->offset)
+			if (text.length < 1 || Text.isSpace(Text.nextCharacter(&text)) != n->offset)
 				return 0;
 			
-			while ((!isspace(*(++c))) != n->offset);
 			goto next;
 			
 		case opWord:
-			if (isword(c) != n->offset)
+			if (text.length < 1 || Text.isWord(Text.nextCharacter(&text)) != n->offset)
 				return 0;
 			
-			do
-				++c;
-			while (isword(c));
 			goto next;
 			
 		case opBytes:
-			if (memcmp(n->bytes, c, n->offset))
+			if (text.length < n->offset || memcmp(n->bytes, text.bytes, n->offset))
 				return 0;
 			
-			c += n->offset;
-			if (c > s->end)
-				return 0;
-			
+			Text.advance(&text, n->offset);
 			goto next;
 			
 		case opOneOf:
 		{
-			const char *set = n->bytes;
-			int len;
+			struct Text set = Text.make(n->bytes, n->offset);
+			uint8_t units;
 			
-			while (*set)
+			while (set.length)
 			{
-				len = charLength(set);
-				if (!memcmp(c, set, len))
+				units = Text.character(set).units;
+				if (text.length >= units && !memcmp(text.bytes, set.bytes, units))
 				{
-					c += len;
-					if (c > s->end)
-						return 0;
-					
+					Text.nextCharacter(&text);
 					goto next;
 				}
-				set += len;
+				Text.advance(&set, units);
 			}
 			return 0;
 		}
 			
 		case opNeitherOf:
 		{
-			const char *set = n->bytes;
-			int len;
+			struct Text set = Text.make(n->bytes, n->offset);
+			uint8_t units;
 			
-			while (*set)
+			while (set.length)
 			{
-				len = charLength(set);
-				if (!memcmp(c, set, len))
+				units = Text.character(set).units;
+				if (text.length >= units && !memcmp(text.bytes, set.bytes, units))
 					return 0;
 				
-				set += len;
+				Text.advance(&set, units);
 			}
-			c += charLength(c);
-			if (c > s->end)
-				return 0;
-			
+			Text.nextCharacter(&text);
 			goto next;
 		}
 			
 		case opAny:
-			if (*c != '\r' && *c != '\n')
+			if (text.length < 1 || !Text.isLineFeed(Text.nextCharacter(&text)))
 				goto next;
 			
 			return 0;
@@ -799,7 +758,7 @@ start:
 			goto jump;
 			
 		case opMatch:
-			s->capture[1] = c;
+			s->capture[1] = text.bytes;
 			return 1;
 			
 		case opOver:
@@ -1024,9 +983,9 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 
 int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 {
-	const char *chars = state->start;
 	int result = 0;
 	uint16_t index, count;
+	struct Text text = Text.make(state->start, state->end - state->start);
 	
 #if DUMP_REGEXP
 	struct RegExp(Node) *n = self->program;
@@ -1034,12 +993,13 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 		printNode(n++);
 #endif
 	
-	while (!result && chars < state->end)
+	while (!result && text.length)
 	{
 		memset(state->capture, 0, sizeof(*state->capture) * (2 + self->count * 2));
 		memset(state->index, 0, sizeof(*state->index) * (2 + self->count * 2));
-		result = match(state, self->program, state->capture[0] = state->index[0] = chars);
-		chars += charLength(chars);
+		state->capture[0] = state->index[0] = text.bytes;
+		result = match(state, self->program, text);
+		Text.nextCharacter(&text);
 	}
 	
 	/* XXX: cleanup */

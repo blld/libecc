@@ -56,6 +56,11 @@
 	extern const struct Text Text(uriErrorName);
 	extern const struct Text Text(inputErrorName);
 
+	struct Text(Char) {
+		uint32_t codepoint;
+		uint8_t units;
+	};
+
 	enum Text(Flags) {
 		Text(breakFlag) = 1 << 0,
 	};
@@ -68,9 +73,9 @@ Interface(Text,
 	(struct Text, make ,(const char *bytes, uint16_t length))
 	(struct Text, join ,(struct Text from, struct Text to))
 	
-	(uint32_t, codepoint ,(struct Text, uint8_t *units))
-	(uint32_t, nextCodepoint ,(struct Text *text))
-	(uint32_t, prevCodepoint ,(struct Text *text))
+	(struct Text(Char), character ,(struct Text))
+	(struct Text(Char), nextCharacter ,(struct Text *text))
+	(struct Text(Char), prevCharacter ,(struct Text *text))
 	(uint16_t, advance ,(struct Text *text, uint16_t units))
 	
 	(uint16_t, toUTF16Length ,(struct Text))
@@ -78,6 +83,11 @@ Interface(Text,
 	
 	(char *, toLower ,(struct Text, char *x2buffer))
 	(char *, toUpper ,(struct Text, char *x3buffer))
+	
+	(int, isSpace ,(struct Text(Char)))
+	(int, isDigit ,(struct Text(Char)))
+	(int, isWord ,(struct Text(Char)))
+	(int, isLineFeed ,(struct Text(Char)))
 	,
 	{
 		const char *bytes;
