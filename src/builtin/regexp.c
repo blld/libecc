@@ -353,9 +353,6 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		int not = accept(p, '^');
 		const char *start = p->c;
 		
-		if (*p->c == ']')
-			++p->c;
-		
 		while (*(p->c++) != ']')
 		{
 			if (p->c >= p->end)
