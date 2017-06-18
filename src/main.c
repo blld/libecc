@@ -1394,6 +1394,7 @@ static void testRegExp (void)
 	test("/[^a-c\\d]+/.exec('abc324234zzz')", "zzz", NULL);
 	test("/\\0377/.exec(String.fromCharCode(0x00ff))", "ÿ", NULL);
 	test("/\\0477/.exec('\\''+'77')", "'7", NULL);
+	test("/[a-z][^1-9][a-z]/.exec('a1b  b2c  c3d  def  f4g')", "def", NULL);
 }
 
 static int runTest (int verbosity)

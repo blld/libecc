@@ -423,7 +423,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				else
 				{
 					if (not)
-						n = join(node(opNLookahead, 2, NULL), join(node(opcode, offset, NULL), n));
+						n = join(node(opNLookahead, 3, NULL), join(node(opcode, offset, NULL), join(node(opMatch, 0, NULL), n)));
 					else
 						n = join(node(opSplit, 3, NULL), join(node(opcode, offset, NULL), join(node(opJump, nlen(n)+2, NULL), n)));
 				}
@@ -436,9 +436,10 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				++p->c;
 				
 				if (not)
-					n = join(node(opNLookahead, 2, NULL),
+					n = join(node(opNLookahead, 3, NULL),
 							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
-								  n));
+								  join(node(opMatch, 0, NULL),
+									   n)));
 				else
 					n = join(node(opSplit, 3, NULL),
 							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
