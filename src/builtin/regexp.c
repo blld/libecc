@@ -268,8 +268,8 @@ enum Opcode escape (struct Parse *p, int16_t *offset, char buffer[5])
 			
 			break;
 			
-		case '0':
-			buffer[0] = 0;
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
+			buffer[0] -= '0';
 			if (*p->c >= '0' && *p->c <= '7')
 			{
 				buffer[0] = buffer[0] * 8 + *(p->c++) - '0';
@@ -406,17 +406,19 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		return node(opAny, 0, NULL);
 	else if (accept(p, '['))
 	{
-		int not = accept(p, '^'), length = 0;
+		enum Opcode opcode;
+		int16_t offset;
+		
+		int not = accept(p, '^'), length = 0, lastLength, range = -1;
 		char buffer[255];
 		n = NULL;
 		
-		while (*p->c != ']')
+		while (*p->c != ']' || range >= 0)
 		{
+			lastLength = length;
+			
 			if (accept(p, '\\'))
 			{
-				enum Opcode opcode;
-				int16_t offset;
-				
 				opcode = escape(p, &offset, buffer + length);
 				if (opcode == opBytes)
 					length += offset;
@@ -428,26 +430,37 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 						n = join(node(opSplit, 3, NULL), join(node(opcode, offset, NULL), join(node(opJump, nlen(n)+2, NULL), n)));
 				}
 			}
-			else if (*(p->c + 1) == '-')
-			{
-				struct Text prev = Text.make(++p->c, p->end - p->c);
-				struct Text text = Text.make(++p->c, p->end - p->c);
-				struct Text(Char) from = Text.prevCharacter(&prev), to = Text.character(text);
-				++p->c;
-				
-				if (not)
-					n = join(node(opNLookahead, 3, NULL),
-							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
-								  join(node(opMatch, 0, NULL),
-									   n)));
-				else
-					n = join(node(opSplit, 3, NULL),
-							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
-								  join(node(opJump, nlen(n)+2, NULL),
-									   n)));
-			}
 			else
+			{
+				opcode = opBytes;
 				buffer[length++] = *(p->c++);
+			}
+			
+			if (range >= 0)
+			{
+				if (opcode == opBytes)
+				{
+					if (not)
+						n = join(node(opNLookahead, 3, NULL),
+								 join(node(opInRange, length - range, buffer + range),
+									  join(node(opMatch, 0, NULL),
+										   n)));
+					else
+						n = join(node(opSplit, 3, NULL),
+								 join(node(opInRange, length - range, buffer + range),
+									  join(node(opJump, nlen(n)+2, NULL),
+										   n)));
+					
+					length = range;
+				}
+				range = -1;
+			}
+			
+			if (opcode == opBytes && *p->c == '-')
+			{
+				buffer[length++] = *(p->c++);
+				range = lastLength;
+			}
 			
 			if (p->c >= p->end || length >= sizeof(buffer))
 			{
