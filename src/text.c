@@ -648,6 +648,8 @@ char * toLower (struct Text i, char *o /* length x 2 */)
 				p = lowers + (p - uppers);
 				while (p[c.units - 1] == (char)255) --c.units;
 			}
+			else
+				p = buffer;
 		}
 		
 		memcpy(o, p, c.units);
@@ -680,6 +682,8 @@ char * toUpper (struct Text i, char *o /* length x 3 */)
 				p = uppers + (p - lowers);
 				while (p[c.units - 1] == (char)255) --c.units;
 			}
+			else
+				p = buffer;
 		}
 		
 		memcpy(o, p, c.units);

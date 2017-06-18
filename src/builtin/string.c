@@ -446,7 +446,7 @@ static struct Value split (struct Context * const context)
 			if (size >= limit)
 				break;
 			
-			if (RegExp.matchWithState(regexp, &state))
+			if (seek.length && RegExp.matchWithState(regexp, &state))
 			{
 				if (state.capture[1] <= text.bytes)
 				{

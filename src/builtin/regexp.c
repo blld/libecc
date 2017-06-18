@@ -31,6 +31,7 @@ enum Opcode {
 	opOneOf,
 	opNeitherOf,
 	opInRange,
+	opInRangeCase,
 	opDigit,
 	opSpace,
 	opWord,
@@ -50,6 +51,7 @@ struct Parse {
 	const char *c;
 	const char *end;
 	uint16_t count;
+	int ignoreCase;
 	int disallowQuantifier;
 };
 
@@ -117,6 +119,7 @@ void printNode (struct RegExp(Node) *n)
 		case opOneOf: fprintf(stderr, "one of "); break;
 		case opNeitherOf: fprintf(stderr, "neither of "); break;
 		case opInRange: fprintf(stderr, "in range "); break;
+		case opInRangeCase: fprintf(stderr, "in range (ignore case) "); break;
 		case opDigit: fprintf(stderr, "digit "); break;
 		case opSpace: fprintf(stderr, "space "); break;
 		case opWord: fprintf(stderr, "word "); break;
@@ -312,10 +315,44 @@ enum Opcode escape (struct Parse *p, int16_t *offset, char buffer[5])
 }
 
 static
+enum Opcode character (struct Text text, int16_t *offset, char buffer[12], int ignoreCase)
+{
+	if (ignoreCase)
+	{
+		char *split = Text.toLower(text, buffer);
+		char *check = Text.toUpper(text, split);
+		ptrdiff_t length = check - buffer;
+		int codepoints = 0;
+		
+		*check = '\0';
+		while (check-- > buffer)
+			if ((*check & 0xc0) != 0x80)
+				codepoints++;
+		
+		if (codepoints == 2 && memcmp(buffer, split, split - buffer))
+		{
+			*offset = length;
+			return opOneOf;
+		}
+	}
+	*offset = text.length;
+	memcpy(buffer, text.bytes, text.length);
+	return opBytes;
+}
+
+static
+struct RegExp(Node) * characterNode (struct Text text, int ignoreCase)
+{
+	char buffer[12];
+	int16_t offset;
+	return node(character(text, &offset, buffer, ignoreCase), offset, buffer);
+}
+
+static
 struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 {
 	struct RegExp(Node) *n;
-	struct Text(Char) c;
+	struct Text text;
 	
 	p->disallowQuantifier = 0;
 	
@@ -362,7 +399,10 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				
 				opcode = escape(p, &offset, buffer);
 				if (opcode == opBytes)
-					return node(opBytes, offset, buffer);
+				{
+					text = Text.make(buffer, offset);
+					return characterNode(text, p->ignoreCase);
+				}
 				else
 					return node(opcode, offset, NULL);
 			}
@@ -449,18 +489,19 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 					
 					if (from.codepoint > to.codepoint)
 					{
+						toss(n);
 						*error = Error.syntaxError(Text.make(p->c - length - range, length - range), Chars.create("range out of order in character class"));
 						return NULL;
 					}
 					
 					if (not)
 						n = join(node(opNLookahead, 3, NULL),
-								 join(node(opInRange, length - range, buffer + range),
+								 join(node(p->ignoreCase? opInRangeCase: opInRange, length - range, buffer + range),
 									  join(node(opMatch, 0, NULL),
 										   n)));
 					else
 						n = join(node(opSplit, 3, NULL),
-								 join(node(opInRange, length - range, buffer + range),
+								 join(node(p->ignoreCase? opInRangeCase: opInRange, length - range, buffer + range),
 									  join(node(opJump, nlen(n)+2, NULL),
 										   n)));
 					
@@ -482,6 +523,35 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			}
 		}
 		
+		if (p->ignoreCase)
+		{
+			char casebuffer[6];
+			struct Text single;
+			struct Text(Char) c;
+			text = Text.make(buffer + length, length);
+			
+			while (text.length)
+			{
+				c = Text.prevCharacter(&text);
+				single = text;
+				single.length = c.units;
+				
+				offset = Text.toLower(single, casebuffer) - casebuffer;
+				if (memcmp(text.bytes, casebuffer, offset))
+				{
+					memcpy(buffer + length, casebuffer, offset);
+					length += offset;
+				}
+				
+				offset = Text.toUpper(single, casebuffer) - casebuffer;
+				if (memcmp(text.bytes, casebuffer, offset))
+				{
+					memcpy(buffer + length, casebuffer, offset);
+					length += offset;
+				}
+			}
+		}
+		
 		buffer[length] = '\0';
 		accept(p, ']');
 		return join(n, node(not? opNeitherOf: opOneOf, length, buffer));
@@ -489,10 +559,10 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 	else if (*p->c && strchr("*+?)}|", *p->c))
 		return NULL;
 	
-	c = Text.character(Text.make(p->c, p->end - p->c));
-	n = node(opBytes, c.units, p->c);
-	p->c += c.units;
-	return n;
+	text = Text.make(p->c, p->end - p->c);
+	text.length = Text.character(text).units;
+	p->c += text.length;
+	return characterNode(text, p->ignoreCase);
 }
 
 static
@@ -861,6 +931,7 @@ start:
 		}
 			
 		case opInRange:
+		case opInRangeCase:
 		{
 			struct Text range = Text.make(n->bytes, n->offset);
 			struct Text(Char) from, to, c;
@@ -870,11 +941,35 @@ start:
 			to = Text.nextCharacter(&range);
 			
 			c = Text.character(text);
-			if ((c.codepoint < from.codepoint || c.codepoint > to.codepoint))
-				return 0;
+			if ((c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
+			{
+				Text.nextCharacter(&text);
+				goto next;
+			}
 			
-			Text.nextCharacter(&text);
-			goto next;
+			if (n->opcode == opInRangeCase)
+			{
+				char casebuffer[6];
+				struct Text casetext = Text.make(casebuffer, sizeof(casebuffer));
+				
+				casetext.length = Text.toLower(text, casebuffer) - casebuffer;
+				c = Text.character(casetext);
+				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
+				{
+					Text.nextCharacter(&text);
+					goto next;
+				}
+				
+				casetext.length = Text.toUpper(text, casebuffer) - casebuffer;
+				c = Text.character(casetext);
+				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
+				{
+					Text.nextCharacter(&text);
+					goto next;
+				}
+			}
+			
+			return 0;
 		}
 			
 		case opAny:
@@ -1087,7 +1182,13 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	p.c = s->bytes;
 	p.end = s->bytes + s->length;
 	while (p.end > p.c && *(p.end - 1) != '/')
-		p.end--;
+	{
+		switch (*(--p.end)) {
+			case 'i':
+				p.ignoreCase = 1;
+				continue;
+		}
+	}
 	
 #if DUMP_REGEXP
 	fprintf(stderr, "\n%.*s\n", s->length, s->bytes);
@@ -1152,7 +1253,7 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 		printNode(n++);
 #endif
 	
-	while (!result && text.length)
+	do
 	{
 		memset(state->capture, 0, sizeof(*state->capture) * (2 + self->count * 2));
 		memset(state->index, 0, sizeof(*state->index) * (2 + self->count * 2));
@@ -1160,6 +1261,7 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 		result = match(state, self->program, text);
 		Text.nextCharacter(&text);
 	}
+	while (!result && text.length);
 	
 	/* XXX: cleanup */
 	
