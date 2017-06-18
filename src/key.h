@@ -36,6 +36,8 @@
 	extern struct Key Key(set);
 	extern struct Key Key(join);
 	extern struct Key Key(toISOString);
+	extern struct Key Key(input);
+	extern struct Key Key(index);
 	extern struct Key Key(lastIndex);
 	extern struct Key Key(global);
 	extern struct Key Key(ignoreCase);

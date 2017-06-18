@@ -30,6 +30,7 @@ enum Opcode {
 	opAny,
 	opOneOf,
 	opNeitherOf,
+	opInRange,
 	opDigit,
 	opSpace,
 	opWord,
@@ -49,6 +50,7 @@ struct Parse {
 	const char *c;
 	const char *end;
 	uint16_t count;
+	int disallowQuantifier;
 };
 
 enum Flags {
@@ -114,6 +116,7 @@ void printNode (struct RegExp(Node) *n)
 		case opAny: fprintf(stderr, "any "); break;
 		case opOneOf: fprintf(stderr, "one of "); break;
 		case opNeitherOf: fprintf(stderr, "neither of "); break;
+		case opInRange: fprintf(stderr, "in range "); break;
 		case opDigit: fprintf(stderr, "digit "); break;
 		case opSpace: fprintf(stderr, "space "); break;
 		case opWord: fprintf(stderr, "word "); break;
@@ -231,86 +234,139 @@ int accept(struct Parse *p, char c)
 static struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error);
 
 static
+enum Opcode escape (struct Parse *p, int16_t *offset, char buffer[5])
+{
+	*offset = 1;
+	buffer[0] = *(p->c++);
+	
+	switch (buffer[0])
+	{
+		case 'D':
+			*offset = 0;
+		case 'd':
+			return opDigit;
+			
+		case 'S':
+			*offset = 0;
+		case 's':
+			return opSpace;
+			
+		case 'W':
+			*offset = 0;
+		case 'w':
+			return opWord;
+			
+		case 'b': buffer[0] = '\b'; break;
+		case 'f': buffer[0] = '\f'; break;
+		case 'n': buffer[0] = '\n'; break;
+		case 'r': buffer[0] = '\r'; break;
+		case 't': buffer[0] = '\t'; break;
+		case 'v': buffer[0] = '\v'; break;
+		case 'c':
+			if (tolower(*p->c) >= 'a' && tolower(*p->c) <= 'z')
+				buffer[0] = *(p->c++) % 32;
+			
+			break;
+			
+		case '0':
+			buffer[0] = 0;
+			if (*p->c >= '0' && *p->c <= '7')
+			{
+				buffer[0] = buffer[0] * 8 + *(p->c++) - '0';
+				if (*p->c >= '0' && *p->c <= '7')
+				{
+					buffer[0] = buffer[0] * 8 + *(p->c++) - '0';
+					if (*p->c >= '0' && *p->c <= '7')
+					{
+						if ((int)buffer[0] * 8 + *p->c - '0' <= 0xFF)
+							buffer[0] = buffer[0] * 8 + *(p->c++) - '0';
+					}
+				}
+				
+				if (buffer[0])
+					*offset = Chars.writeCodepoint(buffer, ((uint8_t *)buffer)[0]);
+			}
+			break;
+			
+		case 'x':
+			if (isxdigit(p->c[0]) && isxdigit(p->c[1]))
+			{
+				*offset = Chars.writeCodepoint(buffer, Lexer.uint8Hex(p->c[0], p->c[1]));
+				p->c += 2;
+			}
+			break;
+			
+		case 'u':
+			if (isxdigit(p->c[0]) && isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]))
+			{
+				*offset = Chars.writeCodepoint(buffer, Lexer.uint16Hex(p->c[0], p->c[1], p->c[2], p->c[3]));
+				p->c += 4;
+			}
+			break;
+			
+		default:
+			break;
+	}
+	
+	return opBytes;
+}
+
+static
 struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 {
 	struct RegExp(Node) *n;
-	char buffer[5] = { 0 };
 	struct Text(Char) c;
+	
+	p->disallowQuantifier = 0;
 	
 	if (p->c >= p->end - 1)
 		return NULL;
 	else if (accept(p, '^'))
+	{
+		p->disallowQuantifier = 1;
 		return node(opStart, 0, NULL);
+	}
 	else if (accept(p, '$'))
+	{
+		p->disallowQuantifier = 1;
 		return node(opEnd, 0, NULL);
+	}
 	else if (accept(p, '\\'))
 	{
-		buffer[0] = *(p->c++);
-		
-		switch (buffer[0])
+		switch (*p->c)
 		{
-			case 'b': return node(opBoundary, 1, NULL);
-			case 'B': return node(opBoundary, 0, NULL);
-			case 'f': return node(opBytes, 1, "\f");
-			case 'n': return node(opBytes, 1, "\n");
-			case 'r': return node(opBytes, 1, "\r");
-			case 't': return node(opBytes, 1, "\t");
-			case 'v': return node(opBytes, 1, "\v");
-			case 'd': return node(opDigit, 1, NULL);
-			case 'D': return node(opDigit, 0, NULL);
-			case 's': return node(opSpace, 1, NULL);
-			case 'S': return node(opSpace, 0, NULL);
-			case 'w': return node(opWord, 1, NULL);
-			case 'W': return node(opWord, 0, NULL);
-			case 'c':
-				if (tolower(*p->c) >= 'a' && tolower(*p->c) <= 'z')
-					buffer[0] = *(p->c++) % 32;
+			case 'b':
+				++p->c;
+				p->disallowQuantifier = 1;
+				return node(opBoundary, 1, NULL);
 				
-				break;
-			
+			case 'B':
+				++p->c;
+				p->disallowQuantifier = 1;
+				return node(opBoundary, 0, NULL);
+				
 			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 			{
-				int c = buffer[0] - '0';
+				int c = *(p->c++) - '0';
 				while (isdigit(*(p->c)))
 					c = c * 10 + *(p->c++) - '0';
 				
 				return node(opReference, c, NULL);
 			}
-			case '0':
-				buffer[0] -= '0';
-				if (buffer[0] >= 0 && buffer[0] <= 7)
-				{
-					if (*p->c >= '0' && *p->c <= '7')
-					{
-						buffer[0] = buffer[0] * 8 + *(++p->c) - '0';
-						if (*p->c >= '0' && *p->c <= '7')
-							buffer[0] = buffer[0] * 8 + *(++p->c) - '0';
-					}
-				}
-				break;
-				
-			case 'x':
-				if (isxdigit(p->c[0]) && isxdigit(p->c[1]))
-				{
-					uint8_t units = Chars.writeCodepoint(buffer, Lexer.uint8Hex(p->c[0], p->c[1]));
-					p->c += 2;
-					return node(opBytes, units, buffer);
-				}
-				break;
-				
-			case 'u':
-				if (isxdigit(p->c[0]) && isxdigit(p->c[1]) && isxdigit(p->c[2]) && isxdigit(p->c[3]))
-				{
-					uint8_t units = Chars.writeCodepoint(buffer, Lexer.uint16Hex(p->c[0], p->c[1], p->c[2], p->c[3]));
-					p->c += 4;
-					return node(opBytes, units, buffer);
-				}
-				break;
 				
 			default:
-				break;
+			{
+				enum Opcode opcode;
+				int16_t offset;
+				char buffer[5];
+				
+				opcode = escape(p, &offset, buffer);
+				if (opcode == opBytes)
+					return node(opBytes, offset, buffer);
+				else
+					return node(opcode, offset, NULL);
+			}
 		}
-		return node(opBytes, 1, buffer);
 	}
 	else if (accept(p, '('))
 	{
@@ -341,8 +397,8 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		
 		switch (modifier) {
 			case '\0': return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
-			case '=': return join(node(opLookahead, nlen(n) + 1, NULL), n);
-			case '!': return join(node(opNLookahead, nlen(n) + 1, NULL), n);
+			case '=': p->disallowQuantifier = 1; return join(node(opLookahead, nlen(n) + 1, NULL), n);
+			case '!': p->disallowQuantifier = 1; return join(node(opNLookahead, nlen(n) + 1, NULL), n);
 			case ':': return n;
 		}
 	}
@@ -350,26 +406,58 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		return node(opAny, 0, NULL);
 	else if (accept(p, '['))
 	{
-		int not = accept(p, '^');
-		const char *start = p->c;
+		int not = accept(p, '^'), length = 0;
+		char buffer[255];
+		n = NULL;
 		
-		while (*(p->c++) != ']')
+		while (*p->c != ']')
 		{
-			if (p->c >= p->end)
+			if (accept(p, '\\'))
+			{
+				enum Opcode opcode;
+				int16_t offset;
+				
+				opcode = escape(p, &offset, buffer + length);
+				if (opcode == opBytes)
+					length += offset;
+				else
+				{
+					if (not)
+						n = join(node(opNLookahead, 2, NULL), join(node(opcode, offset, NULL), n));
+					else
+						n = join(node(opSplit, 3, NULL), join(node(opcode, offset, NULL), join(node(opJump, nlen(n)+2, NULL), n)));
+				}
+			}
+			else if (*(p->c + 1) == '-')
+			{
+				struct Text prev = Text.make(++p->c, p->end - p->c);
+				struct Text text = Text.make(++p->c, p->end - p->c);
+				struct Text(Char) from = Text.prevCharacter(&prev), to = Text.character(text);
+				++p->c;
+				
+				if (not)
+					n = join(node(opNLookahead, 2, NULL),
+							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
+								  n));
+				else
+					n = join(node(opSplit, 3, NULL),
+							 join(node(opInRange, from.units + 1 + to.units, prev.bytes),
+								  join(node(opJump, nlen(n)+2, NULL),
+									   n)));
+			}
+			else
+				buffer[length++] = *(p->c++);
+			
+			if (p->c >= p->end || length >= sizeof(buffer))
 			{
 				*error = Error.syntaxError(Text.make(p->c - 1, 1), Chars.create("expect ']'"));
 				return NULL;
 			}
 		}
 		
-		{
-			int16_t len = p->c - start - 1;
-			char buffer[len + 1];
-			memcpy(buffer, start, len);
-			buffer[len] = '\0';
-			accept(p, ']');
-			return node(not? opNeitherOf: opOneOf, len, buffer);
-		}
+		buffer[length] = '\0';
+		accept(p, ']');
+		return join(n, node(not? opNeitherOf: opOneOf, length, buffer));
 	}
 	else if (*p->c && strchr("*+?)}|", *p->c))
 		return NULL;
@@ -390,7 +478,7 @@ struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 		if (!(t = term(p, error)))
 			break;
 		
-		if (t->opcode > opBoundary)
+		if (!p->disallowQuantifier)
 		{
 			int noop = 0, lazy = 0;
 			
@@ -714,35 +802,50 @@ start:
 			
 		case opOneOf:
 		{
-			struct Text set = Text.make(n->bytes, n->offset);
-			uint8_t units;
+			char buffer[5];
+			struct Text(Char) c;
 			
-			while (set.length)
+			c = Text.character(text);
+			memcpy(buffer, text.bytes, c.units);
+			buffer[c.units] = '\0';
+			
+			if (n->bytes && strstr(n->bytes, buffer))
 			{
-				units = Text.character(set).units;
-				if (text.length >= units && !memcmp(text.bytes, set.bytes, units))
-				{
-					Text.nextCharacter(&text);
-					goto next;
-				}
-				Text.advance(&set, units);
+				Text.nextCharacter(&text);
+				goto next;
 			}
 			return 0;
 		}
 			
 		case opNeitherOf:
 		{
-			struct Text set = Text.make(n->bytes, n->offset);
-			uint8_t units;
+			char buffer[5];
+			struct Text(Char) c;
 			
-			while (set.length)
-			{
-				units = Text.character(set).units;
-				if (text.length >= units && !memcmp(text.bytes, set.bytes, units))
-					return 0;
-				
-				Text.advance(&set, units);
-			}
+			c = Text.character(text);
+			memcpy(buffer, text.bytes, c.units);
+			buffer[c.units] = '\0';
+			
+			if (n->bytes && strstr(n->bytes, buffer))
+				return 0;
+			
+			Text.nextCharacter(&text);
+			goto next;
+		}
+			
+		case opInRange:
+		{
+			struct Text range = Text.make(n->bytes, n->offset);
+			struct Text(Char) from, to, c;
+			
+			from = Text.nextCharacter(&range);
+			Text.advance(&range, 1);
+			to = Text.nextCharacter(&range);
+			
+			c = Text.character(text);
+			if ((c.codepoint < from.codepoint || c.codepoint > to.codepoint))
+				return 0;
+			
 			Text.nextCharacter(&text);
 			goto next;
 		}
@@ -861,7 +964,7 @@ static struct Value exec (struct Context * const context)
 		if (matchWithState(self, &state))
 		{
 			struct Object *array = Array.createSized(self->count);
-			int index, count;
+			int32_t index, count;
 			
 			for (index = 0, count = self->count; index < count; ++index)
 			{
@@ -870,7 +973,7 @@ static struct Value exec (struct Context * const context)
 					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
 #warning TODO: referenceCount
 					++element->referenceCount;
-					array->element[index].value = Value.chars(element);
+					array->element[index].value = Pool.retainedValue(Value.chars(element));
 				}
 				else
 					array->element[index].value = Value(undefined);
@@ -878,6 +981,9 @@ static struct Value exec (struct Context * const context)
 			
 			if (self->global)
 				Object.putMember(&self->object, context, Key(lastIndex), Value.integer((int32_t)(capture[1] - bytes)));
+			
+			Object.addMember(array, Key(index), Value.integer((int32_t)(capture[0] - bytes)), 0);
+			Object.addMember(array, Key(input), Pool.retainedValue(value), 0);
 			
 			return Value.object(array);
 		}
