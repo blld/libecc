@@ -132,8 +132,11 @@ void printNode (struct RegExp(Node) *n)
 	{
 		if (n->opcode == opRedo)
 		{
-			char *c = n->bytes + 1;
+			char *c = n->bytes + 2;
 			fprintf(stderr, " {%u-%u}", n->bytes[0], n->bytes[1]);
+			if (n->bytes[2])
+				fprintf(stderr, " lazy");
+			
 			if (*(c + 1))
 				fprintf(stderr, " clear:");
 			
@@ -655,8 +658,8 @@ struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 			if (max != 1)
 			{
 				struct RegExp(Node) *redo;
-				uint16_t index, count = nlen(t), length = 2;
-				char buffer[count + 2];
+				uint16_t index, count = nlen(t), length = 3;
+				char buffer[count + length];
 				
 				for (index = 0; index < count; ++index)
 					if (t[index].opcode == opSave)
@@ -664,13 +667,10 @@ struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 				
 				buffer[0] = min;
 				buffer[1] = max;
+				buffer[2] = lazy;
 				buffer[length] = '\0';
 				
-				if (lazy)
-					redo = join(node(opRedo, 2, NULL), node(opJump, -nlen(t) - 1, NULL));
-				else
-					redo = node(opRedo, -nlen(t), NULL);
-				
+				redo = node(opRedo, -nlen(t), NULL);
 				redo->bytes = malloc(length + 1);
 				memcpy(redo->bytes, buffer, length + 1);
 				
@@ -842,24 +842,32 @@ start:
 		}
 			
 		case opRedo:
+		{
+			int hasmin = n->depth + 1 >= n->bytes[0];
+			int lazy = n->bytes[2] && hasmin;
+			
 			if (n->bytes[1] && n->depth >= n->bytes[1])
 				return 0;
 			
 			s->flags &= ~infiniteLoop;
 			
-			if (forkMatch(s, n, text, n->offset))
+			if (forkMatch(s, n, text, lazy? 1: n->offset))
 			{
-				clear(s, text.bytes, (uint8_t *)n->bytes + 2);
+				clear(s, text.bytes, (uint8_t *)n->bytes + 3);
 				return 1;
 			}
 			
-			if (n->depth + 1 < n->bytes[0])
+			if (!hasmin)
 				return 0;
 			
 			if (s->flags & infiniteLoop)
-				clear(s, text.bytes, (uint8_t *)n->bytes + 2);
+				clear(s, text.bytes, (uint8_t *)n->bytes + 3);
 			
-			goto next;
+			if (lazy)
+				goto jump;
+			else
+				goto next;
+		}
 			
 		case opSave:
 			s->capture[n->offset] = text.bytes;
