@@ -440,6 +440,19 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 			{
 				if (opcode == opBytes)
 				{
+					struct Text text = Text.make(buffer + range, length - range);
+					struct Text(Char) from, to;
+					
+					from = Text.nextCharacter(&text);
+					Text.advance(&text, 1);
+					to = Text.nextCharacter(&text);
+					
+					if (from.codepoint > to.codepoint)
+					{
+						*error = Error.syntaxError(Text.make(p->c - length - range, length - range), Chars.create("range out of order in character class"));
+						return NULL;
+					}
+					
 					if (not)
 						n = join(node(opNLookahead, 3, NULL),
 								 join(node(opInRange, length - range, buffer + range),
