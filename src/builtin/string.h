@@ -30,7 +30,10 @@ Interface(String,
 	(void, teardown ,(void))
 	
 	(struct String *, create ,(struct Chars *))
-	(struct Value, valueAtPosition ,(struct String *, uint32_t position))
+	(struct Value, valueAtIndex ,(struct String *, uint32_t position))
+	
+	(struct Text, textAtIndex ,(const char *chars, uint16_t length, int32_t index, int enableReverse))
+	(uint16_t, unitIndex ,(const char *chars, uint16_t max, int32_t unit))
 	,
 	{
 		struct Object object;

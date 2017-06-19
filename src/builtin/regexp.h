@@ -22,8 +22,8 @@
 	extern const struct Object(Type) RegExp(type);
 
 	struct RegExp(State) {
-		const char *start;
-		const char *end;
+		const char * const start;
+		const char * const end;
 		const char **capture;
 		const char **index;
 		int flags;

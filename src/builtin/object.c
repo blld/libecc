@@ -894,7 +894,7 @@ struct Value getMember (struct Object *self, struct Context * const context, str
 struct Value getElement (struct Object *self, struct Context * const context, uint32_t index)
 {
 	if (self->type == &String(type))
-		return String.valueAtPosition((struct String *)self, index);
+		return String.valueAtIndex((struct String *)self, index);
 	else
 		return getValue(self, context, element(self, index));
 }

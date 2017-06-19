@@ -21,6 +21,8 @@ enum Opcode {
 	opLookahead = 2,
 	opStart,
 	opEnd,
+	opLineStart,
+	opLineEnd,
 	opBoundary,
 	
 	opSplit,
@@ -52,6 +54,7 @@ struct Parse {
 	const char *end;
 	uint16_t count;
 	int ignoreCase;
+	int multiline;
 	int disallowQuantifier;
 };
 
@@ -109,6 +112,8 @@ void printNode (struct RegExp(Node) *n)
 		case opLookahead: fprintf(stderr, "lookahead "); break;
 		case opStart: fprintf(stderr, "start "); break;
 		case opEnd: fprintf(stderr, "end "); break;
+		case opLineStart: fprintf(stderr, "line start "); break;
+		case opLineEnd: fprintf(stderr, "line end "); break;
 		case opBoundary: fprintf(stderr, "boundary "); break;
 		
 		case opSplit: fprintf(stderr, "split "); break;
@@ -208,7 +213,7 @@ struct RegExp(Node) *join (struct RegExp(Node) *a, struct RegExp(Node) *b)
 	while (a[++lena].opcode != opOver);
 	while (b[++lenb].opcode != opOver);
 	
-	if (lenb == 1 && a[lena - 1].opcode == opBytes && b->opcode == opBytes)
+	if (lena == 1 && lenb == 1 && a[lena - 1].opcode == opBytes && b->opcode == opBytes)
 	{
 		struct RegExp(Node) *c = a + lena - 1;
 		
@@ -364,12 +369,12 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 	else if (accept(p, '^'))
 	{
 		p->disallowQuantifier = 1;
-		return node(opStart, 0, NULL);
+		return node(p->multiline? opLineStart: opStart, 0, NULL);
 	}
 	else if (accept(p, '$'))
 	{
 		p->disallowQuantifier = 1;
-		return node(opEnd, 0, NULL);
+		return node(p->multiline? opLineEnd: opEnd, 0, NULL);
 	}
 	else if (accept(p, '\\'))
 	{
@@ -786,15 +791,36 @@ start:
 			
 			goto next;
 			
+		case opLineStart:
+		{
+			struct Text prev = Text.make(text.bytes, text.bytes - s->start);
+			if (text.bytes != s->start && !Text.isLineFeed(Text.prevCharacter(&prev)))
+				return 0;
+			
+			goto next;
+		}
+			
+		case opLineEnd:
+			if (text.bytes != s->end && !Text.isLineFeed(Text.character(text)))
+				return 0;
+			
+			goto next;
+			
 		case opBoundary:
-			if (text.bytes == s->start || text.bytes == s->end)
+		{
+			struct Text prev = Text.make(text.bytes, text.bytes - s->start);
+			if (text.bytes == s->start)
 			{
 				if (Text.isWord(Text.character(text)) != n->offset)
 					return 0;
 			}
+			else if (text.bytes == s->end)
+			{
+				if (Text.isWord(Text.prevCharacter(&prev)) != n->offset)
+					return 0;
+			}
 			else
 			{
-				struct Text prev = text;
 				if ((Text.isWord(Text.prevCharacter(&prev))
 					!=
 					Text.isWord(Text.character(text))) != n->offset
@@ -802,6 +828,7 @@ start:
 					return 0;
 			}
 			goto next;
+		}
 			
 		case opSplit:
 			if (text.bytes == n->bytes)
@@ -870,15 +897,18 @@ start:
 		}
 			
 		case opSave:
+		{
+			const char *capture = s->capture[n->offset];
 			s->capture[n->offset] = text.bytes;
 			if (forkMatch(s, n, text, 1)) {
-				if (s->capture[n->offset] < text.bytes && text.bytes > s->index[n->offset]) {
-					s->capture[n->offset] = text.bytes;
+				if (text.bytes <= s->index[n->offset] && text.bytes == s->capture[n->offset]) {
+					s->capture[n->offset] = NULL;
 				}
 				return 1;
 			}
-			s->capture[n->offset] = NULL;
+			s->capture[n->offset] = capture;
 			return 0;
+		}
 			
 		case opDigit:
 			if (text.length < 1 || Text.isDigit(Text.nextCharacter(&text)) != n->offset)
@@ -910,6 +940,9 @@ start:
 			char buffer[5];
 			struct Text(Char) c;
 			
+			if (!text.length)
+				return 0;
+			
 			c = Text.character(text);
 			memcpy(buffer, text.bytes, c.units);
 			buffer[c.units] = '\0';
@@ -926,6 +959,9 @@ start:
 		{
 			char buffer[5];
 			struct Text(Char) c;
+			
+			if (!text.length)
+				return 0;
 			
 			c = Text.character(text);
 			memcpy(buffer, text.bytes, c.units);
@@ -944,16 +980,12 @@ start:
 			struct Text range = Text.make(n->bytes, n->offset);
 			struct Text(Char) from, to, c;
 			
+			if (!text.length)
+				return 0;
+			
 			from = Text.nextCharacter(&range);
 			Text.advance(&range, 1);
 			to = Text.nextCharacter(&range);
-			
-			c = Text.character(text);
-			if ((c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
-			{
-				Text.nextCharacter(&text);
-				goto next;
-			}
 			
 			if (n->opcode == opInRangeCase)
 			{
@@ -976,12 +1008,21 @@ start:
 					goto next;
 				}
 			}
+			else
+			{
+				c = Text.character(text);
+				if ((c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
+				{
+					Text.nextCharacter(&text);
+					goto next;
+				}
+			}
 			
 			return 0;
 		}
 			
 		case opAny:
-			if (text.length < 1 || !Text.isLineFeed(Text.nextCharacter(&text)))
+			if (text.length >= 1 && !Text.isLineFeed(Text.nextCharacter(&text)))
 				goto next;
 			
 			return 0;
@@ -1068,7 +1109,7 @@ static struct Value toString (struct Context * const context)
 static struct Value exec (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value, lastIndex;
+	struct Value value;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
@@ -1079,17 +1120,15 @@ static struct Value exec (struct Context * const context)
 		const char *bytes = Value.stringBytes(value);
 		const char *capture[2 + self->count * 2];
 		const char *index[2 + self->count * 2];
-		struct RegExp(State) state = { bytes, bytes + length, capture, index };
+		int32_t lastIndex = self->global? (int32_t)(String.textAtIndex(bytes, length, Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex))).data.integer, 0).bytes - bytes): 0;
 		struct Chars *element;
 		
-		if (self->global)
-		{
-			lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
-			if ((uint32_t)lastIndex.data.integer > length)
-				lastIndex.data.integer = length;
-			
-			state.start += (uint32_t)lastIndex.data.integer;
-		}
+		struct RegExp(State) state = {
+			bytes + lastIndex,
+			bytes + length,
+			capture,
+			index
+		};
 		
 		if (matchWithState(self, &state))
 		{
@@ -1110,9 +1149,9 @@ static struct Value exec (struct Context * const context)
 			}
 			
 			if (self->global)
-				Object.putMember(&self->object, context, Key(lastIndex), Value.integer((int32_t)(capture[1] - bytes)));
+				Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
 			
-			Object.addMember(array, Key(index), Value.integer((int32_t)(capture[0] - bytes)), 0);
+			Object.addMember(array, Key(index), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes))), 0);
 			Object.addMember(array, Key(input), Pool.retainedValue(value), 0);
 			
 			return Value.object(array);
@@ -1124,7 +1163,7 @@ static struct Value exec (struct Context * const context)
 static struct Value test (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value, lastIndex;
+	struct Value value;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
@@ -1135,21 +1174,19 @@ static struct Value test (struct Context * const context)
 		const char *bytes = Value.stringBytes(value);
 		const char *capture[2 + self->count * 2];
 		const char *index[2 + self->count * 2];
-		struct RegExp(State) state = { bytes, bytes + length, capture, index };
+		int32_t lastIndex = self->global? (int32_t)(String.textAtIndex(bytes, length, Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex))).data.integer, 0).bytes - bytes): 0;
 		
-		if (self->global)
-		{
-			lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
-			if ((uint32_t)lastIndex.data.integer > length)
-				lastIndex.data.integer = length;
-			
-			state.start += (uint32_t)lastIndex.data.integer;
-		}
+		struct RegExp(State) state = {
+			bytes + lastIndex,
+			bytes + length,
+			capture,
+			index
+		};
 		
 		value = Value.truth(matchWithState(self, &state));
 		
 		if (self->global)
-			Object.putMember(&self->object, context, Key(lastIndex), Value.integer((int32_t)(capture[1] - bytes)));
+			Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
 		
 		return value;
 	}
@@ -1194,6 +1231,10 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 		switch (*(--p.end)) {
 			case 'i':
 				p.ignoreCase = 1;
+				continue;
+				
+			case 'm':
+				p.multiline = 1;
 				continue;
 		}
 	}
