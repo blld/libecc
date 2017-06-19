@@ -45,7 +45,8 @@ enum Opcode {
 struct RegExp(Node) {
 	char *bytes;
 	int16_t offset;
-	uint8_t opcode;
+	uint8_t opcode:7;
+	uint8_t failure:1;
 	uint8_t depth;
 };
 
@@ -56,10 +57,6 @@ struct Parse {
 	int ignoreCase;
 	int multiline;
 	int disallowQuantifier;
-};
-
-enum Flags {
-	infiniteLoop = 1 << 1,
 };
 
 // MARK: - Private
@@ -439,15 +436,31 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 		n = disjunction(p, error);
 		if (!accept(p, ')'))
 		{
-			*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("expect ')'"));
+			if (!*error)
+				*error = Error.syntaxError(Text.make(p->c, 1), Chars.create("expect ')'"));
+			
 			return NULL;
 		}
 		
 		switch (modifier) {
-			case '\0': return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
-			case '=': p->disallowQuantifier = 1; return join(node(opLookahead, nlen(n) + 1, NULL), n);
-			case '!': p->disallowQuantifier = 1; return join(node(opNLookahead, nlen(n) + 1, NULL), n);
-			case ':': return n;
+			case '\0':
+				return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
+				
+			case '=':
+				p->disallowQuantifier = 1;
+				return join(node(opLookahead, nlen(n) + 2, NULL), join(n, node(opMatch, 0, NULL)));
+				
+			case '!':
+			{
+				int i = 0, c = nlen(n);
+				p->disallowQuantifier = 1;
+				for (; i < c; ++i)
+					n[i].failure = 1;
+				
+				return join(node(opNLookahead, nlen(n) + 2, NULL), join(n, node(opMatch, 0, NULL)));
+			}
+			case ':':
+				return n;
 		}
 	}
 	else if (accept(p, '.'))
@@ -663,10 +676,10 @@ struct RegExp(Node) * alternative (struct Parse *p, struct Error **error)
 			if (max != 1)
 			{
 				struct RegExp(Node) *redo;
-				uint16_t index, count = nlen(t), length = 3;
+				uint16_t index, count = nlen(t) - (lazy? 1: 0), length = 3;
 				char buffer[count + length];
 				
-				for (index = 0; index < count; ++index)
+				for (index = (lazy? 1: 0); index < count; ++index)
 					if (t[index].opcode == opSave)
 						buffer[length++] = (uint8_t)t[index].offset;
 				
@@ -831,14 +844,6 @@ start:
 		}
 			
 		case opSplit:
-			if (text.bytes == n->bytes)
-			{
-				s->flags |= infiniteLoop;
-				return 0;
-			}
-			else
-				n->bytes = (char *)text.bytes;
-			
 			if (forkMatch(s, n, text, 1))
 				return 1;
 			
@@ -846,17 +851,7 @@ start:
 			
 		case opReference:
 		{
-			uint16_t len;
-			
-			if (text.bytes == n->bytes)
-			{
-				s->flags |= infiniteLoop;
-				return 0;
-			}
-			else
-				n->bytes = (char *)text.bytes;
-			
-			len = s->capture[n->offset * 2 + 1]? s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]: 0;
+			uint16_t len = s->capture[n->offset * 2 + 1]? s->capture[n->offset * 2 + 1] - s->capture[n->offset * 2]: 0;
 			
 			if (len)
 			{
@@ -876,8 +871,6 @@ start:
 			if (n->bytes[1] && n->depth >= n->bytes[1])
 				return 0;
 			
-			s->flags &= ~infiniteLoop;
-			
 			if (forkMatch(s, n, text, lazy? 1: n->offset))
 			{
 				clear(s, text.bytes, (uint8_t *)n->bytes + 3);
@@ -886,9 +879,6 @@ start:
 			
 			if (!hasmin)
 				return 0;
-			
-			if (s->flags & infiniteLoop)
-				clear(s, text.bytes, (uint8_t *)n->bytes + 3);
 			
 			if (lazy)
 				goto jump;
@@ -900,14 +890,14 @@ start:
 		{
 			const char *capture = s->capture[n->offset];
 			s->capture[n->offset] = text.bytes;
-			if (forkMatch(s, n, text, 1)) {
-				if (text.bytes <= s->index[n->offset] && text.bytes == s->capture[n->offset]) {
+			if (forkMatch(s, n, text, 1) == !n->failure) {
+				if ((s->capture[n->offset] <= s->index[n->offset] && text.bytes == s->capture[n->offset]) || n->failure) {
 					s->capture[n->offset] = NULL;
 				}
-				return 1;
+				return !n->failure;
 			}
 			s->capture[n->offset] = capture;
-			return 0;
+			return n->failure;
 		}
 			
 		case opDigit:
