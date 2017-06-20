@@ -1244,27 +1244,34 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	if (*p.c == '/')
 		for (;;)
 		{
-			switch (*(++p.c)) {
+			switch (*(++p.c))
+			{
 				case 'g':
 					if (self->global == 1)
-						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
 					self->global = 1;
 					continue;
 					
 				case 'i':
 					if (self->ignoreCase == 1)
-						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
 					self->ignoreCase = 1;
 					continue;
 					
 				case 'm':
 					if (self->multiline == 1)
-						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flags"));
+						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
 					self->multiline = 1;
 					continue;
+					
+				case '\0':
+					break;
+					
+				default:
+					*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 			}
 			break;
 		}

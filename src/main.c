@@ -125,16 +125,23 @@ static void test (const char *func, int line, const char *test, const char *expe
 	
 	if (text)
 	{
-		const char *end = strrchr(text, '~');
+		const char *bytes, *end = strrchr(text, '~');
 		ptrdiff_t textStart = strchr(text, '^') - text, textLength = (end? end - text - textStart: 0) + 1;
 		struct Input *input = Ecc.findInput(ecc, ecc->text);
+		
+		if (ecc->text.bytes >= ecc->ofLine.bytes && ecc->text.bytes < ecc->ofLine.bytes + ecc->ofLine.length)
+			bytes = ecc->ofLine.bytes;
+		else if (input)
+			bytes = input->bytes;
+		else
+			bytes = NULL;
 		
 		assert(textStart >= 0 && textStart <= strlen(test));
 		
 		if (input && (input->length - textStart == 0 || (!ecc->text.length && input->bytes[textStart] == ')')) && textLength == 1)
 			textLength = 0;
 		
-		if (!input || ecc->text.bytes - input->bytes != textStart || ecc->text.length != textLength)
+		if (!bytes || ecc->text.bytes - bytes != textStart || ecc->text.length != textLength)
 		{
 			++testErrorCount;
 			Env.printColor(Env(red), Env(bold), "[failure]");
@@ -1323,7 +1330,7 @@ static void testRegExp (void)
 	test("Object.prototype.toString.call(RegExp.prototype)", "[object RegExp]", NULL);
 	test("RegExp.prototype.constructor", "function RegExp() [native code]", NULL);
 	test("RegExp.prototype", "/(?:)/", NULL);
-	test("/1/gg", "SyntaxError: invalid flags"
+	test("/1/gg", "SyntaxError: invalid flag"
 	,    "    ^");
 	test("/(/", "SyntaxError: expect ')'"
 	,    "  ^");
@@ -1396,6 +1403,12 @@ static void testRegExp (void)
 	test("/\\0477/.exec('\\''+'77')", "'7", NULL);
 	test("/[a-z][^1-9][a-z]/.exec('a1b  b2c  c3d  def  f4g')", "def", NULL);
 	test("/[\\d][\\12-\\14]{1,}[^\\d]/.exec('line1\\n\\n\\n\\n\\nline2')", "1\n\n\n\n\nl", NULL);
+	test("RegExp('\\d', '1')", "SyntaxError: invalid flag"
+	/*   /\d/1*/
+	,    "   ^");
+	test("RegExp('\\d', 'igg')", "SyntaxError: invalid flag"
+	/*   /\d/igg*/
+	,    "     ^");
 }
 
 static int runTest (int verbosity)
