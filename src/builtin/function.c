@@ -274,7 +274,7 @@ struct Function * createWithNative (const Native(Function) native, int parameter
 	self->oplist = OpList.create(native, Value(undefined), Text(nativeCode));
 	self->text = Text(nativeCode);
 	
-	Object.addMember(&self->object, Key(length), Value.integer(abs(parameterCount)), Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(length), Value.integer(abs(parameterCount)), Value(readonly) | Value(hidden) | Value(sealed));
 	
 	return self;
 }
