@@ -29,6 +29,7 @@ enum Opcode {
 	opReference,
 	opRedo,
 	opSave,
+	opNSave,
 	opAny,
 	opOneOf,
 	opNeitherOf,
@@ -45,8 +46,7 @@ enum Opcode {
 struct RegExp(Node) {
 	char *bytes;
 	int16_t offset;
-	uint8_t opcode:7;
-	uint8_t failure:1;
+	uint8_t opcode;
 	uint8_t depth;
 };
 
@@ -117,6 +117,7 @@ void printNode (struct RegExp(Node) *n)
 		case opReference: fprintf(stderr, "reference "); break;
 		case opRedo: fprintf(stderr, "redo "); break;
 		case opSave: fprintf(stderr, "save "); break;
+		case opNSave: fprintf(stderr, "!save "); break;
 		case opAny: fprintf(stderr, "any "); break;
 		case opOneOf: fprintf(stderr, "one of "); break;
 		case opNeitherOf: fprintf(stderr, "neither of "); break;
@@ -455,7 +456,8 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				int i = 0, c = nlen(n);
 				p->disallowQuantifier = 1;
 				for (; i < c; ++i)
-					n[i].failure = 1;
+					if (n[i].opcode == opSave)
+						n[i].opcode = opNSave;
 				
 				return join(node(opNLookahead, nlen(n) + 2, NULL), join(n, node(opMatch, 0, NULL)));
 			}
@@ -783,6 +785,11 @@ next:
 start:
 	;
 	
+	//#if DUMP_REGEXP
+	//	fprintf(stderr, "\n%.*s\n^ ", text.length, text.bytes);
+	//	printNode(n);
+	//#endif
+	
 	switch((enum Opcode)n->opcode)
 	{
 		case opNLookahead:
@@ -855,6 +862,9 @@ start:
 			
 			if (len)
 			{
+				//#if DUMP_REGEXP
+				//				fprintf(stderr, "ref: %.*s", len, s->capture[n->offset * 2]);
+				//#endif
 				if (text.length < len || memcmp(text.bytes, s->capture[n->offset * 2], len))
 					return 0;
 				
@@ -890,14 +900,26 @@ start:
 		{
 			const char *capture = s->capture[n->offset];
 			s->capture[n->offset] = text.bytes;
-			if (forkMatch(s, n, text, 1) == !n->failure) {
-				if ((s->capture[n->offset] <= s->index[n->offset] && text.bytes == s->capture[n->offset]) || n->failure) {
+			if (forkMatch(s, n, text, 1)) {
+				if (s->capture[n->offset] <= s->index[n->offset] && text.bytes == s->capture[n->offset]) {
 					s->capture[n->offset] = NULL;
 				}
-				return !n->failure;
+				return 1;
 			}
 			s->capture[n->offset] = capture;
-			return n->failure;
+			return 0;
+		}
+			
+		case opNSave:
+		{
+			const char *capture = s->capture[n->offset];
+			s->capture[n->offset] = text.bytes;
+			if (!forkMatch(s, n, text, 1)) {
+				s->capture[n->offset] = NULL;
+				return 0;
+			}
+			s->capture[n->offset] = capture;
+			return 1;
 		}
 			
 		case opDigit:
@@ -1056,10 +1078,7 @@ static struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(regexpType));
 	
-	if (self->program[0].opcode == opMatch)
-		return Value.text(&Text(emptyRegExp));
-	else
-		return Value.chars(self->pattern);
+	return Value.chars(self->pattern);
 }
 
 static struct Value exec (struct Context * const context)
@@ -1079,8 +1098,8 @@ static struct Value exec (struct Context * const context)
 	{
 		uint16_t length = Value.stringLength(value);
 		const char *bytes = Value.stringBytes(value);
-		const char *capture[2 + self->count * 2];
-		const char *index[2 + self->count * 2];
+		const char *capture[self->count * 2];
+		const char *index[self->count * 2];
 		struct Chars *element;
 		
 		struct RegExp(State) state = {
