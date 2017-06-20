@@ -930,6 +930,8 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 	{
 		if (ref->flags & Value(readonly))
 			readonlyError(context, ref, self);
+		
+		value.flags = ref->flags;
 	}
 	else if (self->flags & Object(sealed))
 		Context.typeError(context, Chars.create("object is not extensible"));
