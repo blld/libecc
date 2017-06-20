@@ -33,7 +33,7 @@ static struct Value eval (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
-	if (!Value.isString(value))
+	if (!Value.isString(value) || !Value.isPrimitive(value))
 		return value;
 	
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");

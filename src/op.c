@@ -495,7 +495,7 @@ struct Value eval (struct Context * const context)
 	while (--argumentCount)
 		nextOp();
 	
-	if (!Value.isString(value))
+	if (!Value.isString(value) || !Value.isPrimitive(value))
 		return value;
 	
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
