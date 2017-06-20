@@ -672,11 +672,15 @@ struct Value getParentSlot (struct Context * const context)
 
 struct Value setParentSlot (struct Context * const context)
 {
+	const struct Text *text = opText(0);
 	struct Value *ref = getParentSlotRef(context).data.reference;
 	struct Value value = nextOp();
-	if (ref->flags & Value(frozen))
-		return value;
-	
+	if (ref->flags & Value(readonly))
+	{
+		struct Text property = *Key.textOf(ref->key);
+		Context.setText(context, text);
+		Context.typeError(context, Chars.create("'%.*s' is read-only", property.length, property.bytes));
+	}
 	retain(value);
 	release(*ref);
 	ref->data = value.data;
@@ -773,7 +777,7 @@ struct Value deleteMember (struct Context * const context)
 	if (!result)
 	{
 		Context.setText(context, text);
-		Context.typeError(context, Chars.create("property '%.*s' is non-configurable and can't be deleted", Key.textOf(key)->length, Key.textOf(key)->bytes));
+		Context.typeError(context, Chars.create("'%.*s' is non-configurable", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
 	
 	return Value.truth(result);

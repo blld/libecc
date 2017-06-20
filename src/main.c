@@ -560,7 +560,7 @@ static void testDelete (void)
 	,    "       ^");
 	test("var a = { b: 123, c: 'abc' }; a.b", "123", NULL);
 	test("var a = { b: 123, c: 'abc' }; delete a.b; a.b", "undefined", NULL);
-	test("delete Object.prototype", "TypeError: property 'prototype' is non-configurable and can't be deleted"
+	test("delete Object.prototype", "TypeError: 'prototype' is non-configurable"
 	,    "       ^~~~~~~~~~~~~~~~");
 }
 
@@ -596,6 +596,10 @@ static void testGlobal (void)
 	test("encodeURI('ç')", "%C3%A7", NULL);
 	test("encodeURI(';/?:@&=+$,#')", ";/?:@&=+$,#", NULL);
 	test("encodeURIComponent(';/?:@&=+$,#')", "%3B%2F%3F%3A%40%26%3D%2B%24%2C%23", NULL);
+	test("NaN = true", "TypeError: 'NaN' is read-only"
+	,    "^~~~~~~~~~");
+	test("delete global.NaN", "TypeError: 'NaN' is non-configurable"
+	,    "       ^~~~~~~~~~");
 }
 
 static void testFunction (void)
