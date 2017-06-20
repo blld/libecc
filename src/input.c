@@ -138,19 +138,18 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, int fu
 		}
 	}
 	
+	if (fullLine && !ofLine.length)
+		Env.newline();
+	
 	if (!fullLine)
 	{
 		if (text.length)
 			Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
 	}
 	else if (!length)
-	{
-		Env.newline();
 		Env.printColor(0, 0, "%.*s", text.length, text.bytes);
-	}
 	else
 	{
-		Env.newline();
 		Env.print("%.*s", length, bytes);
 		Env.newline();
 		
