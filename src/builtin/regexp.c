@@ -1065,28 +1065,32 @@ static struct Value toString (struct Context * const context)
 static struct Value exec (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value;
+	struct Value value, lastIndex;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
+	lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+	
+	Object.putMember(&self->object, context, Key(lastIndex), Value.integer(0));
+	
+	if (lastIndex.data.integer >= 0)
 	{
 		uint16_t length = Value.stringLength(value);
 		const char *bytes = Value.stringBytes(value);
 		const char *capture[2 + self->count * 2];
 		const char *index[2 + self->count * 2];
-		int32_t lastIndex = self->global? (int32_t)(String.textAtIndex(bytes, length, Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex))).data.integer, 0).bytes - bytes): 0;
 		struct Chars *element;
 		
 		struct RegExp(State) state = {
-			bytes + lastIndex,
+			String.textAtIndex(bytes, length, lastIndex.data.integer, 0).bytes,
 			bytes + length,
 			capture,
 			index
 		};
 		
-		if (matchWithState(self, &state))
+		if (state.start >= bytes && state.start <= state.end && matchWithState(self, &state))
 		{
 			struct Object *array = Array.createSized(self->count);
 			int32_t index, count;
@@ -1119,33 +1123,39 @@ static struct Value exec (struct Context * const context)
 static struct Value test (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
-	struct Value value;
+	struct Value value, lastIndex;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
+	lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+	
+	Object.putMember(&self->object, context, Key(lastIndex), Value.integer(0));
+	
+	if (lastIndex.data.integer >= 0)
 	{
 		uint16_t length = Value.stringLength(value);
 		const char *bytes = Value.stringBytes(value);
-		const char *capture[2 + self->count * 2];
-		const char *index[2 + self->count * 2];
-		int32_t lastIndex = self->global? (int32_t)(String.textAtIndex(bytes, length, Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex))).data.integer, 0).bytes - bytes): 0;
+		const char *capture[self->count * 2];
+		const char *index[self->count * 2];
 		
 		struct RegExp(State) state = {
-			bytes + lastIndex,
+			String.textAtIndex(bytes, length, lastIndex.data.integer, 0).bytes,
 			bytes + length,
 			capture,
 			index
 		};
 		
-		value = Value.truth(matchWithState(self, &state));
-		
-		if (self->global)
-			Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
-		
-		return value;
+		if (state.start >= bytes && state.start <= state.end && matchWithState(self, &state))
+		{
+			if (self->global)
+				Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
+			
+			return Value(true);
+		}
 	}
+	return Value(false);
 }
 
 // MARK: - Methods
@@ -1156,7 +1166,7 @@ void setup ()
 	
 	Function.setupBuiltinObject(
 		&RegExp(constructor), constructor, 2,
-		&RegExp(prototype), Value.regexp(create(Chars.create("//"), NULL)),
+		&RegExp(prototype), Value.regexp(create(Chars.create("/(?:)/"), NULL)),
 		&RegExp(type));
 	
 	Function.addToObject(RegExp(prototype), "toString", toString, 0, h);
@@ -1314,8 +1324,8 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 	
 	do
 	{
-		memset(state->capture, 0, sizeof(*state->capture) * (2 + self->count * 2));
-		memset(state->index, 0, sizeof(*state->index) * (2 + self->count * 2));
+		memset(state->capture, 0, sizeof(*state->capture) * (self->count * 2));
+		memset(state->index, 0, sizeof(*state->index) * (self->count * 2));
 		state->capture[0] = state->index[0] = text.bytes;
 		result = match(state, self->program, text);
 		Text.nextCharacter(&text);

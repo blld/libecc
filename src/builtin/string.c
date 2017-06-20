@@ -602,8 +602,8 @@ static struct Value split (struct Context * const context)
 	
 	if (regexp)
 	{
-		const char *capture[2 + regexp->count * 2];
-		const char *index[2 + regexp->count * 2];
+		const char *capture[regexp->count * 2];
+		const char *index[regexp->count * 2];
 		struct Text seek = text;
 		
 		for (;;)
