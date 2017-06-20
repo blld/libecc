@@ -976,13 +976,14 @@ start:
 			from = Text.nextCharacter(&range);
 			Text.advance(&range, 1);
 			to = Text.nextCharacter(&range);
+			c = Text.character(text);
 			
 			if (n->opcode == opInRangeCase)
 			{
-				char casebuffer[6];
-				struct Text casetext = Text.make(casebuffer, sizeof(casebuffer));
+				char buffer[c.units];
+				struct Text casetext = Text.make(buffer, 0);
 				
-				casetext.length = Text.toLower(text, casebuffer) - casebuffer;
+				casetext.length = Text.toLower(Text.make(text.bytes, sizeof(buffer)), buffer) - buffer;
 				c = Text.character(casetext);
 				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
 				{
@@ -990,7 +991,7 @@ start:
 					goto next;
 				}
 				
-				casetext.length = Text.toUpper(text, casebuffer) - casebuffer;
+				casetext.length = Text.toUpper(Text.make(text.bytes, sizeof(buffer)), buffer) - buffer;
 				c = Text.character(casetext);
 				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
 				{
@@ -1000,7 +1001,6 @@ start:
 			}
 			else
 			{
-				c = Text.character(text);
 				if ((c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
 				{
 					Text.nextCharacter(&text);
