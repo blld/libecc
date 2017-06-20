@@ -357,7 +357,7 @@ static void testEval (void)
 	test("new eval.apply('123')", "TypeError: 'eval.apply' is not a constructor"
 	,    "    ^~~~~~~~~~       ");
 	test("eval.call('123', 'this+456')", "[object Global]456", NULL);
-	test("var x = {}; eval(x)", "[object Object]", NULL);
+	test("var x = new String('1 + 1'); eval(x) == x", "true", NULL);
 }
 
 static void testConvertion (void)
