@@ -1039,48 +1039,14 @@ jump:
 
 static struct Value constructor (struct Context * const context)
 {
-	struct Error *error = NULL;
 	struct Value pattern, flags;
-	struct Chars *chars;
-	struct RegExp *regexp;
 	
 	Context.assertParameterCount(context, 2);
 	
 	pattern = Context.argument(context, 0);
 	flags = Context.argument(context, 1);
 	
-	if (pattern.type == Value(regexpType) && flags.type == Value(undefinedType))
-	{
-		if (context->construct)
-			chars = pattern.data.regexp->pattern;
-		else
-			return pattern;
-	}
-	else
-	{
-		Chars.beginAppend(&chars);
-		Chars.append(&chars, "/");
-		
-		if (pattern.type == Value(regexpType))
-			Chars.appendValue(&chars, context, Value.chars(pattern.data.regexp->source));
-		else
-			Chars.appendValue(&chars, context, pattern);
-		
-		Chars.append(&chars, "/");
-		if (flags.type != Value(undefinedType))
-			Chars.appendValue(&chars, context, flags);
-		
-		Chars.endAppend(&chars);
-	}
-	
-	regexp = create(chars, &error);
-	if (error)
-	{
-		context->ecc->ofLine = Text.make(chars->bytes, chars->length);
-		Context.setText(context, &Text(nativeCode));
-		Context.throw(context, Value.error(error));
-	}
-	return Value.regexp(regexp);
+	return Value.regexp(createWith(context, pattern, flags));
 }
 
 static struct Value toString (struct Context * const context)
@@ -1285,6 +1251,53 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	Object.addMember(&self->object, Key(lastIndex), Value.integer(0), Value(hidden) | Value(sealed));
 	
 	return self;
+}
+
+struct RegExp * createWith (struct Context *context, struct Value pattern, struct Value flags)
+{
+	struct Error *error = NULL;
+	struct Chars *chars;
+	struct RegExp *regexp;
+	
+	if (pattern.type == Value(regexpType) && flags.type == Value(undefinedType))
+	{
+		if (context->construct)
+			chars = pattern.data.regexp->pattern;
+		else
+			return pattern.data.regexp;
+	}
+	else
+	{
+		Chars.beginAppend(&chars);
+		
+		Chars.append(&chars, "/");
+		
+		if (pattern.type == Value(regexpType))
+			Chars.appendValue(&chars, context, Value.chars(pattern.data.regexp->source));
+		else
+		{
+			if (pattern.type == Value(undefinedType) || (Value.isString(pattern) && !Value.stringLength(pattern)))
+				Chars.append(&chars, "(?:)");
+			else
+				Chars.appendValue(&chars, context, pattern);
+		}
+		
+		Chars.append(&chars, "/");
+		
+		if (flags.type != Value(undefinedType))
+			Chars.appendValue(&chars, context, flags);
+		
+		Chars.endAppend(&chars);
+	}
+	
+	regexp = create(chars, &error);
+	if (error)
+	{
+		context->ecc->ofLine = Text.make(chars->bytes, chars->length);
+		Context.setText(context, &Text(nativeCode));
+		Context.throw(context, Value.error(error));
+	}
+	return regexp;
 }
 
 int matchWithState (struct RegExp *self, struct RegExp(State) *state)

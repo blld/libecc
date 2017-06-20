@@ -10,6 +10,7 @@
 #include "string.h"
 
 #include "../pool.h"
+#include "../op.h"
 
 // MARK: - Private
 
@@ -224,7 +225,7 @@ static struct Value lastIndexOf (struct Context * const context)
 	}
 	text.length = text.bytes - chars;
 	
-	do
+	while (text.length)
 	{
 		if (!memcmp(text.bytes, searchChars, searchLength))
 			return Value.integer(index);
@@ -233,9 +234,264 @@ static struct Value lastIndexOf (struct Context * const context)
 		if (Text.prevCharacter(&text).codepoint > 0xffff)
 			--index;
 	}
-	while (text.length);
 	
 	return Value.integer(-1);
+}
+
+static struct Value match (struct Context * const context)
+{
+	struct RegExp *regexp;
+	struct Value value;
+	
+	Context.assertParameterCount(context, 1);
+	
+	context->this = Value.toString(context, Context.this(context));
+	
+	value = Context.argument(context, 0);
+	if (value.type == Value(regexpType))
+		regexp = value.data.regexp;
+	else
+		regexp = RegExp.createWith(context, value, Value(undefined));
+	
+	{
+		const char *bytes = Value.stringBytes(context->this);
+		uint16_t length = Value.stringLength(context->this);
+		struct Text text = Text.make(bytes, length), seek = text;
+		const char *capture[regexp->count * 2];
+		const char *index[regexp->count * 2];
+		struct Object *array = Array.create();
+		struct Chars *element;
+		uint32_t size = 0;
+		
+		do
+		{
+			struct RegExp(State) state = { seek.bytes, text.bytes + text.length, capture, index };
+			
+			if (text.length && RegExp.matchWithState(regexp, &state))
+			{
+				if (state.capture[1] <= text.bytes)
+				{
+					Text.advance(&seek, 1);
+					continue;
+				}
+				
+				element = Chars.createWithBytes(state.capture[0] - text.bytes, text.bytes);
+				Object.addElement(array, size++, Pool.retainedValue(Value.chars(element)), 0);
+				
+				Text.advance(&text, state.capture[1] - text.bytes);
+				seek = text;
+			}
+			else
+			{
+				Object.putMember(&regexp->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes))));
+				break;
+			}
+		}
+		while (regexp->global);
+		
+		if (size)
+			return Value.object(array);
+		else
+			return Value(null);
+	}
+}
+
+static void replaceText (struct Chars **chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
+{
+	struct Text(Char) c;
+	
+	while (replace.length)
+	{
+		c = Text.character(replace);
+		
+		if (c.codepoint == '$')
+		{
+			int index;
+			
+			Text.advance(&replace, 1);
+			
+			switch (Text.character(replace).codepoint)
+			{
+				case '$':
+					Chars.append(chars, "$");
+					break;
+					
+				case '&':
+					Chars.append(chars, "%.*s", match.length, match.bytes);
+					break;
+					
+				case 0x2018:
+					Chars.append(chars, "%.*s", before.length, before.bytes);
+					break;
+					
+				case 0x2019:
+					Chars.append(chars, "%.*s", after.length, after.bytes);
+					break;
+					
+				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+					index = replace.bytes[0] - '0';
+					if (isdigit(replace.bytes[1]))
+						index = index * 10 + replace.bytes[1] - '0';
+					
+					if (index && index < count)
+					{
+						if (isdigit(replace.bytes[1]))
+							Text.advance(&replace, 1);
+						
+						if (capture[index * 2])
+							Chars.append(chars, "%.*s", capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+						else
+							Chars.append(chars, "");
+						
+						break;
+					}
+					/* vvv */
+				default:
+					Chars.append(chars, "$");
+					continue;
+			}
+		}
+		else
+			Chars.append(chars, "%.*s", c.units, replace.bytes);
+		
+		Text.advance(&replace, c.units);
+	}
+}
+
+static struct Value replace (struct Context * const context)
+{
+	struct RegExp *regexp = NULL;
+	struct Chars *chars;
+	struct Value value, replace;
+	struct Text text;
+	const char *bytes, *searchBytes;
+	int32_t length, searchLength;
+	
+	Context.assertParameterCount(context, 2);
+	
+	context->this = Value.toString(context, Context.this(context));
+	bytes = Value.stringBytes(context->this);
+	length = Value.stringLength(context->this);
+	text = Text.make(bytes, length);
+	
+	value = Context.argument(context, 0);
+	if (value.type == Value(regexpType))
+		regexp = value.data.regexp;
+	else
+		value = Value.toString(context, value);
+	
+	replace = Context.argument(context, 1);
+	if (replace.type != Value(functionType))
+		replace = Value.toString(context, replace);
+	
+	if (regexp)
+	{
+		const char *capture[regexp->count * 2];
+		const char *index[regexp->count * 2];
+		struct Text seek = text;
+		
+		Chars.beginAppend(&chars);
+		
+		do
+		{
+			struct RegExp(State) state = { seek.bytes, text.bytes + text.length, capture, index };
+			
+			if (text.length && RegExp.matchWithState(regexp, &state))
+			{
+				if (state.capture[1] <= text.bytes)
+				{
+					Text.advance(&seek, 1);
+					continue;
+				}
+				
+				Chars.append(&chars, "%.*s", state.capture[0] - text.bytes, text.bytes);
+				
+				if (replace.type == Value(functionType))
+				{
+					struct Object *arguments = Array.createSized(regexp->count + 2);
+					uint16_t index, count;
+					struct Value result;
+					
+					for (index = 0, count = regexp->count; index < count; ++index)
+					{
+						if (capture[index * 2])
+							arguments->element[index].value = Value.chars(Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]));
+						else
+							arguments->element[index].value = Value(undefined);
+					}
+					arguments->element[regexp->count].value = Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes)));
+					arguments->element[regexp->count + 1].value = context->this;
+					
+					result = Value.toString(context, Op.callFunctionArguments(context, 0, replace.data.function, Value(undefined), arguments));
+					Chars.append(&chars, "%.*s", Value.stringLength(result), Value.stringBytes(result));
+				}
+				else
+					replaceText(&chars,
+								Text.make(Value.stringBytes(replace), Value.stringLength(replace)),
+								Text.make(bytes, state.capture[0] - bytes),
+								Text.make(state.capture[0], state.capture[1] - state.capture[0]),
+								Text.make(state.capture[1], (bytes + length) - state.capture[1]),
+								regexp->count,
+								capture);
+				
+				Text.advance(&text, state.capture[1] - text.bytes);
+				seek = text;
+			}
+			else
+				break;
+		}
+		while (regexp->global);
+		
+		Chars.append(&chars, "%.*s", text.length, text.bytes);
+		
+		return Value.chars(Chars.endAppend(&chars));
+	}
+	else
+	{
+		searchBytes = Value.stringBytes(value);
+		searchLength = Value.stringLength(value);
+		
+		for (;;)
+		{
+			if (!text.length)
+				return context->this;
+			
+			if (!memcmp(text.bytes, searchBytes, searchLength))
+			{
+				text.length = searchLength;
+				break;
+			}
+			Text.nextCharacter(&text);
+		}
+		
+		Chars.beginAppend(&chars);
+		Chars.append(&chars, "%.*s", text.bytes - bytes, bytes);
+		
+		if (replace.type == Value(functionType))
+		{
+			struct Object *arguments = Array.createSized(1 + 2);
+			struct Value result;
+			
+			arguments->element[0].value = Value.chars(Chars.createWithBytes(text.length, text.bytes));
+			arguments->element[1].value = Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes)));
+			arguments->element[2].value = context->this;
+			
+			result = Value.toString(context, Op.callFunctionArguments(context, 0, replace.data.function, Value(undefined), arguments));
+			Chars.append(&chars, "%.*s", Value.stringLength(result), Value.stringBytes(result));
+		}
+		else
+			replaceText(&chars,
+						Text.make(Value.stringBytes(replace), Value.stringLength(replace)),
+						Text.make(text.bytes, text.bytes - bytes),
+						Text.make(text.bytes, text.length),
+						Text.make(text.bytes, length - (text.bytes - bytes)),
+						0,
+						NULL);
+		
+		Chars.append(&chars, "%.*s", length - (text.bytes - bytes), text.bytes + text.length);
+		
+		return Value.chars(Chars.endAppend(&chars));
+	}
 }
 
 static struct Value slice (struct Context * const context)
@@ -643,6 +899,8 @@ void setup ()
 	Function.addToObject(String(prototype), "concat", concat, -1, h);
 	Function.addToObject(String(prototype), "indexOf", indexOf, -1, h);
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, h);
+	Function.addToObject(String(prototype), "match", match, 1, h);
+	Function.addToObject(String(prototype), "replace", replace, 2, h);
 	Function.addToObject(String(prototype), "slice", slice, 2, h);
 	Function.addToObject(String(prototype), "split", split, 2, h);
 	Function.addToObject(String(prototype), "substring", substring, 2, h);
@@ -748,8 +1006,8 @@ struct Text textAtIndex (const char *chars, uint16_t length, int32_t position, i
 	}
 	else
 		text.length = 0;
-		
-		return text;
+	
+	return text;
 }
 
 uint16_t unitIndex (const char *chars, uint16_t max, int32_t unit)

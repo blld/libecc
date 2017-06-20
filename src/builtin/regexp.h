@@ -40,6 +40,7 @@ Interface(RegExp,
 	(void, teardown ,(void))
 	
 	(struct RegExp *, create ,(struct Chars *pattern, struct Error **))
+	(struct RegExp *, createWith ,(struct Context *context, struct Value pattern, struct Value flags))
 	
 	(int, matchWithState ,(struct RegExp *, struct RegExp(State) *))
 	,

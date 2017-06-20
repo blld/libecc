@@ -1322,6 +1322,17 @@ static void testString (void)
 	test("'a\\0b'.charAt(2)", "b", NULL);
 	test("global.escapedText = function(){ return '\\uD801\\uDC37' }; global.escapedText()", "𐐷", NULL);
 	test("global.escapedText()", "𐐷", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/, 'X')", "uuX123abc", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/g, 'X')", "uuX123X", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/, function (){ return arguments.length })", "uu4123abc", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/, function (){ return arguments[0] })", "uuabc123abc", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/, function (){ return arguments[1] })", "uubc123abc", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/, function (){ return arguments[2] })", "uu2123abc", NULL);
+	test("'uuabc123abc'.replace(/a(bc)/g, function (){ return arguments[2] })", "uu21238", NULL);
+	test("'uuabc123abc'.replace('abc', 'X')", "uuX123abc", NULL);
+	test("'uuabc123abc'.replace('abc', function (){ return arguments[1] })", "uu2123abc", NULL);
+	test("'$1,$2'.replace(/(\\$(\\d))/g, '$$1-$1$2')", "$1-$11,$1-$22", NULL);
+	test("'$1,$2'.replace('$1', '$$1-$1$2')", "$1-$1$2,$2", NULL);
 }
 
 static void testRegExp (void)
