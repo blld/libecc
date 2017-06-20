@@ -32,7 +32,10 @@ static struct Value eval (struct Context * const context)
 	
 	Context.assertParameterCount(context, 1);
 	
-	value = Value.toString(context, Context.argument(context, 0));
+	value = Context.argument(context, 0);
+	if (!Value.isString(value))
+		return value;
+	
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	
 	Context.setTextIndex(context, Context(noIndex));

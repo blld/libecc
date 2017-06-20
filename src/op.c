@@ -491,9 +491,12 @@ struct Value eval (struct Context * const context)
 	if (!argumentCount)
 		return Value(undefined);
 	
-	value = Value.toString(context, nextOp());
+	value = nextOp();
 	while (--argumentCount)
 		nextOp();
+	
+	if (!Value.isString(value))
+		return value;
 	
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
