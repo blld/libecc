@@ -50,7 +50,7 @@ Interface(Function,
 	(struct Function *, addFunction ,(struct Function *, const char *name, const Native(Function) native, int argumentCount, enum Value(Flags)))
 	(struct Function *, addToObject ,(struct Object *object, const char *name, const Native(Function) native, int parameterCount, enum Value(Flags)))
 	
-	(void, linkPrototype ,(struct Function *, struct Value prototype))
+	(void, linkPrototype ,(struct Function *, struct Value prototype, enum Value(Flags)))
 	(void, setupBuiltinObject ,(struct Function **, const Native(Function), int parameterCount, struct Object **, struct Value prototype, const struct Object(Type) *type))
 	
 	(struct Value, accessor ,(const Native(Function) getter, const Native(Function) setter))

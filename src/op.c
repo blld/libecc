@@ -548,7 +548,7 @@ struct Value function (struct Context * const context)
 	function->environment.prototype = context->environment;
 	
 	prototype = Object.create(Object(prototype));
-	Function.linkPrototype(function, Value.object(prototype));
+	Function.linkPrototype(function, Value.object(prototype), Value(hidden) | Value(sealed));
 	
 	++prototype->referenceCount;
 	++context->environment->referenceCount;

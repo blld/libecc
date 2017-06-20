@@ -357,12 +357,12 @@ struct Function * addToObject(struct Object *object, const char *name, const Nat
 	return function;
 }
 
-void linkPrototype (struct Function *self, struct Value prototype)
+void linkPrototype (struct Function *self, struct Value prototype, enum Value(Flags) flags)
 {
 	assert(self);
 	
 	Object.addMember(prototype.data.object, Key(constructor), Value.function(self), Value(hidden));
-	Object.addMember(&self->object, Key(prototype), prototype, Value(hidden) | Value(sealed));
+	Object.addMember(&self->object, Key(prototype), prototype, flags);
 }
 
 void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, struct Value prototypeValue, const struct Object(Type) *type)
@@ -380,7 +380,7 @@ void setupBuiltinObject (struct Function **constructor, const Native(Function) n
 		*prototype = object;
 	}
 	
-	linkPrototype(function, prototypeValue);
+	linkPrototype(function, prototypeValue, Value(readonly) | Value(hidden) | Value(sealed));
 	*constructor = function;
 }
 
