@@ -322,12 +322,12 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				
 				if (binary)
 				{
-					self->value = parseBinary(self->text);
+					self->value = parseBinary(self->text, 0);
 					return Lexer(binaryToken);
 				}
 				else
 				{
-					self->value = parseInteger(self->text, 0);
+					self->value = parseInteger(self->text, 0, 0);
 					
 					if (self->value.type == Value(integerType))
 						return Lexer(integerToken);
@@ -586,24 +586,18 @@ const char * tokenChars (enum Lexer(Token) token, char buffer[4])
 	return "unknow";
 }
 
-struct Value parseBinary (struct Text text)
+struct Value parseBinary (struct Text text, int strict)
 {
 	double binary;
 	char buffer[text.length + 1];
 	char *end;
-	char *b = buffer;
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
-	binary = strtod(b, &end);
+	binary = strtod(buffer, &end);
+	if (*end && (!isspace(*end) || strict))
+		return Value.binary(NAN);
 	
-	if (end - buffer != text.length)
-	{
-		if (!*end || isspace(*end))
-			return Value.binary(binary);
-		else
-			return Value.binary(NAN);
-	}
 	return Value.binary(binary);
 }
 
@@ -639,10 +633,11 @@ static double strtolHexFallback (struct Text text)
 	return binary * sign;
 }
 
-struct Value parseInteger (struct Text text, int base)
+struct Value parseInteger (struct Text text, int base, int strict)
 {
 	long integer;
 	char buffer[text.length + 1];
+	char *end;
 	
 	if (!text.length)
 		return Value.binary(NAN);
@@ -651,9 +646,11 @@ struct Value parseInteger (struct Text text, int base)
 	buffer[text.length] = '\0';
 	
 	errno = 0;
-	integer = strtol(buffer, NULL, base);
+	integer = strtol(buffer, &end, base);
 	
-	if (errno == ERANGE)
+	if (*end && (!isspace(*end) || strict))
+		return Value.binary(NAN);
+	else if (errno == ERANGE)
 	{
 		if (!base || base == 10)
 		{
@@ -686,7 +683,7 @@ uint32_t parseElement (struct Text text)
 		if (!isdigit(text.bytes[index]))
 			return UINT32_MAX;
 	
-	value = parseInteger(text, 0);
+	value = parseInteger(text, 0, 0);
 	
 	if (value.type == Value(integerType))
 		return value.data.integer;

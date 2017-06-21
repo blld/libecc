@@ -334,8 +334,8 @@ struct Value toBinary (struct Context * const context, struct Value value)
 		case Value(keyType):
 		case Value(charsType):
 		case Value(stringType):
-			return Lexer.parseBinary(Text.make(stringBytes(value), stringLength(value)));
-		
+			return Lexer.parseBinary(Text.make(stringBytes(value), stringLength(value)), 0);
+			
 		case Value(objectType):
 		case Value(errorType):
 		case Value(dateType):

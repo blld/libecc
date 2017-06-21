@@ -70,7 +70,7 @@ static struct Value parseInt (struct Context * const context)
 			base = 10;
 	}
 	
-	return Lexer.parseInteger(text, base);
+	return Lexer.parseInteger(text, base, 1);
 }
 
 static struct Value parseFloat (struct Context * const context)
@@ -83,7 +83,7 @@ static struct Value parseFloat (struct Context * const context)
 	value = Value.toString(context, Context.argument(context, 0));
 	
 	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
-	return Lexer.parseBinary(text);
+	return Lexer.parseBinary(text, 1);
 }
 
 static struct Value isFinite (struct Context * const context)

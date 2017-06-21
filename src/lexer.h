@@ -106,8 +106,8 @@ Interface(Lexer,
 	
 	(const char *, tokenChars ,(enum Lexer(Token) token, char buffer[4]))
 	
-	(struct Value, parseBinary ,(struct Text text))
-	(struct Value, parseInteger ,(struct Text text, int base))
+	(struct Value, parseBinary ,(struct Text text, int strict))
+	(struct Value, parseInteger ,(struct Text text, int base, int strict))
 	(uint32_t, parseElement ,(struct Text text))
 	
 	(uint8_t, uint8Hex ,(char a, char b))
