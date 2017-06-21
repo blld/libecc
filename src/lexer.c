@@ -586,20 +586,35 @@ const char * tokenChars (enum Lexer(Token) token, char buffer[4])
 	return "unknow";
 }
 
-struct Value parseBinary (struct Text text, int strict)
+struct Value parseBinary (struct Text text, int lazy)
 {
-	double binary;
 	char buffer[text.length + 1];
-	char *end;
+	char *end = buffer;
+	double binary = NAN;
+	
+	while (text.length && isspace(*text.bytes))
+		Text.advance(&text, 1);
+	
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
-	if (strict && text.length && buffer[0] == '0' && buffer[1] == 'x')
-		return Value.binary(0);
-	
-	binary = strtod(buffer, &end);
-	if (buffer[0] == 'i' || (strict && end == buffer) || (!strict && *end && !isspace(*end)))
-		return Value.binary(NAN);
+	if (text.length)
+	{
+		if (lazy && text.length >= 2 && buffer[0] == '0' && buffer[1] == 'x')
+				return Value.binary(0);
+		
+		if (text.length >= Text(infinity).length && !memcmp(buffer, Text(infinity).bytes, Text(infinity).length))
+			binary = INFINITY, end += Text(infinity).length;
+		else if (text.length >= Text(negativeInfinity).length && !memcmp(buffer, Text(negativeInfinity).bytes, Text(negativeInfinity).length))
+			binary = -INFINITY, end += Text(negativeInfinity).length;
+		else if (!isalpha(buffer[0]))
+			binary = strtod(buffer, &end);
+		
+		if ((!lazy && *end && !isspace(*end)) || (lazy && end == buffer))
+			binary = NAN;
+	}
+	else if (!lazy)
+		binary = 0;
 	
 	return Value.binary(binary);
 }
@@ -636,7 +651,7 @@ static double strtolHexFallback (struct Text text)
 	return binary * sign;
 }
 
-struct Value parseInteger (struct Text text, int base, int strict)
+struct Value parseInteger (struct Text text, int base, int lazy)
 {
 	long integer;
 	char buffer[text.length + 1];
@@ -651,7 +666,7 @@ struct Value parseInteger (struct Text text, int base, int strict)
 	errno = 0;
 	integer = strtol(buffer, &end, base);
 	
-	if ((strict && end == buffer) || (!strict && *end && !isspace(*end)))
+	if ((lazy && end == buffer) || (!lazy && *end && !isspace(*end)))
 		return Value.binary(NAN);
 	else if (errno == ERANGE)
 	{
