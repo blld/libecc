@@ -652,17 +652,16 @@ struct Value parseInteger (struct Text text, int base, int strict)
 		return Value.binary(NAN);
 	else if (errno == ERANGE)
 	{
-		if (!base || base == 10)
+		if (!base || base == 10 || base == 16)
 		{
 			double binary = strtod(buffer, NULL);
-			
-			if (!binary && !base)
+			if (!binary && (!base || base == 16))
 				binary = strtolHexFallback(text);
 			
 			return Value.binary(binary);
 		}
 		
-		Env.printWarning("parseInt('%.*s', %d) out of bounds; only long int are supported by radices other than 10", text.length, text.bytes, base);
+		Env.printWarning("`parseInt('%.*s', %d)` out of bounds; only long int are supported by radices other than 10 or 16", text.length, text.bytes, base);
 		return Value.binary(NAN);
 	}
 	else if (integer < INT32_MIN || integer > INT32_MAX)
