@@ -595,7 +595,7 @@ struct Value parseBinary (struct Text text, int strict)
 	buffer[text.length] = '\0';
 	
 	binary = strtod(buffer, &end);
-	if (*end && (!isspace(*end) || strict))
+	if ((strict && end == buffer) || (!strict && *end && !isspace(*end)))
 		return Value.binary(NAN);
 	
 	return Value.binary(binary);
@@ -648,7 +648,7 @@ struct Value parseInteger (struct Text text, int base, int strict)
 	errno = 0;
 	integer = strtol(buffer, &end, base);
 	
-	if (*end && (!isspace(*end) || strict))
+	if ((strict && end == buffer) || (!strict && *end && !isspace(*end)))
 		return Value.binary(NAN);
 	else if (errno == ERANGE)
 	{
