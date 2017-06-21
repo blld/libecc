@@ -601,6 +601,9 @@ static void testGlobal (void)
 	,    "^~~~~~~~~~");
 	test("delete global.NaN", "TypeError: 'NaN' is non-configurable"
 	,    "       ^~~~~~~~~~");
+	test("parseFloat('0x1')", "0", NULL);
+	test("parseFloat('infinity')", "NaN", NULL);
+	test("parseFloat('Infinity')", "Infinity", NULL);
 }
 
 static void testFunction (void)

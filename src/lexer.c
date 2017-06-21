@@ -594,8 +594,11 @@ struct Value parseBinary (struct Text text, int strict)
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
 	
+	if (strict && text.length && buffer[0] == '0' && buffer[1] == 'x')
+		return Value.binary(0);
+	
 	binary = strtod(buffer, &end);
-	if ((strict && end == buffer) || (!strict && *end && !isspace(*end)))
+	if (buffer[0] == 'i' || (strict && end == buffer) || (!strict && *end && !isspace(*end)))
 		return Value.binary(NAN);
 	
 	return Value.binary(binary);
