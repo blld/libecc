@@ -21,7 +21,7 @@ static struct OpList * assignment (struct Parser *, int noIn);
 static struct OpList * expression (struct Parser *, int noIn);
 static struct OpList * statement (struct Parser *);
 static struct OpList * function (struct Parser *, int isDeclaration, int isGetter, int isSetter);
-static struct OpList * sourceElements (struct Parser *, enum Lexer(Token) endToken);
+static struct OpList * sourceElements (struct Parser *);
 
 
 // MARK: Token
@@ -1041,29 +1041,39 @@ struct OpList * statementList (struct Parser *self)
 	struct OpList *oplist = NULL, *statementOps = NULL, *discardOps = NULL;
 	uint16_t discardCount = 0;
 	
-	while (( statementOps = statement(self) ))
+	while (previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
 	{
-		while (statementOps->count > 1 && statementOps->ops[0].native == Op.next)
-			OpList.shift(statementOps);
-		
-		if (statementOps->count == 1 && statementOps->ops[0].native == Op.next)
-			OpList.destroy(statementOps), statementOps = NULL;
+		if (previewToken(self) == Lexer(functionToken))
+			self->function->oplist = OpList.join(self->function->oplist, function(self, 1, 0, 0));
 		else
 		{
-			if (statementOps->ops[0].native == Op.discard)
+			if (( statementOps = statement(self) ))
 			{
-				++discardCount;
-				discardOps = OpList.join(discardOps, OpList.shift(statementOps));
-				statementOps = NULL;
+				while (statementOps->count > 1 && statementOps->ops[0].native == Op.next)
+					OpList.shift(statementOps);
+				
+				if (statementOps->count == 1 && statementOps->ops[0].native == Op.next)
+					OpList.destroy(statementOps), statementOps = NULL;
+				else
+				{
+					if (statementOps->ops[0].native == Op.discard)
+					{
+						++discardCount;
+						discardOps = OpList.join(discardOps, OpList.shift(statementOps));
+						statementOps = NULL;
+					}
+					else if (discardOps)
+					{
+						oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
+						discardOps = NULL;
+						discardCount = 0;
+					}
+					
+					oplist = OpList.join(oplist, statementOps);
+				}
 			}
-			else if (discardOps)
-			{
-				oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
-				discardOps = NULL;
-				discardCount = 0;
-			}
-			
-			oplist = OpList.join(oplist, statementOps);
+			else
+				break;
 		}
 	}
 	
@@ -1599,7 +1609,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	
 	expectToken(self, ')');
 	expectToken(self, '{');
-	oplist = OpList.join(oplist, sourceElements(self, '}'));
+	oplist = OpList.join(oplist, sourceElements(self));
 	text.length = self->lexer->text.bytes - text.bytes + 1;
 	expectToken(self, '}');
 	self->function = parentFunction;
@@ -1635,75 +1645,29 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 // MARK: Source
 
 static
-struct OpList * sourceElements (struct Parser *self, enum Lexer(Token) endToken)
+struct OpList * sourceElements (struct Parser *self)
 {
-	struct OpList *oplist = NULL, *init = NULL, *last = NULL, *statementOps = NULL, *discardOps = NULL;
-	uint16_t discardCount = 0, functionDiscard = 0;
+	struct OpList *oplist = NULL;
 	
 	++self->sourceDepth;
 	
-	while (previewToken(self) != endToken && previewToken(self) != Lexer(errorToken) && previewToken(self) != Lexer(noToken))
-		if (previewToken(self) == Lexer(functionToken))
-		{
-			++functionDiscard;
-			init = OpList.join(init, function(self, 1, 0, 0));
-		}
-		else
-		{
-			statementOps = statement(self);
-			if (statementOps)
-			{
-				while (statementOps->count > 1 && statementOps->ops[0].native == Op.next)
-					OpList.shift(statementOps);
-				
-				if (statementOps->count == 1 && statementOps->ops[0].native == Op.next)
-					OpList.destroy(statementOps), statementOps = NULL;
-				else
-				{
-					if (statementOps->ops[0].native == Op.discard)
-					{
-						++discardCount;
-						discardOps = OpList.join(discardOps, OpList.shift(statementOps));
-						statementOps = NULL;
-					}
-					else if (discardOps)
-					{
-						oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
-						discardOps = NULL;
-						discardCount = 0;
-					}
-					
-					oplist = OpList.join(oplist, last);
-					last = statementOps;
-				}
-			}
-			else
-				tokenError(self, "statement");
-		}
+	self->function->oplist = NULL;
 	
-	if (init)
-		init = OpList.joinDiscarded(NULL, functionDiscard, init);
+	oplist = statementList(self);
 	
-	if (discardOps)
-		oplist = OpList.joinDiscarded(oplist, discardCount, discardOps);
+	if (self->sourceDepth <= 1)
+		oplist = OpList.appendNoop(oplist);
+	else
+		oplist = OpList.append(oplist, Op.make(Op.resultVoid, Value(undefined), Text(empty)));
 	
-	if (!last || last->ops[last->count - 1].native != Op.result)
-	{
-		if (self->sourceDepth <= 1)
-			last = OpList.appendNoop(last);
-		else
-			last = OpList.append(last, Op.make(Op.resultVoid, Value(undefined), Text(empty)));
-	}
+	if (self->function->oplist)
+		self->function->oplist = OpList.joinDiscarded(NULL, self->function->oplist->count / 2, self->function->oplist);
 	
-	oplist = OpList.join(init, oplist);
-	oplist = OpList.join(oplist, last);
+	oplist = OpList.join(self->function->oplist, oplist);
 	
-	if (oplist)
-	{
-		oplist->ops->text.flags |= Text(breakFlag);
-		if (oplist->count > 1)
-			oplist->ops[1].text.flags |= Text(breakFlag);
-	}
+	oplist->ops->text.flags |= Text(breakFlag);
+	if (oplist->count > 1)
+		oplist->ops[1].text.flags |= Text(breakFlag);
 	
 	Object.packValue(&self->function->environment);
 	
@@ -1745,7 +1709,7 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 	nextToken(self);
 	
 	self->function = function;
-	oplist = sourceElements(self, Lexer(noToken));
+	oplist = sourceElements(self);
 	self->function = NULL;
 	
 	OpList.optimizeWithEnvironment(oplist, &function->environment, 0);

@@ -605,6 +605,7 @@ static void testGlobal (void)
 
 static void testFunction (void)
 {
+	test("try { function f() {}; f() } catch(e) { e }", "undefined", NULL);
 	test("var a; a.prototype", "TypeError: cannot convert 'a' to object"
 	,    "       ^          ");
 	test("var a = null; a.prototype", "TypeError: cannot convert 'a' to object"
