@@ -1323,7 +1323,7 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 	if (error)
 	{
 		context->ecc->ofLine = Text.make(chars->bytes, chars->length);
-		Context.setText(context, &Text(nativeCode));
+		Context.setTextIndex(context, Context(noIndex));
 		Context.throw(context, Value.error(error));
 	}
 	return regexp;
