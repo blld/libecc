@@ -235,6 +235,9 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 {
 	uint32_t index;
 	
+	if (self->functionCount - indices[0] + self->objectCount - indices[1] + self->charsCount - indices[2] < 32)
+		return;
+	
 	// finalize
 	
 	index = self->objectCount;

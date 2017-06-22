@@ -501,7 +501,9 @@ struct Value eval (struct Context * const context)
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
-	return context->ecc->result;
+	value = context->ecc->result;
+	context->ecc->result = Value(undefined);
+	return value;
 }
 
 
@@ -1403,6 +1405,7 @@ struct Value try (struct Context * const context)
 	else
 	{
 		value = context->ecc->result;
+		context->ecc->result = Value(undefined);
 		rethrowOps = context->ops;
 		
 		if (!rethrow) // catch
@@ -1679,6 +1682,8 @@ struct Value switchOp (struct Context * const context)
 
 #define stepIteration(value, nextOps, then) \
 	{ \
+		uint32_t indices[3]; \
+		Pool.getIndices(indices); \
 		value = nextOp(); \
 		if (context->breaker && --context->breaker) \
 		{ \
@@ -1688,7 +1693,10 @@ struct Value switchOp (struct Context * const context)
 				then; \
 		} \
 		else \
+		{ \
+			Pool.collectUnreferencedFromIndices(indices); \
 			context->ops = nextOps; \
+		} \
 	}
 
 struct Value breaker (struct Context * const context)
