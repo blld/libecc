@@ -108,57 +108,70 @@ static struct Value isNaN (struct Context * const context)
 
 static struct Value decodeExcept (struct Context * const context, const char *exclude)
 {
+	char buffer[5], *b;
 	struct Value value;
 	const char *bytes;
-	uint16_t index = 0, offset = 0, count;
+	uint16_t index = 0, count;
 	struct Chars *chars;
-	int c;
+	uint8_t byte;
 	
 	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	bytes = Value.stringBytes(value);
 	count = Value.stringLength(value);
-	chars = Chars.createSized(count);
+	
+	Chars.beginAppend(&chars);
 	
 	while (index < count)
 	{
-		c = bytes[index++];
+		byte = bytes[index++];
 		
-		if (c != '%')
-			chars->bytes[offset++] = c;
+		if (byte != '%')
+			Chars.append(&chars, "%c", byte);
 		else if (index + 2 > count || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
 			goto error;
 		else
 		{
-			c = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
+			byte = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
 			index += 2;
 			
-			if (c >= 0x80)
+			if (byte >= 0x80)
 			{
-				int continuation = (c & 0xf8) == 0xf0? 3: (c & 0xf0) == 0xe0? 2: (c & 0xe0) == 0xc0? 1: 0;
+				struct Text(Char) c;
+				int continuation = (byte & 0xf8) == 0xf0? 3: (byte & 0xf0) == 0xe0? 2: (byte & 0xe0) == 0xc0? 1: 0;
+				
 				if (!continuation || index + continuation * 3 > count)
 					goto error;
 				
-				chars->bytes[offset++] = c;
+				b = buffer;
+				(*b++) = byte;
 				while (continuation--)
 				{
 					if (bytes[index++] != '%' || !isxdigit(bytes[index]) || !isxdigit(bytes[index + 1]))
 						goto error;
 					
-					chars->bytes[offset++] = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
+					byte = Lexer.uint8Hex(bytes[index], bytes[index + 1]);
 					index += 2;
+					
+					if ((byte & 0xc0) != 0x80)
+						goto error;
+					
+					(*b++) = byte;
 				}
+				*b = '\0';
+				
+				c = Text.character(Text.make(buffer, b - buffer));
+				Chars.appendCodepoint(&chars, c.codepoint);
 			}
-			else if (exclude && strchr(exclude, c))
-				chars->bytes[offset++] = '%', chars->bytes[offset++] = bytes[index - 2], chars->bytes[offset++] = bytes[index - 1];
+			else if (byte && exclude && strchr(exclude, byte))
+				Chars.append(&chars, "%%%c%c", bytes[index - 2], bytes[index - 1]);
 			else
-				chars->bytes[offset++] = c;
+				Chars.append(&chars, "%c", byte);
 		}
 	}
 	
-	chars->length = offset;
-	return Value.chars(chars);
+	return Value.chars(Chars.endAppend(&chars));
 	
 	error:
 	Context.uriError(context, Chars.create("malformed URI"));
