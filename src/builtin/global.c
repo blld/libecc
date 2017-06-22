@@ -192,33 +192,58 @@ static struct Value encodeExpect (struct Context * const context, const char *ex
 	const char hex[] = "0123456789ABCDEF";
 	struct Value value;
 	const char *bytes;
-	uint16_t index = 0, offset = 0, count;
+	uint16_t offset = 0, unit, length;
 	struct Chars *chars;
-	unsigned char c;
+	struct Text text;
+	struct Text(Char) c;
+	int needPair = 0;
 	
 	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	bytes = Value.stringBytes(value);
-	count = Value.stringLength(value);
-	chars = Chars.createSized(count * 3);
+	length = Value.stringLength(value);
+	text = Text.make(bytes, length);
 	
-	while (index < count)
+	chars = Chars.createSized(length * 3);
+	
+	while (text.length)
 	{
-		c = bytes[index++];
+		c = Text.character(text);
 		
-		if (strchr(exclude, c))
-			chars->bytes[offset++] = c;
+		if (c.codepoint < 0x80 && c.codepoint && strchr(exclude, c.codepoint))
+			chars->bytes[offset++] = c.codepoint;
 		else
 		{
-			chars->bytes[offset++] = '%';
-			chars->bytes[offset++] = hex[c >> 4];
-			chars->bytes[offset++] = hex[c & 0xf];
+			if (c.codepoint >= 0xDC00 && c.codepoint <= 0xDFFF)
+			{
+				if (!needPair)
+					goto error;
+			}
+			else if (needPair)
+				goto error;
+			else if (c.codepoint >= 0xD800 && c.codepoint <= 0xDBFF)
+				needPair = 1;
+			
+			for (unit = 0; unit < c.units; ++unit)
+			{
+				chars->bytes[offset++] = '%';
+				chars->bytes[offset++] = hex[(uint8_t)text.bytes[unit] >> 4];
+				chars->bytes[offset++] = hex[(uint8_t)text.bytes[unit] & 0xf];
+			}
 		}
+		
+		Text.advance(&text, c.units);
 	}
+	
+	if (needPair)
+		goto error;
 	
 	chars->length = offset;
 	return Value.chars(chars);
+	
+	error:
+	Context.uriError(context, Chars.create("malformed URI"));
 }
 
 static struct Value encodeURI (struct Context * const context)
