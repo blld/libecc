@@ -159,7 +159,7 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
 			/* merge 16-bit surrogates */
-			self->length = prev.length + writeCodepoint(self->bytes + prev.length, 0x10000 | ((hi.codepoint & 0x03FF) << 10) | (lo.codepoint & 0x03FF));
+			self->length = prev.length + writeCodepoint(self->bytes + prev.length, 0x10000 + (((hi.codepoint - 0xD800) << 10) | ((lo.codepoint - 0xDC00) & 0x03FF)));
 			Text.nextCharacter(&text);
 		}
 	}
