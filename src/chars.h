@@ -30,11 +30,10 @@ Interface(Chars,
 	
 	(struct Chars *, createVA ,(uint16_t length, const char *format, va_list ap))
 	(struct Chars *, create ,(const char *format, ...))
-	(struct Chars *, createSized ,(uint16_t size))
+	(struct Chars *, createSized ,(uint16_t length))
 	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
 	
 	(void, beginAppend ,(struct Chars **))
-	(void, beginAppendSized ,(struct Chars **, uint16_t sized))
 	(struct Chars *, append ,(struct Chars **, const char *format, ...))
 	(struct Chars *, appendCodepoint ,(struct Chars **, uint32_t cp))
 	(struct Chars *, appendValue ,(struct Chars **, struct Context * const context, struct Value value))

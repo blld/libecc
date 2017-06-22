@@ -857,7 +857,7 @@ static struct Value fromCharCode (struct Context * const context)
 	
 	count = Context.variableArgumentCount(context);
 	
-	Chars.beginAppendSized(&chars, count);
+	Chars.beginAppend(&chars);
 	
 	for (index = 0; index < count; ++index)
 		Chars.appendCodepoint(&chars, (uint16_t)Value.toInteger(context, Context.variableArgument(context, index)).data.integer);

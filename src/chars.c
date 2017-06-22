@@ -14,6 +14,47 @@
 
 // MARK: - Private
 
+static inline
+uint32_t nextPowerOfTwo(uint32_t v)
+{
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+	return v;
+}
+
+static
+struct Chars *reuseOrCreate (struct Chars **chars, uint16_t length)
+{
+	struct Chars *self = NULL, *reuse = chars? *chars: NULL;
+	
+	if (reuse && nextPowerOfTwo(sizeof(*self) + reuse->length) >= nextPowerOfTwo(sizeof(*self) + length))
+		return reuse;
+//	else
+//		chars = Pool.reusableChars(length);
+	
+	if (!self)
+	{
+		self = malloc(nextPowerOfTwo(sizeof(*self) + length));
+		Pool.addChars(self);
+	}
+	
+	if (reuse)
+	{
+		memcpy(self, reuse, sizeof(*self) + reuse->length);
+		reuse->flags &= ~Chars(inAppend);
+		*chars = self;
+	}
+	else
+		*self = Chars.identity;
+	
+	return self;
+}
+
 // MARK: - Static Members
 
 // MARK: - Methods
@@ -47,9 +88,7 @@ struct Chars * create (const char *format, ...)
 
 struct Chars * createSized (uint16_t length)
 {
-	struct Chars *self = malloc(sizeof(*self) + length);
-	Pool.addChars(self);
-	*self = Chars.identity;
+	struct Chars *self = reuseOrCreate(NULL, length);
 	
 	self->length = length;
 	self->bytes[length] = '\0';
@@ -59,9 +98,7 @@ struct Chars * createSized (uint16_t length)
 
 struct Chars * createWithBytes (uint16_t length, const char *bytes)
 {
-	struct Chars *self = malloc(sizeof(*self) + length);
-	Pool.addChars(self);
-	*self = Chars.identity;
+	struct Chars *self = reuseOrCreate(NULL, length);
 	
 	self->length = length;
 	memcpy(self->bytes, bytes, length);
@@ -73,16 +110,10 @@ struct Chars * createWithBytes (uint16_t length, const char *bytes)
 
 void beginAppend (struct Chars **chars)
 {
-	beginAppendSized(chars, 0);
-}
-
-void beginAppendSized (struct Chars **chars, uint16_t sized)
-{
-	struct Chars *self = malloc(sizeof(*self) + sized);
-	*self = Chars.identity;
+	struct Chars *self = reuseOrCreate(NULL, 0);
+	
 	self->flags |= Chars(inAppend);
 	*chars = self;
-	Pool.addChars(self);
 }
 
 struct Chars * append (struct Chars **chars, const char *format, ...)
@@ -97,17 +128,13 @@ struct Chars * append (struct Chars **chars, const char *format, ...)
 	length = vsnprintf(NULL, 0, format, ap);
 	va_end(ap);
 	
+	self = reuseOrCreate(chars, self->length + length);
+	
 	va_start(ap, format);
-	self = realloc(self, sizeof(*self) + self->length + length);
 	vsprintf(self->bytes + self->length, format, ap);
 	self->length += length;
 	va_end(ap);
 	
-	if (self != *chars)
-	{
-		Pool.reindexChars(self, *chars);
-		*chars = self;
-	}
 	return self;
 }
 
@@ -116,34 +143,30 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 {
 	struct Chars *self = *chars;
 	struct Text(Char) lo = Text.character(text), hi;
+	struct Text prev;
 	
-	if (lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
-	{
-		struct Text prev = Text.make(self->bytes, self->length);
-		prev.bytes += prev.length;
-		hi = Text.prevCharacter(&prev);
-		if (hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
-		{
-			/* merge 16-bit surrogates */
-			self->length = prev.length;
-			self = appendCodepoint(chars, 0x10000 | ((hi.codepoint & 0x03FF) << 10) | (lo.codepoint & 0x03FF));
-			Text.nextCharacter(&text);
-		}
-	}
+	assert(self->flags & Chars(inAppend));
 	
 	if (!text.length)
 		return self;
 	
-	self = realloc(self, sizeof(*self) + self->length + text.length);
+	self = reuseOrCreate(chars, self->length + text.length);
+	prev = Text.make(self->bytes + self->length, self->length);
+	
+	if (lo.units == 3 && lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
+	{
+		hi = Text.prevCharacter(&prev);
+		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
+		{
+			/* merge 16-bit surrogates */
+			self->length = prev.length + writeCodepoint(self->bytes + prev.length, 0x10000 | ((hi.codepoint & 0x03FF) << 10) | (lo.codepoint & 0x03FF));
+			Text.nextCharacter(&text);
+		}
+	}
+	
 	memcpy(self->bytes + self->length, text.bytes, text.length);
 	self->length += text.length;
 	self->bytes[self->length] = '\0';
-	
-	if (self != *chars)
-	{
-		Pool.reindexChars(self, *chars);
-		*chars = self;
-	}
 	
 	return self;
 }
@@ -152,8 +175,7 @@ struct Chars * appendCodepoint (struct Chars **chars, uint32_t cp)
 {
 	char buffer[5] = { 0 };
 	struct Text text = Text.make(buffer, writeCodepoint(buffer, cp));
-	appendText(chars, text);
-	return *chars;
+	return appendText(chars, text);
 }
 
 struct Chars * appendValue (struct Chars **chars, struct Context * const context, struct Value value)

@@ -200,7 +200,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							++bytes;
 							--length;
 							
-							Chars.beginAppendSized(&chars, length);
+							Chars.beginAppend(&chars);
 							
 							for (index = 0; index <= length; ++index)
 								if (bytes[index] == '\\' && bytes[++index] != '\\')

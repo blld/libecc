@@ -119,20 +119,6 @@ void addChars (struct Chars *chars)
 	self->charsList[self->charsCount++] = chars;
 }
 
-void reindexChars (struct Chars *chars, struct Chars *was)
-{
-	uint32_t index, count;
-	
-	for (index = 0, count = self->charsCount; index < count; ++index)
-		if (self->charsList[index] == was)
-		{
-			self->charsList[index] = chars;
-			return;
-		}
-	
-	assert(0);
-}
-
 void unmarkAll (void)
 {
 	uint32_t index, count;
