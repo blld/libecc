@@ -1713,19 +1713,13 @@ struct Value iterate (struct Context * const context)
 	struct Value value;
 	int32_t skipOp = opValue().data.integer;
 	
-	if (skipOp)
-	{
-		context->ops += skipOp;
-		stepIteration(value, nextOps, goto done);
-	}
-	else
-		context->ops = nextOps;
+	context->ops = nextOps + skipOp;
 	
 	while (Value.isTrue(nextOp()))
 		stepIteration(value, nextOps, break);
 	
-done:
 	context->ops = endOps;
+	
 	return nextOp();
 }
 
