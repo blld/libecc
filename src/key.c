@@ -9,6 +9,9 @@
 #define Implementation
 #include "key.h"
 
+#include "env.h"
+#include "builtin/object.h"
+
 // MARK: - Private
 
 static struct Text *keyPool = NULL;
@@ -98,7 +101,7 @@ struct Key makeWithCString (const char *cString)
 	return makeWithText(Text.make(cString, (uint16_t)strlen(cString)), 0);
 }
 
-struct Key makeWithText (const struct Text text, int copyOnCreate)
+struct Key makeWithText (const struct Text text, enum Key(Flags) flags)
 {
 	uint16_t number = 0, index = 0;
 	
@@ -116,11 +119,17 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 	{
 		if (keyCount >= keyCapacity)
 		{
-			keyCapacity = keyCapacity? keyCapacity * 2: 64;
+			keyCapacity += 0xff;
 			keyPool = realloc(keyPool, keyCapacity * sizeof(*keyPool));
 		}
 		
-		if (copyOnCreate)
+		if (isdigit(text.bytes[0]) || (text.bytes[0] == '-' && isdigit(text.bytes[1])))
+		{
+			Env.printWarning("Creating identifier '%.*s' -- Using array element > 0x%lx, or negative-integer/floating-point as property name is discouraged", text.length, text.bytes, Object(MaxElements));
+			Env.newline();
+		}
+		
+		if (flags & Key(copyOnCreate))
 		{
 			char *chars = malloc(text.length + 1);
 			memcpy(chars, text.bytes, text.length);

@@ -44,6 +44,10 @@
 	extern struct Key Key(multiline);
 	extern struct Key Key(source);
 
+	enum Key(Flags) {
+		Key(copyOnCreate) = (1 << 0),
+	};
+
 #endif
 
 
@@ -53,7 +57,7 @@ Interface(Key,
 	(void, teardown ,(void))
 	
 	(struct Key, makeWithCString ,(const char *cString))
-	(struct Key, makeWithText ,(const struct Text text, int copyOnCreate))
+	(struct Key, makeWithText ,(const struct Text text, enum Key(Flags) flags))
 	
 	(int, isEqual, (struct Key, struct Key))
 	(const struct Text *, textOf, (struct Key))

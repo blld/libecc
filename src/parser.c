@@ -279,11 +279,7 @@ struct OpList * propertyAssignment (struct Parser *self)
 	if (previewToken(self) == Lexer(integerToken))
 		oplist = OpList.create(Op.value, self->lexer->value, self->lexer->text);
 	else if (previewToken(self) == Lexer(binaryToken))
-	{
-		Input.printText(self->lexer->input, self->lexer->text, Text(empty), NULL, 1);
-		Env.printWarning("Using floating-point as property name polute identifier's pool");
 		oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
-	}
 	else if (previewToken(self) == Lexer(stringToken))
 	{
 		int32_t element = Lexer.parseElement(self->lexer->text);

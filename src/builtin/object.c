@@ -16,6 +16,8 @@
 
 // MARK: - Private
 
+const uint32_t Object(MaxElements) = 0xffffff;
+
 static struct Value toString (struct Context * const context);
 
 struct Object * Object(prototype) = NULL;
@@ -52,13 +54,16 @@ static inline uint32_t getElementOrKey (struct Value property, struct Context * 
 	{
 		if (property.type == Value(integerType) && property.data.integer >= 0)
 			element = property.data.integer;
-		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary < UINT32_MAX && property.data.binary == (uint32_t)property.data.binary)
+		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= Object(MaxElements) && property.data.binary == (uint32_t)property.data.binary)
 			element = property.data.binary;
 		else if (Value.isString(property))
 		{
 			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
-			if ((element = Lexer.parseElement(text)) == UINT32_MAX)
-				*key = Key.makeWithText(text, 1);
+			if ((element = Lexer.parseElement(text)) > Object(MaxElements))
+			{
+				element = UINT32_MAX;
+				*key = Key.makeWithText(text, Key(copyOnCreate));
+			}
 		}
 		else
 			return getElementOrKey(Value.toString(context, property), context, key);
@@ -967,6 +972,9 @@ struct Value *putElement (struct Object *self, struct Context * const context, u
 {
 	struct Value *ref;
 	
+	if (index > Object(MaxElements))
+		return putProperty(self, context, Value.integer(index), value);
+	
 	if (( ref = elementOwn(self, index) ))
 		return putValue(self, context, ref, value);
 	else if (self->prototype && ( ref = element(self->prototype, index) ))
@@ -1048,6 +1056,7 @@ struct Value * addElement (struct Object *self, uint32_t element, struct Value v
 	struct Value *ref;
 	
 	assert(self);
+	assert(element <= Object(MaxElements));
 	
 	if (self->elementCapacity <= element)
 		resizeElement(self, element + 1);
@@ -1204,6 +1213,12 @@ void resizeElement (struct Object *self, uint32_t size)
 	
 	assert(self);
 	
+	if (capacity > Object(MaxElements) + 1)
+	{
+		Env.printWarning("Faking array length 0x%lx while actual length is 0x%lx -- Using array length > 0xffffff is discouraged", size, capacity);
+		capacity = Object(MaxElements) + 1;
+	}
+	
 	if (capacity != self->elementCapacity)
 	{
 		self->element = realloc(self->element, sizeof(*self->element) * capacity);
@@ -1223,6 +1238,9 @@ void populateElementWithCList (struct Object *self, uint32_t count, const char *
 	double binary;
 	char *end;
 	int index;
+	
+	assert(self);
+	assert(count <= Object(MaxElements));
 	
 	if (count > self->elementCount)
 		resizeElement(self, count);

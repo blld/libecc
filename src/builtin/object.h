@@ -34,6 +34,8 @@
 	extern struct Object * Object(prototype);
 	extern struct Function * Object(constructor);
 	extern const struct Object(Type) Object(type);
+	
+	extern const uint32_t Object(MaxElements);
 
 #endif
 
