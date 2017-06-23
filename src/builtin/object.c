@@ -69,14 +69,14 @@ static inline uint32_t getElementOrKey (struct Value property, struct Context * 
 
 static inline uint32_t nextPowerOfTwo(uint32_t v)
 {
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+	return v;
 }
 
 static void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
@@ -1182,7 +1182,25 @@ void stripMap (struct Object *self)
 
 void resizeElement (struct Object *self, uint32_t size)
 {
-	uint32_t capacity = size < 8? 8: nextPowerOfTwo(size);
+	uint32_t capacity;
+	
+	if (size < 4)
+	{
+		/* 64-bytes mini */
+		capacity = 4;
+	}
+	else if (size < 64)
+	{
+		/* power of two steps between */
+		capacity = nextPowerOfTwo(size);
+	}
+	else
+	{
+		/* 1024-bytes chunk */
+		capacity = size - 1;
+		capacity |= 63;
+		++capacity;
+	}
 	
 	assert(self);
 	

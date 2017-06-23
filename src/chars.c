@@ -27,19 +27,43 @@ uint32_t nextPowerOfTwo(uint32_t v)
 	return v;
 }
 
+static inline
+uint32_t sizeForLength(uint16_t length)
+{
+	uint32_t size = sizeof(struct Chars) + length;
+	
+	if (size < 8)
+	{
+		/* 8-bytes mini */
+		return 8;
+	}
+	else if (size < 1024)
+	{
+		/* power of two steps between */
+		return nextPowerOfTwo(size);
+	}
+	else
+	{
+		/* 1024-bytes chunk */
+		--size;
+		size |= 0x3ff;
+		return size + 1;
+	}
+}
+
 static
 struct Chars *reuseOrCreate (struct Chars **chars, uint16_t length)
 {
 	struct Chars *self = NULL, *reuse = chars? *chars: NULL;
 	
-	if (reuse && nextPowerOfTwo(sizeof(*self) + reuse->length) >= nextPowerOfTwo(sizeof(*self) + length))
+	if (reuse && sizeForLength(reuse->length) >= sizeForLength(length))
 		return reuse;
 //	else
 //		chars = Pool.reusableChars(length);
 	
 	if (!self)
 	{
-		self = malloc(nextPowerOfTwo(sizeof(*self) + length));
+		self = malloc(sizeForLength(length));
 		Pool.addChars(self);
 	}
 	
