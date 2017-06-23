@@ -115,9 +115,13 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 		bytes = ofLine.bytes;
 		length = ofLine.length;
 		Env.printColor(0, Env(dim), "(%s)", ofInput? ofInput: "native code");
+		Env.printColor(0, Env(bold), " line:1");
 	}
 	else if (!self)
+	{
 		Env.printColor(0, Env(dim), "(unknown input)");
+		Env.printColor(0, Env(bold), " line:0");
+	}
 	else
 	{
 		if (self->name[0] == '(')
@@ -141,6 +145,8 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 				++length;
 			} while (start + length < self->length);
 		}
+		else
+			Env.printColor(0, Env(bold), " line:0");
 	}
 	
 	if (!fullLine)
