@@ -810,7 +810,7 @@ static void prepareObjectProperty (struct Context * const context, struct Value 
 	if (Value.isObject(*property))
 	{
 		Context.setText(context, textProperty);
-		*property = Value.toPrimitive(context, *property, Value(hintAuto));
+		*property = Value.toPrimitive(context, *property, Value(hintString));
 	}
 }
 

@@ -264,7 +264,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 		Ecc.fatal("cannot use toPrimitive outside context");
 	
 	object = value.data.object;
-	hint = hint? hint: value.type == Value(dateType)? 1: -1;
+	hint = hint? hint: value.type == Value(dateType)? Value(hintString): Value(hintNumber);
 	aKey = hint > 0? Key(toString): Key(valueOf);
 	bKey = hint > 0? Key(valueOf): Key(toString);
 	
