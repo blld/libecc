@@ -351,7 +351,9 @@ struct RegExp(Node) * characterNode (struct Text text, int ignoreCase)
 {
 	char buffer[12];
 	int16_t offset;
-	return node(character(text, &offset, buffer, ignoreCase), offset, buffer);
+	enum Opcode opcode = character(text, &offset, buffer, ignoreCase);
+	
+	return node(opcode, offset, buffer);
 }
 
 static
@@ -785,10 +787,10 @@ next:
 start:
 	;
 	
-	//#if DUMP_REGEXP
-	//	fprintf(stderr, "\n%.*s\n^ ", text.length, text.bytes);
-	//	printNode(n);
-	//#endif
+//	#if DUMP_REGEXP
+//		fprintf(stderr, "\n%.*s\n^ ", text.length, text.bytes);
+//		printNode(n);
+//	#endif
 	
 	switch((enum Opcode)n->opcode)
 	{
