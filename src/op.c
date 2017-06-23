@@ -577,17 +577,19 @@ struct Value function (struct Context * const context)
 struct Value object (struct Context * const context)
 {
 	struct Object *object = Object.create(Object(prototype));
-	struct Value value;
+	struct Value property, value;
 	uint32_t count;
 	
 	for (count = opValue().data.integer; count--;)
 	{
-		value = nextOp();
+		property = nextOp();
+		value = retain(nextOp());
+		value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
 		
-		if (value.type == Value(keyType))
-			Object.addMember(object, value.data.key, retain(nextOp()), value.flags);
-		else if (value.type == Value(integerType))
-			Object.addElement(object, value.data.integer, retain(nextOp()), value.flags);
+		if (property.type == Value(keyType))
+			Object.addMember(object, property.data.key, value, 0);
+		else if (property.type == Value(integerType))
+			Object.addElement(object, property.data.integer, value, 0);
 	}
 	return Value.object(object);
 }
@@ -601,9 +603,11 @@ struct Value array (struct Context * const context)
 	
 	for (index = 0; index < length; ++index)
 	{
-		value = nextOp();
+		value = retain(nextOp());
+		value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
+		
 		if (value.check == 1)
-			object->element[index].value = retain(value);
+			object->element[index].value = value;
 	}
 	return Value.object(object);
 }
