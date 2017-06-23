@@ -116,7 +116,7 @@ struct Key makeWithText (const struct Text text, int copyOnCreate)
 	{
 		if (keyCount >= keyCapacity)
 		{
-			keyCapacity = keyCapacity? keyCapacity * 2: 1;
+			keyCapacity = keyCapacity? keyCapacity * 2: 64;
 			keyPool = realloc(keyPool, keyCapacity * sizeof(*keyPool));
 		}
 		
