@@ -1618,7 +1618,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	function->text = text;
 	function->parameterCount = parameterCount;
 	
-	Object.addMember(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden));
+	Object.addMember(&function->object, Key(length), Value.integer(parameterCount), Value(readonly) | Value(hidden) | Value(sealed));
 	
 	value = Value.function(function);
 	
