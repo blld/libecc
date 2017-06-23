@@ -642,6 +642,7 @@ static void testFunction (void)
 	test("typeof Function()", "function", NULL);
 	test("Function()()", "undefined", NULL);
 	test("Function('return 123')()", "123", NULL);
+	test("var a = 123; Function('return a')()", "123", NULL);
 	test("new Function('a', 'b', 'c', 'return a+b+c')(1, 2, 3)", "6", NULL);
 	test("new Function('a, b, c', 'return a+b+c')(1, 2, 3)", "6", NULL);
 	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6", NULL);

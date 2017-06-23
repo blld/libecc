@@ -188,6 +188,14 @@ static struct Value constructor (struct Context * const context)
 		int_fast32_t index;
 		struct Value value;
 		struct Chars *chars;
+		struct Input *input;
+		struct Context subContext = {
+			.parent = context->parent,
+			.this = context->parent->this,
+			.environment = context->parent->environment,
+			.ecc = context->ecc,
+			.depth = context->depth + 1,
+		};
 		
 		Chars.beginAppend(&chars);
 		Chars.append(&chars, "(function(");
@@ -203,7 +211,9 @@ static struct Value constructor (struct Context * const context)
 				Chars.append(&chars, ",");
 		}
 		Chars.append(&chars, "})");
-		Ecc.evalInput(context->ecc, Input.createFromBytes(chars->bytes, chars->length, "(Function)"), 0);
+		
+		input = Input.createFromBytes(chars->bytes, chars->length, "(Function)");
+		Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	}
 	else
 	{
