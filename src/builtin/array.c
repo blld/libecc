@@ -591,14 +591,16 @@ static struct Value setLength (struct Context * const context)
 
 static struct Value constructor (struct Context * const context)
 {
+	struct Value value;
 	uint32_t index, count, length;
 	struct Object *array;
 	Context.assertVariableParameter(context);
 	
 	length = count = Context.variableArgumentCount(context);
-	if (count == 1 && Value.isNumber(Context.variableArgument(context, 0)))
+	value = Context.variableArgument(context, 0);
+	if (count == 1 && Value.isNumber(value) && Value.isPrimitive(value))
 	{
-		double binary = Value.toBinary(context, Context.variableArgument(context, 0)).data.binary;
+		double binary = Value.toBinary(context, value).data.binary;
 		if (binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
 		{
 			length = binary;
