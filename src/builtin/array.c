@@ -504,16 +504,20 @@ static
 void sortInPlace (struct Context * const context, struct Object *object, struct Function *function, int first, int last)
 {
 	struct Op defaultOps = { defaultComparison, Value(undefined), Text(nativeCode) };
+	const struct Op * ops = function? function->oplist->ops: &defaultOps;
+	
 	struct Compare cmp = {
 		{
 			.this = Value.object(object),
 			.parent = context,
 			.ecc = context->ecc,
 			.depth = context->depth + 1,
+			.ops = ops,
+			.textIndex = Context(callIndex),
 		},
 		function,
 		NULL,
-		cmp.ops = function? function->oplist->ops: &defaultOps,
+		cmp.ops = ops,
 	};
 	
 	if (function && function->flags & Function(needHeap))
