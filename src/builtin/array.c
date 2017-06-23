@@ -617,7 +617,10 @@ static struct Value constructor (struct Context * const context)
 	array = Array.createSized(length);
 	
 	for (index = 0; index < count; ++index)
+	{
 		array->element[index].value = Context.variableArgument(context, index);
+		array->element[index].value.flags = 0;
+	}
 	
 	return Value.object(array);
 }
