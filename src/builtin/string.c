@@ -937,6 +937,7 @@ void setup ()
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, h);
 	Function.addToObject(String(prototype), "match", match, 1, h);
 	Function.addToObject(String(prototype), "replace", replace, 2, h);
+#warning TODO: search
 	Function.addToObject(String(prototype), "slice", slice, 2, h);
 	Function.addToObject(String(prototype), "split", split, 2, h);
 	Function.addToObject(String(prototype), "substring", substring, 2, h);
