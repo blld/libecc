@@ -64,6 +64,10 @@ struct Input * createFromFile (const char *filename)
 	fclose(file), file = NULL;
 	self->bytes[size] = '\0';
 	
+//	FILE *f = fopen("error.txt", "w");
+//	fprintf(f, "%.*s", self->length, self->bytes);
+//	fclose(f);
+	
 	return self;
 }
 
@@ -100,7 +104,7 @@ void destroy (struct Input *self)
 	free(self), self = NULL;
 }
 
-void printText (struct Input *self, struct Text text, struct Text ofLine, int fullLine)
+void printText (struct Input *self, struct Text text, struct Text ofLine, const char *ofInput, int fullLine)
 {
 	int32_t line = -1;
 	const char *bytes = NULL;
@@ -110,6 +114,7 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, int fu
 	{
 		bytes = ofLine.bytes;
 		length = ofLine.length;
+		Env.printColor(0, Env(dim), "(%s)", ofInput? ofInput: "native code");
 	}
 	else if (!self)
 		Env.printColor(0, Env(dim), "(unknown input)");
@@ -138,18 +143,19 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, int fu
 		}
 	}
 	
-	if (fullLine && !ofLine.length)
-		Env.newline();
-	
 	if (!fullLine)
 	{
 		if (text.length)
 			Env.printColor(0, 0, " `%.*s`", text.length, text.bytes);
 	}
 	else if (!length)
+	{
+		Env.newline();
 		Env.printColor(0, 0, "%.*s", text.length, text.bytes);
+	}
 	else
 	{
+		Env.newline();
 		Env.print("%.*s", length, bytes);
 		Env.newline();
 		

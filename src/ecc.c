@@ -101,17 +101,9 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	}
 	
 	if (catch)
-	{
-//		fprintf(stderr, "--- source:\n%.*s\n", input->length, input->bytes);
-		
 		result = EXIT_FAILURE;
-	}
 	else
 	{
-//		FILE *f = fopen("error.txt", "w");
-//		fprintf(f, "%.*s", input->length, input->bytes);
-//		fclose(f);
-		
 		if (flags & Ecc(globalThis))
 			context.this = Value.object(&self->global->environment);
 		
@@ -233,15 +225,22 @@ struct Input * findInput (struct Ecc *self, struct Text text)
 void printTextInput (struct Ecc *self, struct Text text, int fullLine)
 {
 	struct Text ofLine;
+	const char *ofInput;
 	
 	assert(self);
 	
 	if (text.bytes >= self->ofLine.bytes && text.bytes < self->ofLine.bytes + self->ofLine.length)
+	{
 		ofLine = self->ofLine;
+		ofInput = self->ofInput;
+	}
 	else
+	{
 		ofLine = Text(empty);
+		ofInput = NULL;
+	}
 	
-	Input.printText(findInput(self, text), text, ofLine, fullLine);
+	Input.printText(findInput(self, text), text, ofLine, ofInput, fullLine);
 }
 
 void garbageCollect(struct Ecc *self)
