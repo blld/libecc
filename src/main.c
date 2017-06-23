@@ -1343,8 +1343,8 @@ static void testString (void)
 	test("'$1,$2'.replace(/(\\$(\\d))/g, '$$1-$1$2')", "$1-$11,$1-$22", NULL);
 	test("'$1,$2'.replace('$1', '$$1-$1$2')", "$1-$1$2,$2", NULL);
 	test("' abc  '.trim()", "abc", NULL);
-	test("'\u00A0 abc  \u00A0'.trim()", "abc", NULL);
-	test("'\u2029 abc  \u2029'.trim()", "abc", NULL);
+	test("'\\u00A0 abc  \\u00A0'.trim()", "abc", NULL);
+	test("'\\u2029 abc  \\u2029'.trim()", "abc", NULL);
 }
 
 static void testRegExp (void)
