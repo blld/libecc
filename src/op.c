@@ -442,13 +442,23 @@ struct Value construct (struct Context * const context)
 	if (!prototype)
 		goto error;
 	
-	if (prototype->type == Value(objectType))
+	if (!Value.isObject(*prototype))
+	{
+		++Object(prototype)->referenceCount;
+		object = Value.object(Object.create(Object(prototype)));
+	}
+	else if (prototype->type == Value(functionType))
+	{
+		++Function(prototype)->referenceCount;
+		object = Value.object(Object.create(Function(prototype)));
+	}
+	else if (prototype->type == Value(objectType))
 	{
 		++prototype->data.object->referenceCount;
 		object = Value.object(Object.create(prototype->data.object));
 	}
 	else
-		object = Value.object(Object(prototype));
+		object = Value(undefined);
 	
 	Context.setText(context, text);
 	value = callValue(context, function, object, argumentCount, 1);
