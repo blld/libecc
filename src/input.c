@@ -131,11 +131,6 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 		printInput(ofInput? ofInput: "(unknown input)", 0);
 	else
 	{
-		if (self->name[0] == '(')
-			Env.printColor(0, Env(dim), "%s", self->name);
-		else
-			Env.printColor(0, Env(bold), "%s", self->name);
-		
 		line = findLine(self, text);
 		printInput(ofInput? ofInput: self->name, line > 0? line: 0);
 		
