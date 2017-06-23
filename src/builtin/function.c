@@ -76,6 +76,9 @@ static struct Value apply (struct Context * const context)
 	Context.assertThisType(context, Value(functionType));
 	
 	this = Context.argument(context, 0);
+	if (this.type != Value(undefinedType) && this.type != Value(nullType))
+		this = Value.toObject(context, this);
+	
 	arguments = Context.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
@@ -91,17 +94,18 @@ static struct Value apply (struct Context * const context)
 
 static struct Value call (struct Context * const context)
 {
-	struct Object *object;
+	struct Object arguments;
 	
 	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
 	
-	object = context->environment->hashmap[2].value.data.object;
+	arguments = *context->environment->hashmap[2].value.data.object;
 	
-	if (object->elementCount)
+	if (arguments.elementCount)
 	{
-		struct Value this = object->element[0].value;
-		struct Object arguments = *object;
+		struct Value this = Context.variableArgument(context, 0);
+		if (this.type != Value(undefinedType) && this.type != Value(nullType))
+			this = Value.toObject(context, this);
 		
 		--arguments.elementCapacity;
 		--arguments.elementCount;
