@@ -1666,7 +1666,8 @@ struct Value switchOp (struct Context * const context)
 		Context.setTexts(context, text, textAlt);
 		if (Value.isTrue(Value.same(context, value, caseValue)))
 		{
-			context->ops = nextOps + nextOp().data.integer;
+			offset = nextOp().data.integer;
+			context->ops = nextOps + offset;
 			break;
 		}
 		else
