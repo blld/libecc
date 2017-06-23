@@ -104,6 +104,17 @@ void destroy (struct Input *self)
 	free(self), self = NULL;
 }
 
+static
+void printInput (const char *name, uint16_t line)
+{
+	if (name[0] == '(')
+		Env.printColor(0, Env(dim), "%s", name);
+	else
+		Env.printColor(0, Env(bold), "%s", name);
+	
+	Env.printColor(0, Env(bold), " line:%d", line);
+}
+
 void printText (struct Input *self, struct Text text, struct Text ofLine, const char *ofInput, int fullLine)
 {
 	int32_t line = -1;
@@ -114,14 +125,10 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 	{
 		bytes = ofLine.bytes;
 		length = ofLine.length;
-		Env.printColor(0, Env(dim), "(%s)", ofInput? ofInput: "native code");
-		Env.printColor(0, Env(bold), " line:1");
+		printInput(ofInput? ofInput: "native code", 1);
 	}
 	else if (!self)
-	{
-		Env.printColor(0, Env(dim), "(unknown input)");
-		Env.printColor(0, Env(bold), " line:0");
-	}
+		printInput(ofInput? ofInput: "(unknown input)", 0);
 	else
 	{
 		if (self->name[0] == '(')
@@ -130,11 +137,11 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 			Env.printColor(0, Env(bold), "%s", self->name);
 		
 		line = findLine(self, text);
-		if (line >= 0)
+		printInput(ofInput? ofInput: self->name, line > 0? line: 0);
+		
+		if (line > 0)
 		{
 			uint16_t start = self->lines[line];
-			
-			Env.printColor(0, Env(bold), " line:%d", line);
 			
 			bytes = self->bytes + start;
 			do
@@ -145,8 +152,6 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 				++length;
 			} while (start + length < self->length);
 		}
-		else
-			Env.printColor(0, Env(bold), " line:0");
 	}
 	
 	if (!fullLine)
