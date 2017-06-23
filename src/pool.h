@@ -36,6 +36,7 @@ Interface(Pool,
 	
 	(void, collectUnmarked ,(void))
 	(void, collectUnreferencedFromIndices ,(uint32_t indices[3]))
+	(void, unreferenceFromIndices ,(uint32_t indices[3]))
 	
 	(void, getIndices ,(uint32_t indices[3]))
 	,

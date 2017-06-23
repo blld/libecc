@@ -1399,6 +1399,9 @@ struct Value try (struct Context * const context)
 	volatile int rethrow = 0, breaker = 0;
 	volatile struct Value value = Value(undefined);
 	struct Value finallyValue;
+	uint32_t indices[3];
+	
+	Pool.getIndices(indices);
 	
 	if (!setjmp(*Ecc.pushEnv(context->ecc))) // try
 		value = nextOp();
@@ -1410,6 +1413,8 @@ struct Value try (struct Context * const context)
 		
 		if (!rethrow) // catch
 		{
+			Pool.unreferenceFromIndices(indices);
+			
 			rethrow = 1;
 			context->ops = end + 1; // bypass catch jump
 			key = nextOp().data.key;

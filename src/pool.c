@@ -272,6 +272,26 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 		}
 }
 
+void unreferenceFromIndices (uint32_t indices[3])
+{
+	uint32_t index;
+	
+	index = self->functionCount;
+	while (index-- > indices[0])
+	{
+		--self->functionList[index]->object.referenceCount;
+		--self->functionList[index]->environment.referenceCount;
+	}
+	
+	index = self->objectCount;
+	while (index-- > indices[1])
+		--self->objectList[index]->referenceCount;
+	
+	index = self->charsCount;
+	while (index-- > indices[2])
+		--self->charsList[index]->referenceCount;
+}
+
 void getIndices (uint32_t indices[3])
 {
 	indices[0] = self->functionCount;
