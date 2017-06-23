@@ -830,6 +830,42 @@ static struct Value toUpperCase (struct Context * const context)
 	return Value.chars(chars);
 }
 
+static struct Value trim (struct Context * const context)
+{
+	struct Chars *chars;
+	struct Text text, last;
+	struct Text(Char) c;
+	
+	Context.assertParameterCount(context, 0);
+	
+	if (!Value.isString(context->this))
+		context->this = Value.toString(context, Context.this(context));
+	
+	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	while (text.length)
+	{
+		c = Text.character(text);
+		if (!Text.isSpace(c))
+			break;
+		
+		Text.advance(&text, c.units);
+	}
+	
+	last = Text.make(text.bytes + text.length, text.length);
+	while (last.length)
+	{
+		c = Text.prevCharacter(&last);
+		if (!Text.isSpace(c))
+			break;
+		
+		text.length = last.length;
+	}
+	
+	chars = Chars.createWithBytes(text.length, text.bytes);
+	
+	return Value.chars(chars);
+}
+
 static struct Value constructor (struct Context * const context)
 {
 	struct Value value;
@@ -906,6 +942,7 @@ void setup ()
 	Function.addToObject(String(prototype), "substring", substring, 2, h);
 	Function.addToObject(String(prototype), "toLowerCase", toLowerCase, 0, h);
 	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, h);
+	Function.addToObject(String(prototype), "trim", trim, 0, h);
 	
 	Object.addMember(String(prototype), Key(length), Function.accessor(getLength, NULL), r|h|s | Value(asOwn) | Value(asData));
 }
