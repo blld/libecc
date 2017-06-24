@@ -59,7 +59,7 @@ static inline uint32_t getElementOrKey (struct Value property, struct Context * 
 		else if (Value.isString(property))
 		{
 			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
-			if ((element = Lexer.parseElement(text)) > Object(ElementMax))
+			if ((element = Lexer.scanElement(text)) > Object(ElementMax))
 			{
 				element = UINT32_MAX;
 				*key = Key.makeWithText(text, Key(copyOnCreate));

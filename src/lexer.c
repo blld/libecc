@@ -322,12 +322,12 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				
 				if (binary)
 				{
-					self->value = parseBinary(self->text, 0);
+					self->value = scanBinary(self->text, 0);
 					return Lexer(binaryToken);
 				}
 				else
 				{
-					self->value = parseInteger(self->text, 0, 0);
+					self->value = scanInteger(self->text, 0, 0);
 					
 					if (self->value.type == Value(integerType))
 						return Lexer(integerToken);
@@ -586,7 +586,7 @@ const char * tokenChars (enum Lexer(Token) token, char buffer[4])
 	return "unknow";
 }
 
-struct Value parseBinary (struct Text text, int lazy)
+struct Value scanBinary (struct Text text, int lazy)
 {
 	char buffer[text.length + 1];
 	char *end = buffer;
@@ -651,7 +651,7 @@ static double strtolHexFallback (struct Text text)
 	return binary * sign;
 }
 
-struct Value parseInteger (struct Text text, int base, int lazy)
+struct Value scanInteger (struct Text text, int base, int lazy)
 {
 	long integer;
 	char buffer[text.length + 1];
@@ -688,7 +688,7 @@ struct Value parseInteger (struct Text text, int base, int lazy)
 		return Value.integer((int32_t)integer);
 }
 
-uint32_t parseElement (struct Text text)
+uint32_t scanElement (struct Text text)
 {
 	struct Value value;
 	uint16_t index;
@@ -700,7 +700,7 @@ uint32_t parseElement (struct Text text)
 		if (!isdigit(text.bytes[index]))
 			return UINT32_MAX;
 	
-	value = parseInteger(text, 0, 0);
+	value = scanInteger(text, 0, 0);
 	
 	if (value.type == Value(integerType))
 		return value.data.integer;

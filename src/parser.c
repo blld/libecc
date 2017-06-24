@@ -282,8 +282,8 @@ struct OpList * propertyAssignment (struct Parser *self)
 		oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
 	else if (previewToken(self) == Lexer(stringToken))
 	{
-		int32_t element = Lexer.parseElement(self->lexer->text);
-		if (element >= 0)
+		uint32_t element = Lexer.scanElement(self->lexer->text);
+		if (element < UINT32_MAX)
 			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
 		else
 			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(self->lexer->text, 0)), self->lexer->text);
@@ -291,8 +291,8 @@ struct OpList * propertyAssignment (struct Parser *self)
 	else if (previewToken(self) == Lexer(escapedStringToken))
 	{
 		struct Text text = Text.make(self->lexer->value.data.chars->bytes, self->lexer->value.data.chars->length);
-		int32_t element = Lexer.parseElement(text);
-		if (element >= 0)
+		uint32_t element = Lexer.scanElement(text);
+		if (element < UINT32_MAX)
 			oplist = OpList.create(Op.value, Value.integer(element), self->lexer->text);
 		else
 			oplist = OpList.create(Op.value, Value.key(Key.makeWithText(*self->lexer->value.data.text, 0)), self->lexer->text);
