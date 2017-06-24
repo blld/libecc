@@ -22,12 +22,14 @@ const struct Object(Type) Array(type) = {
 	.text = &Text(arrayType),
 };
 
-static int valueIsArray(struct Value value)
+static
+int valueIsArray(struct Value value)
 {
 	return value.type == Value(objectType) && value.data.object->type == &Array(type);
 }
 
-static uint32_t valueArrayLength(struct Value value)
+static
+uint32_t valueArrayLength(struct Value value)
 {
 	if (valueIsArray(value))
 		return value.data.object->elementCount;
@@ -35,7 +37,8 @@ static uint32_t valueArrayLength(struct Value value)
 	return 1;
 }
 
-static void valueAppendFromElement (struct Context * const context, struct Value value, struct Object *object, uint32_t *element)
+static
+void valueAppendFromElement (struct Context * const context, struct Value value, struct Object *object, uint32_t *element)
 {
 	uint32_t index;
 	
@@ -46,7 +49,8 @@ static void valueAppendFromElement (struct Context * const context, struct Value
 		Object.putElement(object, context, (*element)++, value);
 }
 
-static struct Value isArray (struct Context * const context)
+static
+struct Value isArray (struct Context * const context)
 {
 	struct Value value;
 	
@@ -56,7 +60,8 @@ static struct Value isArray (struct Context * const context)
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
 }
 
-static struct Chars * toChars (struct Context * const context, struct Value this, struct Text separator)
+static
+struct Chars * toChars (struct Context * const context, struct Value this, struct Text separator)
 {
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(object, context, Key(length));
@@ -78,7 +83,8 @@ static struct Chars * toChars (struct Context * const context, struct Value this
 	return Chars.endAppend(&chars);
 }
 
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	struct Value function;
 	
@@ -93,7 +99,8 @@ static struct Value toString (struct Context * const context)
 		return Object.toString(context);
 }
 
-static struct Value concat (struct Context * const context)
+static
+struct Value concat (struct Context * const context)
 {
 	struct Value value;
 	uint32_t element = 0, length = 0, index, count;
@@ -117,7 +124,8 @@ static struct Value concat (struct Context * const context)
 	return Value.object(array);
 }
 
-static struct Value join (struct Context * const context)
+static
+struct Value join (struct Context * const context)
 {
 	struct Value object;
 	struct Value value;
@@ -139,7 +147,8 @@ static struct Value join (struct Context * const context)
 	return Value.chars(toChars(context, object, separator));
 }
 
-static struct Value pop (struct Context * const context)
+static
+struct Value pop (struct Context * const context)
 {
 	struct Value this, value;
 	
@@ -155,7 +164,8 @@ static struct Value pop (struct Context * const context)
 	return value;
 }
 
-static struct Value push (struct Context * const context)
+static
+struct Value push (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t length = 0, index, count, base;
@@ -178,7 +188,8 @@ static struct Value push (struct Context * const context)
 	return Value.binary(length);
 }
 
-static struct Value reverse (struct Context * const context)
+static
+struct Value reverse (struct Context * const context)
 {
 	struct Value this, temp;
 	struct Object *object;
@@ -203,7 +214,8 @@ static struct Value reverse (struct Context * const context)
 	return this;
 }
 
-static struct Value shift (struct Context * const context)
+static
+struct Value shift (struct Context * const context)
 {
 	struct Value this, result;
 	struct Object *object;
@@ -231,7 +243,8 @@ static struct Value shift (struct Context * const context)
 	return result;
 }
 
-static struct Value unshift (struct Context * const context)
+static
+struct Value unshift (struct Context * const context)
 {
 	struct Value this;
 	struct Object *object;
@@ -260,7 +273,8 @@ static struct Value unshift (struct Context * const context)
 	return Value.binary(length);
 }
 
-static struct Value slice (struct Context * const context)
+static
+struct Value slice (struct Context * const context)
 {
 	struct Object *object, *result;
 	struct Value this, start, end;
@@ -557,7 +571,8 @@ void sortInPlace (struct Context * const context, struct Object *object, struct 
 	}
 }
 
-static struct Value sort (struct Context * const context)
+static
+struct Value sort (struct Context * const context)
 {
 	struct Object *this;
 	struct Value compare;
@@ -579,14 +594,86 @@ static struct Value sort (struct Context * const context)
 	return Value.object(this);
 }
 
-static struct Value getLength (struct Context * const context)
+static
+struct Value splice (struct Context * const context)
+{
+	struct Object *this, *result;
+	uint32_t length, from, to, count = 0, add = 0, start = 0, delete = 0;
+	
+	Context.assertVariableParameter(context);
+	
+	count = Context.variableArgumentCount(context);
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = Value.toInteger(context, Object.getMember(this, context, Key(length))).data.integer;
+	
+	if (count >= 1)
+	{
+		double binary = Value.toBinary(context, Context.variableArgument(context, 0)).data.binary;
+		if (isnan(binary))
+			binary = 0;
+		else if (binary < 0)
+			binary += length;
+		
+		if (binary < 0)
+			binary = 0;
+		else if (binary > length)
+			binary = length;
+		
+		start = binary;
+	}
+	
+	if (count >= 2)
+	{
+		double binary = Value.toBinary(context, Context.variableArgument(context, 1)).data.binary;
+		if (isnan(binary) || binary < 0)
+			binary = 0;
+		else if (binary > length - start)
+			binary = length - start;
+		
+		delete = binary;
+	}
+	
+	if (count > 2)
+		add = count - 2;
+	
+	if (length - delete + add > length)
+		Object.resizeElement(this, length - delete + add);
+	
+	result = Array.createSized(delete);
+	
+	for (from = start, to = 0; to < delete; ++from, ++to)
+		Object.putElement(result, context, to, Object.getElement(this, context, from));
+	
+	if (delete > add)
+	{
+		for (from = start + delete, to = start + add; from < length; ++from, ++to)
+			Object.putElement(this, context, to, Object.getElement(this, context, from));
+		
+		for (; to < length; ++to)
+			Object.putElement(this, context, to, Value(none));
+	}
+	else if (delete < add)
+		for (from = length, to = length + add - delete; from > start;)
+			Object.putElement(this, context, --to, Object.getElement(this, context, --from));
+	
+	for (from = 2, to = start; from < count; ++from, ++to)
+		Object.putElement(this, context, to, Context.variableArgument(context, from));
+	
+	Object.putMember(this, context, Key(length), Value.binary(length - delete + add));
+	
+	return Value.object(result);
+}
+
+static
+struct Value getLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	
 	return Value.binary(context->this.data.object->elementCount);
 }
 
-static struct Value setLength (struct Context * const context)
+static
+struct Value setLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 1);
 	Object.resizeElement(context->this.data.object, Value.toBinary(context, Context.argument(context, 0)).data.binary);
@@ -594,7 +681,8 @@ static struct Value setLength (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	uint32_t index, count, length;
@@ -652,6 +740,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "shift", shift, 0, h);
 	Function.addToObject(Array(prototype), "slice", slice, 2, h);
 	Function.addToObject(Array(prototype), "sort", sort, 1, h);
+	Function.addToObject(Array(prototype), "splice", splice, -2, h);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, h);
 	
 	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), h|s | Value(asOwn) | Value(asData));
