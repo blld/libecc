@@ -56,14 +56,14 @@ Interface(Object,
 	
 	(struct Value *, member ,(struct Object *, struct Key))
 	(struct Value *, memberOwn ,(struct Object *, struct Key))
-	(struct Value *, addMember ,(struct Object *, struct Key member, struct Value, enum Value(Flags)))
+	(struct Value *, addMember ,(struct Object *, struct Key, struct Value, enum Value(Flags)))
 	(struct Value *, putMember ,(struct Object *, struct Context * const, struct Key, struct Value))
 	(struct Value, getMember ,(struct Object *, struct Context * const, struct Key))
 	(int, deleteMember ,(struct Object *, struct Key))
 	
 	(struct Value *, element ,(struct Object *, uint32_t))
 	(struct Value *, elementOwn ,(struct Object *, uint32_t))
-	(struct Value *, addElement ,(struct Object *, uint32_t element, struct Value, enum Value(Flags)))
+	(struct Value *, addElement ,(struct Object *, uint32_t, struct Value, enum Value(Flags)))
 	(struct Value *, putElement ,(struct Object *, struct Context * const, uint32_t, struct Value))
 	(struct Value, getElement ,(struct Object *, struct Context * const, uint32_t))
 	(int, deleteElement ,(struct Object *, uint32_t))

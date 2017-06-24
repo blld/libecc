@@ -42,9 +42,9 @@ static inline uint16_t getSlot (const struct Object * const self, const struct K
 		.slot[key.data.depth[3]];
 }
 
-static inline uint32_t getElementOrKey (struct Value property, struct Context * const context, struct Key *key)
+static inline uint32_t getIndexOrKey (struct Value property, struct Context * const context, struct Key *key)
 {
-	uint32_t element = UINT32_MAX;
+	uint32_t index = UINT32_MAX;
 	
 	assert(Value.isPrimitive(property));
 	
@@ -53,23 +53,23 @@ static inline uint32_t getElementOrKey (struct Value property, struct Context * 
 	else
 	{
 		if (property.type == Value(integerType) && property.data.integer >= 0)
-			element = property.data.integer;
+			index = property.data.integer;
 		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= Object(ElementMax) && property.data.binary == (uint32_t)property.data.binary)
-			element = property.data.binary;
+			index = property.data.binary;
 		else if (Value.isString(property))
 		{
 			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
-			if ((element = Lexer.scanElement(text)) > Object(ElementMax))
+			if ((index = Lexer.scanElement(text)) > Object(ElementMax))
 			{
-				element = UINT32_MAX;
+				index = UINT32_MAX;
 				*key = Key.makeWithText(text, Key(copyOnCreate));
 			}
 		}
 		else
-			return getElementOrKey(Value.toString(context, property), context, key);
+			return getIndexOrKey(Value.toString(context, property), context, key);
 	}
 	
-	return element;
+	return index;
 }
 
 static inline uint32_t nextPowerOfTwo(uint32_t v)
@@ -82,6 +82,14 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 	v |= v >> 16;
 	v++;
 	return v;
+}
+
+static inline uint32_t elementCount (struct Object *self)
+{
+	if (self->elementCount < Object(ElementMax))
+		return self->elementCount;
+	else
+		return Object(ElementMax);
 }
 
 static void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
@@ -139,7 +147,7 @@ static struct Value hasOwnProperty (struct Context * const context)
 	
 	self = Value.toObject(context, Context.this(context)).data.object;
 	value = Context.argument(context, 0);
-	index = getElementOrKey(value, context, &key);
+	index = getIndexOrKey(value, context, &key);
 	
 	if (index < UINT32_MAX)
 		return Value.truth(index < self->elementCount && self->element[index].value.check);
@@ -282,11 +290,7 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 	result = Array.create();
 	length = 0;
 	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1)
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
@@ -313,7 +317,7 @@ static struct Value defineProperty (struct Context * const context)
 	struct Object *object, *descriptor;
 	struct Value property, value, *getter, *setter, *current;
 	struct Key key;
-	uint32_t element;
+	uint32_t index;
 	
 	Context.assertParameterCount(context, 3);
 	
@@ -374,7 +378,7 @@ static struct Value defineProperty (struct Context * const context)
 	if (!Value.isTrue(getMember(descriptor, context, Key(configurable))))
 		value.flags |= Value(sealed);
 	
-	element = getElementOrKey(property, context, &key);
+	index = getIndexOrKey(property, context, &key);
 	
 	current = Object.propertyOwn(object, context, property);
 	if (!current)
@@ -438,13 +442,13 @@ static struct Value defineProperty (struct Context * const context)
 	
 sealedError:
 	Context.setTextIndexArgument(context, 1);
-	if (element == UINT32_MAX)
+	if (index == UINT32_MAX)
 	{
 		const struct Text *text = Key.textOf(key);
 		Context.typeError(context, Chars.create("'%.*s' is non-configurable", text->length, text->bytes));
 	}
 	else
-		Context.typeError(context, Chars.create("'%u' is non-configurable", element));
+		Context.typeError(context, Chars.create("'%u' is non-configurable", index));
 }
 
 static struct Value defineProperties (struct Context * const context)
@@ -466,11 +470,7 @@ static struct Value defineProperties (struct Context * const context)
 	
 	Context.replaceArgument(context, 0, Value.object(object));
 	
-	count = properties->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(properties); index < count; ++index)
 	{
 		if (!properties->element[index].value.check)
 			continue;
@@ -526,11 +526,7 @@ static struct Value seal (struct Context * const context)
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1)
 			object->element[index].value.flags |= Value(sealed);
 	
@@ -551,12 +547,7 @@ static struct Value freeze (struct Context * const context)
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
-	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1)
 			object->element[index].value.flags |= Value(frozen);
 	
@@ -590,11 +581,7 @@ static struct Value isSealed (struct Context * const context)
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
 	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(sealed)))
 			return Value(false);
 	
@@ -616,11 +603,7 @@ static struct Value isFrozen (struct Context * const context)
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
 	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(frozen)))
 			return Value(false);
 	
@@ -653,11 +636,7 @@ static struct Value keys (struct Context * const context)
 	result = Array.create();
 	length = 0;
 	
-	count = object->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(object); index < count; ++index)
 		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(hidden)))
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
@@ -821,58 +800,35 @@ void destroy (struct Object *self)
 struct Value * member (struct Object *self, struct Key member)
 {
 	struct Object *object = self;
-	uint32_t slot;
+	struct Value *ref = NULL;
 	
 	assert(object);
 	
 	do
-	{
-		if (( slot = getSlot(object, member) ))
-		{
-			struct Value *ref = &object->hashmap[slot].value;
-			if (ref->check == 1)
-				return ref;
-		}
-	}
-	while ((object = object->prototype));
+		ref = memberOwn(object, member);
+	while (!ref && (object = object->prototype));
 	
-	return NULL;
+	return ref;
 }
 
 struct Value * element (struct Object *self, uint32_t element)
 {
 	struct Object *object = self;
+	struct Value *ref = NULL;
 	
 	assert(object);
 	
-	if (element > Object(ElementMax))
-	{
-		char buffer[11];
-		struct Key key;
-		
-		snprintf(buffer, sizeof(buffer), "%u", element);
-		key = Key.search(Text.make(buffer, strlen(buffer)));
-		if (key.data.integer)
-			return member(self, key);
-	}
-	else
-		do
-		{
-			if (element < object->elementCount)
-			{
-				struct Value *ref = &object->element[element].value;
-				if (ref->check == 1)
-					return ref;
-			}
-		} while ((object = object->prototype));
+	do
+		ref = elementOwn(object, element);
+	while (!ref && (object = object->prototype));
 	
-	return NULL;
+	return ref;
 }
 
 struct Value * property (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t index = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
 	if (index < UINT32_MAX)
 		return element(self, index);
@@ -900,13 +856,21 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 {
 	assert(self);
 	
-	if (element > Object(ElementMax))
+	if (self->type == &String(type))
 	{
-		char buffer[11];
+		/* create temporary slot for ref */
+		struct Value *ref = Object.addMember(self, Key(none), String.valueAtIndex((struct String *)self, element), 0);
+		ref->check = 0;
+		return ref;
+	}
+	else if (element > Object(ElementMax))
+	{
 		struct Key key;
+		char buffer[10 + 1];
+		uint16_t length;
 		
-		snprintf(buffer, sizeof(buffer), "%u", element);
-		key = Key.search(Text.make(buffer, strlen(buffer)));
+		length = snprintf(buffer, sizeof(buffer), "%u", element);
+		key = Key.search(Text.make(buffer, length));
 		if (key.data.integer)
 			return memberOwn(self, key);
 	}
@@ -924,7 +888,7 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 struct Value * propertyOwn (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t index = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
 	if (index < UINT32_MAX)
 		return elementOwn(self, index);
@@ -969,10 +933,10 @@ struct Value getElement (struct Object *self, struct Context * const context, ui
 struct Value getProperty (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
-	if (element < UINT32_MAX)
-		return getElement(self, context, element);
+	if (index < UINT32_MAX)
+		return getElement(self, context, index);
 	else
 		return getMember(self, context, key);
 }
@@ -1056,10 +1020,10 @@ struct Value *putElement (struct Object *self, struct Context * const context, u
 struct Value *putProperty (struct Object *self, struct Context * const context, struct Value property, struct Value value)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
-	if (element < UINT32_MAX)
-		return putElement(self, context, element, value);
+	if (index < UINT32_MAX)
+		return putElement(self, context, index, value);
 	else
 		return putMember(self, context, key, value);
 }
@@ -1070,7 +1034,6 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 	int depth = 0;
 	
 	assert(self);
-	assert(key.data.integer);
 	
 	do
 	{
@@ -1113,19 +1076,19 @@ struct Value * addMember (struct Object *self, struct Key key, struct Value valu
 	return &self->hashmap[slot].value;
 }
 
-struct Value * addElement (struct Object *self, uint32_t element, struct Value value, enum Value(Flags) flags)
+struct Value * addElement (struct Object *self, uint32_t index, struct Value value, enum Value(Flags) flags)
 {
 	struct Value *ref;
 	
 	assert(self);
-	assert(element <= Object(ElementMax));
+	assert(index <= Object(ElementMax));
 	
-	if (self->elementCapacity <= element)
-		resizeElement(self, element + 1);
-	else if (self->elementCount <= element)
-		self->elementCount = element + 1;
+	if (self->elementCapacity <= index)
+		resizeElement(self, index + 1);
+	else if (self->elementCount <= index)
+		self->elementCount = index + 1;
 	
-	ref = &self->element[element].value;
+	ref = &self->element[index].value;
 	
 	value.flags |= flags;
 	*ref = value;
@@ -1136,10 +1099,10 @@ struct Value * addElement (struct Object *self, uint32_t element, struct Value v
 struct Value * addProperty (struct Object *self, struct Context * const context, struct Value property, struct Value value, enum Value(Flags) flags)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
-	if (element < UINT32_MAX)
-		return addElement(self, element, value, flags);
+	if (index < UINT32_MAX)
+		return addElement(self, index, value, flags);
 	else
 		return addMember(self, key, value, flags);
 }
@@ -1173,17 +1136,17 @@ int deleteMember (struct Object *self, struct Key member)
 	return 1;
 }
 
-int deleteElement (struct Object *self, uint32_t element)
+int deleteElement (struct Object *self, uint32_t index)
 {
 	assert(self);
-	assert(element <= Object(ElementMax));
+	assert(index <= Object(ElementMax));
 	
-	if (element < self->elementCount)
+	if (index < self->elementCount)
 	{
-		if (self->element[element].value.flags & Value(sealed))
+		if (self->element[index].value.flags & Value(sealed))
 			return 0;
 		
-		memset(&self->element[element], 0, sizeof(*self->element));
+		memset(&self->element[index], 0, sizeof(*self->element));
 	}
 	
 	return 1;
@@ -1192,10 +1155,10 @@ int deleteElement (struct Object *self, uint32_t element)
 int deleteProperty (struct Object *self, struct Context * const context, struct Value property)
 {
 	struct Key key;
-	uint32_t element = getElementOrKey(property, context, &key);
+	uint32_t index = getIndexOrKey(property, context, &key);
 	
-	if (element < UINT32_MAX)
-		return deleteElement(self, element);
+	if (index < UINT32_MAX)
+		return deleteElement(self, index);
 	else
 		return deleteMember(self, key);
 }
@@ -1358,11 +1321,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	
-	count = self->elementCount;
-	if (count > Object(ElementMax))
-		count = Object(ElementMax);
-	
-	for (index = 0; index < count; ++index)
+	for (index = 0, count = elementCount(self); index < count; ++index)
 	{
 		if (!isArray)
 			fprintf(file, "%d: ", (int)index);

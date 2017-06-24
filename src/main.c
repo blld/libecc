@@ -1348,6 +1348,7 @@ static void testString (void)
 	test("' abc  '.trim()", "abc", NULL);
 	test("'\\u00A0 abc  \\u00A0'.trim()", "abc", NULL);
 	test("'\\u2029 abc  \\u2029'.trim()", "abc", NULL);
+	test("var s = new String('123'); ++s[2]; ++s[2] + s", "4123", NULL);
 }
 
 static void testRegExp (void)
