@@ -172,10 +172,10 @@ Interface(Value,
 			
 			struct Value *reference;
 		} data;
+		struct Key key;
 		int8_t type;
 		uint8_t flags;
 		uint16_t check;
-		struct Key key;
 	}
 )
 
