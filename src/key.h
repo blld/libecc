@@ -58,6 +58,7 @@ Interface(Key,
 	
 	(struct Key, makeWithCString ,(const char *cString))
 	(struct Key, makeWithText ,(const struct Text text, enum Key(Flags) flags))
+	(struct Key, search ,(const struct Text text))
 	
 	(int, isEqual, (struct Key, struct Key))
 	(const struct Text *, textOf, (struct Key))

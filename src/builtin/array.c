@@ -37,13 +37,13 @@ static uint32_t valueArrayLength(struct Value value)
 
 static void valueAppendFromElement (struct Context * const context, struct Value value, struct Object *object, uint32_t *element)
 {
-	uint32_t index, count;
+	uint32_t index;
 	
 	if (valueIsArray(value))
-		for (index = 0, count = value.data.object->elementCount; index < count; ++index)
-			object->element[(*element)++].value = Object.getValue(value.data.object, context, &value.data.object->element[index].value);
+		for (index = 0; index < value.data.object->elementCount; ++index)
+			Object.putElement(object, context, (*element)++, Object.getElement(value.data.object, context, index));
 	else
-		object->element[(*element)++].value = value;
+		Object.putElement(object, context, (*element)++, value);
 }
 
 static struct Value isArray (struct Context * const context)
@@ -147,7 +147,7 @@ static struct Value pop (struct Context * const context)
 	
 	this = Value.toObject(context, Context.this(context));
 	value = this.data.object->elementCount?
-		Object.getValue(this.data.object, context, &this.data.object->element[this.data.object->elementCount - 1].value):
+		Object.getElement(this.data.object, context, this.data.object->elementCount - 1):
 		Value(undefined);
 	
 	--this.data.object->elementCount;
@@ -173,7 +173,7 @@ static struct Value push (struct Context * const context)
 		object->elementCount = length;
 	
 	for (index = 0; index < count; ++index)
-		object->element[index + base].value = Context.variableArgument(context, index);
+		Object.putElement(object, context, index + base, Context.variableArgument(context, index));
 	
 	return Value.binary(length);
 }
@@ -195,9 +195,9 @@ static struct Value reverse (struct Context * const context)
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Object.getValue(object, context, &object->element[index].value);
-		Object.putValue(object, context, &object->element[index].value, Object.getValue(object, context, &object->element[last - index].value));
-		Object.putValue(object, context, &object->element[last - index].value, temp);
+		temp = Object.getElement(object, context, index);
+		Object.putElement(object, context, index, Object.getElement(object, context, last - index));
+		Object.putElement(object, context, last - index, temp);
 	}
 	
 	return this;
@@ -218,10 +218,10 @@ static struct Value shift (struct Context * const context)
 	
 	if (object->elementCount)
 	{
-		result = Object.getValue(object, context, &object->element[0].value);
+		result = Object.getElement(object, context, 0);
 		
 		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Object.putValue(object, context, &this.data.object->element[index].value, Object.getValue(object, context, &this.data.object->element[index + 1].value));
+			Object.putElement(object, context, index, Object.getElement(object, context, index + 1));
 		
 		--object->elementCount;
 	}
@@ -252,10 +252,10 @@ static struct Value unshift (struct Context * const context)
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = count; index < length; ++index)
-		Object.putValue(object, context, &object->element[index].value, Object.getValue(object, context, &object->element[index - count].value));
+		Object.putElement(object, context, index, Object.getElement(object, context, index - count));
 	
 	for (index = 0; index < count; ++index)
-		object->element[index].value = Context.variableArgument(context, index);
+		Object.putElement(object, context, index, Context.variableArgument(context, index));
 	
 	return Value.binary(length);
 }
@@ -271,24 +271,25 @@ static struct Value slice (struct Context * const context)
 	
 	this = Value.toObject(context, Context.this(context));
 	object = this.data.object;
+	length = Value.toInteger(context, Object.getMember(object, context, Key(length))).data.integer;
 	
 	start = Context.argument(context, 0);
 	binary = Value.toBinary(context, start).data.binary;
 	if (start.type == Value(undefinedType))
 		from = 0;
-	else if (binary > 0)
-		from = binary < object->elementCount? binary: object->elementCount;
+	else if (binary >= 0)
+		from = binary < length? binary: length;
 	else
-		from = binary + object->elementCount >= 0? object->elementCount + binary: 0;
+		from = binary + length >= 0? length + binary: 0;
 	
 	end = Context.argument(context, 1);
 	binary = Value.toBinary(context, end).data.binary;
 	if (end.type == Value(undefinedType))
-		to = object->elementCount;
-	else if (binary < 0)
-		to = binary + object->elementCount >= 0? object->elementCount + binary: 0;
+		to = length;
+	else if (binary < 0 || isnan(binary))
+		to = binary + length >= 0? length + binary: 0;
 	else
-		to = binary < object->elementCount? binary: object->elementCount;
+		to = binary < length? binary: length;
 	
 	Context.setTextIndex(context, Context(callIndex));
 	
@@ -298,7 +299,7 @@ static struct Value slice (struct Context * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			result->element[to].value = Object.getValue(object, context, &this.data.object->element[from].value);
+			Object.putElement(result, context, to, Object.getElement(object, context, from));
 	}
 	else
 		result = Array.createSized(0);
@@ -308,9 +309,9 @@ static struct Value slice (struct Context * const context)
 
 struct Compare {
 	struct Context context;
-	struct Function *function;
-	struct Object *arguments;
-	struct Op *ops;
+	struct Function * function;
+	struct Object * arguments;
+	const struct Op * ops;
 };
 
 static
@@ -352,18 +353,18 @@ void rotate(struct Object *object, struct Context *context, uint32_t first, uint
 		shift = half - first;
 		a = first + n;
 		b = a + shift;
-		leftValue = Object.getValue(object, context, &object->element[a].value);
+		leftValue = Object.getElement(object, context, a);
 		while (b != first + n)
 		{
-			value = Object.getValue(object, context, &object->element[b].value);
-			Object.putValue(object, context, &object->element[a].value, value);
+			value = Object.getElement(object, context, b);
+			Object.putElement(object, context, a, value);
 			a = b;
 			if (last - b > shift)
 				b += shift;
 			else
 				b = half - (last - b);
 		}
-		Object.putValue(object, context, &object->element[a].value, leftValue);
+		Object.putElement(object, context, a, leftValue);
 	}
 }
 
@@ -417,7 +418,7 @@ uint32_t search(struct Object *object, struct Compare *cmp, uint32_t first, uint
 	while (first < last)
 	{
 		half = (first + last) >> 1;
-		left = Object.getValue(object, &cmp->context, &object->element[half].value);
+		left = Object.getElement(object, &cmp->context, half);
 		if (compare(cmp, left, right))
 			first = half + 1;
 		else
@@ -437,12 +438,12 @@ void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t 
 	if (len1 + len2 == 2)
 	{
 		struct Value left, right;
-		left = Object.getValue(object, &cmp->context, &object->element[pivot].value);
-		right = Object.getValue(object, &cmp->context, &object->element[first].value);
+		left = Object.getElement(object, &cmp->context, pivot);
+		right = Object.getElement(object, &cmp->context, first);
 		if (compare(cmp, left, right))
 		{
-			Object.putValue(object, &cmp->context, &object->element[pivot].value, right);
-			Object.putValue(object, &cmp->context, &object->element[first].value, left);
+			Object.putElement(object, &cmp->context, pivot, right);
+			Object.putElement(object, &cmp->context, first, left);
 		}
 		return;
 	}
@@ -451,13 +452,13 @@ void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t 
 	{
 		half1 = len1 >> 1;
 		left = first + half1;
-		right = search(object, cmp, pivot, last, Object.getValue(object, &cmp->context, &object->element[first + half1].value));
+		right = search(object, cmp, pivot, last, Object.getElement(object, &cmp->context, first + half1));
 		half2 = right - pivot;
 	}
 	else
 	{
 		half2 = len2 >> 1;
-		left = search(object, cmp, first, pivot, Object.getValue(object, &cmp->context, &object->element[pivot + half2].value));
+		left = search(object, cmp, first, pivot, Object.getElement(object, &cmp->context, pivot + half2));
 		right = pivot + half2;
 		half1 = left - first;
 	}
@@ -480,16 +481,16 @@ void sortAndMerge(struct Object *object, struct Compare *cmp, uint32_t first, ui
 		
 		for (i = first + 1; i < last; ++i)
 		{
-			right = Object.getValue(object, &cmp->context, &object->element[i].value);
+			right = Object.getElement(object, &cmp->context, i);
 			for (j = i; j > first; --j)
 			{
-				left = Object.getValue(object, &cmp->context, &object->element[j - 1].value);
+				left = Object.getElement(object, &cmp->context, j - 1);
 				if (compare(cmp, left, right))
 					break;
 				else
-					Object.putValue(object, &cmp->context, &object->element[j].value, left);
+					Object.putElement(object, &cmp->context, j, left);
 			}
-			Object.putValue(object, &cmp->context, &object->element[j].value, right);
+			Object.putElement(object, &cmp->context, j, right);
 		}
 		return;
 	}
@@ -619,7 +620,7 @@ static struct Value constructor (struct Context * const context)
 	for (index = 0; index < count; ++index)
 	{
 		array->element[index].value = Context.variableArgument(context, index);
-		array->element[index].value.flags = 0;
+		array->element[index].value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
 	}
 	
 	return Value.object(array);

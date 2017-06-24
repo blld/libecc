@@ -16,7 +16,7 @@
 
 // MARK: - Private
 
-const uint32_t Object(MaxElements) = 0xffffff;
+const uint32_t Object(ElementMax) = 0xffffff;
 
 static struct Value toString (struct Context * const context);
 
@@ -54,12 +54,12 @@ static inline uint32_t getElementOrKey (struct Value property, struct Context * 
 	{
 		if (property.type == Value(integerType) && property.data.integer >= 0)
 			element = property.data.integer;
-		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= Object(MaxElements) && property.data.binary == (uint32_t)property.data.binary)
+		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= Object(ElementMax) && property.data.binary == (uint32_t)property.data.binary)
 			element = property.data.binary;
 		else if (Value.isString(property))
 		{
 			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
-			if ((element = Lexer.parseElement(text)) > Object(MaxElements))
+			if ((element = Lexer.parseElement(text)) > Object(ElementMax))
 			{
 				element = UINT32_MAX;
 				*key = Key.makeWithText(text, Key(copyOnCreate));
@@ -274,7 +274,7 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 {
 	struct Object *object, *parent;
 	struct Object *result;
-	uint32_t index, length;
+	uint32_t index, count, length;
 	
 	Context.assertParameterCount(context, 1);
 	
@@ -282,7 +282,11 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 	result = Array.create();
 	length = 0;
 	
-	for (index = 0; index < object->elementCount; ++index)
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 		if (object->element[index].value.check == 1)
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
 	
@@ -448,7 +452,7 @@ static struct Value defineProperties (struct Context * const context)
 	union Object(Hashmap) *originalHashmap = context->environment->hashmap;
 	uint16_t originalHashmapCount = context->environment->hashmapCount;
 	
-	uint16_t index, hashmapCount = 6;
+	uint16_t index, count, hashmapCount = 6;
 	struct Object *object, *properties;
 	union Object(Hashmap) hashmap[hashmapCount];
 	
@@ -462,7 +466,11 @@ static struct Value defineProperties (struct Context * const context)
 	
 	Context.replaceArgument(context, 0, Value.object(object));
 	
-	for (index = 0; index < properties->elementCount; ++index)
+	count = properties->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 	{
 		if (!properties->element[index].value.check)
 			continue;
@@ -511,14 +519,18 @@ static struct Value objectCreate (struct Context * const context)
 static struct Value seal (struct Context * const context)
 {
 	struct Object *object;
-	uint32_t index;
+	uint32_t index, count;
 	
 	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
-	for (index = 0; index < object->elementCount; ++index)
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 		if (object->element[index].value.check == 1)
 			object->element[index].value.flags |= Value(sealed);
 	
@@ -532,14 +544,19 @@ static struct Value seal (struct Context * const context)
 static struct Value freeze (struct Context * const context)
 {
 	struct Object *object;
-	uint32_t index;
+	uint32_t index, count;
 	
 	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
-	for (index = 0; index < object->elementCount; ++index)
+	
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 		if (object->element[index].value.check == 1)
 			object->element[index].value.flags |= Value(frozen);
 	
@@ -565,7 +582,7 @@ static struct Value preventExtensions (struct Context * const context)
 static struct Value isSealed (struct Context * const context)
 {
 	struct Object *object;
-	uint32_t index;
+	uint32_t index, count;
 	
 	Context.assertParameterCount(context, 1);
 	
@@ -573,7 +590,11 @@ static struct Value isSealed (struct Context * const context)
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
 	
-	for (index = 0; index < object->elementCount; ++index)
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(sealed)))
 			return Value(false);
 	
@@ -587,20 +608,24 @@ static struct Value isSealed (struct Context * const context)
 static struct Value isFrozen (struct Context * const context)
 {
 	struct Object *object;
-	uint32_t index;
+	uint32_t index, count;
 	
 	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
-		
-	for (index = 0; index < object->elementCount; ++index)
-		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(readonly) && object->element[index].value.flags & Value(sealed)))
+	
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
+		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(frozen)))
 			return Value(false);
 	
 	for (index = 2; index < object->hashmapCount; ++index)
-		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(readonly) && object->hashmap[index].value.flags & Value(sealed)))
+		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(frozen)))
 			return Value(false);
 	
 	return Value(true);
@@ -618,9 +643,9 @@ static struct Value isExtensible (struct Context * const context)
 
 static struct Value keys (struct Context * const context)
 {
-	struct Object *object;
+	struct Object *object, *parent;
 	struct Object *result;
-	uint32_t index, length;
+	uint32_t index, count, length;
 	
 	Context.assertParameterCount(context, 1);
 	
@@ -628,9 +653,24 @@ static struct Value keys (struct Context * const context)
 	result = Array.create();
 	length = 0;
 	
-	for (index = 0; index < object->elementCount; ++index)
+	count = object->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 		if (object->element[index].value.check == 1 && !(object->element[index].value.flags & Value(hidden)))
 			addElement(result, length++, Value.chars(Chars.create("%d", index)), 0);
+	
+	parent = object;
+	while (( parent = parent->prototype ))
+	{
+		for (index = 2; index < parent->hashmapCount; ++index)
+		{
+			struct Value value = parent->hashmap[index].value;
+			if (value.check == 1 && value.flags & Value(asOwn) & !(value.flags & Value(hidden)))
+				addElement(result, length++, Value.text(Key.textOf(value.key)), 0);
+		}
+	}
 	
 	for (index = 2; index < object->hashmapCount; ++index)
 		if (object->hashmap[index].value.check == 1 && !(object->hashmap[index].value.flags & Value(hidden)))
@@ -805,15 +845,26 @@ struct Value * element (struct Object *self, uint32_t element)
 	
 	assert(object);
 	
-	do
+	if (element > Object(ElementMax))
 	{
-		if (element < object->elementCount)
+		char buffer[11];
+		struct Key key;
+		
+		snprintf(buffer, sizeof(buffer), "%u", element);
+		key = Key.search(Text.make(buffer, strlen(buffer)));
+		if (key.data.integer)
+			return member(self, key);
+	}
+	else
+		do
 		{
-			struct Value *ref = &object->element[element].value;
-			if (ref->check == 1)
-				return ref;
-		}
-	} while ((object = object->prototype));
+			if (element < object->elementCount)
+			{
+				struct Value *ref = &object->element[element].value;
+				if (ref->check == 1)
+					return ref;
+			}
+		} while ((object = object->prototype));
 	
 	return NULL;
 }
@@ -849,12 +900,23 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 {
 	assert(self);
 	
-	if (element < self->elementCount)
+	if (element > Object(ElementMax))
 	{
-		struct Value *ref = &self->element[element].value;
-		if (ref->check == 1)
-			return ref;
+		char buffer[11];
+		struct Key key;
+		
+		snprintf(buffer, sizeof(buffer), "%u", element);
+		key = Key.search(Text.make(buffer, strlen(buffer)));
+		if (key.data.integer)
+			return memberOwn(self, key);
 	}
+	else
+		if (element < self->elementCount)
+		{
+			struct Value *ref = &self->element[element].value;
+			if (ref->check == 1)
+				return ref;
+		}
 	
 	return NULL;
 }
@@ -972,7 +1034,7 @@ struct Value *putElement (struct Object *self, struct Context * const context, u
 {
 	struct Value *ref;
 	
-	if (index > Object(MaxElements))
+	if (index > Object(ElementMax))
 		return putProperty(self, context, Value.integer(index), value);
 	
 	if (( ref = elementOwn(self, index) ))
@@ -1056,7 +1118,7 @@ struct Value * addElement (struct Object *self, uint32_t element, struct Value v
 	struct Value *ref;
 	
 	assert(self);
-	assert(element <= Object(MaxElements));
+	assert(element <= Object(ElementMax));
 	
 	if (self->elementCapacity <= element)
 		resizeElement(self, element + 1);
@@ -1114,6 +1176,7 @@ int deleteMember (struct Object *self, struct Key member)
 int deleteElement (struct Object *self, uint32_t element)
 {
 	assert(self);
+	assert(element <= Object(ElementMax));
 	
 	if (element < self->elementCount)
 	{
@@ -1213,10 +1276,10 @@ void resizeElement (struct Object *self, uint32_t size)
 	
 	assert(self);
 	
-	if (capacity > Object(MaxElements) + 1)
+	if (capacity > Object(ElementMax) + 1)
 	{
-		Env.printWarning("Faking array length 0x%lx while actual length is 0x%lx -- Using array length > 0xffffff is discouraged", size, capacity);
-		capacity = Object(MaxElements) + 1;
+		Env.printWarning("Faking array length of 0x%lx while actual memory length is 0x%lx; Using array length > %u is discouraged", size, capacity, Object(ElementMax));
+		capacity = Object(ElementMax) + 1;
 	}
 	
 	if (capacity != self->elementCapacity)
@@ -1240,7 +1303,7 @@ void populateElementWithCList (struct Object *self, uint32_t count, const char *
 	int index;
 	
 	assert(self);
-	assert(count <= Object(MaxElements));
+	assert(count <= Object(ElementMax));
 	
 	if (count > self->elementCount)
 		resizeElement(self, count);
@@ -1286,7 +1349,7 @@ struct Value toString (struct Context * const context)
 
 void dumpTo(struct Object *self, FILE *file)
 {
-	uint32_t index;
+	uint32_t index, count;
 	int isArray;
 	
 	assert(self);
@@ -1295,7 +1358,11 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	
-	for (index = 0; index < self->elementCount; ++index)
+	count = self->elementCount;
+	if (count > Object(ElementMax))
+		count = Object(ElementMax);
+	
+	for (index = 0; index < count; ++index)
 	{
 		if (!isArray)
 			fprintf(file, "%d: ", (int)index);
