@@ -987,8 +987,7 @@ struct Value *putMember (struct Object *self, struct Context * const context, st
 		else if (ref->flags & Value(readonly))
 			Context.typeError(context, Chars.create("'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
-	
-	if (self->flags & Object(sealed))
+	else if (self->flags & Object(sealed))
 		Context.typeError(context, Chars.create("object is not extensible"));
 	
 	return addMember(self, key, value, 0);
@@ -999,7 +998,7 @@ struct Value *putElement (struct Object *self, struct Context * const context, u
 	struct Value *ref;
 	
 	if (index > Object(ElementMax))
-		return putProperty(self, context, Value.integer(index), value);
+		return putProperty(self, context, Value.binary(index), value);
 	
 	if (( ref = elementOwn(self, index) ))
 		return putValue(self, context, ref, value);
