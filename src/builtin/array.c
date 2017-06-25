@@ -187,8 +187,11 @@ struct Value pop (struct Context * const context)
 		--length;
 		value = Object.getElement(this, context, length);
 		
-		if (this->type != &Array(type))
-			Object.putElement(this, context, length, Value(none));
+		if (!Object.deleteProperty(this, context, Value.binary(length)))
+		{
+			Context.setTextIndex(context, Context(callIndex));
+			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
+		}
 	}
 	objectResize(context, this, length);
 	

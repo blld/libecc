@@ -894,7 +894,7 @@ struct Value deleteProperty (struct Context * const context)
 	{
 		struct Value string = Value.toString(context, property);
 		Context.setText(context, text);
-		Context.typeError(context, Chars.create("property '%.*s' can't be deleted", Value.stringLength(string), Value.stringBytes(string)));
+		Context.typeError(context, Chars.create("'%.*s' is non-configurable", Value.stringLength(string), Value.stringBytes(string)));
 	}
 	return Value.truth(result);
 }

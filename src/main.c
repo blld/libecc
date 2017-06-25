@@ -842,6 +842,12 @@ static void testObject (void)
 	,    "                                    ^    ");
 	test("({}).toString.call(Object.getPrototypeOf('abc'))", "[object String]", NULL);
 	test("Object.getOwnPropertyDescriptor('abc', 'length').value", "3", NULL);
+	test("var a = { 1: 'def', length: 2 }; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); [].pop.call(a)", "2", NULL);
+	test("var a = { length: 2 }; Object.defineProperty(a, 1, { value: 123 }); [].pop.call(a)", "TypeError: '1' is non-configurable"
+	,    "                                                                    ^~~~~~~~~~~~~~");
+	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a.pop()", "2", NULL);
+	test("var a = []; Object.defineProperty(a, 2, {get: function(){}}); a.pop()", "TypeError: '2' is non-configurable"
+	,    "                                                              ^~~~~~~");
 }
 
 static void testError (void)
@@ -973,6 +979,8 @@ static void testArray (void)
 	test("var a = [ 'abc', 'def' ], r = ''; Object.defineProperty(a, 1, {get: function(){ return this[0]; }}); a + '^'", "abc,abc^", NULL);
 	test("var a = ['abc', 'def'], b = [123], r = ''; Object.defineProperty(a, 1, {get : function(){ return this[0]; }}); b.concat(a)", "123,abc,abc", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a.pop()", "2", NULL);
+	test("var a = []; Object.defineProperty(a, 2, {get: function(){}}); a.pop()", "TypeError: '2' is non-configurable"
+	,    "                                                              ^~~~~~~");
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a = a.reverse()", "TypeError: '1' is read-only accessor"
 	,    "                                                                                                     ^~~~~~~~~~~");
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a.push(123); a[1]", "3", NULL);

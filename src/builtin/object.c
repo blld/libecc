@@ -303,7 +303,7 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 static struct Value defineProperty (struct Context * const context)
 {
 	struct Object *object, *descriptor;
-	struct Value property, value, *getter, *setter, *current;
+	struct Value property, value, *getter, *setter, *current, *flag;
 	struct Key key;
 	uint32_t index;
 	
@@ -315,6 +315,9 @@ static struct Value defineProperty (struct Context * const context)
 	
 	getter = member(descriptor, Key(get), 0);
 	setter = member(descriptor, Key(set), 0);
+	
+	index = getIndexOrKey(property, context, &key);
+	current = Object.property(object, context, property, Value(asOwn));
 	
 	if (getter || setter)
 	{
@@ -356,19 +359,19 @@ static struct Value defineProperty (struct Context * const context)
 	{
 		value = getMember(descriptor, context, Key(value));
 		
-		if (!Value.isTrue(getMember(descriptor, context, Key(writable))))
+		flag = member(descriptor, Key(writable), 0);
+		if ((flag && !Value.isTrue(getValue(descriptor, context, flag))) || (!flag && (!current || current->flags & Value(readonly))))
 			value.flags |= Value(readonly);
 	}
 	
-	if (!Value.isTrue(getMember(descriptor, context, Key(enumerable))))
+	flag = member(descriptor, Key(enumerable), 0);
+	if ((flag && !Value.isTrue(getValue(descriptor, context, flag))) || (!flag && (!current || current->flags & Value(hidden))))
 		value.flags |= Value(hidden);
 	
-	if (!Value.isTrue(getMember(descriptor, context, Key(configurable))))
+	flag = member(descriptor, Key(configurable), 0);
+	if ((flag && !Value.isTrue(getValue(descriptor, context, flag))) || (!flag && (!current || current->flags & Value(sealed))))
 		value.flags |= Value(sealed);
 	
-	index = getIndexOrKey(property, context, &key);
-	
-	current = Object.property(object, context, property, Value(asOwn));
 	if (!current)
 	{
 		addProperty(object, context, property, value, 0);
