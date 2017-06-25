@@ -184,9 +184,12 @@ struct Value pop (struct Context * const context)
 	
 	if (length)
 	{
-		value = Object.getElement(this, context, --length);
-		objectResize(context, this, length);
+		--length;
+		value = Object.getElement(this, context, length);
+		Object.putElement(this, context, length, Value(none));
 	}
+	objectResize(context, this, length);
+	
 	return value;
 }
 
