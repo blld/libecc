@@ -358,6 +358,8 @@ static void testEval (void)
 	,    "    ^~~~~~~~~~       ");
 	test("eval.call('123', 'this+456')", "[object Global]456", NULL);
 	test("var x = new String('1 + 1'); eval(x) == x", "true", NULL);
+	test("var a = 123; eval('a')", "123", NULL);
+	test("var a = 123; (1, eval)('a')", "123", NULL);
 }
 
 static void testConvertion (void)

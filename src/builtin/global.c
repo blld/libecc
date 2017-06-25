@@ -22,6 +22,7 @@ static struct Value eval (struct Context * const context)
 {
 	struct Value value;
 	struct Input *input;
+	struct Object *environment;
 	struct Context subContext = {
 		.parent = context,
 		.this = Value.object(&context->ecc->global->environment),
@@ -37,6 +38,13 @@ static struct Value eval (struct Context * const context)
 		return value;
 	
 	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
+	
+	environment = context->parent->environment;
+	while (environment->prototype && environment->prototype != &context->ecc->global->environment)
+		environment = environment->prototype;
+	
+	if (environment)
+		subContext.environment = environment;
 	
 	Context.setTextIndex(context, Context(noIndex));
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
