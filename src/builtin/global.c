@@ -26,7 +26,6 @@ static struct Value eval (struct Context * const context)
 	struct Context subContext = {
 		.parent = context,
 		.this = Value.object(&context->ecc->global->environment),
-		.environment = &context->ecc->global->environment,
 		.ecc = context->ecc,
 		.depth = context->depth + 1,
 	};
@@ -43,8 +42,7 @@ static struct Value eval (struct Context * const context)
 	while (environment->prototype && environment->prototype != &context->ecc->global->environment)
 		environment = environment->prototype;
 	
-	if (environment)
-		subContext.environment = environment;
+	subContext.environment = environment;
 	
 	Context.setTextIndex(context, Context(noIndex));
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
