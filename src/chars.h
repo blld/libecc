@@ -20,9 +20,14 @@
 	enum Chars(Flags)
 	{
 		Chars(mark) = 1 << 0,
-		Chars(inAppend) = 1 << 1,
 	};
 
+	struct Chars(Append) {
+		struct Chars *value;
+		char buffer[9];
+		uint8_t units;
+	};
+	
 #endif
 
 
@@ -33,14 +38,13 @@ Interface(Chars,
 	(struct Chars *, createSized ,(uint16_t length))
 	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
 	
-	(void, beginAppend ,(struct Chars **))
-	(struct Chars *, append ,(struct Chars **, const char *format, ...))
-	(struct Chars *, appendCodepoint ,(struct Chars **, uint32_t cp))
-	(struct Chars *, appendValue ,(struct Chars **, struct Context * const context, struct Value value))
-	(struct Chars *, appendBinary ,(struct Chars **, double binary, int base))
-	(struct Chars *, endAppend ,(struct Chars **))
-	
-	(struct Chars *, normalizeBinary ,(struct Chars *))
+	(void, beginAppend ,(struct Chars(Append) *))
+	(void, append ,(struct Chars(Append) *, const char *format, ...))
+	(void, appendCodepoint ,(struct Chars(Append) *, uint32_t cp))
+	(void, appendValue ,(struct Chars(Append) *, struct Context * const context, struct Value value))
+	(void, appendBinary ,(struct Chars(Append) *, double binary, int base))
+	(void, normalizeBinary ,(struct Chars(Append) *))
+	(struct Value, endAppend ,(struct Chars(Append) *))
 	
 	(void, destroy ,(struct Chars *))
 	

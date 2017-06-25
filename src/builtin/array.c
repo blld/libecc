@@ -84,12 +84,12 @@ struct Value isArray (struct Context * const context)
 }
 
 static
-struct Chars * toChars (struct Context * const context, struct Value this, struct Text separator)
+struct Value toChars (struct Context * const context, struct Value this, struct Text separator)
 {
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(context, object, Key(length));
 	uint32_t index, count = Value.toBinary(context, length).data.binary;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	
 	Chars.beginAppend(&chars);
 	for (index = 0; index < count; ++index)
@@ -162,12 +162,12 @@ struct Value join (struct Context * const context)
 	else
 	{
 		value = Value.toString(context, value);
-		separator = Text.make(Value.stringBytes(value), Value.stringLength(value));
+		separator = Value.textOf(&value);
 	}
 	
 	object = Value.toObject(context, Context.this(context));
 	
-	return Value.chars(toChars(context, object, separator));
+	return toChars(context, object, separator);
 }
 
 static

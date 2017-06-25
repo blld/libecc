@@ -9,6 +9,8 @@
 #define Implementation
 #include "lexer.h"
 
+#include "pool.h"
+
 // MARK: - Private
 
 // MARK: - Static Members
@@ -194,7 +196,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 						
 						if (haveEscape)
 						{
-							struct Chars *chars;
+							struct Chars(Append) chars;
 							uint32_t index;
 							
 							++bytes;
@@ -241,8 +243,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 								else
 									Chars.append(&chars, "%c", bytes[index]);
 							
-							++chars->referenceCount;
-							self->value = Value.chars(Chars.endAppend(&chars));
+							self->value = Pool.retainedValue(Chars.endAppend(&chars));
 							
 							Input.attachValue(self->input, self->value);
 							

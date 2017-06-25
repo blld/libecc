@@ -924,7 +924,7 @@ static struct Value parse (struct Context * const context)
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	
-	return Value.binary(msClip(msFromBytes(Value.stringBytes(value), Value.stringLength(value))));
+	return Value.binary(msClip(msFromBytes(Value.stringBytes(&value), Value.stringLength(&value))));
 }
 
 static struct Value UTC (struct Context * const context)
@@ -956,7 +956,7 @@ static struct Value constructor (struct Context * const context)
 		struct Value value = Value.toPrimitive(context, Context.variableArgument(context, 0), Value(hintAuto));
 		
 		if (Value.isString(value))
-			time = msFromBytes(Value.stringBytes(value), Value.stringLength(value));
+			time = msFromBytes(Value.stringBytes(&value), Value.stringLength(&value));
 		else
 			time = Value.toBinary(context, value).data.binary;
 	}

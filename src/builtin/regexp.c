@@ -1098,8 +1098,8 @@ static struct Value exec (struct Context * const context)
 	
 	if (lastIndex.data.integer >= 0)
 	{
-		uint16_t length = Value.stringLength(value);
-		const char *bytes = Value.stringBytes(value);
+		uint16_t length = Value.stringLength(&value);
+		const char *bytes = Value.stringBytes(&value);
 		const char *capture[self->count * 2];
 		const char *index[self->count * 2];
 		struct Chars *element;
@@ -1156,8 +1156,8 @@ static struct Value test (struct Context * const context)
 	
 	if (lastIndex.data.integer >= 0)
 	{
-		uint16_t length = Value.stringLength(value);
-		const char *bytes = Value.stringBytes(value);
+		uint16_t length = Value.stringLength(&value);
+		const char *bytes = Value.stringBytes(&value);
 		const char *capture[self->count * 2];
 		const char *index[self->count * 2];
 		
@@ -1287,13 +1287,14 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 struct RegExp * createWith (struct Context *context, struct Value pattern, struct Value flags)
 {
 	struct Error *error = NULL;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	struct RegExp *regexp;
+	struct Value value;
 	
 	if (pattern.type == Value(regexpType) && flags.type == Value(undefinedType))
 	{
 		if (context->construct)
-			chars = pattern.data.regexp->pattern;
+			value = Value.chars(pattern.data.regexp->pattern);
 		else
 			return pattern.data.regexp;
 	}
@@ -1307,7 +1308,7 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 			Chars.appendValue(&chars, context, Value.chars(pattern.data.regexp->source));
 		else
 		{
-			if (pattern.type == Value(undefinedType) || (Value.isString(pattern) && !Value.stringLength(pattern)))
+			if (pattern.type == Value(undefinedType) || (Value.isString(pattern) && !Value.stringLength(&pattern)))
 				Chars.append(&chars, "(?:)");
 			else
 				Chars.appendValue(&chars, context, pattern);
@@ -1318,13 +1319,16 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 		if (flags.type != Value(undefinedType))
 			Chars.appendValue(&chars, context, flags);
 		
-		Chars.endAppend(&chars);
+		value = Chars.endAppend(&chars);
+		if (value.type != Value(charsType))
+			value = Value.chars(Chars.createWithBytes(Value.stringLength(&value), Value.stringBytes(&value)));
 	}
 	
-	regexp = create(chars, &error);
+	assert(value.type == Value(charsType));
+	regexp = create(value.data.chars, &error);
 	if (error)
 	{
-		context->ecc->ofLine = Text.make(chars->bytes, chars->length);
+		context->ecc->ofLine = Value.textOf(&value);
 		context->ecc->ofInput = "(RegExp)";
 		Context.setTextIndex(context, Context(noIndex));
 		Context.throw(context, Value.error(error));

@@ -40,15 +40,15 @@ static struct Chars *messageValue (struct Context * const context, struct Value 
 	else
 	{
 		value = Value.toString(context, value);
-		return Chars.create("%.*s", Value.stringLength(value), Value.stringBytes(value));
+		return Chars.create("%.*s", Value.stringLength(&value), Value.stringBytes(&value));
 	}
 }
 
-static struct Chars * toChars (struct Context * const context, struct Value value)
+static struct Value toChars (struct Context * const context, struct Value value)
 {
 	struct Value name, message;
 	struct Object *self;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	
 	assert(value.type == Value(errorType));
 	assert(value.data.error);
@@ -70,7 +70,7 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 	Chars.beginAppend(&chars);
 	Chars.appendValue(&chars, context, name);
 	
-	if (Value.stringLength(name) && Value.stringLength(message))
+	if (Value.stringLength(&name) && Value.stringLength(&message))
 		Chars.append(&chars, ": ");
 	
 	Chars.appendValue(&chars, context, message);
@@ -103,7 +103,7 @@ static struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	Context.assertThisMask(context, Value(objectMask));
 	
-	return Value.chars(toChars(context, context->this));
+	return toChars(context, context->this);
 }
 
 static struct Value errorConstructor (struct Context * const context)

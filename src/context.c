@@ -65,7 +65,7 @@ void throw (struct Context * const self, struct Value value)
 			name = Value.text(&Text(errorName));
 		
 		Env.newline();
-		Env.printError(Value.stringLength(name), Value.stringBytes(name), "%.*s" , Value.stringLength(message), Value.stringBytes(message));
+		Env.printError(Value.stringLength(&name), Value.stringBytes(&name), "%.*s" , Value.stringLength(&message), Value.stringBytes(&message));
 		printBacktrace(self);
 		Ecc.printTextInput(self->ecc, self->ecc->text, 1);
 	}

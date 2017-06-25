@@ -36,7 +36,7 @@ static struct Value eval (struct Context * const context)
 	if (!Value.isString(value) || !Value.isPrimitive(value))
 		return value;
 	
-	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
+	input = Input.createFromBytes(Value.stringBytes(&value), Value.stringLength(&value), "(eval)");
 	
 	environment = context->parent->environment;
 	while (environment->prototype && environment->prototype != &context->ecc->global->environment)
@@ -60,8 +60,7 @@ static struct Value parseInt (struct Context * const context)
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	base = Value.toInteger(context, Context.argument(context, 1)).data.integer;
-	
-	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
+	text = Value.textOf(&value);
 	
 	if (!base)
 	{
@@ -87,8 +86,7 @@ static struct Value parseFloat (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	
-	text = Text.make(Value.stringBytes(value), Value.stringLength(value));
+	text = Value.textOf(&value);
 	return Lexer.scanBinary(text, 1);
 }
 
@@ -118,14 +116,14 @@ static struct Value decodeExcept (struct Context * const context, const char *ex
 	struct Value value;
 	const char *bytes;
 	uint16_t index = 0, count;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	uint8_t byte;
 	
 	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	bytes = Value.stringBytes(value);
-	count = Value.stringLength(value);
+	bytes = Value.stringBytes(&value);
+	count = Value.stringLength(&value);
 	
 	Chars.beginAppend(&chars);
 	
@@ -177,7 +175,7 @@ static struct Value decodeExcept (struct Context * const context, const char *ex
 		}
 	}
 	
-	return Value.chars(Chars.endAppend(&chars));
+	return Chars.endAppend(&chars);
 	
 	error:
 	Context.uriError(context, Chars.create("malformed URI"));
@@ -207,8 +205,8 @@ static struct Value encodeExpect (struct Context * const context, const char *ex
 	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	bytes = Value.stringBytes(value);
-	length = Value.stringLength(value);
+	bytes = Value.stringBytes(&value);
+	length = Value.stringLength(&value);
 	text = Text.make(bytes, length);
 	
 	chars = Chars.createSized(length * 3);

@@ -56,6 +56,21 @@ struct Value binary (double binary)
 	};
 }
 
+struct Value buffer (const char buffer[8], uint8_t units)
+{
+	struct Value value = {
+		.type = Value(bufferType),
+		.check = 1,
+	};
+	
+	assert(units <= 8);
+	memcpy(value.data.buffer, buffer, units);
+	if (units < 8)
+		value.data.buffer[units] = '\xff';
+	
+	return value;
+}
+
 struct Value key (struct Key key)
 {
 	return (struct Value){
@@ -77,7 +92,6 @@ struct Value text (const struct Text *text)
 struct Value chars (struct Chars *chars)
 {
 	assert(chars);
-	assert(!(chars->flags & Chars(inAppend)));
 	
 	return (struct Value){
 		.data = { .chars = chars },
@@ -239,7 +253,7 @@ int isTrue (struct Value value)
 	else if (value.type == Value(binaryType))
 		return !isnan(value.data.binary) && value.data.binary != 0;
 	else if (isString(value))
-		return stringLength(value) > 0;
+		return stringLength(&value) > 0;
 	
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
@@ -334,7 +348,8 @@ struct Value toBinary (struct Context * const context, struct Value value)
 		case Value(keyType):
 		case Value(charsType):
 		case Value(stringType):
-			return Lexer.scanBinary(Text.make(stringBytes(value), stringLength(value)), 0);
+		case Value(bufferType):
+			return Lexer.scanBinary(textOf(&value), 0);
 			
 		case Value(objectType):
 		case Value(errorType):
@@ -372,7 +387,7 @@ struct Value toInteger (struct Context * const context, struct Value value)
 
 struct Value binaryToString (double binary, int base)
 {
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	
 	if (binary == 0)
 		return text(&Text(zero));
@@ -390,7 +405,7 @@ struct Value binaryToString (double binary, int base)
 	
 	Chars.beginAppend(&chars);
 	Chars.appendBinary(&chars, binary, base);
-	return Value.chars(Chars.endAppend(&chars));
+	return Chars.endAppend(&chars);
 }
 
 struct Value toString (struct Context * const context, struct Value value)
@@ -399,8 +414,9 @@ struct Value toString (struct Context * const context, struct Value value)
 	{
 		case Value(textType):
 		case Value(charsType):
+		case Value(bufferType):
 			return value;
-		
+			
 		case Value(keyType):
 			return text(Key.textOf(value.data.key));
 		
@@ -446,28 +462,76 @@ struct Value toString (struct Context * const context, struct Value value)
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
-uint16_t stringLength (struct Value value)
+uint16_t stringLength (const struct Value *value)
 {
-	if (value.type == Value(charsType))
-		return value.data.chars->length;
-	else if (value.type == Value(textType))
-		return value.data.text->length;
-	else if (value.type == Value(stringType))
-		return value.data.string->value->length;
-	else
-		return 0;
+	switch (value->type)
+	{
+		case Value(charsType):
+			return value->data.chars->length;
+			
+		case Value(textType):
+			return value->data.text->length;
+			
+		case Value(stringType):
+			return value->data.string->value->length;
+			
+		case Value(bufferType):
+		{
+			char *last = memchr(value->data.buffer, '\xff', 8);
+			return last? last - value->data.buffer: 8;
+		}
+			
+		default:
+			return 0;
+	}
 }
 
-const char * stringBytes (struct Value value)
+const char * stringBytes (const struct Value *value)
 {
-	if (value.type == Value(charsType))
-		return value.data.chars->bytes;
-	else if (value.type == Value(textType))
-		return value.data.text->bytes;
-	else if (value.type == Value(stringType))
-		return value.data.string->value->bytes;
-	else
-		return NULL;
+	switch (value->type)
+	{
+		case Value(charsType):
+			return value->data.chars->bytes;
+			
+		case Value(textType):
+			return value->data.text->bytes;
+			
+		case Value(stringType):
+			return value->data.string->value->bytes;
+			
+		case Value(bufferType):
+			return value->data.buffer;
+			
+		default:
+			return NULL;
+	}
+}
+
+struct Text textOf (const struct Value *value)
+{
+	switch (value->type)
+	{
+		case Value(charsType):
+			return Text.make(value->data.chars->bytes, value->data.chars->length);
+			
+		case Value(textType):
+			return *value->data.text;
+			
+		case Value(stringType):
+			return Text.make(value->data.string->value->bytes, value->data.string->value->length);
+			
+		case Value(keyType):
+			return *Key.textOf(value->data.key);
+			
+		case Value(bufferType):
+		{
+			char *last = memchr(value->data.buffer, '\xff', 8);
+			return Text.make(value->data.buffer, last? last - value->data.buffer: 8);
+		}
+			
+		default:
+			return Text(empty);
+	}
 }
 
 struct Value toObject (struct Context * const context, struct Value value)
@@ -485,8 +549,9 @@ struct Value toObject (struct Context * const context, struct Value value)
 		
 		case Value(textType):
 		case Value(charsType):
-			return string(String.create(Chars.createWithBytes(stringLength(value), stringBytes(value))));
-		
+		case Value(bufferType):
+			return string(String.create(Chars.createWithBytes(stringLength(&value), stringBytes(&value))));
+			
 		case Value(falseType):
 		case Value(trueType):
 			return boolean(Boolean.create(value.type == Value(trueType)));
@@ -569,8 +634,9 @@ struct Value toType (struct Value value)
 		case Value(keyType):
 		case Value(textType):
 		case Value(charsType):
+		case Value(bufferType):
 			return text(&Text(string));
-		
+			
 		case Value(nullType):
 		case Value(objectType):
 		case Value(stringType):
@@ -599,12 +665,12 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
-		uint32_t aLength = stringLength(a);
-		uint32_t bLength = stringLength(b);
+		uint32_t aLength = stringLength(&a);
+		uint32_t bLength = stringLength(&b);
 		if (aLength != bLength)
 			return Value(false);
 		
-		return truth(!memcmp(stringBytes(a), stringBytes(b), aLength));
+		return truth(!memcmp(stringBytes(&a), stringBytes(&b), aLength));
 	}
 	else if (a.type == b.type)
 		return Value(true);
@@ -642,12 +708,12 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
-		uint32_t aLength = stringLength(a);
-		uint32_t bLength = stringLength(b);
+		uint32_t aLength = stringLength(&a);
+		uint32_t bLength = stringLength(&b);
 		if (aLength != bLength)
 			return Value(false);
 		
-		return truth(!memcmp(stringBytes(a), stringBytes(b), aLength));
+		return truth(!memcmp(stringBytes(&a), stringBytes(&b), aLength));
 	}
 	else if (isObject(a) && isObject(b))
 		return truth(a.data.object == b.data.object);
@@ -667,12 +733,12 @@ struct Value add (struct Context * const context, struct Value a, struct Value b
 		
 		if (isString(a) || isString(b))
 		{
-			struct Chars *chars;
+			struct Chars(Append) chars;
 			
 			Chars.beginAppend(&chars);
-			chars = Chars.appendValue(&chars, context, a);
-			chars = Chars.appendValue(&chars, context, b);
-			return Value.chars(Chars.endAppend(&chars));
+			Chars.appendValue(&chars, context, a);
+			Chars.appendValue(&chars, context, b);
+			return Chars.endAppend(&chars);
 		}
 	}
 	return binary(toBinary(context, a).data.binary + toBinary(context, b).data.binary);
@@ -692,16 +758,16 @@ struct Value compare (struct Context * const context, struct Value a, struct Val
 	
 	if (isString(a) && isString(b))
 	{
-		uint16_t aLength = stringLength(a);
-		uint16_t bLength = stringLength(b);
+		uint16_t aLength = stringLength(&a);
+		uint16_t bLength = stringLength(&b);
 		
-		if (aLength < bLength && !memcmp(stringBytes(a), stringBytes(b), aLength))
+		if (aLength < bLength && !memcmp(stringBytes(&a), stringBytes(&b), aLength))
 			return Value(true);
 		
-		if (aLength > bLength && !memcmp(stringBytes(a), stringBytes(b), bLength))
+		if (aLength > bLength && !memcmp(stringBytes(&a), stringBytes(&b), bLength))
 			return Value(false);
 		
-		return truth(memcmp(stringBytes(a), stringBytes(b), aLength) < 0);
+		return truth(memcmp(stringBytes(&a), stringBytes(&b), aLength) < 0);
 	}
 	else
 	{
@@ -772,8 +838,9 @@ const char * typeName (enum Value(Type) type)
 		case Value(keyType):
 		case Value(textType):
 		case Value(charsType):
+		case Value(bufferType):
 			return "string";
-		
+			
 		case Value(objectType):
 		case Value(hostType):
 			return "object";
@@ -864,31 +931,17 @@ void dumpTo (struct Value value, FILE *file)
 			return;
 		
 		case Value(keyType):
+		case Value(textType):
+		case Value(charsType):
+		case Value(stringType):
+		case Value(bufferType):
 		{
-			const struct Text *text = Key.textOf(value.data.key);
+			const struct Text text = textOf(&value);
 			putc('\'', file);
-			fwrite(text->bytes, sizeof(char), text->length, file);
+			fwrite(text.bytes, sizeof(char), text.length, file);
 			putc('\'', file);
 			return;
 		}
-		
-		case Value(textType):
-			putc('\'', file);
-			fwrite(value.data.text->bytes, sizeof(char), value.data.text->length, file);
-			putc('\'', file);
-			return;
-		
-		case Value(charsType):
-			putc('\'', file);
-			fwrite(value.data.chars->bytes, sizeof(char), value.data.chars->length, file);
-			putc('\'', file);
-			return;
-		
-		case Value(stringType):
-			putc('\'', file);
-			fwrite(value.data.string->value->bytes, sizeof(char), value.data.string->value->length, file);
-			putc('\'', file);
-			return;
 		
 		case Value(objectType):
 		case Value(dateType):

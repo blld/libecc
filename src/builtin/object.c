@@ -58,7 +58,7 @@ static inline uint32_t getIndexOrKey (struct Value property, struct Key *key)
 			index = property.data.binary;
 		else if (Value.isString(property))
 		{
-			struct Text text = Text.make(Value.stringBytes(property), Value.stringLength(property));
+			struct Text text = Value.textOf(&property);
 			if ((index = Lexer.scanElement(text)) > Object(ElementMax))
 			{
 				index = UINT32_MAX;

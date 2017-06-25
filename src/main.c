@@ -110,8 +110,8 @@ static void test (const char *func, int line, const char *test, const char *expe
 	++testCount;
 	
 	assert(Value.isString(ecc->result));
-	bytes = Value.stringBytes(ecc->result);
-	length = Value.stringLength(ecc->result);
+	bytes = Value.stringBytes(&ecc->result);
+	length = Value.stringLength(&ecc->result);
 	
 	if (length != strlen(expect) || memcmp(expect, bytes, length))
 	{

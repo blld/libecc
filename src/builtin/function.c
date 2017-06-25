@@ -36,10 +36,10 @@ const struct Object(Type) Function(type) = {
 	/* XXX: don't finalize */
 };
 
-static struct Chars * toChars (struct Context * const context, struct Value value)
+static struct Value toChars (struct Context * const context, struct Value value)
 {
 	struct Function *self;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	
 	assert(value.type == Value(functionType));
 	assert(value.data.function);
@@ -61,9 +61,7 @@ static struct Value toString (struct Context * const context)
 	Context.assertThisType(context, Value(functionType));
 	
 	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
-	{
-		return Value.chars(toChars(context, context->this));
-	}
+		return toChars(context, context->this);
 	else
 		return Value.text(&context->this.data.function->text);
 }
@@ -187,7 +185,7 @@ static struct Value constructor (struct Context * const context)
 	{
 		int_fast32_t index;
 		struct Value value;
-		struct Chars *chars;
+		struct Chars(Append) chars;
 		struct Input *input;
 		struct Context subContext = {
 			.parent = context->parent,
@@ -205,14 +203,15 @@ static struct Value constructor (struct Context * const context)
 				Chars.append(&chars, ") {");
 			
 			value = Value.toString(context, Context.variableArgument(context, index));
-			Chars.append(&chars, "%.*s", Value.stringLength(value), Value.stringBytes(value));
+			Chars.append(&chars, "%.*s", Value.stringLength(&value), Value.stringBytes(&value));
 			
 			if (index < argumentCount - 2)
 				Chars.append(&chars, ",");
 		}
 		Chars.append(&chars, "})");
 		
-		input = Input.createFromBytes(chars->bytes, chars->length, "(Function)");
+		value = Chars.endAppend(&chars);
+		input = Input.createFromBytes(Value.stringBytes(&value), Value.stringLength(&value), "(Function)");
 		Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	}
 	else

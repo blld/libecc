@@ -65,8 +65,8 @@ static struct Value charAt (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(stringType));
 	
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	index = Value.toInteger(context, Context.argument(context, 0)).data.integer;
 	
 	text = textAtIndex(chars, length, index, 0);
@@ -74,16 +74,14 @@ static struct Value charAt (struct Context * const context)
 		return Value.text(&Text(empty));
 	else
 	{
-		struct Chars *result;
 		struct Text(Char) c = Text.character(text);
 		
 		if (c.codepoint < 0x010000)
-		{
-			result = Chars.createSized(c.units);
-			memcpy(result->bytes, text.bytes, c.units);
-		}
+			return Value.buffer(text.bytes, c.units);
 		else
 		{
+			char buffer[8];
+			
 			/* simulate 16-bit surrogate */
 			
 			c.codepoint -= 0x010000;
@@ -92,11 +90,9 @@ static struct Value charAt (struct Context * const context)
 			else
 				c.codepoint = ((c.codepoint >> 10) & 0x3ff) + 0xd800;
 			
-			result = Chars.createSized(3);
-			Chars.writeCodepoint(result->bytes, c.codepoint);
+			Chars.writeCodepoint(buffer, c.codepoint);
+			return Value.buffer(buffer, 3);
 		}
-		
-		return Value.chars(result);
 	}
 }
 
@@ -109,8 +105,8 @@ static struct Value charCodeAt (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(stringType));
 	
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	index = Value.toInteger(context, Context.argument(context, 0)).data.integer;
 	
 	text = textAtIndex(chars, length, index, 0);
@@ -137,7 +133,7 @@ static struct Value charCodeAt (struct Context * const context)
 
 static struct Value concat (struct Context * const context)
 {
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	int32_t index, count;
 	
 	Context.assertVariableParameter(context);
@@ -147,9 +143,9 @@ static struct Value concat (struct Context * const context)
 	Chars.beginAppend(&chars);
 	Chars.appendValue(&chars, context, Context.this(context));
 	for (index = 0; index < count; ++index)
-		chars = Chars.appendValue(&chars, context, Context.variableArgument(context, index));
+		Chars.appendValue(&chars, context, Context.variableArgument(context, index));
 	
-	return Value.chars(Chars.endAppend(&chars));
+	return Chars.endAppend(&chars);
 }
 
 static struct Value indexOf (struct Context * const context)
@@ -164,12 +160,12 @@ static struct Value indexOf (struct Context * const context)
 	argumentCount = Context.variableArgumentCount(context);
 	
 	context->this = Value.toString(context, Context.this(context));
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	
 	search = argumentCount >= 1? Value.toString(context, Context.variableArgument(context, 0)): Value.text(&Text(undefined));
-	searchChars = Value.stringBytes(search);
-	searchLength = Value.stringLength(search);
+	searchChars = Value.stringBytes(&search);
+	searchLength = Value.stringLength(&search);
 	index = argumentCount >= 2? Value.toInteger(context, Context.variableArgument(context, 1)).data.integer: 0;
 	
 	text = textAtIndex(chars, length, index, 0);
@@ -204,12 +200,12 @@ static struct Value lastIndexOf (struct Context * const context)
 	argumentCount = Context.variableArgumentCount(context);
 	
 	context->this = Value.toString(context, Context.this(context));
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	
 	search = argumentCount >= 1? Value.toString(context, Context.variableArgument(context, 0)): Value.text(&Text(undefined));
-	searchChars = Value.stringBytes(search);
-	searchLength = Value.stringLength(search);
+	searchChars = Value.stringBytes(&search);
+	searchLength = Value.stringLength(&search);
 	
 	if (argumentCount < 2 || Context.variableArgument(context, 1).type == Value(undefinedType))
 		index = unitIndex(chars, length, length);
@@ -254,8 +250,8 @@ static struct Value match (struct Context * const context)
 		regexp = RegExp.createWith(context, value, Value(undefined));
 	
 	{
-		const char *bytes = Value.stringBytes(context->this);
-		uint16_t length = Value.stringLength(context->this);
+		const char *bytes = Value.stringBytes(&context->this);
+		uint16_t length = Value.stringLength(&context->this);
 		struct Text text = Text.make(bytes, length), seek = text;
 		const char *capture[regexp->count * 2];
 		const char *index[regexp->count * 2];
@@ -296,7 +292,7 @@ static struct Value match (struct Context * const context)
 	}
 }
 
-static void replaceText (struct Chars **chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
+static void replaceText (struct Chars(Append) *chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
 {
 	struct Text(Char) c;
 	
@@ -361,7 +357,7 @@ static void replaceText (struct Chars **chars, struct Text replace, struct Text 
 static struct Value replace (struct Context * const context)
 {
 	struct RegExp *regexp = NULL;
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	struct Value value, replace;
 	struct Text text;
 	const char *bytes, *searchBytes;
@@ -370,8 +366,8 @@ static struct Value replace (struct Context * const context)
 	Context.assertParameterCount(context, 2);
 	
 	context->this = Value.toString(context, Context.this(context));
-	bytes = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	bytes = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	text = Text.make(bytes, length);
 	
 	value = Context.argument(context, 0);
@@ -423,11 +419,11 @@ static struct Value replace (struct Context * const context)
 					arguments->element[regexp->count + 1].value = context->this;
 					
 					result = Value.toString(context, Op.callFunctionArguments(context, 0, replace.data.function, Value(undefined), arguments));
-					Chars.append(&chars, "%.*s", Value.stringLength(result), Value.stringBytes(result));
+					Chars.append(&chars, "%.*s", Value.stringLength(&result), Value.stringBytes(&result));
 				}
 				else
 					replaceText(&chars,
-								Text.make(Value.stringBytes(replace), Value.stringLength(replace)),
+								Text.make(Value.stringBytes(&replace), Value.stringLength(&replace)),
 								Text.make(bytes, state.capture[0] - bytes),
 								Text.make(state.capture[0], state.capture[1] - state.capture[0]),
 								Text.make(state.capture[1], (bytes + length) - state.capture[1]),
@@ -444,12 +440,12 @@ static struct Value replace (struct Context * const context)
 		
 		Chars.append(&chars, "%.*s", text.length, text.bytes);
 		
-		return Value.chars(Chars.endAppend(&chars));
+		return Chars.endAppend(&chars);
 	}
 	else
 	{
-		searchBytes = Value.stringBytes(value);
-		searchLength = Value.stringLength(value);
+		searchBytes = Value.stringBytes(&value);
+		searchLength = Value.stringLength(&value);
 		
 		for (;;)
 		{
@@ -477,11 +473,11 @@ static struct Value replace (struct Context * const context)
 			arguments->element[2].value = context->this;
 			
 			result = Value.toString(context, Op.callFunctionArguments(context, 0, replace.data.function, Value(undefined), arguments));
-			Chars.append(&chars, "%.*s", Value.stringLength(result), Value.stringBytes(result));
+			Chars.append(&chars, "%.*s", Value.stringLength(&result), Value.stringBytes(&result));
 		}
 		else
 			replaceText(&chars,
-						Text.make(Value.stringBytes(replace), Value.stringLength(replace)),
+						Text.make(Value.stringBytes(&replace), Value.stringLength(&replace)),
 						Text.make(text.bytes, text.bytes - bytes),
 						Text.make(text.bytes, text.length),
 						Text.make(text.bytes, length - (text.bytes - bytes)),
@@ -490,7 +486,7 @@ static struct Value replace (struct Context * const context)
 		
 		Chars.append(&chars, "%.*s", length - (text.bytes - bytes), text.bytes + text.length);
 		
-		return Value.chars(Chars.endAppend(&chars));
+		return Chars.endAppend(&chars);
 	}
 }
 
@@ -508,8 +504,8 @@ static struct Value slice (struct Context * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 	
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	
 	from = Context.argument(context, 0);
 	if (from.type == Value(undefinedType))
@@ -571,7 +567,7 @@ static struct Value split (struct Context * const context)
 	Context.assertParameterCount(context, 2);
 	
 	context->this = Value.toString(context, Context.this(context));
-	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	text = Value.textOf(&context->this);
 	
 	separatorValue = Context.argument(context, 0);
 	if (separatorValue.type == Value(undefinedType) || !text.length)
@@ -585,7 +581,7 @@ static struct Value split (struct Context * const context)
 	else
 	{
 		separatorValue = Value.toString(context, separatorValue);
-		separator = Text.make(Value.stringBytes(separatorValue), Value.stringLength(separatorValue));
+		separator = Value.textOf(&separatorValue);
 	}
 	
 	limitValue = Context.argument(context, 1);
@@ -661,23 +657,19 @@ static struct Value split (struct Context * const context)
 				break;
 			
 			c = Text.character(text);
-			if (c.codepoint >= 0x010000)
-			{
-				/* simulate 16-bit surrogate */
-				
-				element = Chars.createSized(3);
-				Chars.writeCodepoint(element->bytes, (((c.codepoint - 0x010000) >> 10) & 0x3ff) + 0xd800);
-				Object.addElement(array, size++, Value.chars(element), 0);
-				
-				element = Chars.createSized(3);
-				Chars.writeCodepoint(element->bytes, (((c.codepoint - 0x010000) >> 0) & 0x3ff) + 0xdc00);
-				Object.addElement(array, size++, Value.chars(element), 0);
-			}
+			if (c.codepoint < 0x010000)
+				Object.addElement(array, size++, Value.buffer(text.bytes, c.units), 0);
 			else
 			{
-				element = Chars.createSized(c.units);
-				memcpy(element->bytes, text.bytes, c.units);
-				Object.addElement(array, size++, Value.chars(element), 0);
+				char buffer[8];
+				
+				/* simulate 16-bit surrogate */
+				
+				Chars.writeCodepoint(buffer, (((c.codepoint - 0x010000) >> 10) & 0x3ff) + 0xd800);
+				Object.addElement(array, size++, Value.buffer(buffer, 3), 0);
+				
+				Chars.writeCodepoint(buffer, (((c.codepoint - 0x010000) >> 0) & 0x3ff) + 0xdc00);
+				Object.addElement(array, size++, Value.buffer(buffer, 3), 0);
 			}
 			Text.advance(&text, c.units);
 		}
@@ -732,8 +724,8 @@ static struct Value substring (struct Context * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 	
-	chars = Value.stringBytes(context->this);
-	length = Value.stringLength(context->this);
+	chars = Value.stringBytes(&context->this);
+	length = Value.stringLength(&context->this);
 	
 	from = Context.argument(context, 0);
 	if (from.type == Value(undefinedType))
@@ -800,7 +792,7 @@ static struct Value toLowerCase (struct Context * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 	
-	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	text = Value.textOf(&context->this);
 	{
 		char buffer[text.length * 2];
 		char *end = Text.toLower(text, buffer);
@@ -820,7 +812,7 @@ static struct Value toUpperCase (struct Context * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 		
-		text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+		text = Value.textOf(&context->this);
 	{
 		char buffer[text.length * 3];
 		char *end = Text.toUpper(text, buffer);
@@ -841,7 +833,7 @@ static struct Value trim (struct Context * const context)
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 	
-	text = Text.make(Value.stringBytes(context->this), Value.stringLength(context->this));
+	text = Value.textOf(&context->this);
 	while (text.length)
 	{
 		c = Text.character(text);
@@ -879,14 +871,14 @@ static struct Value constructor (struct Context * const context)
 		value = Value.toString(context, value);
 	
 	if (context->construct)
-		return Value.string(create(Chars.createWithBytes(Value.stringLength(value), Value.stringBytes(value))));
+		return Value.string(create(Chars.createWithBytes(Value.stringLength(&value), Value.stringBytes(&value))));
 	else
 		return value;
 }
 
 static struct Value fromCharCode (struct Context * const context)
 {
-	struct Chars *chars;
+	struct Chars(Append) chars;
 	uint16_t index, count;
 	
 	Context.assertVariableParameter(context);
@@ -898,7 +890,7 @@ static struct Value fromCharCode (struct Context * const context)
 	for (index = 0; index < count; ++index)
 		Chars.appendCodepoint(&chars, (uint16_t)Value.toInteger(context, Context.variableArgument(context, index)).data.integer);
 	
-	return Value.chars(Chars.endAppend(&chars));
+	return Chars.endAppend(&chars);
 }
 
 static struct Value getLength (struct Context * const context)
@@ -980,15 +972,12 @@ struct Value valueAtIndex (struct String *self, uint32_t position)
 		return Value(undefined);
 	else
 	{
-		struct Chars *result;
-		
 		if (c.codepoint < 0x010000)
-		{
-			result = Chars.createSized(c.units);
-			memcpy(result->bytes, text.bytes, c.units);
-		}
+			return Value.buffer(text.bytes, c.units);
 		else
 		{
+			char buffer[8];
+			
 			/* simulate 16-bit surrogate */
 			
 			c.codepoint -= 0x010000;
@@ -997,11 +986,9 @@ struct Value valueAtIndex (struct String *self, uint32_t position)
 			else
 				c.codepoint = ((c.codepoint >> 10) & 0x3ff) + 0xd800;
 			
-			result = Chars.createSized(3);
-			Chars.writeCodepoint(result->bytes, c.codepoint);
+			Chars.writeCodepoint(buffer, c.codepoint);
+			return Value.buffer(buffer, 3);
 		}
-		
-		return Value.chars(result);
 	}
 }
 

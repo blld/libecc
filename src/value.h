@@ -37,6 +37,7 @@
 		/* 0001 0000 */ Value(keyType) = 0x10,
 		/* 0001 0010 */ Value(textType) = 0x12,
 		/* 0001 0011 */ Value(charsType) = 0x13,
+		/* 0001 0100 */ Value(bufferType) = 0x14,
 		
 		/* true */
 		
@@ -100,6 +101,7 @@ Interface(Value,
 	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
+	(struct Value, buffer ,(const char buffer[8], uint8_t units))
 	(struct Value, key ,(struct Key key))
 	(struct Value, text ,(const struct Text *text))
 	(struct Value, chars ,(struct Chars *chars))
@@ -129,8 +131,9 @@ Interface(Value,
 	(struct Value, binaryToString ,(double binary, int base))
 	
 	(struct Value, toString ,(struct Context * const, struct Value))
-	(uint16_t, stringLength ,(struct Value))
-	(const char *, stringBytes ,(struct Value))
+	(uint16_t, stringLength ,(const struct Value *))
+	(const char *, stringBytes ,(const struct Value *))
+	(struct Text, textOf ,(const struct Value *string))
 	
 	(struct Value, toObject ,(struct Context * const, struct Value))
 	(struct Value, objectValue ,(struct Object *))
@@ -156,6 +159,7 @@ Interface(Value,
 		{
 			int32_t integer;
 			double binary;
+			char buffer[8];
 			struct Key key;
 			const struct Text *text;
 			

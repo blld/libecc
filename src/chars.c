@@ -32,10 +32,10 @@ uint32_t sizeForLength(uint16_t length)
 {
 	uint32_t size = sizeof(struct Chars) + length;
 	
-	if (size < 8)
+	if (size < 16)
 	{
 		/* 8-bytes mini */
-		return 8;
+		return 16;
 	}
 	else if (size < 1024)
 	{
@@ -52,9 +52,12 @@ uint32_t sizeForLength(uint16_t length)
 }
 
 static
-struct Chars *reuseOrCreate (struct Chars **chars, uint16_t length)
+struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint16_t length)
 {
-	struct Chars *self = NULL, *reuse = chars? *chars: NULL;
+	struct Chars *self = NULL, *reuse = chars? chars->value: NULL;
+	
+	if (length <= 8)
+		return NULL;
 	
 	if (reuse && sizeForLength(reuse->length) >= sizeForLength(length))
 		return reuse;
@@ -68,14 +71,15 @@ struct Chars *reuseOrCreate (struct Chars **chars, uint16_t length)
 	}
 	
 	if (reuse)
-	{
 		memcpy(self, reuse, sizeof(*self) + reuse->length);
-		reuse->flags &= ~Chars(inAppend);
-		*chars = self;
-	}
 	else
+	{
 		*self = Chars.identity;
+		self->length = chars->units;
+		memcpy(self->bytes, chars->buffer, chars->units);
+	}
 	
+	chars->value = self;
 	return self;
 }
 
@@ -112,7 +116,9 @@ struct Chars * create (const char *format, ...)
 
 struct Chars * createSized (uint16_t length)
 {
-	struct Chars *self = reuseOrCreate(NULL, length);
+	struct Chars *self = malloc(sizeForLength(length));
+	Pool.addChars(self);
+	*self = Chars.identity;
 	
 	self->length = length;
 	self->bytes[length] = '\0';
@@ -122,7 +128,9 @@ struct Chars * createSized (uint16_t length)
 
 struct Chars * createWithBytes (uint16_t length, const char *bytes)
 {
-	struct Chars *self = reuseOrCreate(NULL, length);
+	struct Chars *self = malloc(sizeForLength(length));
+	Pool.addChars(self);
+	*self = Chars.identity;
 	
 	self->length = length;
 	memcpy(self->bytes, bytes, length);
@@ -132,50 +140,50 @@ struct Chars * createWithBytes (uint16_t length, const char *bytes)
 }
 
 
-void beginAppend (struct Chars **chars)
+void beginAppend (struct Chars(Append) *chars)
 {
-	struct Chars *self = reuseOrCreate(NULL, 0);
-	
-	self->flags |= Chars(inAppend);
-	*chars = self;
+	chars->value = NULL;
+	chars->units = 0;
 }
 
-struct Chars * append (struct Chars **chars, const char *format, ...)
+void append (struct Chars(Append) *chars, const char *format, ...)
 {
 	uint16_t length;
 	va_list ap;
-	struct Chars *self = *chars;
-	
-	assert(self->flags & Chars(inAppend));
+	struct Chars *self = chars->value;
 	
 	va_start(ap, format);
 	length = vsnprintf(NULL, 0, format, ap);
 	va_end(ap);
 	
-	self = reuseOrCreate(chars, self->length + length);
+	self = reuseOrCreate(chars, (self? self->length: chars->units) + length);
 	
 	va_start(ap, format);
-	vsprintf(self->bytes + self->length, format, ap);
-	self->length += length;
+	vsprintf(self? (self->bytes + self->length): (chars->buffer + chars->units), format, ap);
 	va_end(ap);
 	
-	return self;
+	if (self)
+		self->length += length;
+	else
+		chars->units += length;
 }
 
 static
-inline struct Chars * appendText (struct Chars ** chars, struct Text text)
+void appendText (struct Chars(Append) * chars, struct Text text)
 {
-	struct Chars *self = *chars;
+	struct Chars *self = chars->value;
 	struct Text(Char) lo = Text.character(text), hi;
 	struct Text prev;
 	
-	assert(self->flags & Chars(inAppend));
-	
 	if (!text.length)
-		return self;
+		return;
 	
-	self = reuseOrCreate(chars, self->length + text.length);
-	prev = Text.make(self->bytes + self->length, self->length);
+	self = reuseOrCreate(chars, (self? self->length: chars->units) + text.length);
+	
+	if (self)
+		prev = Text.make(self->bytes + self->length, self->length);
+	else
+		prev = Text.make(chars->buffer + chars->units, chars->units);
 	
 	if (lo.units == 3 && lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
 	{
@@ -183,73 +191,84 @@ inline struct Chars * appendText (struct Chars ** chars, struct Text text)
 		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
 			/* merge 16-bit surrogates */
-			self->length = prev.length + writeCodepoint(self->bytes + prev.length, 0x10000 + (((hi.codepoint - 0xD800) << 10) | ((lo.codepoint - 0xDC00) & 0x03FF)));
+			uint32_t cp = 0x10000 + (((hi.codepoint - 0xD800) << 10) | ((lo.codepoint - 0xDC00) & 0x03FF));
+			
+			if (self)
+				self->length = prev.length + writeCodepoint(self->bytes + prev.length, cp);
+			else
+				chars->units = prev.length + writeCodepoint(chars->buffer + prev.length, cp);
+			
 			Text.nextCharacter(&text);
 		}
 	}
 	
-	memcpy(self->bytes + self->length, text.bytes, text.length);
-	self->length += text.length;
-	self->bytes[self->length] = '\0';
-	
-	return self;
+	memcpy(self? (self->bytes + self->length): (chars->buffer + chars->units), text.bytes, text.length);
+	if (self)
+		self->length += text.length;
+	else
+		chars->units += text.length;
 }
 
-struct Chars * appendCodepoint (struct Chars **chars, uint32_t cp)
+void appendCodepoint (struct Chars(Append) *chars, uint32_t cp)
 {
 	char buffer[5] = { 0 };
 	struct Text text = Text.make(buffer, writeCodepoint(buffer, cp));
-	return appendText(chars, text);
+	appendText(chars, text);
 }
 
-struct Chars * appendValue (struct Chars **chars, struct Context * const context, struct Value value)
+void appendValue (struct Chars(Append) *chars, struct Context * const context, struct Value value)
 {
 	switch ((enum Value(Type))value.type)
 	{
 		case Value(keyType):
-			return appendText(chars, *Key.textOf(value.data.key));
-		
 		case Value(textType):
-			return appendText(chars, *value.data.text);
-		
 		case Value(stringType):
-			return appendText(chars, Text.make(value.data.string->value->bytes, value.data.string->value->length));
-		
 		case Value(charsType):
-			return appendText(chars, Text.make(value.data.chars->bytes, value.data.chars->length));
-		
+		case Value(bufferType):
+			appendText(chars, Value.textOf(&value));
+			return;
+			
 		case Value(nullType):
-			return appendText(chars, Text(null));
-		
+			appendText(chars, Text(null));
+			return;
+			
 		case Value(undefinedType):
-			return appendText(chars, Text(undefined));
-		
+			appendText(chars, Text(undefined));
+			return;
+			
 		case Value(falseType):
-			return appendText(chars, Text(false));
-		
+			appendText(chars, Text(false));
+			return;
+			
 		case Value(trueType):
-			return appendText(chars, Text(true));
-		
+			appendText(chars, Text(true));
+			return;
+			
 		case Value(booleanType):
-			return appendText(chars, value.data.boolean->truth? Text(true): Text(false));
-		
+			appendText(chars, value.data.boolean->truth? Text(true): Text(false));
+			return;
+			
 		case Value(integerType):
-			return appendBinary(chars, value.data.integer, 10);
-		
+			appendBinary(chars, value.data.integer, 10);
+			return;
+			
 		case Value(numberType):
-			return appendBinary(chars, value.data.number->value, 10);
-		
+			appendBinary(chars, value.data.number->value, 10);
+			return;
+			
 		case Value(binaryType):
-			return appendBinary(chars, value.data.binary, 10);
-		
+			appendBinary(chars, value.data.binary, 10);
+			return;
+			
 		case Value(regexpType):
 		case Value(functionType):
 		case Value(objectType):
 		case Value(errorType):
 		case Value(dateType):
 		case Value(hostType):
-			return appendValue(chars, context, Value.toString(context, value));
-		
+			appendValue(chars, context, Value.toString(context, value));
+			return;
+			
 		case Value(referenceType):
 			break;
 	}
@@ -257,60 +276,77 @@ struct Chars * appendValue (struct Chars **chars, struct Context * const context
 }
 
 static
-struct Chars * stripBinary (struct Chars * chars)
+uint16_t stripBinaryOfBytes (char *bytes, uint16_t length)
 {
-	while (chars->bytes[chars->length - 1] == '0')
-		chars->bytes[--chars->length] = '\0';
+	while (bytes[length - 1] == '0')
+		bytes[--length] = '\0';
 	
-	if (chars->bytes[chars->length - 1] == '.')
-		chars->bytes[--chars->length] = '\0';
+	if (bytes[length - 1] == '.')
+		bytes[--length] = '\0';
 	
-	return chars;
+	return length;
 }
 
-struct Chars * normalizeBinary (struct Chars * chars)
+static
+uint16_t normalizeBinaryOfBytes (char *bytes, uint16_t length)
 {
-	if (chars->length > 5 && chars->bytes[chars->length - 5] == 'e' && chars->bytes[chars->length - 3] == '0')
+	if (length > 5 && bytes[length - 5] == 'e' && bytes[length - 3] == '0')
 	{
-		chars->bytes[chars->length - 3] = chars->bytes[chars->length - 2];
-		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
-		chars->bytes[chars->length - 1] = 0;
-		--chars->length;
+		bytes[length - 3] = bytes[length - 2];
+		bytes[length - 2] = bytes[length - 1];
+		bytes[length - 1] = 0;
+		--length;
 	}
-	else if (chars->length > 4 && chars->bytes[chars->length - 4] == 'e' && chars->bytes[chars->length - 2] == '0')
+	else if (length > 4 && bytes[length - 4] == 'e' && bytes[length - 2] == '0')
 	{
-		chars->bytes[chars->length - 2] = chars->bytes[chars->length - 1];
-		chars->bytes[chars->length - 1] = 0;
-		--chars->length;
+		bytes[length - 2] = bytes[length - 1];
+		bytes[length - 1] = 0;
+		--length;
 	}
-	return chars;
+	return length;
 }
 
-struct Chars * appendBinary (struct Chars **chars, double binary, int base)
+void appendBinary (struct Chars(Append) *chars, double binary, int base)
 {
 	if (isnan(binary))
-		return appendText(chars, Text(nan));
+	{
+		appendText(chars, Text(nan));
+		return;
+	}
 	else if (!isfinite(binary))
 	{
 		if (binary < 0)
-			return appendText(chars, Text(negativeInfinity));
+			appendText(chars, Text(negativeInfinity));
 		else
-			return appendText(chars, Text(infinity));
+			appendText(chars, Text(infinity));
+		
+		return;
 	}
 	
 	if (!base || base == 10)
 	{
 		if (binary <= -1e+21 || binary >= 1e+21)
-			return normalizeBinary(append(chars, "%g", binary));
-		if ((binary < 1 && binary >= 0.000001) || (binary > -1 && binary <= -0.000001))
-			return stripBinary(append(chars, "%.10f", binary));
+			append(chars, "%g", binary);
+		else if ((binary < 1 && binary >= 0.000001) || (binary > -1 && binary <= -0.000001))
+		{
+			append(chars, "%.10f", binary);
+			if (chars->value)
+				chars->value->length = stripBinaryOfBytes(chars->value->bytes, chars->value->length);
+			else
+				chars->units = stripBinaryOfBytes(chars->buffer, chars->units);
+			
+			return;
+		}
 		else
 		{
 			double dblDig10 = pow(10, DBL_DIG);
 			int precision = binary >= -dblDig10 && binary <= dblDig10? DBL_DIG: 21;
 			
-			return normalizeBinary(append(chars, "%.*g", precision, binary));
+			append(chars, "%.*g", precision, binary);
 		}
+		
+		normalizeBinary(chars);
+		return;
 	}
 	else
 	{
@@ -321,7 +357,7 @@ struct Chars * appendBinary (struct Chars **chars, double binary, int base)
 		{
 			const char *format = sign? (base == 8? "-%lo": "-%lx"): (base == 8? "%lo": "%lx");
 			
-			return append(chars, format, integer);
+			append(chars, format, integer);
 		}
 		else
 		{
@@ -338,21 +374,30 @@ struct Chars * appendBinary (struct Chars **chars, double binary, int base)
 				*(--p) = '-';
 			
 			count = buffer + sizeof(buffer) - 1 - p;
-			return append(chars, "%.*s", count, p);
+			append(chars, "%.*s", count, p);
 		}
 	}
 }
 
-struct Chars * endAppend (struct Chars **chars)
+void normalizeBinary (struct Chars(Append) *chars)
 {
-	struct Chars *self = *chars;
+	if (chars->value)
+		chars->value->length = normalizeBinaryOfBytes(chars->value->bytes, chars->value->length);
+	else
+		chars->units = normalizeBinaryOfBytes(chars->buffer, chars->units);
+}
+
+struct Value endAppend (struct Chars(Append) *chars)
+{
+	struct Chars *self = chars->value;
 	
-	assert(self->flags & Chars(inAppend));
-	
-	self->bytes[self->length] = '\0';
-	self->flags &= ~Chars(inAppend);
-	
-	return self;
+	if (chars->value)
+	{
+		self->bytes[self->length] = '\0';
+		return Value.chars(self);
+	}
+	else
+		return Value.buffer(chars->buffer, chars->units);
 }
 
 void destroy (struct Chars *self)

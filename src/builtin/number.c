@@ -23,6 +23,7 @@ const struct Object(Type) Number(type) = {
 
 static struct Value toExponential (struct Context * const context)
 {
+	struct Chars(Append) chars;
 	struct Value value;
 	double binary;
 	
@@ -31,20 +32,27 @@ static struct Value toExponential (struct Context * const context)
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	
+	Chars.beginAppend(&chars);
+	
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 20)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
-		return Value.chars(Chars.normalizeBinary(Chars.create("%.*e", precision, binary)));
+		Chars.append(&chars, "%.*e", precision, binary);
 	}
 	else
-		return Value.chars(Chars.normalizeBinary(Chars.create("%e", binary)));
+		Chars.append(&chars, "%e", binary);
+	
+	Chars.normalizeBinary(&chars);
+	return Chars.endAppend(&chars);
 }
 
 static struct Value toFixed (struct Context * const context)
 {
+	struct Chars(Append) chars;
 	struct Value value;
 	double binary;
 	
@@ -53,20 +61,27 @@ static struct Value toFixed (struct Context * const context)
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	
+	Chars.beginAppend(&chars);
+	
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 20)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
-		return Value.chars(Chars.normalizeBinary(Chars.create("%.*f", precision, binary)));
+		Chars.append(&chars, "%.*f", precision, binary);
 	}
 	else
-		return Value.chars(Chars.normalizeBinary(Chars.create("%f", binary)));
+		Chars.append(&chars, "%f", binary);
+	
+	Chars.normalizeBinary(&chars);
+	return Chars.endAppend(&chars);
 }
 
 static struct Value toPrecision (struct Context * const context)
 {
+	struct Chars(Append) chars;
 	struct Value value;
 	double binary;
 	
@@ -75,16 +90,22 @@ static struct Value toPrecision (struct Context * const context)
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	
+	Chars.beginAppend(&chars);
+	
 	if (value.type != Value(undefinedType))
 	{
 		int32_t precision = Value.toInteger(context, value).data.integer;
 		if (precision < 0 || precision > 100)
 			Context.rangeError(context, Chars.create("precision %d out of range", precision));
 		
-		return Value.chars(Chars.normalizeBinary(Chars.create("%.*g", precision, binary)));
+		Chars.append(&chars, "%.*g", precision, binary);
+		Chars.normalizeBinary(&chars);
 	}
 	else
-		return Value.binaryToString(binary, 10);
+		Chars.appendBinary(&chars, binary, 10);
+	
+	return Chars.endAppend(&chars);
 }
 
 static struct Value toString (struct Context * const context)

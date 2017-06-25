@@ -508,7 +508,7 @@ struct Value eval (struct Context * const context)
 	if (!Value.isString(value) || !Value.isPrimitive(value))
 		return value;
 	
-	input = Input.createFromBytes(Value.stringBytes(value), Value.stringLength(value), "(eval)");
+	input = Input.createFromBytes(Value.stringBytes(&value), Value.stringLength(&value), "(eval)");
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
 	value = context->ecc->result;
@@ -894,7 +894,7 @@ struct Value deleteProperty (struct Context * const context)
 	{
 		struct Value string = Value.toString(context, property);
 		Context.setText(context, text);
-		Context.typeError(context, Chars.create("'%.*s' is non-configurable", Value.stringLength(string), Value.stringBytes(string)));
+		Context.typeError(context, Chars.create("'%.*s' is non-configurable", Value.stringLength(&string), Value.stringBytes(&string)));
 	}
 	return Value.truth(result);
 }
@@ -1817,6 +1817,7 @@ struct Value iterateInRef (struct Context * const context)
 	struct Value *ref = nextOp().data.reference;
 	struct Value target = nextOp();
 	struct Value value = nextOp(), key;
+	struct Chars(Append) chars;
 	struct Object *object;
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
@@ -1838,7 +1839,9 @@ struct Value iterateInRef (struct Context * const context)
 				if (object != target.data.object && &element->value != Object.element(target.data.object, index, 0))
 					continue;
 				
-				key = Value.chars(Chars.create("%d", index));
+				Chars.beginAppend(&chars);
+				Chars.append(&chars, "%d", index);
+				key = Chars.endAppend(&chars);
 				ref->data = key.data;
 				ref->type = key.type;
 				
