@@ -23,18 +23,41 @@ const struct Object(Type) Array(type) = {
 };
 
 static
-int valueIsArray(struct Value value)
+int valueIsArray (struct Value value)
 {
 	return value.type == Value(objectType) && value.data.object->type == &Array(type);
 }
 
 static
-uint32_t valueArrayLength(struct Value value)
+uint32_t valueArrayLength (struct Value value)
 {
 	if (valueIsArray(value))
 		return value.data.object->elementCount;
 	
 	return 1;
+}
+
+static
+uint32_t objectLength (struct Context * const context, struct Object *object)
+{
+	if (object->type == &Array(type))
+		return object->elementCount;
+	else
+		return Value.toInteger(context, Object.getMember(object, context, Key(length))).data.integer;
+}
+
+static
+void objectResize (struct Context * const context, struct Object *object, uint32_t length)
+{
+	if (object->type == &Array(type))
+	{
+		if (length > object->elementCapacity)
+			Object.resizeElement(object, length);
+		else
+			object->elementCount = length;
+	}
+	else
+		Object.putMember(object, context, Key(length), Value.binary(length));
 }
 
 static
@@ -150,40 +173,40 @@ struct Value join (struct Context * const context)
 static
 struct Value pop (struct Context * const context)
 {
-	struct Value this, value;
+	struct Value value = Value(undefined);
+	struct Object *this;
+	uint32_t length;
 	
 	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, Context.this(context));
-	value = this.data.object->elementCount?
-		Object.getElement(this.data.object, context, this.data.object->elementCount - 1):
-		Value(undefined);
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = objectLength(context, this);
 	
-	--this.data.object->elementCount;
-	
+	if (length)
+	{
+		value = Object.getElement(this, context, --length);
+		objectResize(context, this, length);
+	}
 	return value;
 }
 
 static
 struct Value push (struct Context * const context)
 {
-	struct Object *object;
+	struct Object *this;
 	uint32_t length = 0, index, count, base;
 	
 	Context.assertVariableParameter(context);
 	
-	object = Value.toObject(context, Context.this(context)).data.object;
+	this = Value.toObject(context, Context.this(context)).data.object;
 	count = Context.variableArgumentCount(context);
 	
-	base = object->elementCount;
-	length = object->elementCount + count;
-	if (length > object->elementCapacity)
-		Object.resizeElement(object, length);
-	else
-		object->elementCount = length;
+	base = objectLength(context, this);
+	length = base + count;
+	objectResize(context, this, length);
 	
 	for (index = 0; index < count; ++index)
-		Object.putElement(object, context, index + base, Context.variableArgument(context, index));
+		Object.putElement(this, context, index + base, Context.variableArgument(context, index));
 	
 	return Value.binary(length);
 }
@@ -191,51 +214,52 @@ struct Value push (struct Context * const context)
 static
 struct Value reverse (struct Context * const context)
 {
-	struct Value this, temp;
-	struct Object *object;
-	uint32_t index, half, last;
+	struct Value temp;
+	struct Object *this;
+	uint32_t index, half, last, length;
 	
 	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, Context.this(context));
-	object = this.data.object;
-	last = object->elementCount - 1;
-	half = object->elementCount / 2;
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = objectLength(context, this);
+	
+	last = length - 1;
+	half = length / 2;
 	
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Object.getElement(object, context, index);
-		Object.putElement(object, context, index, Object.getElement(object, context, last - index));
-		Object.putElement(object, context, last - index, temp);
+		temp = Object.getElement(this, context, index);
+		Object.putElement(this, context, index, Object.getElement(this, context, last - index));
+		Object.putElement(this, context, last - index, temp);
 	}
 	
-	return this;
+	return Value.object(this);
 }
 
 static
 struct Value shift (struct Context * const context)
 {
-	struct Value this, result;
-	struct Object *object;
-	uint32_t index, count;
+	struct Value result;
+	struct Object *this;
+	uint32_t index, count, length;
 	
 	Context.assertParameterCount(context, 0);
 	
-	this = Value.toObject(context, Context.this(context));
-	object = this.data.object;
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = objectLength(context, this);
 	
 	Context.setTextIndex(context, Context(callIndex));
 	
-	if (object->elementCount)
+	if (length)
 	{
-		result = Object.getElement(object, context, 0);
+		result = Object.getElement(this, context, 0);
 		
-		for (index = 0, count = object->elementCount - 1; index < count; ++index)
-			Object.putElement(object, context, index, Object.getElement(object, context, index + 1));
+		for (index = 0, count = --length; index < count; ++index)
+			Object.putElement(this, context, index, Object.getElement(this, context, index + 1));
 		
-		--object->elementCount;
+		objectResize(context, this, length);
 	}
 	else
 		result = Value(undefined);
@@ -246,29 +270,24 @@ struct Value shift (struct Context * const context)
 static
 struct Value unshift (struct Context * const context)
 {
-	struct Value this;
-	struct Object *object;
+	struct Object *this;
 	uint32_t length = 0, index, count;
 	
 	Context.assertVariableParameter(context);
 	
-	this = Value.toObject(context, Context.this(context));
-	object = this.data.object;
+	this = Value.toObject(context, Context.this(context)).data.object;
 	count = Context.variableArgumentCount(context);
 	
-	length = object->elementCount + count;
-	if (length > object->elementCapacity)
-		Object.resizeElement(object, length);
-	else
-		object->elementCount = length;
+	length = objectLength(context, this) + count;
+	objectResize(context, this, length);
 	
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = count; index < length; ++index)
-		Object.putElement(object, context, index, Object.getElement(object, context, index - count));
+		Object.putElement(this, context, index, Object.getElement(this, context, index - count));
 	
 	for (index = 0; index < count; ++index)
-		Object.putElement(object, context, index, Context.variableArgument(context, index));
+		Object.putElement(this, context, index, Context.variableArgument(context, index));
 	
 	return Value.binary(length);
 }
@@ -276,16 +295,15 @@ struct Value unshift (struct Context * const context)
 static
 struct Value slice (struct Context * const context)
 {
-	struct Object *object, *result;
-	struct Value this, start, end;
+	struct Object *this, *result;
+	struct Value start, end;
 	uint32_t from, to, length;
 	double binary;
 	
 	Context.assertParameterCount(context, 2);
 	
-	this = Value.toObject(context, Context.this(context));
-	object = this.data.object;
-	length = Value.toInteger(context, Object.getMember(object, context, Key(length))).data.integer;
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = objectLength(context, this);
 	
 	start = Context.argument(context, 0);
 	binary = Value.toBinary(context, start).data.binary;
@@ -313,7 +331,7 @@ struct Value slice (struct Context * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			Object.putElement(result, context, to, Object.getElement(object, context, from));
+			Object.putElement(result, context, to, Object.getElement(this, context, from));
 	}
 	else
 		result = Array.createSized(0);
@@ -604,7 +622,7 @@ struct Value splice (struct Context * const context)
 	
 	count = Context.variableArgumentCount(context);
 	this = Value.toObject(context, Context.this(context)).data.object;
-	length = Value.toInteger(context, Object.getMember(this, context, Key(length))).data.integer;
+	length = objectLength(context, this);
 	
 	if (count >= 1)
 	{
@@ -637,7 +655,7 @@ struct Value splice (struct Context * const context)
 		add = count - 2;
 	
 	if (length - delete + add > length)
-		Object.resizeElement(this, length - delete + add);
+		objectResize(context, this, length - delete + add);
 	
 	result = Array.createSized(delete);
 	
@@ -659,7 +677,8 @@ struct Value splice (struct Context * const context)
 	for (from = 2, to = start; from < count; ++from, ++to)
 		Object.putElement(this, context, to, Context.variableArgument(context, from));
 	
-	Object.putMember(this, context, Key(length), Value.binary(length - delete + add));
+	if (length - delete + add <= length)
+		objectResize(context, this, length - delete + add);
 	
 	return Value.object(result);
 }
