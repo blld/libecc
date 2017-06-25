@@ -438,7 +438,7 @@ struct Value construct (struct Context * const context)
 	if (function.type != Value(functionType))
 		goto error;
 	
-	prototype = Object.member(&function.data.function->object, Key(prototype));
+	prototype = Object.member(&function.data.function->object, Key(prototype), 0);
 	if (!prototype)
 		goto error;
 	
@@ -620,7 +620,7 @@ struct Value this (struct Context * const context)
 struct Value getLocalRef (struct Context * const context)
 {
 	struct Key key = opValue().data.key;
-	struct Value *ref = Object.member(context->environment, key);
+	struct Value *ref = Object.member(context->environment, key, 0);
 	if (!ref)
 	{
 		Context.setText(context, opText(0));
@@ -728,7 +728,7 @@ struct Value getMemberRef (struct Context * const context)
 	prepareObject(context, &object);
 	
 	context->refObject = object.data.object;
-	ref = Object.memberOwn(object.data.object, key);
+	ref = Object.member(object.data.object, key, Value(asOwn));
 	
 	if (!ref)
 	{
@@ -827,7 +827,7 @@ struct Value getPropertyRef (struct Context * const context)
 	prepareObjectProperty(context, &object, &property);
 	
 	context->refObject = object.data.object;
-	ref = Object.propertyOwn(object.data.object, context, property);
+	ref = Object.property(object.data.object, context, property, Value(asOwn));
 	
 	if (!ref)
 	{
@@ -1068,7 +1068,7 @@ struct Value in (struct Context * const context)
 	if (!Value.isObject(object))
 		Context.typeError(context, Chars.create("'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
 	
-	ref = Object.property(object.data.object, context, property);
+	ref = Object.property(object.data.object, context, property, 0);
 	
 	return Value.truth(ref != NULL);
 }
@@ -1835,7 +1835,7 @@ struct Value iterateInRef (struct Context * const context)
 				if (element->value.check != 1)
 					continue;
 				
-				if (object != target.data.object && &element->value != Object.element(target.data.object, index))
+				if (object != target.data.object && &element->value != Object.element(target.data.object, index, 0))
 					continue;
 				
 				key = Value.chars(Chars.create("%d", index));
@@ -1852,7 +1852,7 @@ struct Value iterateInRef (struct Context * const context)
 				if (hashmap->value.check != 1 || (hashmap->value.flags & Value(hidden)))
 					continue;
 				
-				if (object != target.data.object && &hashmap->value != Object.member(target.data.object, hashmap->value.key))
+				if (object != target.data.object && &hashmap->value != Object.member(target.data.object, hashmap->value.key, 0))
 					continue;
 				
 				key = Value.text(Key.textOf(hashmap->value.key));

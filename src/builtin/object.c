@@ -139,7 +139,7 @@ static struct Value valueOf (struct Context * const context)
 static struct Value hasOwnProperty (struct Context * const context)
 {
 	struct Object *self;
-	struct Value value, *ref;
+	struct Value value;
 	struct Key key;
 	uint32_t index;
 	
@@ -150,14 +150,9 @@ static struct Value hasOwnProperty (struct Context * const context)
 	index = getIndexOrKey(value, context, &key);
 	
 	if (index < UINT32_MAX)
-		return Value.truth(index < self->elementCount && self->element[index].value.check);
-	
-	if (memberOwn(self, key))
-		return Value(true);
-	else if ((ref = member(self, key)) && ref->flags & Value(asOwn))
-		return Value(true);
-	
-	return Value(false);
+		return Value.truth(element(self, index, Value(asOwn)) != NULL);
+	else
+		return Value.truth(member(self, key, Value(asOwn)) != NULL);
 }
 
 static struct Value isPrototypeOf (struct Context * const context)
@@ -191,7 +186,7 @@ static struct Value propertyIsEnumerable (struct Context * const context)
 	
 	value = Context.argument(context, 0);
 	object = Value.toObject(context, Context.this(context)).data.object;
-	ref = propertyOwn(object, context, value);
+	ref = property(object, context, value, Value(asOwn));
 	
 	if (ref)
 		return Value.truth(!(ref->flags & Value(hidden)));
@@ -236,14 +231,7 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 	
 	object = Value.toObject(context, Context.argument(context, 0)).data.object;
 	value = Context.argument(context, 1);
-	ref = propertyOwn(object, context, value);
-	
-	if (!ref)
-	{
-		ref = property(object, context, value);
-		if (!(ref->flags & Value(asOwn)))
-			ref = NULL;
-	}
+	ref = property(object, context, value, Value(asOwn));
 	
 	if (ref)
 	{
@@ -325,8 +313,8 @@ static struct Value defineProperty (struct Context * const context)
 	property = Value.toString(context, Context.argument(context, 1));
 	descriptor = checkObject(context, 2);
 	
-	getter = member(descriptor, Key(get));
-	setter = member(descriptor, Key(set));
+	getter = member(descriptor, Key(get), 0);
+	setter = member(descriptor, Key(set), 0);
 	
 	if (getter || setter)
 	{
@@ -342,7 +330,7 @@ static struct Value defineProperty (struct Context * const context)
 		if (setter && setter->type != Value(functionType))
 			Context.typeError(context, Chars.create("setter is not a function"));
 		
-		if (member(descriptor, Key(value)) || member(descriptor, Key(writable)))
+		if (member(descriptor, Key(value), 0) || member(descriptor, Key(writable), 0))
 			Context.typeError(context, Chars.create("value & writable forbidden when a getter or setter are set"));
 		
 		if (getter)
@@ -380,14 +368,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 	index = getIndexOrKey(property, context, &key);
 	
-	current = Object.propertyOwn(object, context, property);
-	if (!current)
-	{
-		current = Object.property(object, context, property);
-		if (current && !(current->flags & Value(asOwn)))
-			current = NULL;
-	}
-	
+	current = Object.property(object, context, property, Value(asOwn));
 	if (!current)
 	{
 		addProperty(object, context, property, value, 0);
@@ -797,68 +778,39 @@ void destroy (struct Object *self)
 	free(self), self = NULL;
 }
 
-struct Value * member (struct Object *self, struct Key member)
+struct Value * member (struct Object *self, struct Key member, enum Value(Flags) flags)
 {
+	int lookupChain = !(flags & Value(asOwn));
 	struct Object *object = self;
 	struct Value *ref = NULL;
-	
-	assert(object);
-	
-	do
-		ref = memberOwn(object, member);
-	while (!ref && (object = object->prototype));
-	
-	return ref;
-}
-
-struct Value * element (struct Object *self, uint32_t element)
-{
-	struct Object *object = self;
-	struct Value *ref = NULL;
-	
-	assert(object);
-	
-	do
-		ref = elementOwn(object, element);
-	while (!ref && (object = object->prototype));
-	
-	return ref;
-}
-
-struct Value * property (struct Object *self, struct Context * const context, struct Value property)
-{
-	struct Key key;
-	uint32_t index = getIndexOrKey(property, context, &key);
-	
-	if (index < UINT32_MAX)
-		return element(self, index);
-	else
-		return member(self, key);
-}
-
-struct Value * memberOwn (struct Object *self, struct Key member)
-{
 	uint32_t slot;
 	
 	assert(self);
 	
-	if (( slot = getSlot(self, member) ))
+	do
 	{
-		struct Value *ref = &self->hashmap[slot].value;
-		if (ref->check == 1)
-			return ref;
+		if (( slot = getSlot(object, member) ))
+		{
+			ref = &object->hashmap[slot].value;
+			if (ref->check == 1)
+				return lookupChain || object == self || (ref->flags & flags) ? ref: NULL;
+		}
 	}
+	while ((object = object->prototype));
 	
 	return NULL;
 }
 
-struct Value * elementOwn (struct Object *self, uint32_t element)
+struct Value * element (struct Object *self, uint32_t element, enum Value(Flags) flags)
 {
+	int lookupChain = !(flags & Value(asOwn));
+	struct Object *object = self;
+	struct Value *ref = NULL;
+	
 	assert(self);
 	
 	if (self->type == &String(type))
 	{
-		/* create temporary slot for ref */
 		struct Value *ref = Object.addMember(self, Key(none), String.valueAtIndex((struct String *)self, element), 0);
 		ref->check = 0;
 		return ref;
@@ -872,28 +824,32 @@ struct Value * elementOwn (struct Object *self, uint32_t element)
 		length = snprintf(buffer, sizeof(buffer), "%u", element);
 		key = Key.search(Text.make(buffer, length));
 		if (key.data.integer)
-			return memberOwn(self, key);
+			return member(self, key, Value(asOwn));
 	}
 	else
-		if (element < self->elementCount)
+		do
 		{
-			struct Value *ref = &self->element[element].value;
-			if (ref->check == 1)
-				return ref;
+			if (element < object->elementCount)
+			{
+				ref = &object->element[element].value;
+				if (ref->check == 1)
+					return lookupChain || object == self || (ref->flags & flags) ? ref: NULL;
+			}
 		}
+		while ((object = object->prototype));
 	
 	return NULL;
 }
 
-struct Value * propertyOwn (struct Object *self, struct Context * const context, struct Value property)
+struct Value * property (struct Object *self, struct Context * const context, struct Value property, enum Value(Flags) flags)
 {
 	struct Key key;
 	uint32_t index = getIndexOrKey(property, context, &key);
 	
 	if (index < UINT32_MAX)
-		return elementOwn(self, index);
+		return element(self, index, flags);
 	else
-		return memberOwn(self, key);
+		return member(self, key, flags);
 }
 
 struct Value getValue (struct Object *self, struct Context * const context, struct Value *ref)
@@ -919,7 +875,7 @@ struct Value getValue (struct Object *self, struct Context * const context, stru
 
 struct Value getMember (struct Object *self, struct Context * const context, struct Key key)
 {
-	return getValue(self, context, member(self, key));
+	return getValue(self, context, member(self, key, 0));
 }
 
 struct Value getElement (struct Object *self, struct Context * const context, uint32_t index)
@@ -927,7 +883,7 @@ struct Value getElement (struct Object *self, struct Context * const context, ui
 	if (self->type == &String(type))
 		return String.valueAtIndex((struct String *)self, index);
 	else
-		return getValue(self, context, element(self, index));
+		return getValue(self, context, element(self, index, 0));
 }
 
 struct Value getProperty (struct Object *self, struct Context * const context, struct Value property)
@@ -964,8 +920,6 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 		
 		value.flags = ref->flags;
 	}
-	else if (self->flags & Object(sealed))
-		Context.typeError(context, Chars.create("object is not extensible"));
 	else
 		value.flags = 0;
 	
@@ -978,16 +932,15 @@ struct Value *putMember (struct Object *self, struct Context * const context, st
 {
 	struct Value *ref;
 	
-	if (( ref = memberOwn(self, key) ))
+	if (( ref = member(self, key, Value(asOwn) | Value(accessor)) ))
 		return putValue(self, context, ref, value);
-	else if (self->prototype && ( ref = member(self->prototype, key) ))
+	else if (self->prototype && ( ref = member(self->prototype, key, 0) ))
 	{
-		if (ref->flags & Value(accessor))
-			return putValue(self, context, ref, value);
-		else if (ref->flags & Value(readonly))
+		if (ref->flags & Value(readonly))
 			Context.typeError(context, Chars.create("'%.*s' is readonly", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
-	else if (self->flags & Object(sealed))
+	
+	if (self->flags & Object(sealed))
 		Context.typeError(context, Chars.create("object is not extensible"));
 	
 	return addMember(self, key, value, 0);
@@ -1000,14 +953,12 @@ struct Value *putElement (struct Object *self, struct Context * const context, u
 	if (index > Object(ElementMax))
 		return putProperty(self, context, Value.binary(index), value);
 	
-	if (( ref = elementOwn(self, index) ))
+	if (( ref = element(self, index, Value(asOwn) | Value(accessor)) ))
 		return putValue(self, context, ref, value);
-	else if (self->prototype && ( ref = element(self->prototype, index) ))
+	else if (self->prototype && ( ref = element(self, index, 0) ))
 	{
-		if (ref->flags & Value(accessor))
-			return putValue(self, context, ref, value);
-		else if (ref->flags & Value(readonly))
-			Context.typeError(context, Chars.create("'%d' is readonly", index));
+		if (ref->flags & Value(readonly))
+			Context.typeError(context, Chars.create("'%u' is readonly", index, index));
 	}
 	
 	if (self->flags & Object(sealed))
