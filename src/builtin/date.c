@@ -363,20 +363,20 @@ static struct Value toJSON (struct Context * const context)
 {
 	struct Value object = Value.toObject(context, Context.this(context));
 	struct Value tv = Value.toPrimitive(context, object, Value(hintNumber));
-	struct Value *toISO;
+	struct Value toISO;
 	
 	Context.assertParameterCount(context, 1);
 	
 	if (tv.type == Value(binaryType) && !isfinite(tv.data.binary))
 		return Value(null);
 	
-	toISO = Object.member(object.data.object, Key(toISOString));
-	if (!toISO || toISO->type != Value(functionType))
+	toISO = Object.getMember(object.data.object, context, Key(toISOString));
+	if (toISO.type != Value(functionType))
 	{
 		Context.setTextIndex(context, Context(callIndex));
 		Context.typeError(context, Chars.create("toISOString is not a function"));
 	}
-	return Context.callFunction(context, toISO->data.function, object, 0);
+	return Context.callFunction(context, toISO.data.function, object, 0);
 }
 
 static struct Value toISOString (struct Context * const context)
