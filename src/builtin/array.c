@@ -207,11 +207,33 @@ struct Value push (struct Context * const context)
 	count = Context.variableArgumentCount(context);
 	
 	base = objectLength(context, this);
-	length = base + count;
+	
+	if (UINT32_MAX - base < count)
+		length = UINT32_MAX;
+	else
+		length = base + count;
+	
 	objectResize(context, this, length);
 	
-	for (index = 0; index < count; ++index)
-		Object.putElement(this, context, index + base, Context.variableArgument(context, index));
+	for (index = base; index < length; ++index)
+		Object.putElement(this, context, index, Context.variableArgument(context, index - base));
+	
+	if (UINT32_MAX - base < count)
+	{
+		Object.putElement(this, context, index, Context.variableArgument(context, index - base));
+		
+		if (this->type == &Array(type))
+			Context.rangeError(context, Chars.create("max length exeeded"));
+		else
+		{
+			double index, length = (double)base + count;
+			for (index = (double)UINT32_MAX + 1; index < length; ++index)
+				Object.putProperty(this, context, Value.binary(index), Context.variableArgument(context, index - base));
+			
+			Object.putMember(this, context, Key(length), Value.binary(length));
+			return Value.binary(length);
+		}
+	}
 	
 	return Value.binary(length);
 }
