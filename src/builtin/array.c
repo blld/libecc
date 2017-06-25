@@ -186,7 +186,9 @@ struct Value pop (struct Context * const context)
 	{
 		--length;
 		value = Object.getElement(this, context, length);
-		Object.putElement(this, context, length, Value(none));
+		
+		if (this->type != &Array(type))
+			Object.putElement(this, context, length, Value(none));
 	}
 	objectResize(context, this, length);
 	
