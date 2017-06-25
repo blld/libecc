@@ -268,7 +268,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 	aKey = hint > 0? Key(toString): Key(valueOf);
 	bKey = hint > 0? Key(valueOf): Key(toString);
 	
-	aFunction = Object.getMember(object, context, aKey);
+	aFunction = Object.getMember(context, object, aKey);
 	if (aFunction.type == Value(functionType))
 	{
 		struct Value result = Context.callFunction(context, aFunction.data.function, value, 0 | Context(asAccessor));
@@ -276,7 +276,7 @@ struct Value toPrimitive (struct Context * const context, struct Value value, en
 			return result;
 	}
 	
-	bFunction = Object.getMember(object, context, bKey);
+	bFunction = Object.getMember(context, object, bKey);
 	if (bFunction.type == Value(functionType))
 	{
 		result = Context.callFunction(context, bFunction.data.function, value, 0 | Context(asAccessor));

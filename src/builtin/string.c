@@ -283,7 +283,7 @@ static struct Value match (struct Context * const context)
 			}
 			else
 			{
-				Object.putMember(&regexp->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes))));
+				Object.putMember(context, &regexp->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes))));
 				break;
 			}
 		}

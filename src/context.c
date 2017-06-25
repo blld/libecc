@@ -55,8 +55,8 @@ void throw (struct Context * const self, struct Value value)
 		
 		if (value.type == Value(errorType))
 		{
-			name = Value.toString(self, Object.getMember(value.data.object, self, Key(name)));
-			message = Value.toString(self, Object.getMember(value.data.object, self, Key(message)));
+			name = Value.toString(self, Object.getMember(self, value.data.object, Key(name)));
+			message = Value.toString(self, Object.getMember(self, value.data.object, Key(message)));
 		}
 		else
 			message = Value.toString(self, value);

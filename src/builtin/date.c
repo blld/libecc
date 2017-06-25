@@ -370,7 +370,7 @@ static struct Value toJSON (struct Context * const context)
 	if (tv.type == Value(binaryType) && !isfinite(tv.data.binary))
 		return Value(null);
 	
-	toISO = Object.getMember(object.data.object, context, Key(toISOString));
+	toISO = Object.getMember(context, object.data.object, Key(toISOString));
 	if (toISO.type != Value(functionType))
 	{
 		Context.setTextIndex(context, Context(callIndex));

@@ -1092,9 +1092,9 @@ static struct Value exec (struct Context * const context)
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+	lastIndex = Value.toInteger(context, Object.getMember(context, &self->object, Key(lastIndex)));
 	
-	Object.putMember(&self->object, context, Key(lastIndex), Value.integer(0));
+	Object.putMember(context, &self->object, Key(lastIndex), Value.integer(0));
 	
 	if (lastIndex.data.integer >= 0)
 	{
@@ -1130,7 +1130,7 @@ static struct Value exec (struct Context * const context)
 			}
 			
 			if (self->global)
-				Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
+				Object.putMember(context, &self->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
 			
 			Object.addMember(array, Key(index), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes))), 0);
 			Object.addMember(array, Key(input), Pool.retainedValue(value), 0);
@@ -1150,9 +1150,9 @@ static struct Value test (struct Context * const context)
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	lastIndex = Value.toInteger(context, Object.getMember(&self->object, context, Key(lastIndex)));
+	lastIndex = Value.toInteger(context, Object.getMember(context, &self->object, Key(lastIndex)));
 	
-	Object.putMember(&self->object, context, Key(lastIndex), Value.integer(0));
+	Object.putMember(context, &self->object, Key(lastIndex), Value.integer(0));
 	
 	if (lastIndex.data.integer >= 0)
 	{
@@ -1171,7 +1171,7 @@ static struct Value test (struct Context * const context)
 		if (state.start >= bytes && state.start <= state.end && matchWithState(self, &state))
 		{
 			if (self->global)
-				Object.putMember(&self->object, context, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
+				Object.putMember(context, &self->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
 			
 			return Value(true);
 		}

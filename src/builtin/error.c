@@ -55,13 +55,13 @@ static struct Chars * toChars (struct Context * const context, struct Value valu
 	
 	self = value.data.object;
 	
-	name = Object.getMember(self, context, Key(name));
+	name = Object.getMember(context, self, Key(name));
 	if (name.type == Value(undefinedType))
 		name = Value.text(&Text(errorName));
 	else
 		name = Value.toString(context, name);
 	
-	message = Object.getMember(self, context, Key(message));
+	message = Object.getMember(context, self, Key(message));
 	if (message.type == Value(undefinedType))
 		message = Value.text(&Text(empty));
 	else

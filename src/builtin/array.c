@@ -43,7 +43,7 @@ uint32_t objectLength (struct Context * const context, struct Object *object)
 	if (object->type == &Array(type))
 		return object->elementCount;
 	else
-		return Value.toInteger(context, Object.getMember(object, context, Key(length))).data.integer;
+		return Value.toInteger(context, Object.getMember(context, object, Key(length))).data.integer;
 }
 
 static
@@ -57,7 +57,7 @@ void objectResize (struct Context * const context, struct Object *object, uint32
 			object->elementCount = length;
 	}
 	else
-		Object.putMember(object, context, Key(length), Value.binary(length));
+		Object.putMember(context, object, Key(length), Value.binary(length));
 }
 
 static
@@ -67,9 +67,9 @@ void valueAppendFromElement (struct Context * const context, struct Value value,
 	
 	if (valueIsArray(value))
 		for (index = 0; index < value.data.object->elementCount; ++index)
-			Object.putElement(object, context, (*element)++, Object.getElement(value.data.object, context, index));
+			Object.putElement(context, object, (*element)++, Object.getElement(context, value.data.object, index));
 	else
-		Object.putElement(object, context, (*element)++, value);
+		Object.putElement(context, object, (*element)++, value);
 }
 
 static
@@ -87,14 +87,14 @@ static
 struct Chars * toChars (struct Context * const context, struct Value this, struct Text separator)
 {
 	struct Object *object = this.data.object;
-	struct Value value, length = Object.getMember(object, context, Key(length));
+	struct Value value, length = Object.getMember(context, object, Key(length));
 	uint32_t index, count = Value.toBinary(context, length).data.binary;
 	struct Chars *chars;
 	
 	Chars.beginAppend(&chars);
 	for (index = 0; index < count; ++index)
 	{
-		value = Object.getElement(this.data.object, context, index);
+		value = Object.getElement(context, this.data.object, index);
 		
 		if (index)
 			Chars.append(&chars, "%.*s", separator.length, separator.bytes);
@@ -114,7 +114,7 @@ struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	
 	context->this = Value.toObject(context, Context.this(context));
-	function = Object.getMember(context->this.data.object, context, Key(join));
+	function = Object.getMember(context, context->this.data.object, Key(join));
 	
 	if (function.type == Value(functionType))
 		return Context.callFunction(context, function.data.function, context->this, 0);
@@ -185,9 +185,9 @@ struct Value pop (struct Context * const context)
 	if (length)
 	{
 		--length;
-		value = Object.getElement(this, context, length);
+		value = Object.getElement(context, this, length);
 		
-		if (!Object.deleteProperty(this, context, Value.binary(length)))
+		if (!Object.deleteElement(this, length))
 		{
 			Context.setTextIndex(context, Context(callIndex));
 			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
@@ -219,11 +219,11 @@ struct Value push (struct Context * const context)
 	objectResize(context, this, length);
 	
 	for (index = base; index < length; ++index)
-		Object.putElement(this, context, index, Context.variableArgument(context, index - base));
+		Object.putElement(context, this, index, Context.variableArgument(context, index - base));
 	
 	if (UINT32_MAX - base < count)
 	{
-		Object.putElement(this, context, index, Context.variableArgument(context, index - base));
+		Object.putElement(context, this, index, Context.variableArgument(context, index - base));
 		
 		if (this->type == &Array(type))
 			Context.rangeError(context, Chars.create("max length exeeded"));
@@ -231,9 +231,9 @@ struct Value push (struct Context * const context)
 		{
 			double index, length = (double)base + count;
 			for (index = (double)UINT32_MAX + 1; index < length; ++index)
-				Object.putProperty(this, context, Value.binary(index), Context.variableArgument(context, index - base));
+				Object.putProperty(context, this, Value.binary(index), Context.variableArgument(context, index - base));
 			
-			Object.putMember(this, context, Key(length), Value.binary(length));
+			Object.putMember(context, this, Key(length), Value.binary(length));
 			return Value.binary(length);
 		}
 	}
@@ -260,9 +260,9 @@ struct Value reverse (struct Context * const context)
 	
 	for (index = 0; index < half; ++index)
 	{
-		temp = Object.getElement(this, context, index);
-		Object.putElement(this, context, index, Object.getElement(this, context, last - index));
-		Object.putElement(this, context, last - index, temp);
+		temp = Object.getElement(context, this, index);
+		Object.putElement(context, this, index, Object.getElement(context, this, last - index));
+		Object.putElement(context, this, last - index, temp);
 	}
 	
 	return Value.object(this);
@@ -284,10 +284,10 @@ struct Value shift (struct Context * const context)
 	
 	if (length)
 	{
-		result = Object.getElement(this, context, 0);
+		result = Object.getElement(context, this, 0);
 		
 		for (index = 0, count = --length; index < count; ++index)
-			Object.putElement(this, context, index, Object.getElement(this, context, index + 1));
+			Object.putElement(context, this, index, Object.getElement(context, this, index + 1));
 		
 		objectResize(context, this, length);
 	}
@@ -314,10 +314,10 @@ struct Value unshift (struct Context * const context)
 	Context.setTextIndex(context, Context(callIndex));
 	
 	for (index = count; index < length; ++index)
-		Object.putElement(this, context, index, Object.getElement(this, context, index - count));
+		Object.putElement(context, this, index, Object.getElement(context, this, index - count));
 	
 	for (index = 0; index < count; ++index)
-		Object.putElement(this, context, index, Context.variableArgument(context, index));
+		Object.putElement(context, this, index, Context.variableArgument(context, index));
 	
 	return Value.binary(length);
 }
@@ -361,7 +361,7 @@ struct Value slice (struct Context * const context)
 		result = Array.createSized(length);
 		
 		for (to = 0; to < length; ++from, ++to)
-			Object.putElement(result, context, to, Object.getElement(this, context, from));
+			Object.putElement(context, result, to, Object.getElement(context, this, from));
 	}
 	else
 		result = Array.createSized(0);
@@ -415,18 +415,18 @@ void rotate(struct Object *object, struct Context *context, uint32_t first, uint
 		shift = half - first;
 		a = first + n;
 		b = a + shift;
-		leftValue = Object.getElement(object, context, a);
+		leftValue = Object.getElement(context, object, a);
 		while (b != first + n)
 		{
-			value = Object.getElement(object, context, b);
-			Object.putElement(object, context, a, value);
+			value = Object.getElement(context, object, b);
+			Object.putElement(context, object, a, value);
 			a = b;
 			if (last - b > shift)
 				b += shift;
 			else
 				b = half - (last - b);
 		}
-		Object.putElement(object, context, a, leftValue);
+		Object.putElement(context, object, a, leftValue);
 	}
 }
 
@@ -480,7 +480,7 @@ uint32_t search(struct Object *object, struct Compare *cmp, uint32_t first, uint
 	while (first < last)
 	{
 		half = (first + last) >> 1;
-		left = Object.getElement(object, &cmp->context, half);
+		left = Object.getElement(&cmp->context, object, half);
 		if (compare(cmp, left, right))
 			first = half + 1;
 		else
@@ -500,12 +500,12 @@ void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t 
 	if (len1 + len2 == 2)
 	{
 		struct Value left, right;
-		left = Object.getElement(object, &cmp->context, pivot);
-		right = Object.getElement(object, &cmp->context, first);
+		left = Object.getElement(&cmp->context, object, pivot);
+		right = Object.getElement(&cmp->context, object, first);
 		if (compare(cmp, left, right))
 		{
-			Object.putElement(object, &cmp->context, pivot, right);
-			Object.putElement(object, &cmp->context, first, left);
+			Object.putElement(&cmp->context, object, pivot, right);
+			Object.putElement(&cmp->context, object, first, left);
 		}
 		return;
 	}
@@ -514,13 +514,13 @@ void merge(struct Object *object, struct Compare *cmp, uint32_t first, uint32_t 
 	{
 		half1 = len1 >> 1;
 		left = first + half1;
-		right = search(object, cmp, pivot, last, Object.getElement(object, &cmp->context, first + half1));
+		right = search(object, cmp, pivot, last, Object.getElement(&cmp->context, object, first + half1));
 		half2 = right - pivot;
 	}
 	else
 	{
 		half2 = len2 >> 1;
-		left = search(object, cmp, first, pivot, Object.getElement(object, &cmp->context, pivot + half2));
+		left = search(object, cmp, first, pivot, Object.getElement(&cmp->context, object, pivot + half2));
 		right = pivot + half2;
 		half1 = left - first;
 	}
@@ -543,16 +543,16 @@ void sortAndMerge(struct Object *object, struct Compare *cmp, uint32_t first, ui
 		
 		for (i = first + 1; i < last; ++i)
 		{
-			right = Object.getElement(object, &cmp->context, i);
+			right = Object.getElement(&cmp->context, object, i);
 			for (j = i; j > first; --j)
 			{
-				left = Object.getElement(object, &cmp->context, j - 1);
+				left = Object.getElement(&cmp->context, object, j - 1);
 				if (compare(cmp, left, right))
 					break;
 				else
-					Object.putElement(object, &cmp->context, j, left);
+					Object.putElement(&cmp->context, object, j, left);
 			}
-			Object.putElement(object, &cmp->context, j, right);
+			Object.putElement(&cmp->context, object, j, right);
 		}
 		return;
 	}
@@ -629,7 +629,7 @@ struct Value sort (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	
 	this = Value.toObject(context, Context.this(context)).data.object;
-	count = Value.toInteger(context, Object.getMember(this, context, Key(length))).data.integer;
+	count = Value.toInteger(context, Object.getMember(context, this, Key(length))).data.integer;
 	compare = Context.argument(context, 0);
 	
 	if (compare.type == Value(functionType))
@@ -690,22 +690,22 @@ struct Value splice (struct Context * const context)
 	result = Array.createSized(delete);
 	
 	for (from = start, to = 0; to < delete; ++from, ++to)
-		Object.putElement(result, context, to, Object.getElement(this, context, from));
+		Object.putElement(context, result, to, Object.getElement(context, this, from));
 	
 	if (delete > add)
 	{
 		for (from = start + delete, to = start + add; from < length; ++from, ++to)
-			Object.putElement(this, context, to, Object.getElement(this, context, from));
+			Object.putElement(context, this, to, Object.getElement(context, this, from));
 		
 		for (; to < length; ++to)
-			Object.putElement(this, context, to, Value(none));
+			Object.putElement(context, this, to, Value(none));
 	}
 	else if (delete < add)
 		for (from = length, to = length + add - delete; from > start;)
-			Object.putElement(this, context, --to, Object.getElement(this, context, --from));
+			Object.putElement(context, this, --to, Object.getElement(context, this, --from));
 	
 	for (from = 2, to = start; from < count; ++from, ++to)
-		Object.putElement(this, context, to, Context.variableArgument(context, from));
+		Object.putElement(context, this, to, Context.variableArgument(context, from));
 	
 	if (length - delete + add <= length)
 		objectResize(context, this, length - delete + add);
