@@ -920,8 +920,6 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 		
 		value.flags = ref->flags;
 	}
-	else
-		value.flags = 0;
 	
 	*ref = value;
 	
@@ -931,6 +929,8 @@ struct Value *putValue (struct Object *self, struct Context * const context, str
 struct Value *putMember (struct Object *self, struct Context * const context, struct Key key, struct Value value)
 {
 	struct Value *ref;
+	
+	value.flags = 0;
 	
 	if (( ref = member(self, key, Value(asOwn) | Value(accessor)) ))
 		return putValue(self, context, ref, value);
@@ -949,6 +949,8 @@ struct Value *putMember (struct Object *self, struct Context * const context, st
 struct Value *putElement (struct Object *self, struct Context * const context, uint32_t index, struct Value value)
 {
 	struct Value *ref;
+	
+	value.flags = 0;
 	
 	if (index > Object(ElementMax))
 		return putProperty(self, context, Value.binary(index), value);
