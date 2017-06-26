@@ -32,10 +32,10 @@ uint32_t sizeForLength(uint16_t length)
 {
 	uint32_t size = sizeof(struct Chars) + length;
 	
-	if (size < 16)
+	if (size < 8)
 	{
 		/* 8-bytes mini */
-		return 16;
+		return 8;
 	}
 	else if (size < 1024)
 	{
@@ -56,9 +56,6 @@ struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint16_t length)
 {
 	struct Chars *self = NULL, *reuse = chars? chars->value: NULL;
 	
-	if (length <= 8)
-		return NULL;
-	
 	if (reuse && sizeForLength(reuse->length) >= sizeForLength(length))
 		return reuse;
 //	else
@@ -66,6 +63,9 @@ struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint16_t length)
 	
 	if (!self)
 	{
+		if (length < 8)
+			return NULL;
+		
 		self = malloc(sizeForLength(length));
 		Pool.addChars(self);
 	}
@@ -174,11 +174,10 @@ void appendText (struct Chars(Append) * chars, struct Text text)
 	struct Chars *self = chars->value;
 	struct Text(Char) lo = Text.character(text), hi;
 	struct Text prev;
+	int surrogates = 0;
 	
 	if (!text.length)
 		return;
-	
-	self = reuseOrCreate(chars, (self? self->length: chars->units) + text.length);
 	
 	if (self)
 		prev = Text.make(self->bytes + self->length, self->length);
@@ -190,16 +189,25 @@ void appendText (struct Chars(Append) * chars, struct Text text)
 		hi = Text.prevCharacter(&prev);
 		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
-			/* merge 16-bit surrogates */
-			uint32_t cp = 0x10000 + (((hi.codepoint - 0xD800) << 10) | ((lo.codepoint - 0xDC00) & 0x03FF));
-			
-			if (self)
-				self->length = prev.length + writeCodepoint(self->bytes + prev.length, cp);
-			else
-				chars->units = prev.length + writeCodepoint(chars->buffer + prev.length, cp);
-			
+			surrogates = 1;
 			Text.nextCharacter(&text);
+			if (self)
+				self->length = prev.length;
+			else
+				chars->units = prev.length;
 		}
+	}
+	
+	self = reuseOrCreate(chars, (self? self->length: chars->units) + text.length);
+	
+	if (surrogates)
+	{
+		uint32_t cp = 0x10000 + (((hi.codepoint - 0xD800) << 10) | ((lo.codepoint - 0xDC00) & 0x03FF));
+		
+		if (self)
+			self->length += writeCodepoint(self->bytes + self->length, cp);
+		else
+			chars->units += writeCodepoint(chars->buffer + chars->units, cp);
 	}
 	
 	memcpy(self? (self->bytes + self->length): (chars->buffer + chars->units), text.bytes, text.length);

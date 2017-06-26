@@ -80,7 +80,7 @@ static struct Value charAt (struct Context * const context)
 			return Value.buffer(text.bytes, c.units);
 		else
 		{
-			char buffer[8];
+			char buffer[7];
 			
 			/* simulate 16-bit surrogate */
 			
@@ -661,7 +661,7 @@ static struct Value split (struct Context * const context)
 				Object.addElement(array, size++, Value.buffer(text.bytes, c.units), 0);
 			else
 			{
-				char buffer[8];
+				char buffer[7];
 				
 				/* simulate 16-bit surrogate */
 				
@@ -976,7 +976,7 @@ struct Value valueAtIndex (struct String *self, uint32_t position)
 			return Value.buffer(text.bytes, c.units);
 		else
 		{
-			char buffer[8];
+			char buffer[7];
 			
 			/* simulate 16-bit surrogate */
 			

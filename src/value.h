@@ -101,7 +101,7 @@ Interface(Value,
 	(struct Value, truth ,(int truth))
 	(struct Value, integer ,(int32_t integer))
 	(struct Value, binary ,(double binary))
-	(struct Value, buffer ,(const char buffer[8], uint8_t units))
+	(struct Value, buffer ,(const char buffer[7], uint8_t units))
 	(struct Value, key ,(struct Key key))
 	(struct Value, text ,(const struct Text *text))
 	(struct Value, chars ,(struct Chars *chars))

@@ -56,19 +56,13 @@ struct Value binary (double binary)
 	};
 }
 
-struct Value buffer (const char buffer[8], uint8_t units)
+struct Value buffer (const char b[7], uint8_t units)
 {
-	struct Value value = {
+	return (struct Value){
+		.data = { .buffer = { b[0],b[1],b[2],b[3],b[4],b[5],b[6],units } },
 		.type = Value(bufferType),
 		.check = 1,
 	};
-	
-	assert(units <= 8);
-	memcpy(value.data.buffer, buffer, units);
-	if (units < 8)
-		value.data.buffer[units] = '\xff';
-	
-	return value;
 }
 
 struct Value key (struct Key key)
@@ -476,10 +470,7 @@ uint16_t stringLength (const struct Value *value)
 			return value->data.string->value->length;
 			
 		case Value(bufferType):
-		{
-			char *last = memchr(value->data.buffer, '\xff', 8);
-			return last? last - value->data.buffer: 8;
-		}
+			return value->data.buffer[7];
 			
 		default:
 			return 0;
@@ -524,10 +515,7 @@ struct Text textOf (const struct Value *value)
 			return *Key.textOf(value->data.key);
 			
 		case Value(bufferType):
-		{
-			char *last = memchr(value->data.buffer, '\xff', 8);
-			return Text.make(value->data.buffer, last? last - value->data.buffer: 8);
-		}
+			return Text.make(value->data.buffer, value->data.buffer[7]);
 			
 		default:
 			return Text(empty);
