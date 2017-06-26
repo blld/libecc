@@ -284,15 +284,22 @@ struct Value shift (struct Context * const context)
 	
 	if (length)
 	{
+		length--;
 		result = Object.getElement(context, this, 0);
 		
-		for (index = 0, count = --length; index < count; ++index)
+		for (index = 0, count = length; index < count; ++index)
 			Object.putElement(context, this, index, Object.getElement(context, this, index + 1));
 		
-		objectResize(context, this, length);
+		if (!Object.deleteElement(this, length))
+		{
+			Context.setTextIndex(context, Context(callIndex));
+			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
+		}
 	}
 	else
 		result = Value(undefined);
+	
+	objectResize(context, this, length);
 	
 	return result;
 }
