@@ -340,30 +340,33 @@ static void replaceText (struct Chars(Append) *chars, struct Text replace, struc
 					Chars.append(chars, "%.*s", match.length, match.bytes);
 					break;
 					
-				case 0x2018:
+				case '`':
 					Chars.append(chars, "%.*s", before.length, before.bytes);
 					break;
 					
-				case 0x2019:
+				case '\'':
 					Chars.append(chars, "%.*s", after.length, after.bytes);
 					break;
 					
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 					index = replace.bytes[0] - '0';
-					if (isdigit(replace.bytes[1]))
-						index = index * 10 + replace.bytes[1] - '0';
-					
-					if (index && index < count)
+					if (index < count)
 					{
-						if (isdigit(replace.bytes[1]))
+						if (isdigit(replace.bytes[1]) && index * 10 <= count)
+						{
+							index = index * 10 + replace.bytes[1] - '0';
 							Text.advance(&replace, 1);
+						}
 						
-						if (capture[index * 2])
-							Chars.append(chars, "%.*s", capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
-						else
-							Chars.append(chars, "");
-						
-						break;
+						if (index && index < count)
+						{
+							if (capture[index * 2])
+								Chars.append(chars, "%.*s", capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+							else
+								Chars.append(chars, "");
+							
+							break;
+						}
 					}
 					/* vvv */
 				default:
@@ -388,6 +391,7 @@ static struct Value replace (struct Context * const context)
 	int32_t length, searchLength;
 	
 	Context.assertParameterCount(context, 2);
+	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
 	bytes = Value.stringBytes(&context->this);
@@ -411,19 +415,12 @@ static struct Value replace (struct Context * const context)
 		struct Text seek = text;
 		
 		Chars.beginAppend(&chars);
-		
 		do
 		{
 			struct RegExp(State) state = { seek.bytes, text.bytes + text.length, capture, index };
 			
-			if (text.length && RegExp.matchWithState(regexp, &state))
+			if (RegExp.matchWithState(regexp, &state))
 			{
-				if (state.capture[1] <= text.bytes)
-				{
-					Text.advance(&seek, 1);
-					continue;
-				}
-				
 				Chars.append(&chars, "%.*s", state.capture[0] - text.bytes, text.bytes);
 				
 				if (replace.type == Value(functionType))
@@ -455,12 +452,15 @@ static struct Value replace (struct Context * const context)
 								capture);
 				
 				Text.advance(&text, state.capture[1] - text.bytes);
+				
 				seek = text;
+				if (text.bytes == state.capture[1])
+					Text.nextCharacter(&seek);
 			}
 			else
 				break;
 		}
-		while (regexp->global);
+		while (text.length && regexp->global);
 		
 		Chars.append(&chars, "%.*s", text.length, text.bytes);
 		

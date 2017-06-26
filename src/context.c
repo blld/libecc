@@ -138,7 +138,7 @@ void assertThisType (struct Context * const self, enum Value(Type) type)
 	if (self->this.type != type)
 	{
 		setTextIndex(self, Context(thisIndex));
-		typeError(self, Chars.create("not a %s", Value.typeName(type)));
+		typeError(self, Chars.create("'this' is not a %s", Value.typeName(type)));
 	}
 }
 
@@ -147,7 +147,16 @@ void assertThisMask (struct Context * const self, enum Value(Mask) mask)
 	if (!(self->this.type & mask))
 	{
 		setTextIndex(self, Context(thisIndex));
-		typeError(self, Chars.create("not a %s", Value.maskName(mask)));
+		typeError(self, Chars.create("'this' is not a %s", Value.maskName(mask)));
+	}
+}
+
+void assertThisCoerciblePrimitive (struct Context * const self)
+{
+	if (self->this.type == Value(undefinedType) || self->this.type == Value(nullType))
+	{
+		setTextIndex(self, Context(thisIndex));
+		typeError(self, Chars.create("'this' cannot be null or undefined"));
 	}
 }
 

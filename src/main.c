@@ -649,13 +649,13 @@ static void testFunction (void)
 	test("new Function('a, b, c', 'return a+b+c')(1, 2, 3)", "6", NULL);
 	test("new Function('a,b', 'c', 'return a+b+c')(1, 2, 3)", "6", NULL);
 	test("function a(){ var b = { c: 123 }; function d() { return b.c }; return d; } for (var i = 0; !i; ++i){ var b = a(); } b()", "123", NULL);
-	test("123 .toFixed.call.apply([ 123 ], [ 'abc', 100 ])", "TypeError: not a function"
+	test("123 .toFixed.call.apply([ 123 ], [ 'abc', 100 ])", "TypeError: 'this' is not a function"
 	,    "                        ^~~~~~~                 ");
-	test("123 .toFixed.call.call([ 123 ], 'abc', 100)", "TypeError: not a function"
+	test("123 .toFixed.call.call([ 123 ], 'abc', 100)", "TypeError: 'this' is not a function"
 	,    "                       ^~~~~~~             ");
-	test("123 .toFixed.call.apply(123 .toFixed, [ 'abc', 100 ])", "TypeError: not a number"
+	test("123 .toFixed.call.apply(123 .toFixed, [ 'abc', 100 ])", "TypeError: 'this' is not a number"
 	,    "                                         ^~~         ");
-	test("123 .toFixed.apply.call(123 .toFixed, 'abc', [ 100 ])", "TypeError: not a number"
+	test("123 .toFixed.apply.call(123 .toFixed, 'abc', [ 100 ])", "TypeError: 'this' is not a number"
 	,    "                                       ^~~           ");
 	test("123 .toFixed.call.apply(123 .toFixed, [ 456, 100 ])", "RangeError: precision 100 out of range"
 	,    "                                             ^~~   ");
@@ -663,7 +663,7 @@ static void testFunction (void)
 	,    "                                             ^~~   ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, 100 ])", "TypeError: arguments is not an object"
 	,    "                                              ^~~   ");
-	test("123 .toFixed.apply.apply(123 .toFixed, [ 'abc', [ 100 ] ])", "TypeError: not a number"
+	test("123 .toFixed.apply.apply(123 .toFixed, [ 'abc', [ 100 ] ])", "TypeError: 'this' is not a number"
 	,    "                                          ^~~             ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range"
 	,    "                                                ^~~     ");
@@ -868,13 +868,13 @@ static void testError (void)
 	test("RangeError('test')", "RangeError: test", NULL);
 	test("Object.prototype.toString.call(RangeError())", "[object Error]", NULL);
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]", NULL);
-	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: not a number"
+	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: 'this' is not a number"
 	,    "                                 ^~~              ");
 	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision 100 out of range"
 	,    "                                     ^~~        ");
 	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision 100 out of range"
 	,    "                                        ^~~          ");
-	test("''.toString.call(123)", "TypeError: not a string"
+	test("''.toString.call(123)", "TypeError: 'this' is not a string"
 	,    "                 ^~~ ");
 	test("function a(){}; a.toString = function(){ return 'abc'; }; var b = 123; a + b", "abc123", NULL);
 	test("function a(){}; a.toString = function(){ throw Error('test'); }; a", "Error: test"
@@ -1030,7 +1030,7 @@ static void testBoolean (void)
 	test("var b = new Boolean(0); b.toString()", "false", NULL);
 	test("var b = Boolean(); b.toString()", "false", NULL);
 	test("if (new Boolean(false)) 1; else 2;", "1", NULL);
-	test("Boolean.prototype.toString.call(123)", "TypeError: not a boolean"
+	test("Boolean.prototype.toString.call(123)", "TypeError: 'this' is not a boolean"
 	,    "                                ^~~ ");
 	test("Boolean.prototype.toString.call(false)", "false", NULL);
 	test("Boolean.prototype.toString.call(new Boolean(0))", "false", NULL);
@@ -1046,7 +1046,8 @@ static void testNumber (void)
 	test("Number.prototype", "0", NULL);
 	test("Number.toString", "function toString() [native code]", NULL);
 	test("Number.toString()", "function Number() [native code]", NULL);
-	test("Number.toString.call(null)", "TypeError: not a function", NULL);
+	test("Number.toString.call(null)", "TypeError: 'this' is not a function"
+	,    "                     ^~~~ ");
 	test("0xf", "15", NULL);
 	test("0xff", "255", NULL);
 	test("0xffff", "65535", NULL);
@@ -1214,9 +1215,9 @@ static void testString (void)
 	test("Object.prototype.toString.call(String.prototype)", "[object String]", NULL);
 	test("String.prototype.constructor", "function String() [native code]", NULL);
 	test("String.prototype", "", NULL);
-	test("''.toString.call(123)", "TypeError: not a string"
+	test("''.toString.call(123)", "TypeError: 'this' is not a string"
 	,    "                 ^~~ ");
-	test("''.valueOf.call(123)", "TypeError: not a string"
+	test("''.valueOf.call(123)", "TypeError: 'this' is not a string"
 	,    "                ^~~ ");
 	test("'aべcaべc'.length", "6", NULL);
 	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"

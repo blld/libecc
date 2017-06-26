@@ -1092,7 +1092,7 @@ static struct Value exec (struct Context * const context)
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
-	lastIndex = Value.toInteger(context, Object.getMember(context, &self->object, Key(lastIndex)));
+	lastIndex = self->global? Value.toInteger(context, Object.getMember(context, &self->object, Key(lastIndex))): Value.integer(0);
 	
 	Object.putMember(context, &self->object, Key(lastIndex), Value.integer(0));
 	

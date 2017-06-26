@@ -63,6 +63,7 @@ Interface(Context,
 	(struct Value, this ,(struct Context * const))
 	(void, assertThisType ,(struct Context * const, enum Value(Type)))
 	(void, assertThisMask ,(struct Context * const, enum Value(Mask)))
+	(void, assertThisCoerciblePrimitive ,(struct Context * const))
 	
 	(void, setText ,(struct Context * const, const struct Text *text))
 	(void, setTexts ,(struct Context * const, const struct Text *text, const struct Text *textAlt))
