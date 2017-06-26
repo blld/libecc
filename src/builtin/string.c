@@ -237,7 +237,7 @@ static struct Value lastIndexOf (struct Context * const context)
 static struct Value match (struct Context * const context)
 {
 	struct RegExp *regexp;
-	struct Value value;
+	struct Value value, lastIndex;
 	
 	Context.assertParameterCount(context, 1);
 	
@@ -249,47 +249,71 @@ static struct Value match (struct Context * const context)
 	else
 		regexp = RegExp.createWith(context, value, Value(undefined));
 	
+	lastIndex = regexp->global? Value.integer(0): Value.toInteger(context, Object.getMember(context, &regexp->object, Key(lastIndex)));
+	
+	Object.putMember(context, &regexp->object, Key(lastIndex), Value.integer(0));
+	
+	if (lastIndex.data.integer >= 0)
 	{
 		const char *bytes = Value.stringBytes(&context->this);
 		uint16_t length = Value.stringLength(&context->this);
-		struct Text text = Text.make(bytes, length), seek = text;
+		struct Text text = textAtIndex(bytes, length, 0, 0);
 		const char *capture[regexp->count * 2];
 		const char *index[regexp->count * 2];
 		struct Object *array = Array.create();
-		struct Chars *element;
+		struct Chars(Append) chars;
 		uint32_t size = 0;
 		
 		do
 		{
-			struct RegExp(State) state = { seek.bytes, text.bytes + text.length, capture, index };
+			struct RegExp(State) state = { text.bytes, text.bytes + text.length, capture, index };
 			
-			if (text.length && RegExp.matchWithState(regexp, &state))
+			if (RegExp.matchWithState(regexp, &state))
 			{
-				if (state.capture[1] <= text.bytes)
+				Chars.beginAppend(&chars);
+				Chars.append(&chars, "%.*s", capture[1] - capture[0], capture[0]);
+				Object.addElement(array, size++, Chars.endAppend(&chars), 0);
+				
+				if (!regexp->global)
 				{
-					Text.advance(&seek, 1);
-					continue;
+					int32_t index, count;
+					
+					for (index = 1, count = regexp->count; index < count; ++index)
+					{
+						if (capture[index * 2])
+						{
+							Chars.beginAppend(&chars);
+							Chars.append(&chars, "%.*s", capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+							Object.addElement(array, size++, Chars.endAppend(&chars), 0);
+						}
+						else
+							Object.addElement(array, size++, Value(undefined), 0);
+					}
+					break;
 				}
 				
-				element = Chars.createWithBytes(state.capture[0] - text.bytes, text.bytes);
-				Object.addElement(array, size++, Pool.retainedValue(Value.chars(element)), 0);
-				
-				Text.advance(&text, state.capture[1] - text.bytes);
-				seek = text;
+				if (capture[1] - text.bytes > 0)
+					Text.advance(&text, capture[1] - text.bytes);
+				else
+					Text.nextCharacter(&text);
 			}
 			else
-			{
-				Object.putMember(context, &regexp->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes))));
 				break;
-			}
 		}
-		while (regexp->global);
+		while (text.length);
 		
 		if (size)
+		{
+			Object.addMember(array, Key(input), Pool.retainedValue(context->this), 0);
+			Object.addMember(array, Key(index), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes))), 0);
+			
+			if (regexp->global)
+				Object.putMember(context, &regexp->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(text.bytes - bytes))));
+			
 			return Value.object(array);
-		else
-			return Value(null);
+		}
 	}
+	return Value(null);
 }
 
 static void replaceText (struct Chars(Append) *chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
