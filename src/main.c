@@ -845,6 +845,8 @@ static void testObject (void)
 	test("var a = { 1: 'def', length: 2 }; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); [].pop.call(a)", "2", NULL);
 	test("var a = { length: 2 }; Object.defineProperty(a, 1, { value: 123 }); [].pop.call(a)", "TypeError: '1' is non-configurable"
 	,    "                                                                    ^~~~~~~~~~~~~~");
+	test("var a = { length: 2, pop: Array.prototype.pop }; Object.defineProperty(a, 1, { value: 123 }); a.pop()", "TypeError: '1' is non-configurable"
+	,    "                                                                                              ^~~~~~~");
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a.pop()", "2", NULL);
 	test("var a = []; Object.defineProperty(a, 2, {get: function(){}}); a.pop()", "TypeError: '2' is non-configurable"
 	,    "                                                              ^~~~~~~");
@@ -1014,6 +1016,7 @@ static void testArray (void)
 	test("function f(x,y){return arguments[0]<y?-1: x>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
 	test("function f(x){return x<arguments[1]?-1: x>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
 	test("function f(){return arguments[0]<arguments[1]?-1: arguments[0]>arguments[1]?+1: 0};var a=['araignée',,,,'zèbre'];a.sort(f)", "araignée,zèbre,,,", NULL);
+	test("var a = [], b = ''; a[34] = 34; Object.defineProperty(a, 12, {value: 12}); for (var i in a) b += i", "34", NULL);
 }
 
 static void testBoolean (void)

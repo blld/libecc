@@ -25,8 +25,19 @@ static struct Value getLength (struct Context * const context)
 
 static struct Value setLength (struct Context * const context)
 {
+	double length;
+	
 	Context.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(context, Context.argument(context, 0)).data.binary);
+	
+	length = Value.toBinary(context, Context.argument(context, 0)).data.binary;
+	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)
+		Context.rangeError(context, Chars.create("invalid array length"));
+	
+	if (Object.resizeElement(context->this.data.object, length))
+	{
+		Context.typeError(context, Chars.create("'%u' is non-configurable", context->this.data.object->elementCount));
+	}
+	
 	return Value(undefined);
 }
 

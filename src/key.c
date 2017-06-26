@@ -131,7 +131,7 @@ struct Key makeWithText (const struct Text text, enum Key(Flags) flags)
 		}
 		
 		if ((isdigit(text.bytes[0]) || text.bytes[0] == '-') && !isnan(Lexer.scanBinary(text, 0).data.binary))
-			Env.printWarning("Creating identifier '%.*s'; %u identifier(s) left. Using array of length > 0x%lx, or negative-integer/floating-point as property name is discouraged", text.length, text.bytes, UINT16_MAX - keyCount, Object(ElementMax));
+			Env.printWarning("Creating identifier '%.*s'; %u identifier(s) left. Using array of length > 0x%x, or negative-integer/floating-point as property name is discouraged", text.length, text.bytes, UINT16_MAX - keyCount, Object(ElementMax));
 		
 		if (flags & Key(copyOnCreate))
 		{

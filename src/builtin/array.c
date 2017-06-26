@@ -51,10 +51,11 @@ void objectResize (struct Context * const context, struct Object *object, uint32
 {
 	if (object->type == &Array(type))
 	{
-		if (length > object->elementCapacity)
-			Object.resizeElement(object, length);
-		else
-			object->elementCount = length;
+		if (Object.resizeElement(object, length))
+		{
+			Context.setTextIndex(context, Context(callIndex));
+			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
+		}
 	}
 	else
 		Object.putMember(context, object, Key(length), Value.binary(length));
@@ -210,12 +211,7 @@ struct Value push (struct Context * const context)
 	count = Context.variableArgumentCount(context);
 	
 	base = objectLength(context, this);
-	
-	if (UINT32_MAX - base < count)
-		length = UINT32_MAX;
-	else
-		length = base + count;
-	
+	length = UINT32_MAX - base < count? UINT32_MAX: base + count;
 	objectResize(context, this, length);
 	
 	for (index = base; index < length; ++index)
@@ -731,8 +727,16 @@ struct Value getLength (struct Context * const context)
 static
 struct Value setLength (struct Context * const context)
 {
+	double length;
+	
 	Context.assertParameterCount(context, 1);
-	Object.resizeElement(context->this.data.object, Value.toBinary(context, Context.argument(context, 0)).data.binary);
+	
+	length = Value.toBinary(context, Context.argument(context, 0)).data.binary;
+	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)
+		Context.rangeError(context, Chars.create("invalid array length"));
+	
+	if (Object.resizeElement(context->this.data.object, length))
+		Context.typeError(context, Chars.create("'%u' is non-configurable", context->this.data.object->elementCount));
 	
 	return Value(undefined);
 }
@@ -750,7 +754,7 @@ struct Value constructor (struct Context * const context)
 	if (count == 1 && Value.isNumber(value) && Value.isPrimitive(value))
 	{
 		double binary = Value.toBinary(context, value).data.binary;
-		if (binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
+		if (isfinite(length) && binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
 		{
 			length = binary;
 			count = 0;

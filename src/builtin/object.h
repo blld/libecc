@@ -78,7 +78,7 @@ Interface(Object,
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
 	
-	(void, resizeElement ,(struct Object *, uint32_t size))
+	(int, resizeElement ,(struct Object *, uint32_t size))
 	(void, populateElementWithCList ,(struct Object *, uint32_t count, const char * list[]))
 	
 	(struct Value, toString ,(struct Context * const))

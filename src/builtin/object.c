@@ -29,7 +29,8 @@ const struct Object(Type) Object(type) = {
 
 static const int defaultSize = 8;
 
-static inline uint16_t getSlot (const struct Object * const self, const struct Key key)
+static inline
+uint16_t getSlot (const struct Object * const self, const struct Key key)
 {
 	return
 		self->hashmap[
@@ -42,7 +43,8 @@ static inline uint16_t getSlot (const struct Object * const self, const struct K
 		.slot[key.data.depth[3]];
 }
 
-static inline uint32_t getIndexOrKey (struct Value property, struct Key *key)
+static inline
+uint32_t getIndexOrKey (struct Value property, struct Key *key)
 {
 	uint32_t index = UINT32_MAX;
 	
@@ -54,16 +56,13 @@ static inline uint32_t getIndexOrKey (struct Value property, struct Key *key)
 	{
 		if (property.type == Value(integerType) && property.data.integer >= 0)
 			index = property.data.integer;
-		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary <= Object(ElementMax) && property.data.binary == (uint32_t)property.data.binary)
+		else if (property.type == Value(binaryType) && property.data.binary >= 0 && property.data.binary < UINT32_MAX && property.data.binary == (uint32_t)property.data.binary)
 			index = property.data.binary;
 		else if (Value.isString(property))
 		{
 			struct Text text = Value.textOf(&property);
-			if ((index = Lexer.scanElement(text)) > Object(ElementMax))
-			{
-				index = UINT32_MAX;
+			if ((index = Lexer.scanElement(text)) == UINT32_MAX)
 				*key = Key.makeWithText(text, Key(copyOnCreate));
-			}
 		}
 		else
 			return getIndexOrKey(Value.toString(NULL, property), key);
@@ -72,7 +71,21 @@ static inline uint32_t getIndexOrKey (struct Value property, struct Key *key)
 	return index;
 }
 
-static inline uint32_t nextPowerOfTwo(uint32_t v)
+static inline
+struct Key keyOfIndex (uint32_t index, int create)
+{
+	char buffer[10 + 1];
+	uint16_t length;
+	
+	length = snprintf(buffer, sizeof(buffer), "%u", index);
+	if (create)
+		return Key.makeWithText(Text.make(buffer, length), Key(copyOnCreate));
+	else
+		return Key.search(Text.make(buffer, length));
+}
+
+static inline
+uint32_t nextPowerOfTwo(uint32_t v)
 {
 	v--;
 	v |= v >> 1;
@@ -84,7 +97,8 @@ static inline uint32_t nextPowerOfTwo(uint32_t v)
 	return v;
 }
 
-static inline uint32_t elementCount (struct Object *self)
+static inline
+uint32_t elementCount (struct Object *self)
 {
 	if (self->elementCount < Object(ElementMax))
 		return self->elementCount;
@@ -92,7 +106,8 @@ static inline uint32_t elementCount (struct Object *self)
 		return Object(ElementMax);
 }
 
-static void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
+static
+void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
 {
 	const char *postfix =
 		ref->flags & Value(accessor) && !(ref->flags & Value(asData))
@@ -110,7 +125,7 @@ static void readonlyError(struct Context * const context, struct Value *ref, str
 			Context.typeError(context, Chars.create("'%.*s' %s", keyText->length, keyText->bytes, postfix));
 		}
 		else if (element >= this->element && element < this->element + this->elementCount)
-			Context.typeError(context, Chars.create("'%d' %s", element - this->element, postfix));
+			Context.typeError(context, Chars.create("'%u' %s", element - this->element, postfix));
 		
 	} while (( this = this->prototype ));
 	
@@ -120,7 +135,8 @@ static void readonlyError(struct Context * const context, struct Value *ref, str
 
 //
 
-static struct Object *checkObject (struct Context * const context, int argument)
+static
+struct Object *checkObject (struct Context * const context, int argument)
 {
 	struct Value value = Context.argument(context, argument);
 	if (!Value.isObject(value))
@@ -129,14 +145,16 @@ static struct Object *checkObject (struct Context * const context, int argument)
 	return value.data.object;
 }
 
-static struct Value valueOf (struct Context * const context)
+static
+struct Value valueOf (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	
 	return Value.toObject(context, Context.this(context));
 }
 
-static struct Value hasOwnProperty (struct Context * const context)
+static
+struct Value hasOwnProperty (struct Context * const context)
 {
 	struct Object *self;
 	struct Value value;
@@ -155,7 +173,8 @@ static struct Value hasOwnProperty (struct Context * const context)
 		return Value.truth(member(self, key, Value(asOwn)) != NULL);
 }
 
-static struct Value isPrototypeOf (struct Context * const context)
+static
+struct Value isPrototypeOf (struct Context * const context)
 {
 	struct Value arg0;
 	
@@ -176,7 +195,8 @@ static struct Value isPrototypeOf (struct Context * const context)
 	return Value(false);
 }
 
-static struct Value propertyIsEnumerable (struct Context * const context)
+static
+struct Value propertyIsEnumerable (struct Context * const context)
 {
 	struct Value value;
 	struct Object *object;
@@ -194,7 +214,8 @@ static struct Value propertyIsEnumerable (struct Context * const context)
 		return Value(false);
 }
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -210,7 +231,8 @@ static struct Value constructor (struct Context * const context)
 		return Value.toObject(context, value);
 }
 
-static struct Value getPrototypeOf (struct Context * const context)
+static
+struct Value getPrototypeOf (struct Context * const context)
 {
 	struct Object *object;
 	
@@ -221,7 +243,8 @@ static struct Value getPrototypeOf (struct Context * const context)
 	return object->prototype? Value.objectValue(object->prototype): Value(undefined);
 }
 
-static struct Value getOwnPropertyDescriptor (struct Context * const context)
+static
+struct Value getOwnPropertyDescriptor (struct Context * const context)
 {
 	struct Object *object;
 	struct Value value;
@@ -266,7 +289,8 @@ static struct Value getOwnPropertyDescriptor (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value getOwnPropertyNames (struct Context * const context)
+static
+struct Value getOwnPropertyNames (struct Context * const context)
 {
 	struct Object *object, *parent;
 	struct Object *result;
@@ -300,7 +324,8 @@ static struct Value getOwnPropertyNames (struct Context * const context)
 	return Value.object(result);
 }
 
-static struct Value defineProperty (struct Context * const context)
+static
+struct Value defineProperty (struct Context * const context)
 {
 	struct Object *object, *descriptor;
 	struct Value property, value, *getter, *setter, *current, *flag;
@@ -316,7 +341,6 @@ static struct Value defineProperty (struct Context * const context)
 	getter = member(descriptor, Key(get), 0);
 	setter = member(descriptor, Key(set), 0);
 	
-	index = getIndexOrKey(property, &key);
 	current = Object.property(object, property, Value(asOwn));
 	
 	if (getter || setter)
@@ -426,6 +450,7 @@ static struct Value defineProperty (struct Context * const context)
 	
 sealedError:
 	Context.setTextIndexArgument(context, 1);
+	index = getIndexOrKey(property, &key);
 	if (index == UINT32_MAX)
 	{
 		const struct Text *text = Key.textOf(key);
@@ -435,7 +460,8 @@ sealedError:
 		Context.typeError(context, Chars.create("'%u' is non-configurable", index));
 }
 
-static struct Value defineProperties (struct Context * const context)
+static
+struct Value defineProperties (struct Context * const context)
 {
 	union Object(Hashmap) *originalHashmap = context->environment->hashmap;
 	uint16_t originalHashmapCount = context->environment->hashmapCount;
@@ -480,7 +506,8 @@ static struct Value defineProperties (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value objectCreate (struct Context * const context)
+static
+struct Value objectCreate (struct Context * const context)
 {
 	struct Object *object, *result;
 	struct Value properties;
@@ -500,7 +527,8 @@ static struct Value objectCreate (struct Context * const context)
 	return Value.object(result);
 }
 
-static struct Value seal (struct Context * const context)
+static
+struct Value seal (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
@@ -521,7 +549,8 @@ static struct Value seal (struct Context * const context)
 	return Value.object(object);
 }
 
-static struct Value freeze (struct Context * const context)
+static
+struct Value freeze (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
@@ -542,7 +571,8 @@ static struct Value freeze (struct Context * const context)
 	return Value.object(object);
 }
 
-static struct Value preventExtensions (struct Context * const context)
+static
+struct Value preventExtensions (struct Context * const context)
 {
 	struct Object *object;
 	
@@ -554,7 +584,8 @@ static struct Value preventExtensions (struct Context * const context)
 	return Value.object(object);
 }
 
-static struct Value isSealed (struct Context * const context)
+static
+struct Value isSealed (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
@@ -576,7 +607,8 @@ static struct Value isSealed (struct Context * const context)
 	return Value(true);
 }
 
-static struct Value isFrozen (struct Context * const context)
+static
+struct Value isFrozen (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
@@ -598,7 +630,8 @@ static struct Value isFrozen (struct Context * const context)
 	return Value(true);
 }
 
-static struct Value isExtensible (struct Context * const context)
+static
+struct Value isExtensible (struct Context * const context)
 {
 	struct Object *object;
 	
@@ -608,7 +641,8 @@ static struct Value isExtensible (struct Context * const context)
 	return Value.truth(!(object->flags & Object(sealed)));
 }
 
-static struct Value keys (struct Context * const context)
+static
+struct Value keys (struct Context * const context)
 {
 	struct Object *object, *parent;
 	struct Object *result;
@@ -804,7 +838,7 @@ struct Value * member (struct Object *self, struct Key member, enum Value(Flags)
 	return NULL;
 }
 
-struct Value * element (struct Object *self, uint32_t element, enum Value(Flags) flags)
+struct Value * element (struct Object *self, uint32_t index, enum Value(Flags) flags)
 {
 	int lookupChain = !(flags & Value(asOwn));
 	struct Object *object = self;
@@ -814,27 +848,22 @@ struct Value * element (struct Object *self, uint32_t element, enum Value(Flags)
 	
 	if (self->type == &String(type))
 	{
-		struct Value *ref = Object.addMember(self, Key(none), String.valueAtIndex((struct String *)self, element), 0);
+		struct Value *ref = Object.addMember(self, Key(none), String.valueAtIndex((struct String *)self, index), 0);
 		ref->check = 0;
 		return ref;
 	}
-	else if (element > Object(ElementMax))
+	else if (index > Object(ElementMax))
 	{
-		struct Key key;
-		char buffer[10 + 1];
-		uint16_t length;
-		
-		length = snprintf(buffer, sizeof(buffer), "%u", element);
-		key = Key.search(Text.make(buffer, length));
+		struct Key key = keyOfIndex(index, 0);
 		if (key.data.integer)
-			return member(self, key, Value(asOwn));
+			return member(self, key, flags);
 	}
 	else
 		do
 		{
-			if (element < object->elementCount)
+			if (index < object->elementCount)
 			{
-				ref = &object->element[element].value;
+				ref = &object->element[index].value;
 				if (ref->check == 1)
 					return lookupChain || object == self || (ref->flags & flags) ? ref: NULL;
 			}
@@ -951,10 +980,17 @@ struct Value putElement (struct Context *context, struct Object *self, uint32_t 
 {
 	struct Value *ref;
 	
-	value.flags = 0;
-	
 	if (index > Object(ElementMax))
-		return putProperty(context, self, Value.binary(index), value);
+	{
+		if (self->elementCapacity <= index)
+			resizeElement(self, index < UINT32_MAX? index + 1: index);
+		else if (self->elementCount <= index)
+			self->elementCount = index + 1;
+		
+		return putMember(context, self, keyOfIndex(index, 1), value);
+	}
+	
+	value.flags = 0;
 	
 	if (( ref = element(self, index, Value(asOwn) | Value(accessor)) ))
 		return putValue(context, self, ref, value);
@@ -1035,13 +1071,13 @@ struct Value * addElement (struct Object *self, uint32_t index, struct Value val
 	
 	assert(self);
 	
-	if (index > Object(ElementMax))
-		return addProperty(self, Value.binary(index), value, flags);
-	
 	if (self->elementCapacity <= index)
-		resizeElement(self, index + 1);
+		resizeElement(self, index < UINT32_MAX? index + 1: index);
 	else if (self->elementCount <= index)
 		self->elementCount = index + 1;
+	
+	if (index > Object(ElementMax))
+		return addMember(self, keyOfIndex(index, 1), value, flags);
 	
 	ref = &self->element[index].value;
 	
@@ -1096,7 +1132,13 @@ int deleteElement (struct Object *self, uint32_t index)
 	assert(self);
 	
 	if (index > Object(ElementMax))
-		return deleteProperty(self, Value.binary(index));
+	{
+		struct Key key = keyOfIndex(index, 0);
+		if (key.data.integer)
+			return deleteMember(self, key);
+		else
+			return 1;
+	}
 	
 	if (index < self->elementCount)
 	{
@@ -1172,11 +1214,13 @@ void stripMap (struct Object *self)
 	memset(self->hashmap + 1, 0, sizeof(*self->hashmap));
 }
 
-void resizeElement (struct Object *self, uint32_t size)
+int resizeElement (struct Object *self, uint32_t size)
 {
 	uint32_t capacity;
 	
-	if (size < 4)
+	if (size <= self->elementCapacity)
+		capacity = self->elementCapacity;
+	else if (size < 4)
 	{
 		/* 64-bytes mini */
 		capacity = 4;
@@ -1186,6 +1230,8 @@ void resizeElement (struct Object *self, uint32_t size)
 		/* power of two steps between */
 		capacity = nextPowerOfTwo(size);
 	}
+	else if (size > Object(ElementMax))
+		capacity = Object(ElementMax) + 1;
 	else
 	{
 		/* 1024-bytes chunk */
@@ -1196,14 +1242,13 @@ void resizeElement (struct Object *self, uint32_t size)
 	
 	assert(self);
 	
-	if (capacity > Object(ElementMax) + 1)
-	{
-		Env.printWarning("Faking array length of 0x%lx while actual memory length is 0x%lx; Using array length > %u is discouraged", size, capacity, Object(ElementMax));
-		capacity = Object(ElementMax) + 1;
-	}
-	
 	if (capacity != self->elementCapacity)
 	{
+		if (size > Object(ElementMax))
+		{
+			Env.printWarning("Faking array length of %u while actual physical length is %u. Using array length > 0x%x is discouraged", size, capacity, Object(ElementMax));
+		}
+		
 		self->element = realloc(self->element, sizeof(*self->element) * capacity);
 		if (capacity > self->elementCapacity)
 			memset(self->element + self->elementCapacity, 0, sizeof(*self->element) * (capacity - self->elementCapacity));
@@ -1211,9 +1256,60 @@ void resizeElement (struct Object *self, uint32_t size)
 		self->elementCapacity = capacity;
 	}
 	else if (size < self->elementCount)
-		memset(self->element + size, 0, sizeof(*self->element) * (self->elementCount - size));
-	
+	{
+		union Object(Element) *element;
+		uint32_t until = size, e;
+		
+		if (self->elementCount > Object(ElementMax))
+		{
+			union Object(Hashmap) *hashmap;
+			uint32_t index, h;
+			
+			for (h = 2; h < self->hashmapCount; ++h)
+			{
+				hashmap = &self->hashmap[h];
+				if (hashmap->value.check == 1)
+				{
+					index = Lexer.scanElement(*Key.textOf(hashmap->value.key));
+					if (hashmap->value.check == 1 && (hashmap->value.flags & Value(sealed)) && index >= until)
+						until = index + 1;
+				}
+			}
+			
+			for (h = 2; h < self->hashmapCount; ++h)
+			{
+				hashmap = &self->hashmap[h];
+				if (hashmap->value.check == 1)
+					if (Lexer.scanElement(*Key.textOf(hashmap->value.key)) >= until)
+						self->hashmap[h].value.check = 0;
+			}
+			
+			if (until > size)
+			{
+				self->elementCount = until;
+				return 1;
+			}
+			self->elementCount = self->elementCapacity;
+		}
+		
+		for (e = size; e < self->elementCount; ++e)
+		{
+			element = &self->element[e];
+			if (element->value.check == 1 && (element->value.flags & Value(sealed)) && e >= until)
+				until = e + 1;
+		}
+		
+		memset(self->element + until, 0, sizeof(*self->element) * (self->elementCount - until));
+		
+		if (until > size)
+		{
+			self->elementCount = until;
+			return 1;
+		}
+	}
 	self->elementCount = size;
+	
+	return 0;
 }
 
 void populateElementWithCList (struct Object *self, uint32_t count, const char * list[])

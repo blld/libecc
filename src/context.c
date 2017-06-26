@@ -216,7 +216,12 @@ struct Text textSeek (struct Context * const self)
 	if (seek.ops->native == Op.noop)
 		--seek.ops;
 	
-	if (index > Context(noIndex) && !isAccessor)
+	if (isAccessor)
+	{
+		if (index > Context(thisIndex))
+			Context.rewindStatement(&seek);
+	}
+	else if (index > Context(noIndex))
 	{
 		while (seek.ops->text.bytes != seek.textCall->bytes
 			|| seek.ops->text.length != seek.textCall->length

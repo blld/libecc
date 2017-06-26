@@ -1833,7 +1833,7 @@ struct Value iterateInRef (struct Context * const context)
 			{
 				union Object(Element) *element = object->element + index;
 				
-				if (element->value.check != 1)
+				if (element->value.check != 1 || (element->value.flags & Value(hidden)))
 					continue;
 				
 				if (object != target.data.object && &element->value != Object.element(target.data.object, index, 0))
