@@ -566,12 +566,16 @@ static struct Value slice (struct Context * const context)
 	from = Context.argument(context, 0);
 	if (from.type == Value(undefinedType))
 		start = Text.make(chars, length);
+	else if (from.type == Value(binaryType) && from.data.binary == INFINITY)
+		start = Text.make(chars + length, 0);
 	else
 		start = textAtIndex(chars, length, Value.toInteger(context, from).data.integer, 1);
 	
 	to = Context.argument(context, 1);
-	if (to.type == Value(undefinedType))
+	if (to.type == Value(undefinedType) || (to.type == Value(binaryType) && (isnan(to.data.binary) || to.data.binary == INFINITY)))
 		end = Text.make(chars + length, 0);
+	else if (to.type == Value(binaryType) && to.data.binary == -INFINITY)
+		end = Text.make(chars, length);
 	else
 		end = textAtIndex(chars, length, Value.toInteger(context, to).data.integer, 1);
 	
