@@ -514,6 +514,38 @@ static struct Value replace (struct Context * const context)
 	}
 }
 
+static
+struct Value search (struct Context * const context)
+{
+	struct RegExp *regexp;
+	struct Value value;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisCoerciblePrimitive(context);
+	
+	context->this = Value.toString(context, Context.this(context));
+	
+	value = Context.argument(context, 0);
+	if (value.type == Value(regexpType))
+		regexp = value.data.regexp;
+	else
+		regexp = RegExp.createWith(context, value, Value(undefined));
+	
+	{
+		const char *bytes = Value.stringBytes(&context->this);
+		uint16_t length = Value.stringLength(&context->this);
+		struct Text text = textAtIndex(bytes, length, 0, 0);
+		const char *capture[regexp->count * 2];
+		const char *index[regexp->count * 2];
+		
+		struct RegExp(State) state = { text.bytes, text.bytes + text.length, capture, index };
+		
+		if (RegExp.matchWithState(regexp, &state))
+			return Value.integer(unitIndex(bytes, length, (int32_t)(capture[0] - bytes)));
+	}
+	return Value.integer(-1);
+}
+
 static struct Value slice (struct Context * const context)
 {
 	struct Value from, to;
@@ -953,7 +985,7 @@ void setup ()
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, h);
 	Function.addToObject(String(prototype), "match", match, 1, h);
 	Function.addToObject(String(prototype), "replace", replace, 2, h);
-#warning TODO: search
+	Function.addToObject(String(prototype), "search", search, 1, h);
 	Function.addToObject(String(prototype), "slice", slice, 2, h);
 	Function.addToObject(String(prototype), "split", split, 2, h);
 	Function.addToObject(String(prototype), "substring", substring, 2, h);
