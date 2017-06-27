@@ -13,6 +13,13 @@
 #include <windows.h>
 #endif
 
+#if _WIN32
+#include <sys/timeb.h>
+#elif _DEFAULT_SOURCE || __APPLE__
+#include <sys/time.h>
+#endif
+
+
 #define Implementation
 #include "env.h"
 
@@ -268,4 +275,19 @@ void printWarning (const char *format, ...)
 void newline ()
 {
 	putc('\n', stderr);
+}
+
+double currentTime ()
+{
+#if _WIN32
+	struct _timeb timebuffer;
+	_ftime (&timebuffer);
+	return timebuffer.time * 1000 + timebuffer.millitm;
+#elif _DEFAULT_SOURCE || __APPLE__
+	struct timeval time;
+	gettimeofday(&time, NULL);
+	return time.tv_sec * 1000 + time.tv_usec / 1000;
+#else
+	return time(NULL) * 1000;
+#endif
 }

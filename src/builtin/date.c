@@ -6,17 +6,12 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
-#if _WIN32
-#include <sys/timeb.h>
-#elif _DEFAULT_SOURCE || __APPLE__
-#include <sys/time.h>
-#endif
-
 #define Implementation
 #include "date.h"
 
 #include "../ecc.h"
 #include "../pool.h"
+#include "../env.h"
 
 // MARK: - Private
 
@@ -344,23 +339,7 @@ unsigned int msToWeekday(double ms)
     return (unsigned)(z >= -4? (z + 4) % 7: (z + 5) % 7 + 6);
 }
 
-
-static double currentTime ()
-{
-#if _WIN32
-	struct _timeb timebuffer;
-	_ftime (&timebuffer);
-	return timebuffer.time * 1000 + timebuffer.millitm;
-#elif _DEFAULT_SOURCE || __APPLE__
-	struct timeval time;
-	gettimeofday(&time, NULL);
-	return time.tv_sec * 1000 + time.tv_usec / 1000;
-#else
-	return time(NULL) * 1000;
-#endif
-}
-
-//
+// MARK: - Static Members
 
 static
 struct Value toString (struct Context * const context)
