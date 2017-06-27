@@ -124,7 +124,10 @@ int variableArgumentCount (struct Context * const self)
 struct Value variableArgument (struct Context * const self, int argumentIndex)
 {
 	self->textIndex = argumentIndex + 4;
-	return self->environment->hashmap[2].value.data.object->element[argumentIndex].value;
+	if (argumentIndex < self->environment->hashmap[2].value.data.object->elementCount)
+		return self->environment->hashmap[2].value.data.object->element[argumentIndex].value;
+	else
+		return Value(none);
 }
 
 struct Value this (struct Context * const self)
