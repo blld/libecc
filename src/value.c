@@ -58,11 +58,13 @@ struct Value binary (double binary)
 
 struct Value buffer (const char b[7], uint8_t units)
 {
-	return (struct Value){
-		.data = { .buffer = { b[0],b[1],b[2],b[3],b[4],b[5],b[6],units } },
+	struct Value value = {
 		.type = Value(bufferType),
 		.check = 1,
 	};
+	memcpy(value.data.buffer, b, units);
+	value.data.buffer[7] = units;
+	return value;
 }
 
 struct Value key (struct Key key)
