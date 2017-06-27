@@ -781,6 +781,7 @@ static struct Value substring (struct Context * const context)
 	uint32_t headcp = 0;
 	
 	Context.assertParameterCount(context, 2);
+	Context.assertThisCoerciblePrimitive(context);
 	
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
@@ -789,14 +790,18 @@ static struct Value substring (struct Context * const context)
 	length = Value.stringLength(&context->this);
 	
 	from = Context.argument(context, 0);
-	if (from.type == Value(undefinedType))
+	if (from.type == Value(undefinedType) || (from.type == Value(binaryType) && (isnan(from.data.binary) || from.data.binary == -INFINITY)))
 		start = Text.make(chars, length);
+	else if (from.type == Value(binaryType) && from.data.binary == INFINITY)
+		start = Text.make(chars + length, 0);
 	else
 		start = textAtIndex(chars, length, Value.toInteger(context, from).data.integer, 0);
 	
 	to = Context.argument(context, 1);
-	if (to.type == Value(undefinedType))
+	if (to.type == Value(undefinedType) || (to.type == Value(binaryType) && to.data.binary == INFINITY))
 		end = Text.make(chars + length, 0);
+	else if (to.type == Value(binaryType) && !isfinite(to.data.binary))
+		end = Text.make(chars, length);
 	else
 		end = textAtIndex(chars, length, Value.toInteger(context, to).data.integer, 0);
 	
