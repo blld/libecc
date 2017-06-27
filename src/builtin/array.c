@@ -746,6 +746,35 @@ struct Value indexOf (struct Context * const context)
 }
 
 static
+struct Value lastIndexOf (struct Context * const context)
+{
+	struct Object *this;
+	struct Value search, start;
+	uint32_t length = 0;
+	int32_t index;
+	
+	Context.assertVariableParameter(context);
+	
+	this = Value.toObject(context, Context.this(context)).data.object;
+	length = objectLength(context, this);
+	
+	search = Context.variableArgument(context, 0);
+	start = Value.toInteger(context, Context.variableArgument(context, 1));
+	index = start.data.integer <= 0? length + start.data.integer: start.data.integer + 1;
+	
+	if (index < 0)
+		index = 0;
+	else if (index > length)
+		index = length;
+	
+	for (; index--;)
+		if (Value.isTrue(Value.same(context, search, Object.getElement(context, this, index))))
+			return Value.binary(index);
+	
+	return Value.binary(-1);
+}
+
+static
 struct Value getLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
@@ -830,6 +859,7 @@ void setup (void)
 	Function.addToObject(Array(prototype), "splice", splice, -2, h);
 	Function.addToObject(Array(prototype), "unshift", unshift, -1, h);
 	Function.addToObject(Array(prototype), "indexOf", indexOf, -1, h);
+	Function.addToObject(Array(prototype), "lastIndexOf", lastIndexOf, -1, h);
 	
 	Object.addMember(Array(prototype), Key(length), Function.accessor(getLength, setLength), h|s | Value(asOwn) | Value(asData));
 }
