@@ -1460,32 +1460,30 @@ static int runTest (int verbosity)
 	
 //	test("debugger", "undefined", NULL);
 	
-//	testLexer();
-//	testParser();
-//	testEval();
-//	testConvertion();
-//	testException();
-//	testOperator();
-//	testEquality();
-//	testRelational();
-//	testConditional();
-//	testSwitch();
-//	testDelete();
-//	testGlobal();
-//	testFunction();
-//	testLoop();
-//	testThis();
-//	testObject();
-//	testError();
-//	testAccessor();
-//	testArray();
-//	testBoolean();
-//	testNumber();
-//	testDate();
-//	testString();
-//	testRegExp();
-	
-	test("var __instance = function(){}; __instance.substring = String.prototype.substring; __instance.toString()", " ", NULL);
+	testLexer();
+	testParser();
+	testEval();
+	testConvertion();
+	testException();
+	testOperator();
+	testEquality();
+	testRelational();
+	testConditional();
+	testSwitch();
+	testDelete();
+	testGlobal();
+	testFunction();
+	testLoop();
+	testThis();
+	testObject();
+	testError();
+	testAccessor();
+	testArray();
+	testBoolean();
+	testNumber();
+	testDate();
+	testString();
+	testRegExp();
 	
 	Env.newline();
 	
