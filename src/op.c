@@ -192,6 +192,25 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 	for (index = 2, count = environment->hashmapCount; index < count; ++index)
 		release(environment->hashmap[index].value);
 	
+	if (Value.isObject(result) && context->ops->text.bytes == Text(nativeCode).bytes)
+	{
+		struct Object *object = result.data.object;
+		uint32_t index;
+		
+		for (index = 0; index < object->elementCount; ++index)
+		{
+			union Object(Element) *element = object->element + index;
+			if (element->value.check == 1)
+				retain(element->value);
+		}
+		
+		for (index = 2; index < object->hashmapCount; ++index)
+		{
+			union Object(Hashmap) *hashmap = object->hashmap + index;
+			if (hashmap->value.check == 1)
+				retain(hashmap->value);
+		}
+	}
 	return result;
 }
 

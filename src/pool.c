@@ -145,16 +145,6 @@ void markValue (struct Value value)
 		markChars(value.data.chars);
 }
 
-struct Value retainedValue (struct Value value)
-{
-	if (value.type == Value(charsType))
-		++value.data.chars->referenceCount;
-	if (value.type >= Value(objectType))
-		++value.data.object->referenceCount;
-	
-	return value;
-}
-
 static
 void releaseObject(struct Object *object)
 {

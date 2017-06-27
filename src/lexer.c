@@ -243,7 +243,9 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 								else
 									Chars.append(&chars, "%c", bytes[index]);
 							
-							self->value = Pool.retainedValue(Chars.endAppend(&chars));
+							self->value = Chars.endAppend(&chars);
+							if (self->value.type == Value(charsType))
+								self->value.data.chars->referenceCount++;
 							
 							Input.attachValue(self->input, self->value);
 							

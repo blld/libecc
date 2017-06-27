@@ -1127,9 +1127,7 @@ struct Value exec (struct Context * const context)
 				if (capture[index * 2])
 				{
 					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
-#warning TODO: referenceCount
-					++element->referenceCount;
-					array->element[index].value = Pool.retainedValue(Value.chars(element));
+					array->element[index].value = Value.chars(element);
 				}
 				else
 					array->element[index].value = Value(undefined);
@@ -1139,7 +1137,7 @@ struct Value exec (struct Context * const context)
 				Object.putMember(context, &self->object, Key(lastIndex), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[1] - bytes))));
 			
 			Object.addMember(array, Key(index), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes))), 0);
-			Object.addMember(array, Key(input), Pool.retainedValue(value), 0);
+			Object.addMember(array, Key(input), value, 0);
 			
 			return Value.object(array);
 		}

@@ -320,7 +320,7 @@ struct Value match (struct Context * const context)
 		
 		if (size)
 		{
-			Object.addMember(array, Key(input), Pool.retainedValue(context->this), 0);
+			Object.addMember(array, Key(input), context->this, 0);
 			Object.addMember(array, Key(index), Value.integer(String.unitIndex(bytes, length, (int32_t)(capture[0] - bytes))), 0);
 			
 			if (regexp->global)
