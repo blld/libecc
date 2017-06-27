@@ -148,6 +148,7 @@ struct Value concat (struct Context * const context)
 	int32_t index, count;
 	
 	Context.assertVariableParameter(context);
+	Context.assertThisCoerciblePrimitive(context);
 	
 	count = Context.variableArgumentCount(context);
 	
