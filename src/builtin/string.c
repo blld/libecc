@@ -625,12 +625,21 @@ static struct Value split (struct Context * const context)
 	uint32_t size = 0, limit = UINT32_MAX;
 	
 	Context.assertParameterCount(context, 2);
+	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
 	text = Value.textOf(&context->this);
 	
+	limitValue = Context.argument(context, 1);
+	if (limitValue.type != Value(undefinedType))
+	{
+		limit = Value.toInteger(context, limitValue).data.integer;
+		if (!limit)
+			return Value.object(Array.createSized(0));
+	}
+	
 	separatorValue = Context.argument(context, 0);
-	if (separatorValue.type == Value(undefinedType) || !text.length)
+	if (separatorValue.type == Value(undefinedType))
 	{
 		struct Object *array = Array.createSized(1);
 		array->element[0].value = context->this;
@@ -642,14 +651,6 @@ static struct Value split (struct Context * const context)
 	{
 		separatorValue = Value.toString(context, separatorValue);
 		separator = Value.textOf(&separatorValue);
-	}
-	
-	limitValue = Context.argument(context, 1);
-	if (limitValue.type != Value(undefinedType))
-	{
-		limit = Value.toInteger(context, limitValue).data.integer;
-		if (!limit)
-			return Value.object(Array.createSized(0));
 	}
 	
 	Context.setTextIndex(context, Context(callIndex));
@@ -760,7 +761,7 @@ static struct Value split (struct Context * const context)
 			Text.nextCharacter(&seek);
 		}
 		
-		if (text.length && size < limit)
+		if (size < limit)
 		{
 			element = Chars.createSized(text.length);
 			memcpy(element->bytes, text.bytes, text.length);
