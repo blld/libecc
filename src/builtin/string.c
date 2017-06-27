@@ -72,6 +72,7 @@ struct Value charAt (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
+	context->this = Value.toString(context, context->this);
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	index = Value.toInteger(context, Context.argument(context, 0)).data.integer;
@@ -113,6 +114,7 @@ struct Value charCodeAt (struct Context * const context)
 	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
+	context->this = Value.toString(context, context->this);
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	index = Value.toInteger(context, Context.argument(context, 0)).data.integer;
@@ -800,9 +802,7 @@ struct Value substring (struct Context * const context)
 	Context.assertParameterCount(context, 2);
 	Context.assertThisCoerciblePrimitive(context);
 	
-	if (!Value.isString(context->this))
-		context->this = Value.toString(context, Context.this(context));
-	
+	context->this = Value.toString(context, Context.this(context));
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	
