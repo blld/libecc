@@ -195,16 +195,18 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 	if (Value.isObject(result) && context->ops->text.bytes == Text(nativeCode).bytes)
 	{
 		struct Object *object = result.data.object;
-		uint32_t index;
+		uint32_t index, count;
 		
-		for (index = 0; index < object->elementCapacity; ++index)
+		count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
+		for (index = 0; index < count; ++index)
 		{
 			union Object(Element) *element = object->element + index;
 			if (element->value.check == 1)
 				retain(element->value);
 		}
 		
-		for (index = 2; index < object->hashmapCount; ++index)
+		count = object->hashmapCount;
+		for (index = 2; index < count; ++index)
 		{
 			union Object(Hashmap) *hashmap = object->hashmap + index;
 			if (hashmap->value.check == 1)
@@ -1852,15 +1854,15 @@ struct Value iterateInRef (struct Context * const context)
 	struct Object *object;
 	const struct Op *startOps = context->ops;
 	const struct Op *endOps = startOps + value.data.integer;
-	uint32_t index;
+	uint32_t index, count;
 	
 	if (Value.isObject(target))
 	{
 		object = target.data.object;
-		
 		do
 		{
-			for (index = 0; index < object->elementCount; ++index)
+			count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
+			for (index = 0; index < count; ++index)
 			{
 				union Object(Element) *element = object->element + index;
 				
@@ -1878,8 +1880,14 @@ struct Value iterateInRef (struct Context * const context)
 				
 				stepIteration(value, startOps, break);
 			}
-			
-			for (index = 2; index < object->hashmapCount; ++index)
+		}
+		while (( object = object->prototype ));
+		
+		object = target.data.object;
+		do
+		{
+			count = object->hashmapCount;
+			for (index = 2; index < count; ++index)
 			{
 				union Object(Hashmap) *hashmap = object->hashmap + index;
 				
