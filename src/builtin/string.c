@@ -250,6 +250,30 @@ struct Value lastIndexOf (struct Context * const context)
 }
 
 static
+struct Value localeCompare (struct Context * const context)
+{
+	struct Value that;
+	struct Text a, b;
+	
+	Context.assertParameterCount(context, 1);
+	Context.assertThisCoerciblePrimitive(context);
+	
+	context->this = Value.toString(context, Context.this(context));
+	a = Value.textOf(&context->this);
+	
+	that = Value.toString(context, Context.argument(context, 0));
+	b = Value.textOf(&that);
+	
+	if (a.length < b.length && !memcmp(a.bytes, b.bytes, a.length))
+		return Value.integer(-1);
+	
+	if (a.length > b.length && !memcmp(a.bytes, b.bytes, b.length))
+		return Value.integer(1);
+	
+	return Value.integer(memcmp(a.bytes, b.bytes, a.length));
+}
+
+static
 struct Value match (struct Context * const context)
 {
 	struct RegExp *regexp;
@@ -1016,6 +1040,7 @@ void setup ()
 	Function.addToObject(String(prototype), "concat", concat, -1, h);
 	Function.addToObject(String(prototype), "indexOf", indexOf, -1, h);
 	Function.addToObject(String(prototype), "lastIndexOf", lastIndexOf, -1, h);
+	Function.addToObject(String(prototype), "localeCompare", localeCompare, 1, h);
 	Function.addToObject(String(prototype), "match", match, 1, h);
 	Function.addToObject(String(prototype), "replace", replace, 2, h);
 	Function.addToObject(String(prototype), "search", search, 1, h);
@@ -1023,7 +1048,9 @@ void setup ()
 	Function.addToObject(String(prototype), "split", split, 2, h);
 	Function.addToObject(String(prototype), "substring", substring, 2, h);
 	Function.addToObject(String(prototype), "toLowerCase", toLowerCase, 0, h);
+	Function.addToObject(String(prototype), "toLocaleLowerCase", toLowerCase, 0, h);
 	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, h);
+	Function.addToObject(String(prototype), "toLocaleUpperCase", toUpperCase, 0, h);
 	Function.addToObject(String(prototype), "trim", trim, 0, h);
 	
 	Object.addMember(String(prototype), Key(length), Function.accessor(getLength, NULL), r|h|s | Value(asOwn) | Value(asData));
