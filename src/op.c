@@ -197,7 +197,7 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 		struct Object *object = result.data.object;
 		uint32_t index;
 		
-		for (index = 0; index < object->elementCount; ++index)
+		for (index = 0; index < object->elementCapacity; ++index)
 		{
 			union Object(Element) *element = object->element + index;
 			if (element->value.check == 1)
