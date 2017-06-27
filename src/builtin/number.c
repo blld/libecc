@@ -68,18 +68,12 @@ struct Value toFixed (struct Context * const context)
 	
 	Chars.beginAppend(&chars);
 	
-	if (value.type != Value(undefinedType))
-	{
-		int32_t precision = Value.toInteger(context, value).data.integer;
-		if (precision < 0 || precision > 20)
-			Context.rangeError(context, Chars.create("precision %d out of range", precision));
-		
-		Chars.append(&chars, "%.*f", precision, binary);
-	}
-	else
-		Chars.append(&chars, "%f", binary);
+	int32_t precision = Value.toInteger(context, value).data.integer;
+	if (precision < 0 || precision > 20)
+		Context.rangeError(context, Chars.create("precision %d out of range", precision));
 	
-	Chars.normalizeBinary(&chars);
+	Chars.append(&chars, "%.*f", precision, binary);
+	
 	return Chars.endAppend(&chars);
 }
 

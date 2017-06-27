@@ -1094,7 +1094,7 @@ static void testNumber (void)
 	test("-2147483647..toString(10)", "-2147483647", NULL);
 	test("-2147483647 .toString()", "-2147483647", NULL);
 	test("123.456.toExponential()", "1.234560e+2", NULL);
-	test("123.456.toFixed()", "123.456000", NULL);
+	test("123.456.toFixed()", "123", NULL);
 	test("123.456.toPrecision()", "123.456", NULL);
 	test("123.456.toExponential(10)", "1.2345600000e+2", NULL);
 	test("123.456.toFixed(10)", "123.4560000000", NULL);
