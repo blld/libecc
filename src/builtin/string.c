@@ -14,8 +14,17 @@
 
 // MARK: - Private
 
+static void mark (struct Object *object);
+static void finalize (struct Object *object);
+
 struct Object * String(prototype) = NULL;
 struct Function * String(constructor) = NULL;
+
+const struct Object(Type) String(type) = {
+	.text = &Text(stringType),
+	.mark = mark,
+	.finalize = finalize,
+};
 
 static
 void mark (struct Object *object)
@@ -33,14 +42,10 @@ void finalize (struct Object *object)
 	--self->value->referenceCount;
 }
 
-const struct Object(Type) String(type) = {
-	.text = &Text(stringType),	
-	.mark = mark,
-	.finalize = finalize,
-};
+// MARK: - Static Members
 
-
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(stringType));
@@ -48,7 +53,8 @@ static struct Value toString (struct Context * const context)
 	return Value.chars(context->this.data.string->value);
 }
 
-static struct Value valueOf (struct Context * const context)
+static
+struct Value valueOf (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(stringType));
@@ -56,14 +62,15 @@ static struct Value valueOf (struct Context * const context)
 	return Value.chars(context->this.data.string->value);
 }
 
-static struct Value charAt (struct Context * const context)
+static
+struct Value charAt (struct Context * const context)
 {
 	uint16_t index, length;
 	const char *chars;
 	struct Text text;
 	
 	Context.assertParameterCount(context, 1);
-	Context.assertThisType(context, Value(stringType));
+	Context.assertThisCoerciblePrimitive(context);
 	
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
@@ -96,14 +103,15 @@ static struct Value charAt (struct Context * const context)
 	}
 }
 
-static struct Value charCodeAt (struct Context * const context)
+static
+struct Value charCodeAt (struct Context * const context)
 {
 	int32_t index, length;
 	const char *chars;
 	struct Text text;
 	
 	Context.assertParameterCount(context, 1);
-	Context.assertThisType(context, Value(stringType));
+	Context.assertThisCoerciblePrimitive(context);
 	
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
@@ -131,7 +139,8 @@ static struct Value charCodeAt (struct Context * const context)
 	}
 }
 
-static struct Value concat (struct Context * const context)
+static
+struct Value concat (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	int32_t index, count;
@@ -148,7 +157,8 @@ static struct Value concat (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value indexOf (struct Context * const context)
+static
+struct Value indexOf (struct Context * const context)
 {
 	struct Text text;
 	struct Value search;
@@ -188,7 +198,8 @@ static struct Value indexOf (struct Context * const context)
 	return Value.integer(-1);
 }
 
-static struct Value lastIndexOf (struct Context * const context)
+static
+struct Value lastIndexOf (struct Context * const context)
 {
 	struct Text text;
 	struct Value search;
@@ -234,7 +245,8 @@ static struct Value lastIndexOf (struct Context * const context)
 	return Value.integer(-1);
 }
 
-static struct Value match (struct Context * const context)
+static
+struct Value match (struct Context * const context)
 {
 	struct RegExp *regexp;
 	struct Value value, lastIndex;
@@ -316,7 +328,8 @@ static struct Value match (struct Context * const context)
 	return Value(null);
 }
 
-static void replaceText (struct Chars(Append) *chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
+static
+void replaceText (struct Chars(Append) *chars, struct Text replace, struct Text before, struct Text match, struct Text after, int count, const char *capture[])
 {
 	struct Text(Char) c;
 	
@@ -381,7 +394,8 @@ static void replaceText (struct Chars(Append) *chars, struct Text replace, struc
 	}
 }
 
-static struct Value replace (struct Context * const context)
+static
+struct Value replace (struct Context * const context)
 {
 	struct RegExp *regexp = NULL;
 	struct Chars(Append) chars;
@@ -546,7 +560,8 @@ struct Value search (struct Context * const context)
 	return Value.integer(-1);
 }
 
-static struct Value slice (struct Context * const context)
+static
+struct Value slice (struct Context * const context)
 {
 	struct Value from, to;
 	struct Text start, end;
@@ -615,7 +630,8 @@ static struct Value slice (struct Context * const context)
 	}
 }
 
-static struct Value split (struct Context * const context)
+static
+struct Value split (struct Context * const context)
 {
 	struct Value separatorValue, limitValue;
 	struct RegExp *regexp = NULL;
@@ -772,7 +788,8 @@ static struct Value split (struct Context * const context)
 	return Value.object(array);
 }
 
-static struct Value substring (struct Context * const context)
+static
+struct Value substring (struct Context * const context)
 {
 	struct Value from, to;
 	struct Text start, end;
@@ -848,7 +865,8 @@ static struct Value substring (struct Context * const context)
 	}
 }
 
-static struct Value toLowerCase (struct Context * const context)
+static
+struct Value toLowerCase (struct Context * const context)
 {
 	struct Chars *chars;
 	struct Text text;
@@ -868,7 +886,8 @@ static struct Value toLowerCase (struct Context * const context)
 	return Value.chars(chars);
 }
 
-static struct Value toUpperCase (struct Context * const context)
+static
+struct Value toUpperCase (struct Context * const context)
 {
 	struct Chars *chars;
 	struct Text text;
@@ -888,7 +907,8 @@ static struct Value toUpperCase (struct Context * const context)
 	return Value.chars(chars);
 }
 
-static struct Value trim (struct Context * const context)
+static
+struct Value trim (struct Context * const context)
 {
 	struct Chars *chars;
 	struct Text text, last;
@@ -924,7 +944,8 @@ static struct Value trim (struct Context * const context)
 	return Value.chars(chars);
 }
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -942,7 +963,8 @@ static struct Value constructor (struct Context * const context)
 		return value;
 }
 
-static struct Value fromCharCode (struct Context * const context)
+static
+struct Value fromCharCode (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	uint16_t index, count;
@@ -959,7 +981,8 @@ static struct Value fromCharCode (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value getLength (struct Context * const context)
+static
+struct Value getLength (struct Context * const context)
 {
 	struct Chars *chars;
 	
@@ -968,8 +991,6 @@ static struct Value getLength (struct Context * const context)
 	chars = context->this.data.string->value;
 	return Value.integer(unitIndex(chars->bytes, chars->length, chars->length));
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

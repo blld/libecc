@@ -67,7 +67,8 @@ void usage(void)
 	return nextOp();
 
 
-static struct Value trapOp(struct Context *context, int offset)
+static
+struct Value trapOp(struct Context *context, int offset)
 {
 _	/* gdb/lldb infos: p usage() */
 }
@@ -81,7 +82,8 @@ _	/* gdb/lldb infos: p usage() */
 
 //
 
-static struct Value retain(struct Value value)
+static
+struct Value retain(struct Value value)
 {
 	if (value.type == Value(charsType))
 		++value.data.chars->referenceCount;
@@ -91,7 +93,8 @@ static struct Value retain(struct Value value)
 	return value;
 }
 
-static struct Value release(struct Value value)
+static
+struct Value release(struct Value value)
 {
 	if (value.type == Value(charsType))
 		--value.data.chars->referenceCount;
@@ -101,32 +104,38 @@ static struct Value release(struct Value value)
 	return value;
 }
 
-static int integerLess(int32_t a, int32_t b)
+static
+int integerLess(int32_t a, int32_t b)
 {
 	return a < b;
 }
 
-static int integerLessOrEqual(int32_t a, int32_t b)
+static
+int integerLessOrEqual(int32_t a, int32_t b)
 {
 	return a <= b;
 }
 
-static int integerMore(int32_t a, int32_t b)
+static
+int integerMore(int32_t a, int32_t b)
 {
 	return a > b;
 }
 
-static int integerMoreOrEqual(int32_t a, int32_t b)
+static
+int integerMoreOrEqual(int32_t a, int32_t b)
 {
 	return a >= b;
 }
 
-static int integerWontOverflowPositive(int32_t a, int32_t positive)
+static
+int integerWontOverflowPositive(int32_t a, int32_t positive)
 {
 	return a <= INT32_MAX - positive;
 }
 
-static int integerWontOverflowNegative(int32_t a, int32_t negative)
+static
+int integerWontOverflowNegative(int32_t a, int32_t negative)
 {
 	return a >= INT32_MIN - negative;
 }
@@ -707,7 +716,8 @@ struct Value setParentSlot (struct Context * const context)
 	return value;
 }
 
-static void prepareObject (struct Context * const context, struct Value *object)
+static
+void prepareObject (struct Context * const context, struct Value *object)
 {
 	const struct Text *textObject = opText(1);
 	*object = nextOp();
@@ -802,7 +812,8 @@ struct Value deleteMember (struct Context * const context)
 	return Value.truth(result);
 }
 
-static void prepareObjectProperty (struct Context * const context, struct Value *object, struct Value *property)
+static
+void prepareObjectProperty (struct Context * const context, struct Value *object, struct Value *property)
 {
 	const struct Text *textProperty;
 	
@@ -1743,7 +1754,8 @@ struct Value iterate (struct Context * const context)
 	return nextOp();
 }
 
-static struct Value iterateIntegerRef (
+static
+struct Value iterateIntegerRef (
 	struct Context * const context,
 	int (*compareInteger) (int32_t, int32_t),
 	int (*wontOverflow) (int32_t, int32_t),

@@ -42,7 +42,8 @@ void markObject (struct Object *object)
 		object->type->mark(object);
 }
 
-static void markChars (struct Chars *chars)
+static
+void markChars (struct Chars *chars)
 {
 	if (chars->flags & Chars(mark))
 		return;
@@ -154,13 +155,15 @@ struct Value retainedValue (struct Value value)
 	return value;
 }
 
-static void releaseObject(struct Object *object)
+static
+void releaseObject(struct Object *object)
 {
 	if (object->referenceCount > 0 && !--object->referenceCount)
 		cleanupObject(object);
 }
 
-static struct Value releaseValue(struct Value value)
+static
+struct Value releaseValue(struct Value value)
 {
 	if (value.type == Value(charsType))
 		--value.data.chars->referenceCount;
@@ -170,7 +173,8 @@ static struct Value releaseValue(struct Value value)
 	return value;
 }
 
-static void cleanupObject(struct Object *object)
+static
+void cleanupObject(struct Object *object)
 {
 	struct Value value;
 	

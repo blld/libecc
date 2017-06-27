@@ -13,6 +13,20 @@
 #include "../ecc.h"
 #include "../lexer.h"
 
+// MARK: - Private
+
+static void mark (struct Object *object);
+static void finalize (struct Object *object);
+
+struct Object * RegExp(prototype) = NULL;
+struct Function * RegExp(constructor) = NULL;
+
+const struct Object(Type) RegExp(type) = {
+	.text = &Text(regexpType),
+	.mark = mark,
+	.finalize = finalize,
+};
+
 #define DUMP_REGEXP 0
 
 enum Opcode {
@@ -59,10 +73,7 @@ struct Parse {
 	int disallowQuantifier;
 };
 
-// MARK: - Private
-
-struct Object * RegExp(prototype) = NULL;
-struct Function * RegExp(constructor) = NULL;
+static struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error);
 
 static
 void mark (struct Object *object)
@@ -91,12 +102,6 @@ void finalize (struct Object *object)
 	--self->pattern->referenceCount;
 	--self->source->referenceCount;
 }
-
-const struct Object(Type) RegExp(type) = {
-	.text = &Text(regexpType),
-	.mark = mark,
-	.finalize = finalize,
-};
 
 #if DUMP_REGEXP
 static
@@ -239,8 +244,6 @@ int accept(struct Parse *p, char c)
 	}
 	return 0;
 }
-
-static struct RegExp(Node) * disjunction (struct Parse *p, struct Error **error);
 
 static
 enum Opcode escape (struct Parse *p, int16_t *offset, char buffer[5])
@@ -1061,7 +1064,8 @@ jump:
 
 // MARK: - Static Members
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	struct Value pattern, flags;
 	
@@ -1073,7 +1077,8 @@ static struct Value constructor (struct Context * const context)
 	return Value.regexp(createWith(context, pattern, flags));
 }
 
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
 	
@@ -1083,7 +1088,8 @@ static struct Value toString (struct Context * const context)
 	return Value.chars(self->pattern);
 }
 
-static struct Value exec (struct Context * const context)
+static
+struct Value exec (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value, lastIndex;
@@ -1141,7 +1147,8 @@ static struct Value exec (struct Context * const context)
 	return Value(null);
 }
 
-static struct Value test (struct Context * const context)
+static
+struct Value test (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value, lastIndex;

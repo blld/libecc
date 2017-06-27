@@ -15,8 +15,16 @@
 
 // MARK: - Private
 
+static void mark (struct Object *object);
+
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
+
+const struct Object(Type) Function(type) = {
+	.text = &Text(functionType),
+	.mark = mark,
+	/* XXX: don't finalize */
+};
 
 static
 void mark (struct Object *object)
@@ -30,13 +38,10 @@ void mark (struct Object *object)
 		Pool.markObject(&self->pair->object);
 }
 
-const struct Object(Type) Function(type) = {
-	.text = &Text(functionType),
-	.mark = mark,
-	/* XXX: don't finalize */
-};
+// MARK: - Static Members
 
-static struct Value toChars (struct Context * const context, struct Value value)
+static
+struct Value toChars (struct Context * const context, struct Value value)
 {
 	struct Function *self;
 	struct Chars(Append) chars;
@@ -55,7 +60,8 @@ static struct Value toChars (struct Context * const context, struct Value value)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(functionType));
@@ -66,7 +72,8 @@ static struct Value toString (struct Context * const context)
 		return Value.text(&context->this.data.function->text);
 }
 
-static struct Value apply (struct Context * const context)
+static
+struct Value apply (struct Context * const context)
 {
 	struct Value this, arguments;
 	
@@ -90,7 +97,8 @@ static struct Value apply (struct Context * const context)
 	}
 }
 
-static struct Value call (struct Context * const context)
+static
+struct Value call (struct Context * const context)
 {
 	struct Object arguments;
 	
@@ -120,7 +128,8 @@ static struct Value call (struct Context * const context)
 		return Op.callFunctionVA(context, Context(callOffset), context->this.data.function, Value(undefined), 0, NULL);
 }
 
-static struct Value bindCall (struct Context * const context)
+static
+struct Value bindCall (struct Context * const context)
 {
 	struct Function *function;
 	struct Object *arguments;
@@ -141,7 +150,8 @@ static struct Value bindCall (struct Context * const context)
 	return Op.callFunctionArguments(context, 0, context->this.data.function->pair, function->environment.element[0].value, arguments);
 }
 
-static struct Value bind (struct Context * const context)
+static
+struct Value bind (struct Context * const context)
 {
 	struct Function *function;
 	uint16_t index, count;
@@ -168,12 +178,14 @@ static struct Value bind (struct Context * const context)
 	return Value.function(function);
 }
 
-static struct Value prototypeConstructor (struct Context * const context)
+static
+struct Value prototypeConstructor (struct Context * const context)
 {
 	return Value(undefined);
 }
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	int argumentCount;
 	
@@ -222,8 +234,6 @@ static struct Value constructor (struct Context * const context)
 	
 	return context->ecc->result;
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

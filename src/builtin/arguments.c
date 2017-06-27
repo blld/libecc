@@ -17,13 +17,17 @@ const struct Object(Type) Arguments(type) = {
 	.text = &Text(argumentsType),
 };
 
-static struct Value getLength (struct Context * const context)
+// MARK: - Static Members
+
+static
+struct Value getLength (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	return Value.binary(context->this.data.object->elementCount);
 }
 
-static struct Value setLength (struct Context * const context)
+static
+struct Value setLength (struct Context * const context)
 {
 	double length;
 	
@@ -41,14 +45,13 @@ static struct Value setLength (struct Context * const context)
 	return Value(undefined);
 }
 
-static struct Value callee (struct Context * const context)
+static
+struct Value callee (struct Context * const context)
 {
 	Context.rewindStatement(context->parent);
 	Context.typeError(context, Chars.create("'callee' cannot be accessed in this context"));
 	return Value(undefined);
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

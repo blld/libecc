@@ -45,6 +45,8 @@ Interface(Env,
 	(void, printError ,(int typeLength, const char *type, const char *format, ...))
 	(void, printWarning ,(const char *format, ...))
 	(void, newline ,())
+	
+	(double, currentTime ,())
 	,
 	{
 		struct Env(Internal) *internal;

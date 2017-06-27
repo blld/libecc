@@ -22,6 +22,8 @@ const struct Object(Type) Array(type) = {
 	.text = &Text(arrayType),
 };
 
+// MARK: - Static Members
+
 static
 int valueIsArray (struct Value value)
 {
@@ -773,8 +775,6 @@ struct Value constructor (struct Context * const context)
 	
 	return Value.object(array);
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

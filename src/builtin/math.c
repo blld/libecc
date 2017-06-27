@@ -17,7 +17,8 @@ const struct Object(Type) Math(type) = {
 
 // MARK: - Static Members
 
-static struct Value mathAbs (struct Context * const context)
+static
+struct Value mathAbs (struct Context * const context)
 {
 	struct Value value;
 	
@@ -30,7 +31,8 @@ static struct Value mathAbs (struct Context * const context)
 	return Value.binary(fabs(value.data.binary));
 }
 
-static struct Value mathACos (struct Context * const context)
+static
+struct Value mathACos (struct Context * const context)
 {
 	struct Value value;
 	
@@ -43,7 +45,8 @@ static struct Value mathACos (struct Context * const context)
 	return Value.binary(acos(value.data.binary));
 }
 
-static struct Value mathASin (struct Context * const context)
+static
+struct Value mathASin (struct Context * const context)
 {
 	struct Value value;
 	
@@ -56,7 +59,8 @@ static struct Value mathASin (struct Context * const context)
 	return Value.binary(asin(value.data.binary));
 }
 
-static struct Value mathATan (struct Context * const context)
+static
+struct Value mathATan (struct Context * const context)
 {
 	struct Value value;
 	
@@ -69,7 +73,8 @@ static struct Value mathATan (struct Context * const context)
 	return Value.binary(atan(value.data.binary));
 }
 
-static struct Value mathATan2 (struct Context * const context)
+static
+struct Value mathATan2 (struct Context * const context)
 {
 	struct Value x, y;
 	
@@ -86,7 +91,8 @@ static struct Value mathATan2 (struct Context * const context)
 	return Value.binary(atan2(x.data.binary, y.data.binary));
 }
 
-static struct Value mathCeil (struct Context * const context)
+static
+struct Value mathCeil (struct Context * const context)
 {
 	struct Value value;
 	
@@ -99,7 +105,8 @@ static struct Value mathCeil (struct Context * const context)
 	return Value.binary(ceil(value.data.binary));
 }
 
-static struct Value mathCos (struct Context * const context)
+static
+struct Value mathCos (struct Context * const context)
 {
 	struct Value value;
 	
@@ -112,7 +119,8 @@ static struct Value mathCos (struct Context * const context)
 	return Value.binary(cos(value.data.binary));
 }
 
-static struct Value mathExp (struct Context * const context)
+static
+struct Value mathExp (struct Context * const context)
 {
 	struct Value value;
 	
@@ -125,7 +133,8 @@ static struct Value mathExp (struct Context * const context)
 	return Value.binary(exp(value.data.binary));
 }
 
-static struct Value mathFloor (struct Context * const context)
+static
+struct Value mathFloor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -138,7 +147,8 @@ static struct Value mathFloor (struct Context * const context)
 	return Value.binary(floor(value.data.binary));
 }
 
-static struct Value mathLog (struct Context * const context)
+static
+struct Value mathLog (struct Context * const context)
 {
 	struct Value value;
 	
@@ -151,7 +161,8 @@ static struct Value mathLog (struct Context * const context)
 	return Value.binary(log(value.data.binary));
 }
 
-static struct Value mathMax (struct Context * const context)
+static
+struct Value mathMax (struct Context * const context)
 {
 	double result = -INFINITY, value;
 	int index, count;
@@ -168,7 +179,8 @@ static struct Value mathMax (struct Context * const context)
 	return Value.binary(result);
 }
 
-static struct Value mathMin (struct Context * const context)
+static
+struct Value mathMin (struct Context * const context)
 {
 	double result = INFINITY, value;
 	int index, count;
@@ -185,7 +197,8 @@ static struct Value mathMin (struct Context * const context)
 	return Value.binary(result);
 }
 
-static struct Value mathPow (struct Context * const context)
+static
+struct Value mathPow (struct Context * const context)
 {
 	struct Value x, y;
 	
@@ -202,14 +215,16 @@ static struct Value mathPow (struct Context * const context)
 	return Value.binary(pow(x.data.binary, y.data.binary));
 }
 
-static struct Value mathRandom (struct Context * const context)
+static
+struct Value mathRandom (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	
 	return Value.binary((double)rand() / (double)RAND_MAX);
 }
 
-static struct Value mathRound (struct Context * const context)
+static
+struct Value mathRound (struct Context * const context)
 {
 	struct Value value;
 	
@@ -225,7 +240,8 @@ static struct Value mathRound (struct Context * const context)
 		return Value.binary(floor(0.5 + value.data.binary));
 }
 
-static struct Value mathSin (struct Context * const context)
+static
+struct Value mathSin (struct Context * const context)
 {
 	struct Value value;
 	
@@ -238,7 +254,8 @@ static struct Value mathSin (struct Context * const context)
 	return Value.binary(sin(value.data.binary));
 }
 
-static struct Value mathSqrt (struct Context * const context)
+static
+struct Value mathSqrt (struct Context * const context)
 {
 	struct Value value;
 	
@@ -251,7 +268,8 @@ static struct Value mathSqrt (struct Context * const context)
 	return Value.binary(sqrt(value.data.binary));
 }
 
-static struct Value mathTan (struct Context * const context)
+static
+struct Value mathTan (struct Context * const context)
 {
 	struct Value value;
 	

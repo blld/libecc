@@ -18,7 +18,7 @@
 
 const uint32_t Object(ElementMax) = 0xffffff;
 
-static struct Value toString (struct Context * const context);
+static const int defaultSize = 8;
 
 struct Object * Object(prototype) = NULL;
 struct Function * Object(constructor) = NULL;
@@ -27,7 +27,7 @@ const struct Object(Type) Object(type) = {
 	.text = &Text(objectType),
 };
 
-static const int defaultSize = 8;
+// MARK: - Static Members
 
 static inline
 uint16_t getSlot (const struct Object * const self, const struct Key key)
@@ -675,8 +675,6 @@ struct Value keys (struct Context * const context)
 	
 	return Value.object(result);
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

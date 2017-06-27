@@ -19,7 +19,8 @@ static int instanceCount = 0;
 
 // MARK: - Static Members
 
-static void addInput(struct Ecc *self, struct Input *input)
+static
+void addInput(struct Ecc *self, struct Input *input)
 {
 	self->inputs = realloc(self->inputs, sizeof(*self->inputs) * (self->inputCount + 1));
 	self->inputs[self->inputCount++] = input;

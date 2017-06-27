@@ -21,7 +21,10 @@ const struct Object(Type) Number(type) = {
 	.text = &Text(numberType),
 };
 
-static struct Value toExponential (struct Context * const context)
+// MARK: - Static Members
+
+static
+struct Value toExponential (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
@@ -50,7 +53,8 @@ static struct Value toExponential (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value toFixed (struct Context * const context)
+static
+struct Value toFixed (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
@@ -79,7 +83,8 @@ static struct Value toFixed (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value toPrecision (struct Context * const context)
+static
+struct Value toPrecision (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
@@ -108,7 +113,8 @@ static struct Value toPrecision (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	struct Value value;
 	int32_t radix = 10;
@@ -132,7 +138,8 @@ static struct Value toString (struct Context * const context)
 	return Value.binaryToString(binary, radix);
 }
 
-static struct Value valueOf (struct Context * const context)
+static
+struct Value valueOf (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(numberType));
@@ -140,7 +147,8 @@ static struct Value valueOf (struct Context * const context)
 	return Value.binary(context->this.data.number->value);
 }
 
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
@@ -157,8 +165,6 @@ static struct Value constructor (struct Context * const context)
 	else
 		return value;
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

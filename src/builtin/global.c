@@ -18,7 +18,10 @@ const struct Object(Type) Global(type) = {
 	.text = &Text(globalType),
 };
 
-static struct Value eval (struct Context * const context)
+// MARK: - Static Members
+
+static
+struct Value eval (struct Context * const context)
 {
 	struct Value value;
 	struct Input *input;
@@ -50,7 +53,8 @@ static struct Value eval (struct Context * const context)
 	return context->ecc->result;
 }
 
-static struct Value parseInt (struct Context * const context)
+static
+struct Value parseInt (struct Context * const context)
 {
 	struct Value value;
 	struct Text text;
@@ -78,7 +82,8 @@ static struct Value parseInt (struct Context * const context)
 	return Lexer.scanInteger(text, base, 1);
 }
 
-static struct Value parseFloat (struct Context * const context)
+static
+struct Value parseFloat (struct Context * const context)
 {
 	struct Value value;
 	struct Text text;
@@ -90,7 +95,8 @@ static struct Value parseFloat (struct Context * const context)
 	return Lexer.scanBinary(text, 1);
 }
 
-static struct Value isFinite (struct Context * const context)
+static
+struct Value isFinite (struct Context * const context)
 {
 	struct Value value;
 	
@@ -100,7 +106,8 @@ static struct Value isFinite (struct Context * const context)
 	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
 
-static struct Value isNaN (struct Context * const context)
+static
+struct Value isNaN (struct Context * const context)
 {
 	struct Value value;
 	
@@ -110,7 +117,8 @@ static struct Value isNaN (struct Context * const context)
 	return Value.truth(isnan(value.data.binary));
 }
 
-static struct Value decodeExcept (struct Context * const context, const char *exclude)
+static
+struct Value decodeExcept (struct Context * const context, const char *exclude)
 {
 	char buffer[5], *b;
 	struct Value value;
@@ -181,17 +189,20 @@ static struct Value decodeExcept (struct Context * const context, const char *ex
 	Context.uriError(context, Chars.create("malformed URI"));
 }
 
-static struct Value decodeURI (struct Context * const context)
+static
+struct Value decodeURI (struct Context * const context)
 {
 	return decodeExcept(context, ";/?:@&=+$,#");
 }
 
-static struct Value decodeURIComponent (struct Context * const context)
+static
+struct Value decodeURIComponent (struct Context * const context)
 {
 	return decodeExcept(context, NULL);
 }
 
-static struct Value encodeExpect (struct Context * const context, const char *exclude)
+static
+struct Value encodeExpect (struct Context * const context, const char *exclude)
 {
 	const char hex[] = "0123456789ABCDEF";
 	struct Value value;
@@ -250,17 +261,17 @@ static struct Value encodeExpect (struct Context * const context, const char *ex
 	Context.uriError(context, Chars.create("malformed URI"));
 }
 
-static struct Value encodeURI (struct Context * const context)
+static
+struct Value encodeURI (struct Context * const context)
 {
 	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()" ";/?:@&=+$,#");
 }
 
-static struct Value encodeURIComponent (struct Context * const context)
+static
+struct Value encodeURIComponent (struct Context * const context)
 {
 	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()");
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

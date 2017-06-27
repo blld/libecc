@@ -13,7 +13,8 @@
 
 // MARK: - Static Members
 
-static struct Input * create()
+static
+struct Input * create()
 {
 	size_t linesBytes;
 	struct Input *self = malloc(sizeof(*self));
@@ -27,6 +28,17 @@ static struct Input * create()
 	memset(self->lines, 0, linesBytes);
 	
 	return self;
+}
+
+static
+void printInput (const char *name, uint16_t line)
+{
+	if (name[0] == '(')
+		Env.printColor(0, Env(dim), "%s", name);
+	else
+		Env.printColor(0, Env(bold), "%s", name);
+	
+	Env.printColor(0, Env(bold), " line:%d", line);
 }
 
 // MARK: - Methods
@@ -102,17 +114,6 @@ void destroy (struct Input *self)
 	free(self->bytes), self->bytes = NULL;
 	free(self->lines), self->lines = NULL;
 	free(self), self = NULL;
-}
-
-static
-void printInput (const char *name, uint16_t line)
-{
-	if (name[0] == '(')
-		Env.printColor(0, Env(dim), "%s", name);
-	else
-		Env.printColor(0, Env(bold), "%s", name);
-	
-	Env.printColor(0, Env(bold), " line:%d", line);
 }
 
 void printText (struct Input *self, struct Text text, struct Text ofLine, const char *ofInput, int fullLine)

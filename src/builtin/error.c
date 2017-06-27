@@ -31,7 +31,10 @@ const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
 };
 
-static struct Chars *messageValue (struct Context * const context, struct Value value)
+// MARK: - Static Members
+
+static
+struct Chars *messageValue (struct Context * const context, struct Value value)
 {
 	if (value.type == Value(undefinedType))
 		return NULL;
@@ -44,7 +47,8 @@ static struct Chars *messageValue (struct Context * const context, struct Value 
 	}
 }
 
-static struct Value toChars (struct Context * const context, struct Value value)
+static
+struct Value toChars (struct Context * const context, struct Value value)
 {
 	struct Value name, message;
 	struct Object *self;
@@ -78,7 +82,8 @@ static struct Value toChars (struct Context * const context, struct Value value)
 	return Chars.endAppend(&chars);
 }
 
-static struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
+static
+struct Error * create (struct Object *errorPrototype, struct Text text, struct Chars *message)
 {
 	struct Error *self = malloc(sizeof(*self));
 	Pool.addObject(&self->object);
@@ -98,7 +103,8 @@ static struct Error * create (struct Object *errorPrototype, struct Text text, s
 	return self;
 }
 
-static struct Value toString (struct Context * const context)
+static
+struct Value toString (struct Context * const context)
 {
 	Context.assertParameterCount(context, 0);
 	Context.assertThisMask(context, Value(objectMask));
@@ -106,7 +112,8 @@ static struct Value toString (struct Context * const context)
 	return toChars(context, context->this);
 }
 
-static struct Value errorConstructor (struct Context * const context)
+static
+struct Value errorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -117,7 +124,8 @@ static struct Value errorConstructor (struct Context * const context)
 	return Value.error(error(Context.textSeek(context), message));
 }
 
-static struct Value rangeErrorConstructor (struct Context * const context)
+static
+struct Value rangeErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -128,7 +136,8 @@ static struct Value rangeErrorConstructor (struct Context * const context)
 	return Value.error(rangeError(Context.textSeek(context), message));
 }
 
-static struct Value referenceErrorConstructor (struct Context * const context)
+static
+struct Value referenceErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -139,7 +148,8 @@ static struct Value referenceErrorConstructor (struct Context * const context)
 	return Value.error(referenceError(Context.textSeek(context), message));
 }
 
-static struct Value syntaxErrorConstructor (struct Context * const context)
+static
+struct Value syntaxErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -150,7 +160,8 @@ static struct Value syntaxErrorConstructor (struct Context * const context)
 	return Value.error(syntaxError(Context.textSeek(context), message));
 }
 
-static struct Value typeErrorConstructor (struct Context * const context)
+static
+struct Value typeErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -161,7 +172,8 @@ static struct Value typeErrorConstructor (struct Context * const context)
 	return Value.error(typeError(Context.textSeek(context), message));
 }
 
-static struct Value uriErrorConstructor (struct Context * const context)
+static
+struct Value uriErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
@@ -172,7 +184,8 @@ static struct Value uriErrorConstructor (struct Context * const context)
 	return Value.error(uriError(Context.textSeek(context), message));
 }
 
-static void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
+static
+void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
 	Function.setupBuiltinObject(
 		constructor, native, 1,
@@ -181,8 +194,6 @@ static void setupBuiltinObject (struct Function **constructor, const Native(Func
 	
 	Object.addMember(*prototype, Key(name), Value.text(name), Value(hidden));
 }
-
-// MARK: - Static Members
 
 // MARK: - Methods
 

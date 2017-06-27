@@ -20,7 +20,10 @@ const struct Object(Type) Boolean(type) = {
 	.text = &Text(booleanType),
 };
 
-static struct Value toString (struct Context * const context)
+// MARK: - Static Members
+
+static
+struct Value toString (struct Context * const context)
 {
 	int truth;
 	
@@ -32,7 +35,8 @@ static struct Value toString (struct Context * const context)
 	return Value.text(truth? &Text(true): &Text(false));
 }
 
-static struct Value valueOf (struct Context * const context)
+static
+struct Value valueOf (struct Context * const context)
 {
 	int truth;
 	
@@ -44,9 +48,8 @@ static struct Value valueOf (struct Context * const context)
 	return Value.truth(truth);
 }
 
-// MARK: - Static Members
-
-static struct Value constructor (struct Context * const context)
+static
+struct Value constructor (struct Context * const context)
 {
 	char truth;
 	
