@@ -164,22 +164,23 @@ static
 struct Value indexOf (struct Context * const context)
 {
 	struct Text text;
-	struct Value search;
-	int32_t index, length, searchLength, argumentCount;
+	struct Value search, start;
+	int32_t index, length, searchLength;
 	const char *chars, *searchChars;
 	
 	Context.assertVariableParameter(context);
-	
-	argumentCount = Context.variableArgumentCount(context);
 	
 	context->this = Value.toString(context, Context.this(context));
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	
-	search = argumentCount >= 1? Value.toString(context, Context.variableArgument(context, 0)): Value.text(&Text(undefined));
+	search = Value.toString(context, Context.variableArgument(context, 0));
 	searchChars = Value.stringBytes(&search);
 	searchLength = Value.stringLength(&search);
-	index = argumentCount >= 2? Value.toInteger(context, Context.variableArgument(context, 1)).data.integer: 0;
+	start = Value.toInteger(context, Context.variableArgument(context, 1));
+	index = start.data.integer < 0? length + start.data.integer: start.data.integer;
+	if (index < 0)
+		index = 0;
 	
 	text = textAtIndex(chars, length, index, 0);
 	if (text.flags & Text(breakFlag))
