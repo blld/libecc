@@ -28,24 +28,34 @@ struct Value toExponential (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
-	double binary;
+	double binary, precision = 0;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	if (value.type != Value(undefinedType))
+	{
+		precision = Value.toBinary(context, value).data.binary;
+		if (precision <= -1 || precision >= 21)
+			Context.rangeError(context, Chars.create("precision '%.0f' out of range", precision));
+		
+		if (isnan(precision))
+			precision = 0;
+	}
+	
+	if (isnan(binary))
+		return Value.text(&Text(nan));
+	else if (binary == INFINITY)
+		return Value.text(&Text(infinity));
+	else if (binary == -INFINITY)
+		return Value.text(&Text(negativeInfinity));
 	
 	Chars.beginAppend(&chars);
 	
 	if (value.type != Value(undefinedType))
-	{
-		int32_t precision = Value.toInteger(context, value).data.integer;
-		if (precision < 0 || precision > 20)
-			Context.rangeError(context, Chars.create("precision %d out of range", precision));
-		
-		Chars.append(&chars, "%.*e", precision, binary);
-	}
+		Chars.append(&chars, "%.*e", (int32_t)precision, binary);
 	else
 		Chars.append(&chars, "%e", binary);
 	
@@ -58,21 +68,36 @@ struct Value toFixed (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
-	double binary;
+	double binary, precision = 0;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	if (value.type != Value(undefinedType))
+	{
+		precision = Value.toBinary(context, value).data.binary;
+		if (precision <= -1 || precision >= 21)
+			Context.rangeError(context, Chars.create("precision '%.0f' out of range", precision));
+		
+		if (isnan(precision))
+			precision = 0;
+	}
+	
+	if (isnan(binary))
+		return Value.text(&Text(nan));
+	else if (binary == INFINITY)
+		return Value.text(&Text(infinity));
+	else if (binary == -INFINITY)
+		return Value.text(&Text(negativeInfinity));
 	
 	Chars.beginAppend(&chars);
 	
-	int32_t precision = Value.toInteger(context, value).data.integer;
-	if (precision < 0 || precision > 20)
-		Context.rangeError(context, Chars.create("precision %d out of range", precision));
-	
-	Chars.append(&chars, "%.*f", precision, binary);
+	if (binary <= -1e+21 || binary >= 1e+21)
+		Chars.appendBinary(&chars, binary, 10);
+	else
+		Chars.append(&chars, "%.*f", (int32_t)precision, binary);
 	
 	return Chars.endAppend(&chars);
 }
@@ -82,23 +107,35 @@ struct Value toPrecision (struct Context * const context)
 {
 	struct Chars(Append) chars;
 	struct Value value;
-	double binary;
+	double binary, precision = 0;
 	
 	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
 	value = Context.argument(context, 0);
+	if (value.type != Value(undefinedType))
+	{
+		precision = Value.toBinary(context, value).data.binary;
+		if (precision <= -1 || precision >= 101)
+			Context.rangeError(context, Chars.create("precision '%.0f' out of range", precision));
+		
+		if (isnan(precision))
+			precision = 0;
+	}
+	
+	if (isnan(binary))
+		return Value.text(&Text(nan));
+	else if (binary == INFINITY)
+		return Value.text(&Text(infinity));
+	else if (binary == -INFINITY)
+		return Value.text(&Text(negativeInfinity));
 	
 	Chars.beginAppend(&chars);
 	
 	if (value.type != Value(undefinedType))
 	{
-		int32_t precision = Value.toInteger(context, value).data.integer;
-		if (precision < 0 || precision > 100)
-			Context.rangeError(context, Chars.create("precision %d out of range", precision));
-		
-		Chars.append(&chars, "%.*g", precision, binary);
+		Chars.append(&chars, "%.*g", (int32_t)precision, binary);
 		Chars.normalizeBinary(&chars);
 	}
 	else

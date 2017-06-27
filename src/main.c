@@ -657,15 +657,15 @@ static void testFunction (void)
 	,    "                                         ^~~         ");
 	test("123 .toFixed.apply.call(123 .toFixed, 'abc', [ 100 ])", "TypeError: 'this' is not a number"
 	,    "                                       ^~~           ");
-	test("123 .toFixed.call.apply(123 .toFixed, [ 456, 100 ])", "RangeError: precision 100 out of range"
+	test("123 .toFixed.call.apply(123 .toFixed, [ 456, 100 ])", "RangeError: precision '100' out of range"
 	,    "                                             ^~~   ");
-	test("123 .toFixed.apply.call(123 .toFixed, 456, [ 100 ])", "RangeError: precision 100 out of range"
+	test("123 .toFixed.apply.call(123 .toFixed, 456, [ 100 ])", "RangeError: precision '100' out of range"
 	,    "                                             ^~~   ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, 100 ])", "TypeError: arguments is not an object"
 	,    "                                              ^~~   ");
 	test("123 .toFixed.apply.apply(123 .toFixed, [ 'abc', [ 100 ] ])", "TypeError: 'this' is not a number"
 	,    "                                          ^~~             ");
-	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision 100 out of range"
+	test("123 .toFixed.apply.apply(123 .toFixed, [ 456, [ 100 ] ])", "RangeError: precision '100' out of range"
 	,    "                                                ^~~     ");
 	test("var a = [123,'abc','def']; Object.defineProperty(a, 1, {get: function(){ return this[1]; },set: function(v){}}); a.shift()", "RangeError: maximum depth exceeded"
 	,    "                                                                         ^~~~~~~~~~~~~~                                   ");
@@ -870,9 +870,9 @@ static void testError (void)
 	test("var e = new Error(); Object.prototype.toString.call(e)", "[object Error]", NULL);
 	test("function a(){ 123 .toFixed.call('abc', 100) }; a()", "TypeError: 'this' is not a number"
 	,    "                                 ^~~              ");
-	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision 100 out of range"
+	test("function a(){ 123 .toFixed.call(456, 100) }; a()", "RangeError: precision '100' out of range"
 	,    "                                     ^~~        ");
-	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision 100 out of range"
+	test("function a(){ 123 .toFixed.apply(456, [ 100 ]) }; a()", "RangeError: precision '100' out of range"
 	,    "                                        ^~~          ");
 	test("''.toString.call(123)", "TypeError: 'this' is not a string"
 	,    "                 ^~~ ");
