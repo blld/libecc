@@ -32,10 +32,10 @@ uint32_t sizeForLength(uint16_t length)
 {
 	uint32_t size = sizeof(struct Chars) + length;
 	
-	if (size < 8)
+	if (size < 16)
 	{
-		/* 8-bytes mini */
-		return 8;
+		/* 16-bytes mini */
+		return 16;
 	}
 	else if (size < 1024)
 	{
