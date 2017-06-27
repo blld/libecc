@@ -651,6 +651,16 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 {
 	if (isObject(a) && isObject(b))
 		return truth(a.data.object == b.data.object);
+	else if (((isString(a) || isNumber(a)) && isObject(b))
+			 || (isObject(a) && (isString(b) || isNumber(b)))
+			 )
+	{
+		a = toPrimitive(context, a, Value(hintAuto));
+		Context.setTextIndex(context, Context(savedIndexAlt));
+		b = toPrimitive(context, b, Value(hintAuto));
+		
+		return equals(context, a, b);
+	}
 	else if (isNumber(a) && isNumber(b))
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
@@ -676,16 +686,6 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 		return equals(context, toBinary(context, a), b);
 	else if (isBoolean(b))
 		return equals(context, a, toBinary(context, b));
-	else if (((isString(a) || isNumber(a)) && isObject(b))
-		   || (isObject(a) && (isString(b) || isNumber(b)))
-		   )
-	{
-		a = toPrimitive(context, a, Value(hintAuto));
-		Context.setTextIndex(context, Context(savedIndexAlt));
-		b = toPrimitive(context, b, Value(hintAuto));
-		
-		return equals(context, a, b);
-	}
 	
 	return Value(false);
 }
