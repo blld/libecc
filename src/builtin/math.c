@@ -169,9 +169,16 @@ struct Value mathMax (struct Context * const context)
 	
 	Context.assertVariableParameter(context);
 	
-	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
+	count = Context.variableArgumentCount(context);
+	if (!count)
+		return Value.binary(-INFINITY);
+	
+	for (index = 0; index < count; ++index)
 	{
 		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
+		if (isnan(value))
+			return Value.binary(NAN);
+		
 		if (result < value)
 			result = value;
 	}
@@ -187,9 +194,16 @@ struct Value mathMin (struct Context * const context)
 	
 	Context.assertVariableParameter(context);
 	
-	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
+	count = Context.variableArgumentCount(context);
+	if (!count)
+		return Value.binary(INFINITY);
+	
+	for (index = 0; index < count; ++index)
 	{
 		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
+		if (isnan(value))
+			return Value.binary(NAN);
+		
 		if (result > value)
 			result = value;
 	}
@@ -204,13 +218,11 @@ struct Value mathPow (struct Context * const context)
 	
 	Context.assertParameterCount(context, 2);
 	
-	x = Context.argument(context, 0);
-	if (x.type != Value(binaryType))
-		x = Value.toBinary(context, x);
+	x = Value.toBinary(context, Context.argument(context, 0));
+	y = Value.toBinary(context, Context.argument(context, 1));
 	
-	y = Context.argument(context, 1);
-	if (y.type != Value(binaryType))
-		y = Value.toBinary(context, y);
+	if (fabs(x.data.binary) == 1 && !isfinite(y.data.binary))
+		return Value.binary(NAN);
 	
 	return Value.binary(pow(x.data.binary, y.data.binary));
 }

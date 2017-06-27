@@ -1106,6 +1106,7 @@ static void testNumber (void)
 	test("var orig = Number.prototype.toString; Number.prototype.toString = function(){ return this + 'abc' }; var r = 123..toString(); Number.prototype.toString = orig; r", "123abc", NULL);
 	test("Number()", "0", NULL);
 	test("Number(undefined)", "NaN", NULL);
+	test("Math.pow(-1, Infinity)", "NaN", NULL);
 }
 
 static void testDate (void)
