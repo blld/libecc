@@ -315,3 +315,14 @@ void printBacktrace (struct Context * const context)
 		}
 	}
 }
+
+struct Object *environmentRoot (struct Context * const context)
+{
+	struct Object *environment = context->strictMode? context->environment: &context->ecc->global->environment;
+	
+	if (context->strictMode)
+		while (environment->prototype && environment->prototype != &context->ecc->global->environment)
+			environment = environment->prototype;
+	
+	return environment;
+}

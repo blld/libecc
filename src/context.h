@@ -73,6 +73,8 @@ Interface(Context,
 	
 	(void, rewindStatement ,(struct Context * const))
 	(void, printBacktrace ,(struct Context * const context))
+	
+	(struct Object *, environmentRoot ,(struct Context * const context))
 	,
 	{
 		const struct Op * ops;

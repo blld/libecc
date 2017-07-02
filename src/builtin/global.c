@@ -30,12 +30,8 @@ struct Value eval (struct Context * const context)
 		.this = Value.object(&context->ecc->global->environment),
 		.ecc = context->ecc,
 		.depth = context->depth + 1,
-		.environment = context->parent->strictMode? context->parent->environment: &context->ecc->global->environment,
+		.environment = Context.environmentRoot(context->parent),
 	};
-	
-	if (context->parent->strictMode)
-		while (subContext.environment->prototype && subContext.environment->prototype != &context->ecc->global->environment)
-			subContext.environment = subContext.environment->prototype;
 	
 	Context.assertParameterCount(context, 1);
 	
