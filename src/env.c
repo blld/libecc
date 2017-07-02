@@ -11,15 +11,14 @@
 #elif _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #if _WIN32
 #include <sys/timeb.h>
-#endif
-
-#if _DEFAULT_SOURCE || __APPLE__
+#elif _DEFAULT_SOURCE || __APPLE__
 #include <sys/time.h>
-#include <unistd.h>
 #endif
 
 
@@ -42,10 +41,6 @@ struct Env(Internal) {
 } static const EnvInternalIdentity;
 
 static struct Env *self = NULL;
-
-#ifdef __MINGW32__
-extern int _putenv(const char *);
-#endif
 
 static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
 {
