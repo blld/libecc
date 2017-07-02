@@ -11,8 +11,6 @@
 #elif _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#else
-#include <unistd.h>
 #endif
 
 #if _WIN32
@@ -134,7 +132,7 @@ void setup (void)
 	self->internal->defaultAttribute = consoleScreenBufferInfo.wAttributes;
 	
 	#else
-	self->internal->isTerminal = getenv("TERM") != NULL && isatty(fileno(stderr));
+	self->internal->isTerminal = getenv("TERM") != NULL;
 	#endif
 }
 
