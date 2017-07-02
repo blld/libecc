@@ -340,24 +340,19 @@ struct Value unescape (struct Context * const context)
 					
 				case 'u':
 				{
-					Text.nextCharacter(&text);
-					uint32_t cp = Lexer.uint16Hex(
-						Text.nextCharacter(&text).codepoint,
-						Text.nextCharacter(&text).codepoint,
-						Text.nextCharacter(&text).codepoint,
-						Text.nextCharacter(&text).codepoint);
+					uint32_t cp = Lexer.uint16Hex(text.bytes[1], text.bytes[2], text.bytes[3], text.bytes[4]);
 					
 					Chars.appendCodepoint(&chars, cp);
+					Text.advance(&text, 5);
 					break;
 				}
 					
 				default:
 				{
-					uint32_t cp = Lexer.uint8Hex(
-						Text.nextCharacter(&text).codepoint,
-						Text.nextCharacter(&text).codepoint);
+					uint32_t cp = Lexer.uint8Hex(text.bytes[0], text.bytes[1]);
 					
 					Chars.appendCodepoint(&chars, cp);
+					Text.advance(&text, 2);
 					break;
 				}
 			}
