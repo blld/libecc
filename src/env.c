@@ -15,8 +15,11 @@
 
 #if _WIN32
 #include <sys/timeb.h>
-#elif _DEFAULT_SOURCE || __APPLE__
+#endif
+
+#if _DEFAULT_SOURCE || __APPLE__
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 
@@ -135,18 +138,8 @@ void setup (void)
 	GetConsoleScreenBufferInfo(self->internal->console, &consoleScreenBufferInfo);
 	self->internal->defaultAttribute = consoleScreenBufferInfo.wAttributes;
 	
-	#if _MSC_VER && _MSC_VER < 1900
-	self->internal->outputFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
-	#endif
-	
-	/* NOTE: below implementation is buggy; handle in Chars.normalizeBinary(...)
-	#if __MINGW32__
-	_putenv("PRINTF_EXPONENT_DIGITS=2");
-	#endif
-	*/
-	
 	#else
-	self->internal->isTerminal = getenv("TERM") != NULL;
+	self->internal->isTerminal = getenv("TERM") != NULL && isatty(fileno(stderr));
 	#endif
 }
 
