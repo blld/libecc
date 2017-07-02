@@ -189,7 +189,7 @@ struct Value constructor (struct Context * const context)
 	if (value.type == Value(undefinedType))
 		value = Value.binary(value.check == 1? NAN: 0);
 	else
-		value = Value.toBinary(context, Value.toPrimitive(context, value, Value(hintNumber)));
+		value = Value.toBinary(context, value);
 	
 	if (context->construct)
 		return Value.number(Number.create(value.data.binary));

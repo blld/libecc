@@ -30,17 +30,22 @@
 		_( regexp )\
 		_( this )\
 		\
+		_( createLocalRef )\
+		_( getLocalRefOrNull )\
 		_( getLocalRef )\
 		_( getLocal )\
 		_( setLocal )\
+		_( deleteLocal )\
 		\
 		_( getLocalSlotRef )\
 		_( getLocalSlot )\
 		_( setLocalSlot )\
+		_( deleteLocalSlot )\
 		\
 		_( getParentSlotRef )\
 		_( getParentSlot )\
 		_( setParentSlot )\
+		_( deleteParentSlot )\
 		\
 		_( getMemberRef )\
 		_( getMember )\
@@ -110,6 +115,7 @@
 		_( debugger )\
 		_( try )\
 		_( throw )\
+		_( with )\
 		_( next )\
 		_( nextIf )\
 		_( autoreleaseExpression )\

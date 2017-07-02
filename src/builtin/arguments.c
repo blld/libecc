@@ -37,7 +37,7 @@ struct Value setLength (struct Context * const context)
 	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)
 		Context.rangeError(context, Chars.create("invalid array length"));
 	
-	if (Object.resizeElement(context->this.data.object, length))
+	if (Object.resizeElement(context->this.data.object, length) && context->strictMode)
 	{
 		Context.typeError(context, Chars.create("'%u' is non-configurable", context->this.data.object->elementCount));
 	}
@@ -46,10 +46,20 @@ struct Value setLength (struct Context * const context)
 }
 
 static
-struct Value callee (struct Context * const context)
+struct Value getCallee (struct Context * const context)
 {
 	Context.rewindStatement(context->parent);
 	Context.typeError(context, Chars.create("'callee' cannot be accessed in this context"));
+	
+	return Value(undefined);
+}
+
+static
+struct Value setCallee (struct Context * const context)
+{
+	Context.rewindStatement(context->parent);
+	Context.typeError(context, Chars.create("'callee' cannot be accessed in this context"));
+	
 	return Value(undefined);
 }
 
@@ -63,7 +73,7 @@ void setup (void)
 	Arguments(prototype) = Object.createTyped(&Arguments(type));
 	
 	Object.addMember(Arguments(prototype), Key(length), Function.accessor(getLength, setLength), h|s | Value(asOwn) | Value(asData));
-	Object.addMember(Arguments(prototype), Key(callee), Function.accessor(callee, callee), h|s | Value(asOwn));
+	Object.addMember(Arguments(prototype), Key(callee), Function.accessor(getCallee, setCallee), h|s | Value(asOwn));
 }
 
 void teardown (void)

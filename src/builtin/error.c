@@ -19,6 +19,7 @@ struct Object * Error(referencePrototype) = NULL;
 struct Object * Error(syntaxPrototype) = NULL;
 struct Object * Error(typePrototype) = NULL;
 struct Object * Error(uriPrototype) = NULL;
+struct Object * Error(evalPrototype) = NULL;
 
 struct Function * Error(constructor) = NULL;
 struct Function * Error(rangeConstructor) = NULL;
@@ -26,12 +27,15 @@ struct Function * Error(referenceConstructor) = NULL;
 struct Function * Error(syntaxConstructor) = NULL;
 struct Function * Error(typeConstructor) = NULL;
 struct Function * Error(uriConstructor) = NULL;
+struct Function * Error(evalConstructor) = NULL;
 
 const struct Object(Type) Error(type) = {
 	.text = &Text(errorType),
 };
 
 // MARK: - Static Members
+
+static struct Error * evalError (struct Text text, struct Chars *message);
 
 static
 struct Chars *messageValue (struct Context * const context, struct Value value)
@@ -185,6 +189,18 @@ struct Value uriErrorConstructor (struct Context * const context)
 }
 
 static
+struct Value evalErrorConstructor (struct Context * const context)
+{
+	struct Chars *message;
+	
+	Context.assertParameterCount(context, 1);
+	
+	message = messageValue(context, Context.argument(context, 0));
+	Context.setTextIndex(context, Context(callIndex));
+	return Value.error(evalError(Context.textSeek(context), message));
+}
+
+static
 void setupBuiltinObject (struct Function **constructor, const Native(Function) native, int parameterCount, struct Object **prototype, const struct Text *name)
 {
 	Function.setupBuiltinObject(
@@ -207,6 +223,7 @@ void setup (void)
 	setupBuiltinObject(&Error(syntaxConstructor), syntaxErrorConstructor, 1, &Error(syntaxPrototype), &Text(syntaxErrorName));
 	setupBuiltinObject(&Error(typeConstructor), typeErrorConstructor, 1, &Error(typePrototype), &Text(typeErrorName));
 	setupBuiltinObject(&Error(uriConstructor), uriErrorConstructor, 1, &Error(uriPrototype), &Text(uriErrorName));
+	setupBuiltinObject(&Error(evalConstructor), evalErrorConstructor, 1, &Error(evalPrototype), &Text(evalErrorName));
 	
 	Function.addToObject(Error(prototype), "toString", toString, 0, h);
 	
@@ -262,6 +279,11 @@ struct Error * typeError (struct Text text, struct Chars *message)
 struct Error * uriError (struct Text text, struct Chars *message)
 {
 	return create(Error(uriPrototype), text, message);
+}
+
+struct Error * evalError (struct Text text, struct Chars *message)
+{
+	return create(Error(evalPrototype), text, message);
 }
 
 void destroy (struct Error *self)

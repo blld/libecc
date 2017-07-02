@@ -22,6 +22,7 @@
 		const struct Text *text;
 		
 		void (*mark)(struct Object *);
+		void (*capture)(struct Object *);
 		void (*finalize)(struct Object *);
 	};
 
@@ -77,6 +78,7 @@ Interface(Object,
 	
 	(void, packValue ,(struct Object *))
 	(void, stripMap ,(struct Object *))
+	(void, reserveSlots ,(struct Object *, uint16_t slots))
 	
 	(int, resizeElement ,(struct Object *, uint32_t size))
 	(void, populateElementWithCList ,(struct Object *, uint32_t count, const char * list[]))

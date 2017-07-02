@@ -94,6 +94,11 @@
 	};
 	#undef _
 
+	enum Lexer(ScanFlags) {
+		Lexer(scanLazy) = 1 << 0,
+		Lexer(scanSloppy) = 1 << 1,
+	};
+
 #endif
 
 
@@ -106,8 +111,8 @@ Interface(Lexer,
 	
 	(const char *, tokenChars ,(enum Lexer(Token) token, char buffer[4]))
 	
-	(struct Value, scanBinary ,(struct Text text, int lazy))
-	(struct Value, scanInteger ,(struct Text text, int base, int lazy))
+	(struct Value, scanBinary ,(struct Text text, enum Lexer(ScanFlags)))
+	(struct Value, scanInteger ,(struct Text text, int base, enum Lexer(ScanFlags)))
 	(uint32_t, scanElement ,(struct Text text))
 	
 	(uint8_t, uint8Hex ,(char a, char b))
@@ -121,6 +126,7 @@ Interface(Lexer,
 		struct Text text;
 		int didLineBreak;
 		int allowRegex;
+		int allowUnicodeOutsideLiteral;
 		int disallowKeyword;
 	}
 )

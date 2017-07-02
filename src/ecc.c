@@ -89,11 +89,15 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	volatile int result = EXIT_SUCCESS, trap = !self->envCount || flags & Ecc(primitiveResult), catch = 0;
 	struct Context context = {
 		.environment = &self->global->environment,
+		.this = Value.object(&self->global->environment),
 		.ecc = self,
+		.strictMode = !(flags & Ecc(sloppyMode)),
 	};
 	
 	if (!input)
 		return EXIT_FAILURE;
+	
+	self->sloppyMode = flags & Ecc(sloppyMode);
 	
 	if (trap)
 	{
@@ -104,18 +108,13 @@ int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 	if (catch)
 		result = EXIT_FAILURE;
 	else
-	{
-		if (flags & Ecc(globalThis))
-			context.this = Value.object(&self->global->environment);
-		
 		evalInputWithContext(self, input, &context);
-	}
-	
-	Context.rewindStatement(&context);
-	context.text = &context.ops->text;
 	
 	if (flags & Ecc(primitiveResult))
 	{
+		Context.rewindStatement(&context);
+		context.text = &context.ops->text;
+		
 		if ((flags & Ecc(stringResult)) == Ecc(stringResult))
 			self->result = Value.toString(&context, self->result);
 		else
@@ -144,7 +143,14 @@ void evalInputWithContext (struct Ecc *self, struct Input *input, struct Context
 	
 	lexer = Lexer.createWithInput(input);
 	parser = Parser.createWithLexer(lexer);
-	function = Parser.parseWithEnvironment(parser, context->environment);
+	
+	if (context->strictMode)
+		parser->strictMode = 1;
+	
+	if (self->sloppyMode)
+		lexer->allowUnicodeOutsideLiteral = 1;
+	
+	function = Parser.parseWithEnvironment(parser, context->environment, &self->global->environment);
 	context->ops = function->oplist->ops;
 	context->environment = &function->environment;
 	

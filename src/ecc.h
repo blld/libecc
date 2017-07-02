@@ -19,9 +19,9 @@
 	#include "input.h"
 
 	enum Ecc(EvalFlags) {
-		Ecc(globalThis)         = 0x1 /* 0000 0001 */,
-		Ecc(primitiveResult)    = 0x2 /* 0000 0100 */,
-		Ecc(stringResult)       = 0x6 /* 0000 1100 */,
+		Ecc(sloppyMode)         = 0x1 /* 0000 0001 */,
+		Ecc(primitiveResult)    = 0x2 /* 0000 0010 */,
+		Ecc(stringResult)       = 0x6 /* 0000 0110 */,
 	};
 
 #endif
@@ -64,7 +64,8 @@ Interface(Ecc,
 		uint16_t inputCount;
 		
 		int16_t maximumCallDepth;
-		int printLastThrow;
+		unsigned printLastThrow:1;
+		unsigned sloppyMode:1;
 	}
 )
 

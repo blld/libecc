@@ -16,6 +16,7 @@
 // MARK: - Private
 
 static void mark (struct Object *object);
+static void capture (struct Object *object);
 
 struct Object * Function(prototype) = NULL;
 struct Function * Function(constructor) = NULL;
@@ -23,16 +24,31 @@ struct Function * Function(constructor) = NULL;
 const struct Object(Type) Function(type) = {
 	.text = &Text(functionType),
 	.mark = mark,
+	.capture = capture,
 	/* XXX: don't finalize */
 };
+
+static
+void capture (struct Object *object)
+{
+	struct Function *self = (struct Function *)object;
+	
+	if (self->refObject)
+		++self->refObject->referenceCount;
+	
+	if (self->pair)
+		++self->pair->object.referenceCount;
+}
 
 static
 void mark (struct Object *object)
 {
 	struct Function *self = (struct Function *)object;
 	
-	Pool.markObject(&self->object);
 	Pool.markObject(&self->environment);
+	
+	if (self->refObject)
+		Pool.markObject(self->refObject);
 	
 	if (self->pair)
 		Pool.markObject(&self->pair->object);
@@ -80,6 +96,8 @@ struct Value apply (struct Context * const context)
 	Context.assertParameterCount(context, 2);
 	Context.assertThisType(context, Value(functionType));
 	
+	context->strictMode = context->parent->strictMode;
+	
 	this = Context.argument(context, 0);
 	if (this.type != Value(undefinedType) && this.type != Value(nullType))
 		this = Value.toObject(context, this);
@@ -104,6 +122,8 @@ struct Value call (struct Context * const context)
 	
 	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
+	
+	context->strictMode = context->parent->strictMode;
 	
 	arguments = *context->environment->hashmap[2].value.data.object;
 	
@@ -137,6 +157,8 @@ struct Value bindCall (struct Context * const context)
 	
 	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
+	
+	context->strictMode = context->parent->strictMode;
 	
 	function = context->this.data.function;
 	
@@ -200,12 +222,16 @@ struct Value constructor (struct Context * const context)
 		struct Chars(Append) chars;
 		struct Input *input;
 		struct Context subContext = {
-			.parent = context->parent,
-			.this = context->parent->this,
-			.environment = context->parent->environment,
+			.parent = context,
+			.this = Value.object(&context->ecc->global->environment),
 			.ecc = context->ecc,
 			.depth = context->depth + 1,
+			.environment = context->parent->strictMode? context->parent->environment: &context->ecc->global->environment,
 		};
+		
+		if (context->parent->strictMode)
+			while (subContext.environment->prototype && subContext.environment->prototype != &context->ecc->global->environment)
+				subContext.environment = subContext.environment->prototype;
 		
 		Chars.beginAppend(&chars);
 		Chars.append(&chars, "(function(");

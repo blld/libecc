@@ -91,6 +91,8 @@ Interface(Context,
 		int16_t depth;
 		int8_t construct:1;
 		int8_t argumentOffset:3;
+		int8_t strictMode:1;
+		int8_t inEnvironmentObject:1;
 	}
 )
 

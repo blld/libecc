@@ -83,7 +83,7 @@ _	/* gdb/lldb infos: p usage() */
 //
 
 static
-struct Value retain(struct Value value)
+struct Value retain (struct Value value)
 {
 	if (value.type == Value(charsType))
 		++value.data.chars->referenceCount;
@@ -94,7 +94,7 @@ struct Value retain(struct Value value)
 }
 
 static
-struct Value release(struct Value value)
+struct Value release (struct Value value)
 {
 	if (value.type == Value(charsType))
 		--value.data.chars->referenceCount;
@@ -102,6 +102,34 @@ struct Value release(struct Value value)
 		--value.data.object->referenceCount;
 	
 	return value;
+}
+
+static
+void capture (struct Object *object)
+{
+	uint32_t index, count;
+	
+	if (object->prototype)
+		++object->prototype->referenceCount;
+	
+	count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
+	for (index = 0; index < count; ++index)
+	{
+		union Object(Element) *element = object->element + index;
+		if (element->value.check == 1)
+			retain(element->value);
+	}
+	
+	count = object->hashmapCount;
+	for (index = 2; index < count; ++index)
+	{
+		union Object(Hashmap) *hashmap = object->hashmap + index;
+		if (hashmap->value.check == 1)
+			retain(hashmap->value);
+	}
+	
+	if (object->type->capture)
+		object->type->capture(object);
 }
 
 static
@@ -171,11 +199,32 @@ const char * toChars (const Native(Function) native)
 
 // MARK: call
 
+static
+struct Value nextOpValue (struct Context * const context)
+{
+	struct Value value = nextOp();
+	value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
+	return value;
+}
+
+#define nextOpValue() nextOpValue(context)
+
+static
+struct Value replaceRefValue (struct Value *ref, struct Value value)
+{
+	ref->data = value.data;
+	ref->type = value.type;
+	return value;
+}
+
 static inline
 struct Value callOps (struct Context * const context, struct Object *environment)
 {
 	if (context->depth >= context->ecc->maximumCallDepth)
 		Context.rangeError(context, Chars.create("maximum depth exceeded"));
+	
+	if (!context->parent->strictMode && context->this.type == Value(undefinedType))
+		context->this = Value.object(&context->ecc->global->environment);
 	
 	context->environment = environment;
 	return context->ops->native(context);
@@ -193,26 +242,8 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 		release(environment->hashmap[index].value);
 	
 	if (Value.isObject(result) && context->ops->text.bytes == Text(nativeCode).bytes)
-	{
-		struct Object *object = result.data.object;
-		uint32_t index, count;
-		
-		count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
-		for (index = 0; index < count; ++index)
-		{
-			union Object(Element) *element = object->element + index;
-			if (element->value.check == 1)
-				retain(element->value);
-		}
-		
-		count = object->hashmapCount;
-		for (index = 2; index < count; ++index)
-		{
-			union Object(Hashmap) *hashmap = object->hashmap + index;
-			if (hashmap->value.check == 1)
-				retain(hashmap->value);
-		}
-	}
+		capture(result.data.object);
+	
 	return result;
 }
 
@@ -222,7 +253,7 @@ void populateEnvironmentWithArguments (struct Object *environment, struct Object
 	int32_t index = 0;
 	int argumentCount = arguments->elementCount;
 	
-	environment->hashmap[2].value = retain(Value.object(arguments));
+	replaceRefValue(&environment->hashmap[2].value, retain(Value.object(arguments)));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -240,7 +271,7 @@ void populateEnvironmentAndArgumentsWithVA (struct Object *environment, int32_t 
 	int32_t index = 0;
 	struct Object *arguments = Arguments.createSized(argumentCount);
 	
-	environment->hashmap[2].value = retain(Value.object(arguments));
+	replaceRefValue(&environment->hashmap[2].value, retain(Value.object(arguments)));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
@@ -272,18 +303,18 @@ void populateStackEnvironmentAndArgumentsWithOps (struct Context * const context
 {
 	int32_t index = 0;
 	
-	environment->hashmap[2].value = Value.object(arguments);
+	replaceRefValue(&environment->hashmap[2].value, Value.object(arguments));
 	
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOp());
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOpValue());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOp());
+			environment->hashmap[index + 3].value = arguments->element[index].value = retain(nextOpValue());
 		
 		for (; index < argumentCount; ++index)
-			arguments->element[index].value = nextOp();
+			arguments->element[index].value = nextOpValue();
 	}
 }
 
@@ -308,11 +339,11 @@ void populateEnvironmentWithOps (struct Context * const context, struct Object *
 	int32_t index = 0;
 	if (argumentCount <= parameterCount)
 		for (; index < argumentCount; ++index)
-			environment->hashmap[index + 3].value = retain(nextOp());
+			environment->hashmap[index + 3].value = retain(nextOpValue());
 	else
 	{
 		for (; index < parameterCount; ++index)
-			environment->hashmap[index + 3].value = retain(nextOp());
+			environment->hashmap[index + 3].value = retain(nextOpValue());
 		
 		for (; index < argumentCount; ++index)
 			nextOp();
@@ -328,6 +359,8 @@ struct Value callFunctionArguments (struct Context * const context, enum Context
 		.ecc = context->ecc,
 		.argumentOffset = offset,
 		.depth = context->depth + 1,
+		.strictMode = function->flags & Function(strictMode),
+		.refObject = function->refObject,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -366,6 +399,8 @@ struct Value callFunctionVA (struct Context * const context, enum Context(Offset
 		.ecc = context->ecc,
 		.argumentOffset = offset,
 		.depth = context->depth + 1,
+		.strictMode = function->flags & Function(strictMode),
+		.refObject = function->refObject,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -373,7 +408,15 @@ struct Value callFunctionVA (struct Context * const context, enum Context(Offset
 		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
+		{
 			populateEnvironmentAndArgumentsWithVA(environment, function->parameterCount, argumentCount, ap);
+			
+			if (!context->strictMode)
+			{
+				Object.addMember(environment->hashmap[2].value.data.object, Key(callee), retain(Value.function(function)), Value(hidden));
+				Object.addMember(environment->hashmap[2].value.data.object, Key(length), Value.integer(argumentCount), Value(hidden));
+			}
+		}
 		else
 			populateEnvironmentWithVA(environment, function->parameterCount, argumentCount, ap);
 		
@@ -403,6 +446,8 @@ struct Value callFunction (struct Context * const context, struct Function * con
 		.ecc = context->ecc,
 		.construct = construct,
 		.depth = context->depth + 1,
+		.strictMode = function->flags & Function(strictMode),
+		.refObject = function->refObject,
 	};
 	
 	if (function->flags & Function(needHeap))
@@ -410,7 +455,15 @@ struct Value callFunction (struct Context * const context, struct Function * con
 		struct Object *environment = Object.copy(&function->environment);
 		
 		if (function->flags & Function(needArguments))
+		{
 			populateEnvironmentAndArgumentsWithOps(context, environment, Arguments.createSized(argumentCount), function->parameterCount, argumentCount);
+			
+			if (!context->strictMode)
+			{
+				Object.addMember(environment->hashmap[2].value.data.object, Key(callee), retain(Value.function(function)), Value(hidden));
+				Object.addMember(environment->hashmap[2].value.data.object, Key(length), Value.integer(argumentCount), Value(hidden));
+			}
+		}
 		else
 			populateEnvironmentWithOps(context, environment, function->parameterCount, argumentCount);
 		
@@ -445,15 +498,23 @@ struct Value callFunction (struct Context * const context, struct Function * con
 }
 
 static inline
-struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct)
+struct Value callValue (struct Context * const context, struct Value value, struct Value this, int32_t argumentCount, int construct, const struct Text *textCall)
 {
+	struct Value result;
+	const struct Text *parentTextCall = context->textCall;
+	
 	if (value.type != Value(functionType))
 		Context.typeError(context, Chars.create("'%.*s' is not a function", context->text->length, context->text->bytes));
 	
+	context->textCall = textCall;
+	
 	if (value.data.function->flags & Function(useBoundThis))
-		return callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
+		result = callFunction(context, value.data.function, value.data.function->boundThis, argumentCount, construct);
 	else
-		return callFunction(context, value.data.function, this, argumentCount, construct);
+		result = callFunction(context, value.data.function, this, argumentCount, construct);
+	
+	context->textCall = parentTextCall;
+	return result;
 }
 
 struct Value construct (struct Context * const context)
@@ -462,8 +523,6 @@ struct Value construct (struct Context * const context)
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value, *prototype, object, function = nextOp();
-	
-	context->textCall = textCall;
 	
 	if (function.type != Value(functionType))
 		goto error;
@@ -479,8 +538,8 @@ struct Value construct (struct Context * const context)
 	}
 	else if (prototype->type == Value(functionType))
 	{
-		++Function(prototype)->referenceCount;
-		object = Value.object(Object.create(Function(prototype)));
+		++prototype->data.function->object.referenceCount;
+		object = Value.object(Object.create(&prototype->data.function->object));
 	}
 	else if (prototype->type == Value(objectType))
 	{
@@ -491,7 +550,7 @@ struct Value construct (struct Context * const context)
 		object = Value(undefined);
 	
 	Context.setText(context, text);
-	value = callValue(context, function, object, argumentCount, 1);
+	value = callValue(context, function, object, argumentCount, 1, textCall);
 	
 	if (Value.isObject(value))
 		return value;
@@ -499,6 +558,7 @@ struct Value construct (struct Context * const context)
 		return object;
 	
 error:
+	context->textCall = textCall;
 	Context.setTextIndex(context, Context(funcIndex));
 	Context.typeError(context, Chars.create("'%.*s' is not a constructor", text->length, text->bytes));
 }
@@ -509,10 +569,18 @@ struct Value call (struct Context * const context)
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
 	struct Value value = nextOp();
+	struct Value this;
 	
-	context->textCall = textCall;
+	if (context->inEnvironmentObject)
+	{
+		++context->environment->referenceCount;
+		this = Value.objectValue(context->environment);
+	}
+	else
+		this = Value(undefined);
+	
 	Context.setText(context, text);
-	return callValue(context, value, Value(undefined), argumentCount, 0);
+	return callValue(context, value, this, argumentCount, 0, textCall);
 }
 
 struct Value eval (struct Context * const context)
@@ -526,6 +594,7 @@ struct Value eval (struct Context * const context)
 		.environment = context->environment,
 		.ecc = context->ecc,
 		.depth = context->depth + 1,
+		.strictMode = context->strictMode,
 	};
 	
 	if (!argumentCount)
@@ -542,6 +611,10 @@ struct Value eval (struct Context * const context)
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
 	value = context->ecc->result;
+	
+	if (Value.isObject(value))
+		capture(value.data.object);
+	
 	context->ecc->result = Value(undefined);
 	return value;
 }
@@ -574,7 +647,7 @@ struct Value regexp (struct Context * const context)
 	const struct Text *text = opText(0);
 	struct Error *error = NULL;
 	struct Chars *chars = Chars.createWithBytes(text->length, text->bytes);
-	struct RegExp *regexp = RegExp.create(chars, &error);
+	struct RegExp *regexp = RegExp.create(chars, &error, context->ecc->sloppyMode? RegExp(allowUnicodeFlags): 0);
 	if (error)
 	{
 		error->text.bytes = text->bytes + (error->text.bytes - chars->bytes);
@@ -591,9 +664,14 @@ struct Value function (struct Context * const context)
 	struct Function *function = Function.copy(value.data.function);
 	function->object.prototype = &value.data.function->object;
 	function->environment.prototype = context->environment;
+	if (context->refObject)
+	{
+		++context->refObject->referenceCount;
+		function->refObject = context->refObject;
+	}
 	
 	prototype = Object.create(Object(prototype));
-	Function.linkPrototype(function, Value.object(prototype), Value(hidden) | Value(sealed));
+	Function.linkPrototype(function, Value.object(prototype), Value(sealed));
 	
 	++prototype->referenceCount;
 	++context->environment->referenceCount;
@@ -613,8 +691,7 @@ struct Value object (struct Context * const context)
 	for (count = opValue().data.integer; count--;)
 	{
 		property = nextOp();
-		value = retain(nextOp());
-		value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
+		value = retain(nextOpValue());
 		
 		if (property.type == Value(keyType))
 			Object.addMember(object, property.data.key, value, 0);
@@ -633,11 +710,8 @@ struct Value array (struct Context * const context)
 	
 	for (index = 0; index < length; ++index)
 	{
-		value = retain(nextOp());
-		value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
-		
-		if (value.check == 1)
-			object->element[index].value = value;
+		value = retain(nextOpValue());
+		object->element[index].value = value;
 	}
 	return Value.object(object);
 }
@@ -647,35 +721,89 @@ struct Value this (struct Context * const context)
 	return context->this;
 }
 
-struct Value getLocalRef (struct Context * const context)
+static
+struct Value * localRef (struct Context * const context, struct Key key, const struct Text *text, int required)
 {
-	struct Key key = opValue().data.key;
-	struct Value *ref = Object.member(context->environment, key, 0);
-	if (!ref)
+	struct Value *ref;
+	
+	ref = Object.member(context->environment, key, 0);
+	
+	if (!context->strictMode)
 	{
-		Context.setText(context, opText(0));
+		context->inEnvironmentObject = context->refObject != NULL;
+		if (!ref && context->refObject)
+		{
+			context->inEnvironmentObject = 0;
+			ref = Object.member(context->refObject, key, 0);
+		}
+	}
+	
+	if (!ref && required)
+	{
+		Context.setText(context, text);
 		Context.referenceError(context, Chars.create("'%.*s' is not defined", Key.textOf(key)->length, Key.textOf(key)->bytes));
 	}
+	return ref;
+}
+
+struct Value createLocalRef (struct Context * const context)
+{
+	struct Key key = opValue().data.key;
+	struct Value *ref = localRef(context, key, opText(0), context->strictMode);
+	
+	if (!ref)
+		ref = Object.addMember(&context->ecc->global->environment, key, Value(undefined), 0);
+	
 	return Value.reference(ref);
+}
+
+struct Value getLocalRefOrNull (struct Context * const context)
+{
+	return Value.reference(localRef(context, opValue().data.key, opText(0), 0));
+}
+
+struct Value getLocalRef (struct Context * const context)
+{
+	return Value.reference(localRef(context, opValue().data.key, opText(0), 1));
 }
 
 struct Value getLocal (struct Context * const context)
 {
-	return *getLocalRef(context).data.reference;
+	return *localRef(context, opValue().data.key, opText(0), 1);
 }
 
 struct Value setLocal (struct Context * const context)
 {
-	struct Value *ref = getLocalRef(context).data.reference;
+	const struct Text *text = opText(0);
+	struct Key key = opValue().data.key;
 	struct Value value = nextOp();
-	if (ref->flags & Value(frozen))
+	
+	struct Value *ref = localRef(context, key, text, context->strictMode);
+	
+	if (!ref)
+		ref = Object.addMember(&context->ecc->global->environment, key, Value(undefined), 0);
+	
+	if (ref->flags & Value(readonly))
 		return value;
 	
 	retain(value);
 	release(*ref);
-	ref->data = value.data;
-	ref->type = value.type;
+	replaceRefValue(ref, value);
 	return value;
+}
+
+struct Value deleteLocal (struct Context * const context)
+{
+	struct Value *ref = localRef(context, opValue().data.key, opText(0), 0);
+	
+	if (!ref)
+		return Value(true);
+	
+	if (ref->flags & Value(sealed))
+		return Value(false);
+	
+	*ref = Value(none);
+	return Value(true);
 }
 
 struct Value getLocalSlotRef (struct Context * const context)
@@ -693,14 +821,19 @@ struct Value setLocalSlot (struct Context * const context)
 	int32_t slot = opValue().data.integer;
 	struct Value value = nextOp();
 	struct Value *ref = &context->environment->hashmap[slot].value;
-	if (ref->flags & Value(frozen))
+	
+	if (ref->flags & Value(readonly))
 		return value;
 	
 	retain(value);
 	release(*ref);
-	ref->data = value.data;
-	ref->type = value.type;
+	replaceRefValue(ref, value);
 	return value;
+}
+
+struct Value deleteLocalSlot (struct Context * const context)
+{
+	return Value(false);
 }
 
 struct Value getParentSlotRef (struct Context * const context)
@@ -726,15 +859,25 @@ struct Value setParentSlot (struct Context * const context)
 	struct Value value = nextOp();
 	if (ref->flags & Value(readonly))
 	{
-		struct Text property = *Key.textOf(ref->key);
-		Context.setText(context, text);
-		Context.typeError(context, Chars.create("'%.*s' is read-only", property.length, property.bytes));
+		if (context->strictMode)
+		{
+			struct Text property = *Key.textOf(ref->key);
+			Context.setText(context, text);
+			Context.typeError(context, Chars.create("'%.*s' is read-only", property.length, property.bytes));
+		}
 	}
-	retain(value);
-	release(*ref);
-	ref->data = value.data;
-	ref->type = value.type;
+	else
+	{
+		retain(value);
+		release(*ref);
+		replaceRefValue(ref, value);
+	}
 	return value;
+}
+
+struct Value deleteParentSlot (struct Context * const context)
+{
+	return Value(false);
 }
 
 static
@@ -809,9 +952,8 @@ struct Value callMember (struct Context * const context)
 	
 	prepareObject(context, &object);
 	
-	context->textCall = textCall;
 	Context.setText(context, text);
-	return callValue(context, Object.getMember(context, object.data.object, key), object, argumentCount, 0);
+	return callValue(context, Object.getMember(context, object.data.object, key), object, argumentCount, 0, textCall);
 }
 
 struct Value deleteMember (struct Context * const context)
@@ -824,7 +966,7 @@ struct Value deleteMember (struct Context * const context)
 	prepareObject(context, &object);
 	
 	result = Object.deleteMember(object.data.object, key);
-	if (!result)
+	if (!result && context->strictMode)
 	{
 		Context.setText(context, text);
 		Context.typeError(context, Chars.create("'%.*s' is non-configurable", Key.textOf(key)->length, Key.textOf(key)->bytes));
@@ -908,9 +1050,8 @@ struct Value callProperty (struct Context * const context)
 	
 	prepareObjectProperty(context, &object, &property);
 	
-	context->textCall = textCall;
 	Context.setText(context, text);
-	return callValue(context, Object.getProperty(context, object.data.object, property), object, argumentCount, 0);
+	return callValue(context, Object.getProperty(context, object.data.object, property), object, argumentCount, 0, textCall);
 }
 
 struct Value deleteProperty (struct Context * const context)
@@ -922,7 +1063,7 @@ struct Value deleteProperty (struct Context * const context)
 	prepareObjectProperty(context, &object, &property);
 	
 	result = Object.deleteProperty(object.data.object, property);
-	if (!result)
+	if (!result && context->strictMode)
 	{
 		struct Value string = Value.toString(context, property);
 		Context.setText(context, text);
@@ -933,15 +1074,28 @@ struct Value deleteProperty (struct Context * const context)
 
 struct Value pushEnvironment (struct Context * const context)
 {
-	context->environment = Object.create(context->environment);
+	if (context->refObject)
+		context->refObject = Object.create(context->refObject);
+	else
+		context->environment = Object.create(context->environment);
+	
 	return opValue();
 }
 
 struct Value popEnvironment (struct Context * const context)
 {
-	struct Object *environment = context->environment;
-	context->environment = context->environment->prototype;
-	environment->prototype = NULL;
+	if (context->refObject)
+	{
+		struct Object *refObject = context->refObject;
+		context->refObject = context->refObject->prototype;
+		refObject->prototype = NULL;
+	}
+	else
+	{
+		struct Object *environment = context->environment;
+		context->environment = context->environment->prototype;
+		environment->prototype = NULL;
+	}
 	return opValue();
 }
 
@@ -955,6 +1109,14 @@ struct Value exchange (struct Context * const context)
 struct Value typeOf (struct Context * const context)
 {
 	struct Value value = nextOp();
+	if (value.type == Value(referenceType))
+	{
+		struct Value *ref = value.data.reference;
+		if (!ref)
+			return Value.text(&Text(undefined));
+		else
+			value = *ref;
+	}
 	return Value.toType(value);
 }
 
@@ -1070,14 +1232,22 @@ struct Value moreOrEqual (struct Context * const context)
 
 struct Value instanceOf (struct Context * const context)
 {
-	prepareAB
+	struct Value a = nextOp();
+	const struct Text *textAlt = opText(1);
+	struct Value b = nextOp();
 	
 	if (b.type != Value(functionType))
-		Context.typeError(context, Chars.create("'%.*s' not a function", text->length, text->bytes));
+	{
+		Context.setText(context, textAlt);
+		Context.typeError(context, Chars.create("'%.*s' is not a function", textAlt->length, textAlt->bytes));
+	}
 	
 	b = Object.getMember(context, b.data.object, Key(prototype));
 	if (!Value.isObject(b))
+	{
+		Context.setText(context, textAlt);
 		Context.typeError(context, Chars.create("'%.*s'.prototype not an object", textAlt->length, textAlt->bytes));
+	}
 	
 	if (Value.isObject(a))
 	{
@@ -1100,7 +1270,7 @@ struct Value in (struct Context * const context)
 	if (!Value.isObject(object))
 		Context.typeError(context, Chars.create("'%.*s' not an object", context->ops->text.length, context->ops->text.bytes));
 	
-	ref = Object.property(object.data.object, property, 0);
+	ref = Object.property(object.data.object, Value.toString(context, property), 0);
 	
 	return Value.truth(ref != NULL);
 }
@@ -1276,6 +1446,7 @@ struct Value not (struct Context * const context)
 // MARK: assignement
 
 #define unaryBinaryOpRef(OP) \
+	struct Object *refObject = context->refObject; \
 	const struct Text *text = opText(0); \
 	struct Value *ref = nextOp().data.reference; \
 	struct Value a; \
@@ -1294,8 +1465,8 @@ struct Value not (struct Context * const context)
 		a = Value.toBinary(context, release(a)); \
 	 \
 	result = OP; \
-	ref->data = a.data; \
-	ref->type = a.type; \
+	replaceRefValue(ref, a); \
+	context->refObject = refObject; \
 	return Value.binary(result); \
 
 struct Value incrementRef (struct Context * const context)
@@ -1319,6 +1490,7 @@ struct Value postDecrementRef (struct Context * const context)
 }
 
 #define assignOpRef(OP, TYPE, CONV) \
+	struct Object *refObject = context->refObject; \
 	const struct Text *text = opText(0); \
 	struct Value *ref = nextOp().data.reference; \
 	struct Value a, b = nextOp(); \
@@ -1338,8 +1510,8 @@ struct Value postDecrementRef (struct Context * const context)
 		a = CONV(context, release(a)); \
 	\
 	OP; \
-	ref->data = a.data; \
-	ref->type = a.type; \
+	replaceRefValue(ref, a); \
+	context->refObject = refObject; \
 	return a; \
 
 #define assignBinaryOpRef(OP) assignOpRef(OP, Value(binaryType), Value.toBinary)
@@ -1347,6 +1519,7 @@ struct Value postDecrementRef (struct Context * const context)
 
 struct Value addAssignRef (struct Context * const context)
 {
+	struct Object *refObject = context->refObject;
 	const struct Text *text = opText(1);
 	struct Value *ref = nextOp().data.reference;
 	const struct Text *textAlt = opText(1);
@@ -1369,8 +1542,8 @@ struct Value addAssignRef (struct Context * const context)
 	}
 	
 	a = retain(Value.add(context, release(a), b));
-	ref->data = a.data;
-	ref->type = a.type;
+	replaceRefValue(ref, a);
+	context->refObject = refObject;
 	return a;
 }
 
@@ -1438,6 +1611,8 @@ struct Value debugger (struct Context * const context)
 useframe
 struct Value try (struct Context * const context)
 {
+	struct Object *environment = context->environment;
+	struct Object *refObject = context->refObject;
 	const struct Op *end = context->ops + opValue().data.integer;
 	struct Key key;
 	
@@ -1463,6 +1638,8 @@ struct Value try (struct Context * const context)
 			
 			rethrow = 1;
 			context->ops = end + 1; // bypass catch jump
+			context->environment = environment;
+			context->refObject = refObject;
 			key = nextOp().data.key;
 			
 			if (!Key.isEqual(key, Key(none)))
@@ -1472,7 +1649,7 @@ struct Value try (struct Context * const context)
 					value.data.function->flags |= Function(useBoundThis);
 					value.data.function->boundThis = Value.object(context->environment);
 				}
-				Object.addMember(context->environment, key, value, 0);
+				Object.addMember(context->environment, key, value, Value(sealed));
 				value = nextOp(); // execute until noop
 				rethrow = 0;
 				if (context->breaker)
@@ -1511,6 +1688,24 @@ struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
 	Context.throw(context, retain(trapOp(context, 0)));
+}
+
+struct Value with (struct Context * const context)
+{
+	struct Object *refObject = context->refObject;
+	struct Object *object = Value.toObject(context, nextOp()).data.object;
+	struct Value value;
+	
+	context->refObject = context->environment;
+	context->environment = object;
+	value = nextOp();
+	context->environment = context->refObject;
+	context->refObject = refObject;
+	
+	if (context->breaker)
+		return value;
+	else
+		return nextOp();
 }
 
 struct Value next (struct Context * const context)
@@ -1783,6 +1978,7 @@ struct Value iterateIntegerRef (
 	struct Value io_libecc_interface_Unwrap((*compareValue)) (struct Context * const, struct Value, struct Value),
 	struct Value io_libecc_interface_Unwrap((*valueStep)) (struct Context * const, struct Value, struct Value))
 {
+	struct Object *refObject = context->refObject;
 	const struct Op *endOps = context->ops + opValue().data.integer;
 	struct Value stepValue = nextOp();
 	struct Value *indexRef = nextOp().data.reference;
@@ -1821,6 +2017,7 @@ deoptimize:
 		stepIteration(value, nextOps, break);
 	
 done:
+	context->refObject = refObject;
 	context->ops = endOps;
 	return nextOp();
 }
@@ -1847,6 +2044,7 @@ struct Value iterateMoreOrEqualRef (struct Context * const context)
 
 struct Value iterateInRef (struct Context * const context)
 {
+	struct Object *refObject = context->refObject;
 	struct Value *ref = nextOp().data.reference;
 	struct Value target = nextOp();
 	struct Value value = nextOp(), key;
@@ -1875,8 +2073,7 @@ struct Value iterateInRef (struct Context * const context)
 				Chars.beginAppend(&chars);
 				Chars.append(&chars, "%d", index);
 				key = Chars.endAppend(&chars);
-				ref->data = key.data;
-				ref->type = key.type;
+				replaceRefValue(ref, key);
 				
 				stepIteration(value, startOps, break);
 			}
@@ -1898,8 +2095,7 @@ struct Value iterateInRef (struct Context * const context)
 					continue;
 				
 				key = Value.text(Key.textOf(hashmap->value.key));
-				ref->data = key.data;
-				ref->type = key.type;
+				replaceRefValue(ref, key);
 				
 				stepIteration(value, startOps, break);
 			}
@@ -1907,6 +2103,7 @@ struct Value iterateInRef (struct Context * const context)
 		while (( object = object->prototype ));
 	}
 	
+	context->refObject = refObject;
 	context->ops = endOps;
 	return nextOp();
 }

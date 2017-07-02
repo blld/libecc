@@ -93,8 +93,8 @@ void addObject (struct Object *object)
 {
 	assert(object);
 	
+//	fprintf(stderr, " > add %p %u\n", object, self->objectCount);
 //	Object.dumpTo(object, stderr);
-//	fprintf(stderr, " > add %p %u\n", object, self->objectsCount);
 	
 	if (self->objectCount >= self->objectCapacity)
 	{

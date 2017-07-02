@@ -462,6 +462,18 @@ struct Value valueOf (struct Context * const context)
 }
 
 static
+struct Value getYear (struct Context * const context)
+{
+	struct date date;
+	
+	Context.assertParameterCount(context, 0);
+	Context.assertThisType(context, Value(dateType));
+	
+	msToDate(toLocal(context->this.data.date->ms), &date);
+	return Value.binary(date.year - 1900);
+}
+
+static
 struct Value getFullYear (struct Context * const context)
 {
 	struct date date;
@@ -922,6 +934,31 @@ struct Value setFullYear (struct Context * const context)
 }
 
 static
+struct Value setYear (struct Context * const context)
+{
+	struct date date;
+	double year, month, day, ms;
+	
+	Context.assertParameterCount(context, 3);
+	Context.assertThisType(context, Value(dateType));
+	
+	if (isnan(context->this.data.date->ms))
+		context->this.data.date->ms = 0;
+	
+	ms = msToDate(toLocal(context->this.data.date->ms), &date);
+	year = binaryArgumentOr(context, 0, NAN);
+	month = binaryArgumentOr(context, 1, date.month - 1) + 1;
+	day = binaryArgumentOr(context, 2, date.day);
+	if (isnan(year) || isnan(month) || isnan(day))
+		return Value.binary(context->this.data.date->ms = NAN);
+	
+	date.year = year < 100? year + 1900: year;
+	date.month = month;
+	date.day = day;
+	return Value.binary(context->this.data.date->ms = msClip(toUTC(ms + msFromDate(date))));
+}
+
+static
 struct Value setUTCFullYear (struct Context * const context)
 {
 	struct date date;
@@ -1032,6 +1069,7 @@ void setup (void)
 	Function.addToObject(Date(prototype), "toLocaleTimeString", toTimeString, 0, h);
 	Function.addToObject(Date(prototype), "valueOf", valueOf, 0, h);
 	Function.addToObject(Date(prototype), "getTime", valueOf, 0, h);
+	Function.addToObject(Date(prototype), "getYear", getYear, 0, h);
 	Function.addToObject(Date(prototype), "getFullYear", getFullYear, 0, h);
 	Function.addToObject(Date(prototype), "getUTCFullYear", getUTCFullYear, 0, h);
 	Function.addToObject(Date(prototype), "getMonth", getMonth, 0, h);
@@ -1062,9 +1100,11 @@ void setup (void)
 	Function.addToObject(Date(prototype), "setUTCDate", setUTCDate, 1, h);
 	Function.addToObject(Date(prototype), "setMonth", setMonth, 2, h);
 	Function.addToObject(Date(prototype), "setUTCMonth", setUTCMonth, 2, h);
+	Function.addToObject(Date(prototype), "setYear", setYear, 3, h);
 	Function.addToObject(Date(prototype), "setFullYear", setFullYear, 3, h);
 	Function.addToObject(Date(prototype), "setUTCFullYear", setUTCFullYear, 3, h);
 	Function.addToObject(Date(prototype), "toUTCString", toUTCString, 0, h);
+	Function.addToObject(Date(prototype), "toGMTString", toUTCString, 0, h);
 	Function.addToObject(Date(prototype), "toISOString", toISOString, 0, h);
 	Function.addToObject(Date(prototype), "toJSON", toJSON, 1, h);
 }

@@ -250,13 +250,19 @@ normal:
 
 void optimizeWithEnvironment (struct OpList *self, struct Object *environment, uint32_t selfIndex)
 {
-	uint32_t index, count, slotIndex, slotCount, haveLocal = 0, environmentLevel = 0;
+	uint32_t index, count, slot, haveLocal = 0, environmentLevel = 0;
 	
 	if (!self)
 		return;
 	
 	for (index = 0, count = self->count; index < count; ++index)
 	{
+		if (self->ops[index].native == Op.with)
+		{
+			index += self->ops[index].value.data.integer;
+			haveLocal = 1;
+		}
+		
 		if (self->ops[index].native == Op.function)
 		{
 			uint32_t selfIndex = index && self->ops[index - 1].native == Op.setLocalSlot? self->ops[index - 1].value.data.integer: 0;
@@ -269,39 +275,51 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment, u
 		if (self->ops[index].native == Op.popEnvironment)
 			--environmentLevel;
 		
-		if (self->ops[index].native == Op.getLocal || self->ops[index].native == Op.getLocalRef || self->ops[index].native == Op.setLocal)
+		if (self->ops[index].native == Op.createLocalRef
+			|| self->ops[index].native == Op.getLocalRefOrNull
+			|| self->ops[index].native == Op.getLocalRef
+			|| self->ops[index].native == Op.getLocal
+			|| self->ops[index].native == Op.setLocal
+			|| self->ops[index].native == Op.deleteLocal
+			)
 		{
 			struct Object *searchEnvironment = environment;
 			uint32_t level = environmentLevel;
 			
 			do
 			{
-				for (slotIndex = 0, slotCount = searchEnvironment->hashmapCount; slotIndex < slotCount; ++slotIndex)
+				for (slot = searchEnvironment->hashmapCount; slot--;)
 				{
-					if (searchEnvironment->hashmap[slotIndex].value.check == 1)
+					if (searchEnvironment->hashmap[slot].value.check == 1)
 					{
-						if (Key.isEqual(searchEnvironment->hashmap[slotIndex].value.key, self->ops[index].value.data.key))
+						if (Key.isEqual(searchEnvironment->hashmap[slot].value.key, self->ops[index].value.data.key))
 						{
 							if (!level)
 							{
 								self->ops[index] = Op.make(
-									self->ops[index].native == Op.getLocal? Op.getLocalSlot:
+									self->ops[index].native == Op.createLocalRef? Op.getLocalSlotRef:
+									self->ops[index].native == Op.getLocalRefOrNull? Op.getLocalSlotRef:
 									self->ops[index].native == Op.getLocalRef? Op.getLocalSlotRef:
-									self->ops[index].native == Op.setLocal? Op.setLocalSlot: NULL
-									, Value.integer(slotIndex), self->ops[index].text);
+									self->ops[index].native == Op.getLocal? Op.getLocalSlot:
+									self->ops[index].native == Op.setLocal? Op.setLocalSlot:
+									self->ops[index].native == Op.deleteLocal? Op.deleteLocalSlot: NULL
+									, Value.integer(slot), self->ops[index].text);
 							}
-							else if (slotIndex <= INT16_MAX && level <= INT16_MAX)
+							else if (slot <= INT16_MAX && level <= INT16_MAX)
 							{
 								self->ops[index] = Op.make(
-									self->ops[index].native == Op.getLocal? Op.getParentSlot:
+									self->ops[index].native == Op.createLocalRef? Op.getParentSlotRef:
+									self->ops[index].native == Op.getLocalRefOrNull? Op.getParentSlotRef:
 									self->ops[index].native == Op.getLocalRef? Op.getParentSlotRef:
-									self->ops[index].native == Op.setLocal? Op.setParentSlot: NULL
-									, Value.integer((level << 16) | slotIndex), self->ops[index].text);
+									self->ops[index].native == Op.getLocal? Op.getParentSlot:
+									self->ops[index].native == Op.setLocal? Op.setParentSlot:
+									self->ops[index].native == Op.deleteLocal? Op.deleteParentSlot: NULL
+									, Value.integer((level << 16) | slot), self->ops[index].text);
 							}
 							else
 								goto notfound;
 							
-							if (index > 1 && level == 1 && slotIndex == selfIndex)
+							if (index > 1 && level == 1 && slot == selfIndex)
 							{
 								struct Op op = self->ops[index - 1];
 								if (op.native == Op.call && self->ops[index - 2].native == Op.result)

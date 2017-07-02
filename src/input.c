@@ -9,6 +9,8 @@
 #define Implementation
 #include "input.h"
 
+#include "chars.h"
+
 // MARK: - Private
 
 // MARK: - Static Members
@@ -169,7 +171,7 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 		if (length >= text.bytes - bytes)
 		{
 			char mark[length + 2];
-			long index = 0;
+			long index = 0, marked = 0;
 			
 			for (; index < text.bytes - bytes; ++index)
 				if (isprint(bytes[index]))
@@ -177,13 +179,19 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 				else
 					mark[index] = bytes[index];
 			
-			if ((signed char)bytes[index] >= 0 || !index)
+			if ((signed char)bytes[index] >= 0)
+			{
 				mark[index] = '^';
+				marked = 1;
+			}
 			else
 			{
 				mark[index] = bytes[index];
 				if (index > 0)
+				{
 					mark[index - 1] = '>';
+					marked = 1;
+				}
 			}
 			
 			while (++index < text.bytes - bytes + text.length && index <= length)
@@ -191,6 +199,12 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 					mark[index] = '~';
 				else
 					mark[index] = bytes[index];
+			
+			if (!marked)
+			{
+				mark[index++] = '<';
+				marked = 1;
+			}
 			
 			mark[index] = '\0';
 			
@@ -214,8 +228,12 @@ int32_t findLine (struct Input *self, struct Text text)
 	return -1;
 }
 
-void attachValue (struct Input *self, struct Value value)
+struct Value attachValue (struct Input *self, struct Value value)
 {
+	if (value.type == Value(charsType))
+		value.data.chars->referenceCount++;
+	
 	self->attached = realloc(self->attached, sizeof(*self->attached) * (self->attachedCount + 1));
-	self->attached[self->attachedCount++] = value;
+	self->attached[self->attachedCount] = value;
+	return value;
 }

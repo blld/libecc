@@ -10,6 +10,7 @@
 #include "parser.h"
 
 #include "oplist.h"
+#include "ecc.h"
 
 // MARK: - Private
 
@@ -128,9 +129,10 @@ void popDepth (struct Parser *self)
 // MARK: Expression
 
 static
-struct OpList * foldConstant (struct OpList * oplist)
+struct OpList * foldConstant (struct Parser *self, struct OpList * oplist)
 {
-	struct Context context = { oplist->ops };
+	struct Ecc ecc = { .sloppyMode = self->lexer->allowUnicodeOutsideLiteral };
+	struct Context context = { oplist->ops, .ecc = &ecc };
 	struct Value value = context.ops->native(&context);
 	struct Text text = OpList.text(oplist);
 	OpList.destroy(oplist);
@@ -138,22 +140,24 @@ struct OpList * foldConstant (struct OpList * oplist)
 }
 
 static
-struct OpList * useBinary (struct OpList * oplist, int add)
+struct OpList * useBinary (struct Parser *self, struct OpList * oplist, int add)
 {
 	if (oplist && oplist->ops[0].native == Op.value && (Value.isNumber(oplist->ops[0].value) || !add))
 	{
-		struct Context context = { oplist->ops };
+		struct Ecc ecc = { .sloppyMode = self->lexer->allowUnicodeOutsideLiteral };
+		struct Context context = { oplist->ops, .ecc = &ecc };
 		oplist->ops[0].value = Value.toBinary(&context, oplist->ops[0].value);
 	}
 	return oplist;
 }
 
 static
-struct OpList * useInteger (struct OpList * oplist)
+struct OpList * useInteger (struct Parser *self, struct OpList * oplist)
 {
 	if (oplist && oplist->ops[0].native == Op.value)
 	{
-		struct Context context = { oplist->ops };
+		struct Ecc ecc = { .sloppyMode = self->lexer->allowUnicodeOutsideLiteral };
+		struct Context context = { oplist->ops, .ecc = &ecc };
 		oplist->ops[0].value = Value.toInteger(&context, oplist->ops[0].value);
 	}
 	return oplist;
@@ -587,11 +591,18 @@ struct OpList * unary (struct Parser *self)
 		oplist = unary(self);
 		
 		if (oplist && oplist->ops[0].native == Op.getLocal)
-			syntaxError(self, OpList.text(oplist), Chars.create("delete of an unqualified identifier"));
+		{
+			if (self->strictMode)
+				syntaxError(self, OpList.text(oplist), Chars.create("delete of an unqualified identifier"));
+			
+			oplist->ops->native = Op.deleteLocal;
+		}
 		else if (oplist && oplist->ops[0].native == Op.getMember)
 			oplist->ops->native = Op.deleteMember;
 		else if (oplist && oplist->ops[0].native == Op.getProperty)
 			oplist->ops->native = Op.deleteProperty;
+		else if (!self->strictMode && oplist)
+			oplist = OpList.unshift(Op.make(Op.exchange, Value(true), Text(empty)), oplist);
 		else if (oplist)
 			referenceError(self, OpList.text(oplist), Chars.create("invalid delete operand"));
 		else
@@ -602,17 +613,21 @@ struct OpList * unary (struct Parser *self)
 	else if (acceptToken(self, Lexer(voidToken)))
 		native = Op.exchange, alt = unary(self);
 	else if (acceptToken(self, Lexer(typeofToken)))
+	{
 		native = Op.typeOf, alt = unary(self);
+		if (alt->ops->native == Op.getLocal)
+			alt->ops->native = Op.getLocalRefOrNull;
+	}
 	else if (acceptToken(self, Lexer(incrementToken)))
 		native = Op.incrementRef, alt = expressionRef(self, unary(self), "invalid increment operand");
 	else if (acceptToken(self, Lexer(decrementToken)))
 		native = Op.decrementRef, alt = expressionRef(self, unary(self), "invalid decrement operand");
 	else if (acceptToken(self, '+'))
-		native = Op.positive, alt = useBinary(unary(self), 0);
+		native = Op.positive, alt = useBinary(self, unary(self), 0);
 	else if (acceptToken(self, '-'))
-		native = Op.negative, alt = useBinary(unary(self), 0);
+		native = Op.negative, alt = useBinary(self, unary(self), 0);
 	else if (acceptToken(self, '~'))
-		native = Op.invert, alt = useInteger(unary(self));
+		native = Op.invert, alt = useInteger(self, unary(self));
 	else if (acceptToken(self, '!'))
 		native = Op.not, alt = unary(self);
 	else
@@ -624,7 +639,7 @@ struct OpList * unary (struct Parser *self)
 	oplist = OpList.unshift(Op.make(native, Value(undefined), Text.join(text, alt->ops->text)), alt);
 	
 	if (oplist->ops[1].native == Op.value)
-		return foldConstant(oplist);
+		return foldConstant(self, oplist);
 	else
 		return oplist;
 }
@@ -647,16 +662,16 @@ struct OpList * multiplicative (struct Parser *self)
 		else
 			return oplist;
 		
-		if (useBinary(oplist, 0))
+		if (useBinary(self, oplist, 0))
 		{
 			nextToken(self);
-			if ((alt = useBinary(unary(self), 0)))
+			if ((alt = useBinary(self, unary(self), 0)))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
-					oplist = foldConstant(oplist);
+					oplist = foldConstant(self, oplist);
 				
 				continue;
 			}
@@ -681,16 +696,16 @@ struct OpList * additive (struct Parser *self)
 		else
 			return oplist;
 		
-		if (useBinary(oplist, native == Op.add))
+		if (useBinary(self, oplist, native == Op.add))
 		{
 			nextToken(self);
-			if ((alt = useBinary(multiplicative(self), native == Op.add)))
+			if ((alt = useBinary(self, multiplicative(self), native == Op.add)))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
-					oplist = foldConstant(oplist);
+					oplist = foldConstant(self, oplist);
 				
 				continue;
 			}
@@ -717,16 +732,16 @@ struct OpList * shift (struct Parser *self)
 		else
 			return oplist;
 		
-		if (useInteger(oplist))
+		if (useInteger(self, oplist))
 		{
 			nextToken(self);
-			if ((alt = useInteger(additive(self))))
+			if ((alt = useInteger(self, additive(self))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(native, Value(undefined), text), oplist, alt);
 				
 				if (oplist->ops[1].native == Op.value && oplist->ops[2].native == Op.value)
-					oplist = foldConstant(oplist);
+					oplist = foldConstant(self, oplist);
 				
 				continue;
 			}
@@ -816,10 +831,10 @@ struct OpList * bitwiseAnd (struct Parser *self, int noIn)
 	struct OpList *oplist = equality(self, noIn), *alt;
 	while (previewToken(self) == '&')
 	{
-		if (useInteger(oplist))
+		if (useInteger(self, oplist))
 		{
 			nextToken(self);
-			if ((alt = useInteger(equality(self, noIn))))
+			if ((alt = useInteger(self, equality(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseAnd, Value(undefined), text), oplist, alt);
@@ -839,10 +854,10 @@ struct OpList * bitwiseXor (struct Parser *self, int noIn)
 	struct OpList *oplist = bitwiseAnd(self, noIn), *alt;
 	while (previewToken(self) == '^')
 	{
-		if (useInteger(oplist))
+		if (useInteger(self, oplist))
 		{
 			nextToken(self);
-			if ((alt = useInteger(bitwiseAnd(self, noIn))))
+			if ((alt = useInteger(self, bitwiseAnd(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseXor, Value(undefined), text), oplist, alt);
@@ -862,10 +877,10 @@ struct OpList * bitwiseOr (struct Parser *self, int noIn)
 	struct OpList *oplist = bitwiseXor(self, noIn), *alt;
 	while (previewToken(self) == '|')
 	{
-		if (useInteger(oplist))
+		if (useInteger(self, oplist))
 		{
 			nextToken(self);
-			if ((alt = useInteger(bitwiseXor(self, noIn))))
+			if ((alt = useInteger(self, bitwiseXor(self, noIn))))
 			{
 				struct Text text = Text.join(oplist->ops->text, alt->ops->text);
 				oplist = OpList.unshiftJoin(Op.make(Op.bitwiseOr, Value(undefined), text), oplist, alt);
@@ -961,6 +976,10 @@ struct OpList * assignment (struct Parser *self, int noIn)
 				syntaxError(self, text, Chars.create("can't assign to eval"));
 			else if (Key.isEqual(oplist->ops[0].value.data.key, Key(arguments)))
 				syntaxError(self, text, Chars.create("can't assign to arguments"));
+			
+			if (!self->strictMode && !Object.member(&self->function->environment, oplist->ops[0].value.data.key, 0))
+				++self->reserveGlobalSlots;
+//				Object.addMember(self->global, oplist->ops[0].value.data.key, Value(none), 0);
 			
 			oplist->ops->native = Op.setLocal;
 		}
@@ -1101,22 +1120,28 @@ struct OpList * variableDeclaration (struct Parser *self, int noIn)
 	if (!expectToken(self, Lexer(identifierToken)))
 		return NULL;
 	
-	if (Key.isEqual(value.data.key, Key(eval)))
+	if (self->strictMode && Key.isEqual(value.data.key, Key(eval)))
 		syntaxError(self, text, Chars.create("redefining eval is not allowed"));
-	else if (Key.isEqual(value.data.key, Key(arguments)))
+	else if (self->strictMode && Key.isEqual(value.data.key, Key(arguments)))
 		syntaxError(self, text, Chars.create("redefining arguments is not allowed"));
 	
-	Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(hidden));
+	if (self->function->flags & Function(strictMode) || self->sourceDepth > 1)
+		Object.addMember(&self->function->environment, value.data.key, Value(undefined), Value(sealed));
+	else
+		Object.addMember(self->global, value.data.key, Value(undefined), Value(sealed));
 	
 	if (acceptToken(self, '='))
 	{
 		struct OpList *opassign = assignment(self, noIn);
+		
 		if (opassign)
 			return OpList.unshiftJoin(Op.make(Op.discard, Value(undefined), Text(empty)), OpList.create(Op.setLocal, value, Text.join(text, opassign->ops->text)), opassign);
 		
 		tokenError(self, "expression");
 		return NULL;
 	}
+//	else if (!(self->function->flags & Function(strictMode)) && self->sourceDepth <= 1)
+//		return OpList.unshift(Op.make(Op.discard, Value(undefined), Text(empty)), OpList.create(Op.createLocalRef, value, text));
 	else
 		return OpList.create(Op.next, value, text);
 }
@@ -1215,14 +1240,17 @@ struct OpList * forStatement (struct Parser *self)
 	
 	if (oplist && acceptToken(self, Lexer(inToken)))
 	{
-		if (oplist && oplist->count == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
+		if (oplist->count == 2 && oplist->ops[0].native == Op.discard && oplist->ops[1].native == Op.getLocal)
 		{
+			if (!self->strictMode && !Object.member(&self->function->environment, oplist->ops[1].value.data.key, 0))
+				++self->reserveGlobalSlots;
+			
 			oplist->ops[0].native = Op.iterateInRef;
-			oplist->ops[1].native = Op.getLocalRef;
+			oplist->ops[1].native = Op.createLocalRef;
 		}
 		else if (oplist->count == 1 && oplist->ops[0].native == Op.next)
 		{
-			oplist->ops->native = Op.getLocalRef;
+			oplist->ops->native = Op.createLocalRef;
 			oplist = OpList.unshift(Op.make(Op.iterateInRef, Value(undefined), self->lexer->text), oplist);
 		}
 		else
@@ -1431,7 +1459,16 @@ struct OpList * allStatement (struct Parser *self)
 		return returnStatement(self, text);
 	else if (acceptToken(self, Lexer(withToken)))
 	{
-		syntaxError(self, text, Chars.create("strict mode code may not contain 'with' statements"));
+		if (self->strictMode)
+			syntaxError(self, text, Chars.create("code may not contain 'with' statements"));
+		
+		oplist = expression(self, 0);
+		if (!oplist)
+			tokenError(self, "expression");
+		
+		oplist = OpList.join(oplist, OpList.appendNoop(statement(self)));
+		oplist = OpList.unshift(Op.make(Op.with, Value.integer(oplist->count), Text(empty)), oplist);
+		
 		return oplist;
 	}
 	else if (acceptToken(self, Lexer(switchToken)))
@@ -1449,8 +1486,7 @@ struct OpList * allStatement (struct Parser *self)
 	}
 	else if (acceptToken(self, Lexer(tryToken)))
 	{
-		oplist = block(self);
-		oplist = OpList.appendNoop(oplist);
+		oplist = OpList.appendNoop(block(self));
 		oplist = OpList.unshift(Op.make(Op.try, Value.integer(oplist->count), text), oplist);
 		
 		if (previewToken(self) != Lexer(catchToken) && previewToken(self) != Lexer(finallyToken))
@@ -1540,9 +1576,9 @@ struct OpList * parameters (struct Parser *self, int *count)
 			
 			if (op.value.data.key.data.integer)
 			{
-				if (Key.isEqual(op.value.data.key, Key(eval)))
+				if (self->strictMode && Key.isEqual(op.value.data.key, Key(eval)))
 					syntaxError(self, op.text, Chars.create("redefining eval is not allowed"));
-				else if (Key.isEqual(op.value.data.key, Key(arguments)))
+				else if (self->strictMode && Key.isEqual(op.value.data.key, Key(arguments)))
 					syntaxError(self, op.text, Chars.create("redefining arguments is not allowed"));
 				
 				Object.deleteMember(&self->function->environment, op.value.data.key);
@@ -1574,9 +1610,9 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 		{
 			identifierOp = identifier(self);
 			
-			if (Key.isEqual(identifierOp.value.data.key, Key(eval)))
+			if (self->strictMode && Key.isEqual(identifierOp.value.data.key, Key(eval)))
 				syntaxError(self, identifierOp.text, Chars.create("redefining eval is not allowed"));
-			else if (Key.isEqual(identifierOp.value.data.key, Key(arguments)))
+			else if (self->strictMode && Key.isEqual(identifierOp.value.data.key, Key(arguments)))
 				syntaxError(self, identifierOp.text, Chars.create("redefining arguments is not allowed"));
 		}
 		else if (isDeclaration)
@@ -1591,12 +1627,17 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	
 	function = Function.create(&self->function->environment);
 	
-	Object.addMember(&function->environment, Key(arguments), Value(undefined), Value(hidden) | Value(sealed));
+	union Object(Hashmap) *arguments = (union Object(Hashmap) *)Object.addMember(&function->environment, Key(arguments), Value(undefined), 0);
+	uint16_t slot = arguments - function->environment.hashmap;
 	
 	self->function = function;
 	expectToken(self, '(');
 	textParameter = self->lexer->text;
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));
+	
+	function->environment.hashmap[slot].value = Value(undefined);
+	function->environment.hashmap[slot].value.key = Key(arguments);
+	function->environment.hashmap[slot].value.flags |= Value(hidden) | Value(sealed);
 	
 	if (isGetter && parameterCount != 0)
 		syntaxError(self, Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), Chars.create("getter functions must have no arguments"));
@@ -1605,6 +1646,15 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	
 	expectToken(self, ')');
 	expectToken(self, '{');
+	
+	if ((previewToken(self) == Lexer(stringToken)
+		&& self->lexer->text.length == 10
+		&& !memcmp("use strict", self->lexer->text.bytes, 10))
+		||
+		(parentFunction->flags & Function(strictMode))
+		)
+		self->function->flags |= Function(strictMode);
+	
 	oplist = OpList.join(oplist, sourceElements(self));
 	text.length = self->lexer->text.bytes - text.bytes + 1;
 	expectToken(self, '}');
@@ -1619,7 +1669,12 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	value = Value.function(function);
 	
 	if (isDeclaration)
-		Object.addMember(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
+	{
+		if (self->function->flags & Function(strictMode) || self->sourceDepth > 1)
+			Object.addMember(&parentFunction->environment, identifierOp.value.data.key, Value(undefined), Value(hidden));
+		else
+			Object.addMember(self->global, identifierOp.value.data.key, Value(undefined), Value(hidden));
+	}
 	else if (identifierOp.value.type != Value(undefinedType) && !isGetter && !isSetter)
 	{
 		Object.addMember(&function->environment, identifierOp.value.data.key, value, Value(hidden));
@@ -1648,6 +1703,12 @@ struct OpList * sourceElements (struct Parser *self)
 	++self->sourceDepth;
 	
 	self->function->oplist = NULL;
+	
+	if (previewToken(self) == Lexer(stringToken)
+		&& self->lexer->text.length == 10
+		&& !memcmp("use strict", self->lexer->text.bytes, 10)
+		)
+		self->function->flags |= Function(strictMode);
 	
 	oplist = statementList(self);
 	
@@ -1694,7 +1755,7 @@ void destroy (struct Parser *self)
 	free(self), self = NULL;
 }
 
-struct Function * parseWithEnvironment (struct Parser * const self, struct Object *environment)
+struct Function * parseWithEnvironment (struct Parser * const self, struct Object *environment, struct Object *global)
 {
 	struct Function *function;
 	struct OpList *oplist;
@@ -1702,13 +1763,17 @@ struct Function * parseWithEnvironment (struct Parser * const self, struct Objec
 	assert(self);
 	
 	function = Function.create(environment);
-	nextToken(self);
-	
 	self->function = function;
-	oplist = sourceElements(self);
-	self->function = NULL;
+	self->global = global;
+	self->reserveGlobalSlots = 0;
+	if (self->strictMode)
+		function->flags |= Function(strictMode);
 	
+	nextToken(self);
+	oplist = sourceElements(self);
 	OpList.optimizeWithEnvironment(oplist, &function->environment, 0);
+	
+	Object.reserveSlots(global, self->reserveGlobalSlots);
 	
 	if (self->error)
 	{

@@ -109,11 +109,6 @@ uint32_t elementCount (struct Object *self)
 static
 void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
 {
-	const char *postfix =
-		ref->flags & Value(accessor) && !(ref->flags & Value(asData))
-		?	"is read-only accessor"
-		:	"is read-only property";
-	
 	do
 	{
 		union Object(Hashmap) *hashmap = (union Object(Hashmap) *)ref;
@@ -122,15 +117,15 @@ void readonlyError(struct Context * const context, struct Value *ref, struct Obj
 		if (hashmap >= this->hashmap && hashmap < this->hashmap + this->hashmapCount)
 		{
 			const struct Text *keyText = Key.textOf(hashmap->value.key);
-			Context.typeError(context, Chars.create("'%.*s' %s", keyText->length, keyText->bytes, postfix));
+			Context.typeError(context, Chars.create("'%.*s' is read-only", keyText->length, keyText->bytes));
 		}
 		else if (element >= this->element && element < this->element + this->elementCount)
-			Context.typeError(context, Chars.create("'%u' %s", element - this->element, postfix));
+			Context.typeError(context, Chars.create("'%u' is read-only", element - this->element));
 		
 	} while (( this = this->prototype ));
 	
 	struct Text text = Context.textSeek(context);
-	Context.typeError(context, Chars.create("'%.*s' %s", text.length, text.bytes, postfix));
+	Context.typeError(context, Chars.create("'%.*s' is read-only", text.length, text.bytes));
 }
 
 //
@@ -187,9 +182,10 @@ struct Value isPrototypeOf (struct Context * const context)
 		struct Object *v = arg0.data.object;
 		struct Object *o = Value.toObject(context, Context.this(context)).data.object;
 		
-		while (( v = v->prototype ))
+		do
 			if (v == o)
 				return Value(true);
+		while (( v = v->prototype ));
 	}
 	
 	return Value(false);
@@ -724,7 +720,7 @@ struct Object * create (struct Object *prototype)
 
 struct Object * createSized (struct Object *prototype, uint16_t size)
 {
-	struct Object *self = malloc(sizeof(*self));
+	struct Object *self = calloc(sizeof(*self), 1);
 	Pool.addObject(self);
 	return initializeSized(self, prototype, size);
 }
@@ -767,7 +763,7 @@ struct Object * initializeSized (struct Object * restrict self, struct Object * 
 		memset(self->hashmap, 0, byteSize);
 	}
 	else
-		// size is < zero = to be initialized later by caller
+		// size is == zero = to be initialized later by caller
 		self->hashmapCapacity = 2;
 	
 	return self;
@@ -937,7 +933,7 @@ struct Value putValue (struct Context *context, struct Object *self, struct Valu
 			Context.callFunction(context, ref->data.function, Value.object(self), 1 | Context(asAccessor), value);
 		else if (ref->data.function->pair)
 			Context.callFunction(context, ref->data.function->pair, Value.object(self), 1 | Context(asAccessor), value);
-		else
+		else if (context->strictMode || (context->parent && context->parent->strictMode))
 			readonlyError(context, ref, self);
 		
 		return value;
@@ -946,9 +942,14 @@ struct Value putValue (struct Context *context, struct Object *self, struct Valu
 	if (ref->check == 1)
 	{
 		if (ref->flags & Value(readonly))
-			readonlyError(context, ref, self);
-		
-		value.flags = ref->flags;
+		{
+			if (context->strictMode)
+				readonlyError(context, ref, self);
+			else
+				return value;
+		}
+		else
+			value.flags = ref->flags;
 	}
 	
 	return *ref = value;
@@ -1210,6 +1211,21 @@ void stripMap (struct Object *self)
 	self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
 	
 	memset(self->hashmap + 1, 0, sizeof(*self->hashmap));
+}
+
+void reserveSlots (struct Object *self, uint16_t slots)
+{
+	int need = (slots * 4) - (self->hashmapCapacity - self->hashmapCount);
+	
+	assert(slots < self->hashmapCapacity);
+	
+	if (need > 0)
+	{
+		uint16_t capacity = self->hashmapCapacity;
+		self->hashmapCapacity = self->hashmapCapacity? self->hashmapCapacity * 2: 2;
+		self->hashmap = realloc(self->hashmap, sizeof(*self->hashmap) * self->hashmapCapacity);
+		memset(self->hashmap + capacity, 0, sizeof(*self->hashmap) * (self->hashmapCapacity - capacity));
+	}
 }
 
 int resizeElement (struct Object *self, uint32_t size)

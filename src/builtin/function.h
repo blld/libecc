@@ -24,6 +24,7 @@
 		Function(needHeap)      = 1 << 1,
 		Function(needArguments) = 1 << 2,
 		Function(useBoundThis)  = 1 << 3,
+		Function(strictMode)    = 1 << 4,
 	};
 
 	extern struct Object * Function(prototype);
@@ -58,6 +59,7 @@ Interface(Function,
 	{
 		struct Object object;
 		struct Object environment;
+		struct Object *refObject;
 		struct OpList *oplist;
 		struct Function *pair;
 		struct Value boundThis;

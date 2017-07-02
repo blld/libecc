@@ -25,13 +25,17 @@ struct Value eval (struct Context * const context)
 {
 	struct Value value;
 	struct Input *input;
-	struct Object *environment;
 	struct Context subContext = {
 		.parent = context,
 		.this = Value.object(&context->ecc->global->environment),
 		.ecc = context->ecc,
 		.depth = context->depth + 1,
+		.environment = context->parent->strictMode? context->parent->environment: &context->ecc->global->environment,
 	};
+	
+	if (context->parent->strictMode)
+		while (subContext.environment->prototype && subContext.environment->prototype != &context->ecc->global->environment)
+			subContext.environment = subContext.environment->prototype;
 	
 	Context.assertParameterCount(context, 1);
 	
@@ -40,12 +44,6 @@ struct Value eval (struct Context * const context)
 		return value;
 	
 	input = Input.createFromBytes(Value.stringBytes(&value), Value.stringLength(&value), "(eval)");
-	
-	environment = context->parent->environment;
-	while (environment->prototype && environment->prototype != &context->ecc->global->environment)
-		environment = environment->prototype;
-	
-	subContext.environment = environment;
 	
 	Context.setTextIndex(context, Context(noIndex));
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
@@ -79,7 +77,7 @@ struct Value parseInt (struct Context * const context)
 			base = 10;
 	}
 	
-	return Lexer.scanInteger(text, base, 1);
+	return Lexer.scanInteger(text, base, Lexer(scanLazy) | (context->ecc->sloppyMode? Lexer(scanSloppy): 0));
 }
 
 static
@@ -92,7 +90,7 @@ struct Value parseFloat (struct Context * const context)
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	text = Value.textOf(&value);
-	return Lexer.scanBinary(text, 1);
+	return Lexer.scanBinary(text, Lexer(scanLazy) | (context->ecc->sloppyMode? Lexer(scanSloppy): 0));
 }
 
 static
@@ -264,13 +262,111 @@ struct Value encodeExpect (struct Context * const context, const char *exclude)
 static
 struct Value encodeURI (struct Context * const context)
 {
-	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()" ";/?:@&=+$,#");
+	return encodeExpect(context, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()" ";/?:@&=+$,#");
 }
 
 static
 struct Value encodeURIComponent (struct Context * const context)
 {
-	return encodeExpect(context, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.!~*'()");
+	return encodeExpect(context, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()");
+}
+
+static
+struct Value escape (struct Context * const context)
+{
+	const char *exclude = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 @*_+-./";
+	struct Value value;
+	struct Chars(Append) chars;
+	struct Text text;
+	struct Text(Char) c;
+	
+	Context.assertParameterCount(context, 1);
+	
+	value = Value.toString(context, Context.argument(context, 0));
+	text = Value.textOf(&value);
+	
+	Chars.beginAppend(&chars);
+	
+	while (text.length)
+	{
+		c = Text.nextCharacter(&text);
+		
+		if (c.codepoint < 0x80 && c.codepoint && strchr(exclude, c.codepoint))
+			Chars.append(&chars, "%c", c.codepoint);
+		else
+		{
+			if (c.codepoint <= 0xff)
+				Chars.append(&chars, "%%%02X", c.codepoint);
+			else if (c.codepoint < 0x010000)
+				Chars.append(&chars, "%%u%04X", c.codepoint);
+			else
+			{
+				c.codepoint -= 0x010000;
+				Chars.append(&chars, "%%u%04X", ((c.codepoint >> 10) & 0x3ff) + 0xd800);
+				Chars.append(&chars, "%%u%04X", ((c.codepoint >>  0) & 0x3ff) + 0xdc00);
+			}
+		}
+	}
+	
+	return Chars.endAppend(&chars);
+}
+
+static
+struct Value unescape (struct Context * const context)
+{
+	struct Value value;
+	struct Chars(Append) chars;
+	struct Text text;
+	struct Text(Char) c;
+	
+	Context.assertParameterCount(context, 1);
+	
+	value = Value.toString(context, Context.argument(context, 0));
+	text = Value.textOf(&value);
+	
+	Chars.beginAppend(&chars);
+	
+	while (text.length)
+	{
+		c = Text.nextCharacter(&text);
+		
+		if (c.codepoint == '%')
+		{
+			switch (Text.character(text).codepoint)
+			{
+				case '%':
+					Chars.append(&chars, "%%");
+					break;
+					
+				case 'u':
+				{
+					Text.nextCharacter(&text);
+					uint32_t cp = Lexer.uint16Hex(
+						Text.nextCharacter(&text).codepoint,
+						Text.nextCharacter(&text).codepoint,
+						Text.nextCharacter(&text).codepoint,
+						Text.nextCharacter(&text).codepoint);
+					
+					Chars.appendCodepoint(&chars, cp);
+					break;
+				}
+					
+				default:
+				{
+					uint32_t cp = Lexer.uint8Hex(
+						Text.nextCharacter(&text).codepoint,
+						Text.nextCharacter(&text).codepoint);
+					
+					Chars.appendCodepoint(&chars, cp);
+					break;
+				}
+			}
+		}
+		else
+			Chars.append(&chars, "%c", c.codepoint);
+	}
+	
+	return Chars.endAppend(&chars);
 }
 
 // MARK: - Methods
@@ -321,6 +417,8 @@ struct Function * create (void)
 	Function.addValue(self, "undefined", Value(undefined), r|h|s);
 	
 	Function.addFunction(self, "eval", eval, 1, h);
+	Function.addFunction(self, "escape", escape, 1, h);
+	Function.addFunction(self, "unescape", unescape, 1, h);
 	Function.addFunction(self, "parseInt", parseInt, 2, h);
 	Function.addFunction(self, "parseFloat", parseFloat, 1, h);
 	Function.addFunction(self, "isNaN", isNaN, 1, h);
@@ -343,6 +441,7 @@ struct Function * create (void)
 	Function.addValue(self, "SyntaxError", Value.function(Error(syntaxConstructor)), h);
 	Function.addValue(self, "TypeError", Value.function(Error(typeConstructor)), h);
 	Function.addValue(self, "URIError", Value.function(Error(uriConstructor)), h);
+	Function.addValue(self, "EvalError", Value.function(Error(evalConstructor)), h);
 	Function.addValue(self, "Math", Value.object(Math(object)), h);
 	#warning JSON
 	

@@ -55,6 +55,7 @@ textMake(syntaxErrorName, "SyntaxError");
 textMake(typeErrorName, "TypeError");
 textMake(uriErrorName, "URIError");
 textMake(inputErrorName, "InputError");
+textMake(evalErrorName, "EvalError");
 
 // MARK: - Static Members
 
@@ -699,6 +700,12 @@ int isSpace (struct Text(Char) c)
 		isspace(c.codepoint)
 		|| c.codepoint == 0xA0
 		|| c.codepoint == 0xFEFF
+		|| c.codepoint == 0x1680
+		|| c.codepoint == 0x180E
+		|| (c.codepoint >= 0x2000 && c.codepoint <= 0x200A)
+		|| c.codepoint == 0x202F
+		|| c.codepoint == 0x205F
+		|| c.codepoint == 0x3000
 		|| isLineFeed(c)
 		;
 }

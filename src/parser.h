@@ -25,7 +25,7 @@ Interface(Parser,
 	(struct Parser *, createWithLexer ,(struct Lexer *))
 	(void, destroy, (struct Parser *))
 	
-	(struct Function *, parseWithEnvironment ,(struct Parser * const, struct Object *environment))
+	(struct Function *, parseWithEnvironment ,(struct Parser * const, struct Object *environment, struct Object *global))
 	,
 	{
 		struct Lexer *lexer;
@@ -38,10 +38,13 @@ Interface(Parser,
 		} *depths;
 		uint16_t depthCount;
 		
+		struct Object *global;
 		struct Function *function;
 		uint16_t sourceDepth;
 		
 		int preferInteger;
+		int strictMode;
+		int reserveGlobalSlots;
 	}
 )
 

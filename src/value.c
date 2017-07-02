@@ -345,7 +345,7 @@ struct Value toBinary (struct Context * const context, struct Value value)
 		case Value(charsType):
 		case Value(stringType):
 		case Value(bufferType):
-			return Lexer.scanBinary(textOf(&value), 0);
+			return Lexer.scanBinary(textOf(&value), context && context->ecc->sloppyMode? Lexer(scanSloppy): 0);
 			
 		case Value(objectType):
 		case Value(errorType):
@@ -705,8 +705,6 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 		
 		return truth(!memcmp(stringBytes(&a), stringBytes(&b), aLength));
 	}
-	else if (isObject(a) && isObject(b))
-		return truth(a.data.object == b.data.object);
 	else if (a.type == b.type)
 		return Value(true);
 	

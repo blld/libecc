@@ -13,9 +13,75 @@
 
 // MARK: - Private
 
+static const struct {
+	const char *name;
+	size_t length;
+	enum Lexer(Token) token;
+} keywords[] = {
+	#define _(X) { #X, sizeof(#X) - 1, Lexer(X##Token) },
+	_(break)
+	_(case)
+	_(catch)
+	_(continue)
+	_(debugger)
+	_(default)
+	_(delete)
+	_(do)
+	_(else)
+	_(finally)
+	_(for)
+	_(function)
+	_(if)
+	_(in)
+	_(instanceof)
+	_(new)
+	_(return)
+	_(switch)
+	_(typeof)
+	_(throw)
+	_(try)
+	_(var)
+	_(void)
+	_(while)
+	_(with)
+	
+	_(void)
+	_(typeof)
+	
+	_(null)
+	_(true)
+	_(false)
+	_(this)
+	#undef _
+};
+
+static const struct {
+	const char *name;
+	size_t length;
+} reservedKeywords[] = {
+	#define _(X) { #X, sizeof(#X) - 1 },
+	_(class)
+	_(enum)
+	_(extends)
+	_(super)
+	_(const)
+	_(export)
+	_(import)
+	_(implements)
+	_(let)
+	_(private)
+	_(public)
+	_(interface)
+	_(package)
+	_(protected)
+	_(static)
+	_(yield)
+	#undef _
+};
+
 // MARK: - Static Members
 
-static inline
+static
 void addLine(struct Lexer *self, uint32_t offset)
 {
 	if (self->input->lineCount + 1 >= self->input->lineCapacity)
@@ -26,7 +92,7 @@ void addLine(struct Lexer *self, uint32_t offset)
 	self->input->lines[++self->input->lineCount] = offset;
 }
 
-static inline
+static
 unsigned char previewChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
@@ -35,27 +101,35 @@ unsigned char previewChar(struct Lexer *self)
 		return 0;
 }
 
-static inline
-unsigned char nextChar(struct Lexer *self)
+static
+uint32_t nextChar(struct Lexer *self)
 {
 	if (self->offset < self->input->length)
 	{
-		unsigned char c = self->input->bytes[self->offset++];
+		struct Text(Char) c = Text.character(Text.make(self->input->bytes + self->offset, self->input->length - self->offset));
 		
-		if ((c == '\r' && previewChar(self) != '\n') || c == '\n')
+		self->offset += c.units;
+		
+		if ((self->allowUnicodeOutsideLiteral && Text.isLineFeed(c))
+			|| (c.codepoint == '\r' && previewChar(self) != '\n')
+			|| c.codepoint == '\n'
+			)
 		{
 			self->didLineBreak = 1;
 			addLine(self, self->offset);
+			c.codepoint = '\n';
 		}
+		else if (self->allowUnicodeOutsideLiteral && Text.isSpace(c))
+			c.codepoint = ' ';
 		
-		++self->text.length;
-		return c;
+		self->text.length += c.units;
+		return c.codepoint;
 	}
 	else
 		return 0;
 }
 
-static inline
+static
 int acceptChar(struct Lexer *self, char c)
 {
 	if (previewChar(self) == c)
@@ -67,13 +141,13 @@ int acceptChar(struct Lexer *self, char c)
 		return 0;
 }
 
-static inline
+static
 char eof(struct Lexer *self)
 {
 	return self->offset >= self->input->length;
 }
 
-static inline
+static
 enum Lexer(Token) syntaxError(struct Lexer *self, struct Chars *message)
 {
 	struct Error *error = Error.syntaxError(self->text, message);
@@ -104,7 +178,7 @@ void destroy (struct Lexer *self)
 
 enum Lexer(Token) nextToken (struct Lexer *self)
 {
-	unsigned char c;
+	uint32_t c;
 	assert(self);
 	
 	self->value = Value(undefined);
@@ -148,22 +222,19 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 				{
 					while (!eof(self))
 					{
-						int c = self->input->bytes[self->offset++];
-						++self->text.length;
+						int c = nextChar(self);
 						
 						if (c == '\\')
-						{
-							++self->offset;
-							++self->text.length;
-						}
+							c = nextChar(self);
 						else if (c == '/')
 						{
-							while (isalpha(previewChar(self)))
+							while (isalnum(previewChar(self)) || previewChar(self) == '\\')
 								nextChar(self);
 							
 							return Lexer(regexpToken);
 						}
-						else if (c == '\r' || c == '\n')
+						
+						if (c == '\n')
 							break;
 					}
 					return syntaxError(self, Chars.create("unterminated regexp literal"));
@@ -243,12 +314,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 								else
 									Chars.append(&chars, "%c", bytes[index]);
 							
-							self->value = Chars.endAppend(&chars);
-							if (self->value.type == Value(charsType))
-								self->value.data.chars->referenceCount++;
-							
-							Input.attachValue(self->input, self->value);
-							
+							self->value = Input.attachValue(self->input, Chars.endAppend(&chars));
 							return Lexer(escapedStringToken);
 						}
 						
@@ -459,78 +525,73 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			
 			default:
 			{
-				if (isalpha(c) || c == '$' || c == '_')
+				if (isalpha(c) || c == '$' || c == '_' || (self->allowUnicodeOutsideLiteral && (c == '\\' || c >= 0x80)))
 				{
-					static const struct {
-						const char *name;
-						size_t length;
-						enum Lexer(Token) token;
-					} keywords[] = {
-						#define _(X) { #X, sizeof(#X) - 1, Lexer(X##Token) },
-						_(break)
-						_(case)
-						_(catch)
-						_(continue)
-						_(debugger)
-						_(default)
-						_(delete)
-						_(do)
-						_(else)
-						_(finally)
-						_(for)
-						_(function)
-						_(if)
-						_(in)
-						_(instanceof)
-						_(new)
-						_(return)
-						_(switch)
-						_(typeof)
-						_(throw)
-						_(try)
-						_(var)
-						_(void)
-						_(while)
-						_(with)
+					struct Text text = self->text;
+					int k, haveEscape = 0;
+					
+					do
+					{
+						if (c == '\\' && acceptChar(self, 'u'))
+						{
+							char
+								u1 = nextChar(self),
+								u2 = nextChar(self),
+								u3 = nextChar(self),
+								u4 = nextChar(self);
+							
+							if (isxdigit(u1) && isxdigit(u2) && isxdigit(u3) && isxdigit(u4))
+							{
+								c = uint16Hex(u1, u2, u3, u4);
+								haveEscape = 1;
+							}
+							else
+								break;
+						}
 						
-						_(void)
-						_(typeof)
+						if (Text.isSpace((struct Text(Char)){ c }))
+							break;
 						
-						_(null)
-						_(true)
-						_(false)
-						_(this)
-						#undef _
-					};
+						text = self->text;
+						c = nextChar(self);
+					}
+					while (isalnum(c) || c == '$' || c == '_' || (self->allowUnicodeOutsideLiteral && (c == '\\' || c >= 0x80)));
 					
-					static const struct {
-						const char *name;
-						size_t length;
-					} reservedKeywords[] = {
-						#define _(X) { #X, sizeof(#X) - 1 },
-						_(class)
-						_(enum)
-						_(extends)
-						_(super)
-						_(const)
-						_(export)
-						_(import)
-						_(implements)
-						_(let)
-						_(private)
-						_(public)
-						_(interface)
-						_(package)
-						_(protected)
-						_(static)
-						_(yield)
-						#undef _
-					};
+					self->text = text;
+					self->offset = (uint32_t)(text.bytes + text.length - self->input->bytes);
 					
-					int k;
-					
-					while (isalnum(previewChar(self)) || previewChar(self) == '$' || previewChar(self) == '_')
-						nextChar(self);
+					if (haveEscape)
+					{
+						struct Text text = self->text;
+						struct Chars(Append) chars;
+						
+						Chars.beginAppend(&chars);
+						
+						while (text.length)
+						{
+							c = Text.nextCharacter(&text).codepoint;
+							
+							if (c == '\\' && Text.nextCharacter(&text).codepoint == 'u')
+							{
+								char
+									u1 = Text.nextCharacter(&text).codepoint,
+									u2 = Text.nextCharacter(&text).codepoint,
+									u3 = Text.nextCharacter(&text).codepoint,
+									u4 = Text.nextCharacter(&text).codepoint;
+								
+								if (isxdigit(u1) && isxdigit(u2) && isxdigit(u3) && isxdigit(u4))
+									c = uint16Hex(u1, u2, u3, u4);
+								else
+									Text.advance(&text, -5);
+							}
+							
+							Chars.appendCodepoint(&chars, c);
+						}
+						
+						struct Value value = Input.attachValue(self->input, Chars.endAppend(&chars));
+						self->value = Value.key(Key.makeWithText(Value.textOf(&value), value.type != Value(charsType)));
+						return Lexer(identifierToken);
+					}
 					
 					if (!self->disallowKeyword)
 					{
@@ -547,10 +608,14 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					return Lexer(identifierToken);
 				}
 				else
-					if (isprint(c))
+				{
+					if (c >= 0x80)
+						return syntaxError(self, Chars.create("invalid character '%.*s'", self->text.length, self->text.bytes));
+					else if (isprint(c))
 						return syntaxError(self, Chars.create("invalid character '%c'", c));
 					else
 						return syntaxError(self, Chars.create("invalid character '\\%d'", c & 0xff));
+				}
 			}
 		}
 	}
@@ -589,14 +654,26 @@ const char * tokenChars (enum Lexer(Token) token, char buffer[4])
 	return "unknow";
 }
 
-struct Value scanBinary (struct Text text, int lazy)
+struct Value scanBinary (struct Text text, enum Lexer(ScanFlags) flags)
 {
+	int lazy = flags & Lexer(scanLazy);
 	char buffer[text.length + 1];
 	char *end = buffer;
 	double binary = NAN;
 	
-	while (text.length && isspace(*text.bytes))
-		Text.advance(&text, 1);
+	if (flags & Lexer(scanSloppy))
+	{
+		struct Text tail = Text.make(text.bytes + text.length, text.length);
+		
+		while (tail.length && Text.isSpace(Text.prevCharacter(&tail)))
+			text.length = tail.length;
+		
+		while (text.length && Text.isSpace(Text.character(text)))
+			Text.nextCharacter(&text);
+	}
+	else
+		while (text.length && isspace(*text.bytes))
+			Text.advance(&text, 1);
 	
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';
@@ -654,14 +731,26 @@ static double strtolHexFallback (struct Text text)
 	return binary * sign;
 }
 
-struct Value scanInteger (struct Text text, int base, int lazy)
+struct Value scanInteger (struct Text text, int base, enum Lexer(ScanFlags) flags)
 {
+	int lazy = flags & Lexer(scanLazy);
 	long integer;
 	char buffer[text.length + 1];
 	char *end;
 	
-	if (!text.length)
-		return Value.binary(NAN);
+	if (flags & Lexer(scanSloppy))
+	{
+		struct Text tail = Text.make(text.bytes + text.length, text.length);
+		
+		while (tail.length && Text.isSpace(Text.prevCharacter(&tail)))
+			text.length = tail.length;
+		
+		while (text.length && Text.isSpace(Text.character(text)))
+			Text.nextCharacter(&text);
+	}
+	else
+		while (text.length && isspace(*text.bytes))
+			Text.advance(&text, 1);
 	
 	memcpy(buffer, text.bytes, text.length);
 	buffer[text.length] = '\0';

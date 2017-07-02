@@ -23,6 +23,7 @@
 	extern struct Object * Error(syntaxPrototype);
 	extern struct Object * Error(typePrototype);
 	extern struct Object * Error(uriPrototype);
+	extern struct Object * Error(evalPrototype);
 
 	extern struct Function * Error(constructor);
 	extern struct Function * Error(rangeConstructor);
@@ -30,6 +31,7 @@
 	extern struct Function * Error(syntaxConstructor);
 	extern struct Function * Error(typeConstructor);
 	extern struct Function * Error(uriConstructor);
+	extern struct Function * Error(evalConstructor);
 
 	extern const struct Object(Type) Error(type);
 

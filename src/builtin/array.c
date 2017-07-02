@@ -53,7 +53,7 @@ void objectResize (struct Context * const context, struct Object *object, uint32
 {
 	if (object->type == &Array(type))
 	{
-		if (Object.resizeElement(object, length))
+		if (Object.resizeElement(object, length) && context->parent->strictMode)
 		{
 			Context.setTextIndex(context, Context(callIndex));
 			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
@@ -190,7 +190,7 @@ struct Value pop (struct Context * const context)
 		--length;
 		value = Object.getElement(context, this, length);
 		
-		if (!Object.deleteElement(this, length))
+		if (!Object.deleteElement(this, length) && context->parent->strictMode)
 		{
 			Context.setTextIndex(context, Context(callIndex));
 			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
@@ -288,7 +288,7 @@ struct Value shift (struct Context * const context)
 		for (index = 0, count = length; index < count; ++index)
 			Object.putElement(context, this, index, Object.getElement(context, this, index + 1));
 		
-		if (!Object.deleteElement(this, length))
+		if (!Object.deleteElement(this, length) && context->parent->strictMode)
 		{
 			Context.setTextIndex(context, Context(callIndex));
 			Context.typeError(context, Chars.create("'%u' is non-configurable", length));
@@ -793,7 +793,7 @@ struct Value setLength (struct Context * const context)
 	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)
 		Context.rangeError(context, Chars.create("invalid array length"));
 	
-	if (Object.resizeElement(context->this.data.object, length))
+	if (Object.resizeElement(context->this.data.object, length) && context->parent->strictMode)
 		Context.typeError(context, Chars.create("'%u' is non-configurable", context->this.data.object->elementCount));
 	
 	return Value(undefined);

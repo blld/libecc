@@ -55,6 +55,7 @@
 	extern const struct Text Text(typeErrorName);
 	extern const struct Text Text(uriErrorName);
 	extern const struct Text Text(inputErrorName);
+	extern const struct Text Text(evalErrorName);
 
 	struct Text(Char) {
 		uint32_t codepoint;

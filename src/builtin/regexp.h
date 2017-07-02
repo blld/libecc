@@ -31,6 +31,10 @@
 
 	struct RegExp(Node);
 
+	enum RegExp(Options) {
+		RegExp(allowUnicodeFlags) = 1 << 0,
+	};
+
 #endif
 
 
@@ -39,7 +43,7 @@ Interface(RegExp,
 	(void, setup ,(void))
 	(void, teardown ,(void))
 	
-	(struct RegExp *, create ,(struct Chars *pattern, struct Error **))
+	(struct RegExp *, create ,(struct Chars *pattern, struct Error **, enum RegExp(Options)))
 	(struct RegExp *, createWith ,(struct Context *context, struct Value pattern, struct Value flags))
 	
 	(int, matchWithState ,(struct RegExp *, struct RegExp(State) *))

@@ -15,6 +15,7 @@
 // MARK: - Private
 
 static void mark (struct Object *object);
+static void capture (struct Object *object);
 static void finalize (struct Object *object);
 
 struct Object * String(prototype) = NULL;
@@ -23,6 +24,7 @@ struct Function * String(constructor) = NULL;
 const struct Object(Type) String(type) = {
 	.text = &Text(stringType),
 	.mark = mark,
+	.capture = capture,
 	.finalize = finalize,
 };
 
@@ -32,6 +34,14 @@ void mark (struct Object *object)
 	struct String *self = (struct String *)object;
 	
 	Pool.markValue(Value.chars(self->value));
+}
+
+static
+void capture (struct Object *object)
+{
+	struct String *self = (struct String *)object;
+	
+	++self->value->referenceCount;
 }
 
 static
@@ -235,7 +245,7 @@ struct Value lastIndexOf (struct Context * const context)
 	
 	for (;;)
 	{
-		if (!memcmp(text.bytes, searchChars, searchLength))
+		if (length - (text.bytes - chars) >= searchLength && !memcmp(text.bytes, searchChars, searchLength))
 			return Value.integer(index);
 		
 		if (!text.length)
@@ -1071,7 +1081,6 @@ struct String * create (struct Chars *chars)
 	Object.initialize(&self->object, String(prototype));
 	
 	self->value = chars;
-	++chars->referenceCount;
 	
 	return self;
 }

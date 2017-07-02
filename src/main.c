@@ -8,12 +8,13 @@
 
 #include "ecc.h"
 
-static int printUsage (void);
-static struct Value print (struct Context * const context);
-static struct Value alert (struct Context * const context);
-static int runTest (int verbosity);
-
 static struct Ecc *ecc;
+
+static int runTest (int verbosity);
+static int alertUsage (void);
+
+static struct Value alert (struct Context * const context);
+static struct Value print (struct Context * const context);
 
 int main (int argc, const char * argv[])
 {
@@ -21,11 +22,11 @@ int main (int argc, const char * argv[])
 	
 	ecc = Ecc.create();
 	
-	Ecc.addFunction(ecc, "print", print, -1, 0);
 	Ecc.addFunction(ecc, "alert", alert, -1, 0);
+	Ecc.addFunction(ecc, "print", print, -1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
-		result = printUsage();
+		result = alertUsage();
 	else if (!strcmp(argv[1], "--test"))
 		result = runTest(0);
 	else if (!strcmp(argv[1], "--test-verbose"))
@@ -36,7 +37,7 @@ int main (int argc, const char * argv[])
 	{
 		struct Object *arguments = Arguments.createWithCList(argc - 2, &argv[2]);
 		Ecc.addValue(ecc, "arguments", Value.object(arguments), 0);
-		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]), Ecc(globalThis));
+		result = Ecc.evalInput(ecc, Input.createFromFile(argv[1]), Ecc(sloppyMode));
 	}
 	
 	Ecc.destroy(ecc), ecc = NULL;
@@ -46,7 +47,7 @@ int main (int argc, const char * argv[])
 
 //
 
-static int printUsage (void)
+static int alertUsage (void)
 {
 	const char error[] = "Usage";
 	Env.printError(sizeof(error)-1, error, "libecc [<filename> | --test | --test-verbose | --test-quiet]");
@@ -76,14 +77,14 @@ static struct Value dumpTo (struct Context * const context, FILE *file)
 	return Value(undefined);
 }
 
-static struct Value print (struct Context * const context)
-{
-	return dumpTo(context, stdout);
-}
-
 static struct Value alert (struct Context * const context)
 {
 	return dumpTo(context, stderr);
+}
+
+static struct Value print (struct Context * const context)
+{
+	return dumpTo(context, stdout);
 }
 
 //
@@ -193,7 +194,7 @@ static void testLexer (void)
 	test("'\\x44' + 2", "D2", NULL);
 	test("'\\u4F8B'", "例", NULL);
 	test("'例abc'", "例abc", NULL);
-	test("例", "SyntaxError: invalid character '\\228'", NULL);
+	test("例", "SyntaxError: invalid character '例'", NULL);
 	test("/abc", "SyntaxError: unterminated regexp literal"
 	,    "^~~~");
 	test("/abc\n""  ", "SyntaxError: unterminated regexp literal"
@@ -569,15 +570,14 @@ static void testDelete (void)
 
 static void testGlobal (void)
 {
-	test("typeof this", "undefined", NULL);
-	test("typeof global", "object", NULL);
+	test("typeof this", "object", NULL);
 	test("null", "null", NULL);
-	test("global.null", "undefined", NULL);
-	test("global.Infinity", "Infinity", NULL);
-	test("-global.Infinity", "-Infinity", NULL);
-	test("global.NaN", "NaN", NULL);
-	test("global.undefined", "undefined", NULL);
-	test("typeof global.eval", "function", NULL);
+	test("this.null", "undefined", NULL);
+	test("this.Infinity", "Infinity", NULL);
+	test("-this.Infinity", "-Infinity", NULL);
+	test("this.NaN", "NaN", NULL);
+	test("this.undefined", "undefined", NULL);
+	test("typeof this.eval", "function", NULL);
 	test("decodeURI('abc/def')", "abc/def", NULL);
 	test("decodeURI('abc%2fdef')", "abc%2fdef", NULL);
 	test("decodeURI('abc%2edef')", "abc.def", NULL);
@@ -601,11 +601,13 @@ static void testGlobal (void)
 	test("encodeURIComponent(';/?:@&=+$,#')", "%3B%2F%3F%3A%40%26%3D%2B%24%2C%23", NULL);
 	test("NaN = true", "TypeError: 'NaN' is read-only"
 	,    "^~~~~~~~~~");
-	test("delete global.NaN", "TypeError: 'NaN' is non-configurable"
-	,    "       ^~~~~~~~~~");
+	test("delete this.NaN", "TypeError: 'NaN' is non-configurable"
+	,    "       ^~~~~~~~");
 	test("parseFloat('0x1')", "0", NULL);
 	test("parseFloat('infinity')", "NaN", NULL);
 	test("parseFloat('Infinity')", "Infinity", NULL);
+	test("escape('éççäîtest./例')", "%E9%E7%E7%E4%EEtest./%u4F8B", NULL);
+	test("unescape('%E9%E7%E7%E4%EEtest./%u4F8B')", "éççäîtest./例", NULL);
 }
 
 static void testFunction (void)
@@ -788,32 +790,32 @@ static void testObject (void)
 	test("var a = {}; Object.freeze(a); a['b'] = 2", "TypeError: object is not extensible"
 	,    "                              ^~~~~~~~~~");
 	test("var a = { b:1 }; ++a.b", "2", NULL);
-	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); ++a.b", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~");
-	test("var a = { b:1 }; Object.freeze(a); a.b += 1", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); a.b += 1", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~~~~");
-	test("var a = { b:1 }; Object.freeze(a); a.b -= 1", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); a.b -= 1", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~~~~");
-	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); a.b += 2", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~~~~");
-	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); a.b = 2", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~~~");
-	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: 'b' is read-only property"
+	test("var a = { b:1 }; Object.freeze(a); a['b'] = 2", "TypeError: 'b' is read-only"
 	,    "                                   ^~~~~~~~~~");
 	test("var a = { v: 1, get b() { return this.v }, set b(v) { this.v = v } }; ++a.b", "2", NULL);
-	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: 'b' is read-only accessor"
+	test("var a = { v: 1, get b() { return this.v } }; ++a.b", "TypeError: 'b' is read-only"
 	,    "                                             ^~~~~");
-	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: 'b' is read-only accessor"
+	test("var a = { v: 1, get b() { return this.v } }; a.b += 2", "TypeError: 'b' is read-only"
 	,    "                                             ^~~~~~~~");
-	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: 'b' is read-only accessor"
+	test("var a = { v: 1, get b() { return this.v } }; a.b = 2", "TypeError: 'b' is read-only"
 	,    "                                             ^~~~~~~");
-	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: 'b' is read-only accessor"
+	test("var a = { v: 1, get b() { return this.v } }; a['b'] = 2", "TypeError: 'b' is read-only"
 	,    "                                             ^~~~~~~~~~");
 	test("var o = {}; Object.defineProperty(o, 'a', 123); o.a = 1;", "TypeError: not an object"
 	,    "                                          ^~~           ");
-	test("var o = {}; Object.defineProperty(o, 'a', {}); o.a = 1;", "TypeError: 'a' is read-only property"
+	test("var o = {}; Object.defineProperty(o, 'a', {}); o.a = 1;", "TypeError: 'a' is read-only"
 	,    "                                               ^~~~~~~ ");
-	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only property"
+	test("var o = {}; Object.defineProperty(o, 2, {}); o[2] = 1;", "TypeError: '2' is read-only"
 	,    "                                             ^~~~~~~~ ");
 	test("var o = {}; Object.defineProperty(o, 'p', { get: 123 });", "TypeError: getter is not a function"
 	,    "                                          ^~~~~~~~~~~~  ");
@@ -955,7 +957,7 @@ static void testArray (void)
 	test("var a = [1,2]; a.reverse(); a.toString()", "2,1", NULL);
 	test("var a = [1,2,'abc']; a.reverse(); a.toString()", "abc,2,1", NULL);
 	test("var a = [1, 2], b = ''; b += a.shift(); b += a.shift(); b += a.shift()", "12undefined", NULL);
-	test("var a = ['abc', 'def']; Object.defineProperty(a, 0, {get: function(){ return this[1]; }}); a.shift()", "TypeError: '0' is read-only accessor"
+	test("var a = ['abc', 'def']; Object.defineProperty(a, 0, {get: function(){ return this[1]; }}); a.shift()", "TypeError: '0' is read-only"
 	,    "                                                                                           ^~~~~~~~~");
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift()", "123", NULL);
 	test("var a = [123, 'abc', 'def']; Object.defineProperty(a, 1, {get: function(){ return this[2]; },set: function(v){}}); a.shift(); a", "def,", NULL);
@@ -983,7 +985,7 @@ static void testArray (void)
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a.pop()", "2", NULL);
 	test("var a = []; Object.defineProperty(a, 2, {get: function(){}}); a.pop()", "TypeError: '2' is non-configurable"
 	,    "                                                              ^~~~~~~");
-	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a = a.reverse()", "TypeError: '1' is read-only accessor"
+	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }}); a = a.reverse()", "TypeError: '1' is read-only"
 	,    "                                                                                                     ^~~~~~~~~~~");
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a.push(123); a[1]", "3", NULL);
 	test("var a = [ 'abc', 'def' ]; Object.defineProperty(a, 1, {get: function(){ return this.length; }, set: function(v){ }}); a = a.reverse(); a.push(123); a[0]", "2", NULL);
@@ -1221,7 +1223,7 @@ static void testString (void)
 	test("''.valueOf.call(123)", "TypeError: 'this' is not a string"
 	,    "                ^~~ ");
 	test("'aべcaべc'.length", "6", NULL);
-	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only property"
+	test("var a = new String('aべcaべc'); a.length = 12; a.length", "TypeError: 'length' is read-only"
 	,    "                     べ  べ     ^~~~~~~~~~~~~          ");
 	test("'abせd'.slice()", "abせd", NULL);
 	test("'abせd'.slice(1)", "bせd", NULL);
@@ -1347,8 +1349,8 @@ static void testString (void)
 	test("[].join.call('ab𐐷d')", "a,b,\xED\xA0\x81,\xED\xB0\xB7,d", NULL);
 	test("'ab𐐷d'.split('').join('')", "ab𐐷d", NULL);
 	test("'a\\0b'.charAt(2)", "b", NULL);
-	test("global.escapedText = function(){ return '\\uD801\\uDC37' }; global.escapedText()", "𐐷", NULL);
-	test("global.escapedText()", "𐐷", NULL);
+	test("this.escapedText = function(){ return '\\uD801\\uDC37' }; escapedText()", "𐐷", NULL);
+	test("escapedText()", "𐐷", NULL);
 	test("'uuabc123abc'.replace(/a(bc)/, 'X')", "uuX123abc", NULL);
 	test("'uuabc123abc'.replace(/a(bc)/g, 'X')", "uuX123X", NULL);
 	test("'uuabc123abc'.replace(/a(bc)/, function (){ return arguments.length })", "uu4123abc", NULL);
@@ -1446,17 +1448,13 @@ static void testRegExp (void)
 	test("/[a-z][^1-9][a-z]/.exec('a1b  b2c  c3d  def  f4g')", "def", NULL);
 	test("/[\\d][\\12-\\14]{1,}[^\\d]/.exec('line1\\n\\n\\n\\n\\nline2')", "1\n\n\n\n\nl", NULL);
 	test("RegExp('\\d', '1')", "SyntaxError: invalid flag"
-	/*   /\d/1*/
-	,    "   ^");
+	,             "   " "^");
 	test("RegExp('\\d', 'igg')", "SyntaxError: invalid flag"
-	/*   /\d/igg*/
-	,    "     ^");
+	,             "   " "  ^");
 }
 
 static int runTest (int verbosity)
 {
-	Function.addValue(ecc->global, "global", Value.object(&ecc->global->environment), 0);
-	
 	testVerbosity = verbosity;
 	
 //	test("debugger", "undefined", NULL);

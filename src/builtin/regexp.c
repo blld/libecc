@@ -16,6 +16,7 @@
 // MARK: - Private
 
 static void mark (struct Object *object);
+static void capture (struct Object *object);
 static void finalize (struct Object *object);
 
 struct Object * RegExp(prototype) = NULL;
@@ -24,6 +25,7 @@ struct Function * RegExp(constructor) = NULL;
 const struct Object(Type) RegExp(type) = {
 	.text = &Text(regexpType),
 	.mark = mark,
+	.capture = capture,
 	.finalize = finalize,
 };
 
@@ -82,6 +84,15 @@ void mark (struct Object *object)
 	
 	Pool.markValue(Value.chars(self->pattern));
 	Pool.markValue(Value.chars(self->source));
+}
+
+static
+void capture (struct Object *object)
+{
+	struct RegExp *self = (struct RegExp *)object;
+	
+	++self->pattern->referenceCount;
+	++self->source->referenceCount;
 }
 
 static
@@ -1192,7 +1203,7 @@ void setup ()
 	
 	Function.setupBuiltinObject(
 		&RegExp(constructor), constructor, 2,
-		&RegExp(prototype), Value.regexp(create(Chars.create("/(?:)/"), NULL)),
+		&RegExp(prototype), Value.regexp(create(Chars.create("/(?:)/"), NULL, 0)),
 		&RegExp(type));
 	
 	Function.addToObject(RegExp(prototype), "toString", toString, 0, h);
@@ -1206,7 +1217,7 @@ void teardown (void)
 	RegExp(constructor) = NULL;
 }
 
-struct RegExp * create (struct Chars *s, struct Error **error)
+struct RegExp * create (struct Chars *s, struct Error **error, enum RegExp(Options) options)
 {
 	struct Parse p = { 0 };
 	
@@ -1240,29 +1251,29 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 	self->count = p.count + 1;
 	self->source = Chars.createWithBytes(p.c - self->pattern->bytes - 1, self->pattern->bytes + 1);
 	
-	++self->pattern->referenceCount;
-	++self->source->referenceCount;
+//	++self->pattern->referenceCount;
+//	++self->source->referenceCount;
 	
 	if (*p.c == '/')
 		for (;;)
 		{
 			switch (*(++p.c))
 			{
-				case 'g':
+				case 'g': g:
 					if (self->global == 1)
 						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
 					self->global = 1;
 					continue;
 					
-				case 'i':
+				case 'i': i:
 					if (self->ignoreCase == 1)
 						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
 					self->ignoreCase = 1;
 					continue;
 					
-				case 'm':
+				case 'm': m:
 					if (self->multiline == 1)
 						*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
 					
@@ -1271,6 +1282,26 @@ struct RegExp * create (struct Chars *s, struct Error **error)
 					
 				case '\0':
 					break;
+					
+				case '\\':
+					if (options & RegExp(allowUnicodeFlags))
+					{
+						if (!memcmp(p.c + 1, "u0067", 5))
+						{
+							p.c += 5;
+							goto g;
+						}
+						else if (!memcmp(p.c + 1, "u0069", 5))
+						{
+							p.c += 5;
+							goto i;
+						}
+						else if (!memcmp(p.c + 1, "u006d", 5) || !memcmp(p.c + 1, "u006D", 5))
+						{
+							p.c += 5;
+							goto m;
+						}
+					}
 					
 				default:
 					*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid flag"));
@@ -1314,7 +1345,10 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 		else
 		{
 			if (pattern.type == Value(undefinedType) || (Value.isString(pattern) && !Value.stringLength(&pattern)))
-				Chars.append(&chars, "(?:)");
+			{
+				if (!context->ecc->sloppyMode)
+					Chars.append(&chars, "(?:)");
+			}
 			else
 				Chars.appendValue(&chars, context, pattern);
 		}
@@ -1330,7 +1364,7 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 	}
 	
 	assert(value.type == Value(charsType));
-	regexp = create(value.data.chars, &error);
+	regexp = create(value.data.chars, &error, context->ecc->sloppyMode? RegExp(allowUnicodeFlags): 0);
 	if (error)
 	{
 		context->ecc->ofLine = Value.textOf(&value);
