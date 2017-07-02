@@ -464,8 +464,11 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 				return join(node(opSave, count * 2, NULL), join(n, node(opSave, count * 2 + 1, NULL)));
 				
 			case '=':
+			{
+				int c = nlen(n);
 				p->disallowQuantifier = 1;
-				return join(node(opLookahead, nlen(n) + 2, NULL), join(n, node(opMatch, 0, NULL)));
+				return join(node(opLookahead, c + 2, NULL), join(n, node(opMatch, 0, NULL)));
+			}
 				
 			case '!':
 			{
@@ -475,7 +478,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 					if (n[i].opcode == opSave)
 						n[i].opcode = opNSave;
 				
-				return join(node(opNLookahead, nlen(n) + 2, NULL), join(n, node(opMatch, 0, NULL)));
+				return join(node(opNLookahead, c + 2, NULL), join(n, node(opMatch, 0, NULL)));
 			}
 			case ':':
 				return n;
