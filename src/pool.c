@@ -171,15 +171,6 @@ void cleanupObject(struct Object *object)
 	if (object->prototype && object->prototype->referenceCount)
 		--object->prototype->referenceCount;
 	
-	if (object->type == &String(type))
-		--((struct String *)object)->value->referenceCount;
-	
-	if (object->type == &RegExp(type))
-	{
-		--((struct RegExp *)object)->pattern->referenceCount;
-		--((struct RegExp *)object)->source->referenceCount;
-	}
-	
 	if (object->elementCount)
 		while (object->elementCount--)
 			if ((value = object->element[object->elementCount].value).check == 1)

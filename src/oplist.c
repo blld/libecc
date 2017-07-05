@@ -251,6 +251,7 @@ normal:
 void optimizeWithEnvironment (struct OpList *self, struct Object *environment, uint32_t selfIndex)
 {
 	uint32_t index, count, slot, haveLocal = 0, environmentLevel = 0;
+	struct Key environments[0xff];
 	
 	if (!self)
 		return;
@@ -270,7 +271,7 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment, u
 		}
 		
 		if (self->ops[index].native == Op.pushEnvironment)
-			++environmentLevel;
+			environments[environmentLevel++] = self->ops[index].value.data.key;
 		
 		if (self->ops[index].native == Op.popEnvironment)
 			--environmentLevel;
@@ -284,8 +285,14 @@ void optimizeWithEnvironment (struct OpList *self, struct Object *environment, u
 			)
 		{
 			struct Object *searchEnvironment = environment;
-			uint32_t level = environmentLevel;
+			uint32_t level;
 			
+			level = environmentLevel;
+			while (level--)
+				if (Key.isEqual(environments[level], self->ops[index].value.data.key))
+					goto notfound;
+			
+			level = environmentLevel;
 			do
 			{
 				for (slot = searchEnvironment->hashmapCount; slot--;)

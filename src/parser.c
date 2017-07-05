@@ -1647,12 +1647,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	expectToken(self, ')');
 	expectToken(self, '{');
 	
-	if ((previewToken(self) == Lexer(stringToken)
-		&& self->lexer->text.length == 10
-		&& !memcmp("use strict", self->lexer->text.bytes, 10))
-		||
-		(parentFunction->flags & Function(strictMode))
-		)
+	if (parentFunction->flags & Function(strictMode))
 		self->function->flags |= Function(strictMode);
 	
 	oplist = OpList.join(oplist, sourceElements(self));

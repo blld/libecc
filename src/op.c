@@ -70,7 +70,7 @@ void usage(void)
 static
 struct Value trapOp(struct Context *context, int offset)
 {
-_	/* gdb/lldb infos: p usage() */
+_/*     gdb/lldb infos: p usage()     */
 }
 
 
@@ -108,6 +108,8 @@ static
 void capture (struct Object *object)
 {
 	uint32_t index, count;
+	union Object(Element) *element;
+	union Object(Hashmap) *hashmap;
 	
 	if (object->prototype)
 		++object->prototype->referenceCount;
@@ -115,7 +117,7 @@ void capture (struct Object *object)
 	count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
 	for (index = 0; index < count; ++index)
 	{
-		union Object(Element) *element = object->element + index;
+		element = object->element + index;
 		if (element->value.check == 1)
 			retain(element->value);
 	}
@@ -123,7 +125,7 @@ void capture (struct Object *object)
 	count = object->hashmapCount;
 	for (index = 2; index < count; ++index)
 	{
-		union Object(Hashmap) *hashmap = object->hashmap + index;
+		hashmap = object->hashmap + index;
 		if (hashmap->value.check == 1)
 			retain(hashmap->value);
 	}
@@ -223,8 +225,9 @@ struct Value callOps (struct Context * const context, struct Object *environment
 	if (context->depth >= context->ecc->maximumCallDepth)
 		Context.rangeError(context, Chars.create("maximum depth exceeded"));
 	
-	if (!context->parent->strictMode && context->this.type == Value(undefinedType))
-		context->this = Value.object(&context->ecc->global->environment);
+	if (!context->parent->strictMode)
+		if (context->this.type == Value(undefinedType) || context->this.type == Value(nullType))
+			context->this = Value.object(&context->ecc->global->environment);
 	
 	context->environment = environment;
 	return context->ops->native(context);
@@ -532,10 +535,7 @@ struct Value construct (struct Context * const context)
 		goto error;
 	
 	if (!Value.isObject(*prototype))
-	{
-		++Object(prototype)->referenceCount;
 		object = Value.object(Object.create(Object(prototype)));
-	}
 	else if (prototype->type == Value(functionType))
 	{
 		++prototype->data.function->object.referenceCount;
@@ -568,13 +568,20 @@ struct Value call (struct Context * const context)
 	const struct Text *textCall = opText(0);
 	const struct Text *text = opText(1);
 	int32_t argumentCount = opValue().data.integer;
-	struct Value value = nextOp();
+	struct Value value;
 	struct Value this;
+	
+	context->inEnvironmentObject = 0;
+	value = nextOp();
 	
 	if (context->inEnvironmentObject)
 	{
-		++context->environment->referenceCount;
-		this = Value.objectValue(context->environment);
+		struct Context *seek = context;
+		while (seek->parent && seek->parent->refObject == context->refObject)
+			seek = seek->parent;
+		
+		++seek->environment->referenceCount;
+		this = Value.objectValue(seek->environment);
 	}
 	else
 		this = Value(undefined);
@@ -890,6 +897,7 @@ void prepareObject (struct Context * const context, struct Value *object)
 	{
 		Context.setText(context, textObject);
 		*object = Value.toObject(context, *object);
+		capture(object->data.object);
 	}
 }
 
@@ -1692,14 +1700,17 @@ struct Value throw (struct Context * const context)
 
 struct Value with (struct Context * const context)
 {
+	struct Object *environment = context->environment;
 	struct Object *refObject = context->refObject;
 	struct Object *object = Value.toObject(context, nextOp()).data.object;
 	struct Value value;
 	
-	context->refObject = context->environment;
+	if (!refObject)
+		context->refObject = context->environment;
+	
 	context->environment = object;
 	value = nextOp();
-	context->environment = context->refObject;
+	context->environment = environment;
 	context->refObject = refObject;
 	
 	if (context->breaker)
