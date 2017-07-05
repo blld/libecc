@@ -532,21 +532,22 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					
 					do
 					{
-						if (c == '\\' && acceptChar(self, 'u'))
+						if (c == '\\')
 						{
 							char
+								uu = nextChar(self),
 								u1 = nextChar(self),
 								u2 = nextChar(self),
 								u3 = nextChar(self),
 								u4 = nextChar(self);
 							
-							if (isxdigit(u1) && isxdigit(u2) && isxdigit(u3) && isxdigit(u4))
+							if (uu == 'u' && isxdigit(u1) && isxdigit(u2) && isxdigit(u3) && isxdigit(u4))
 							{
 								c = uint16Hex(u1, u2, u3, u4);
 								haveEscape = 1;
 							}
 							else
-								break;
+								return syntaxError(self, Chars.create("incomplete unicode escape"));
 						}
 						
 						if (Text.isSpace((struct Text(Char)){ c }))
