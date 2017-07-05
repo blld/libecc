@@ -18,31 +18,38 @@
 	#include "text.h"
 
 	extern struct Key Key(none);
-	extern struct Key Key(prototype);
-	extern struct Key Key(constructor);
-	extern struct Key Key(length);
-	extern struct Key Key(arguments);
-	extern struct Key Key(callee);
-	extern struct Key Key(name);
-	extern struct Key Key(message);
-	extern struct Key Key(toString);
-	extern struct Key Key(valueOf);
-	extern struct Key Key(eval);
-	extern struct Key Key(value);
-	extern struct Key Key(writable);
-	extern struct Key Key(enumerable);
-	extern struct Key Key(configurable);
-	extern struct Key Key(get);
-	extern struct Key Key(set);
-	extern struct Key Key(join);
-	extern struct Key Key(toISOString);
-	extern struct Key Key(input);
-	extern struct Key Key(index);
-	extern struct Key Key(lastIndex);
-	extern struct Key Key(global);
-	extern struct Key Key(ignoreCase);
-	extern struct Key Key(multiline);
-	extern struct Key Key(source);
+
+	#define io_libecc_key_Keys \
+		_( prototype )\
+		_( constructor )\
+		_( length )\
+		_( arguments )\
+		_( callee )\
+		_( name )\
+		_( message )\
+		_( toString )\
+		_( valueOf )\
+		_( eval )\
+		_( value )\
+		_( writable )\
+		_( enumerable )\
+		_( configurable )\
+		_( get )\
+		_( set )\
+		_( join )\
+		_( toISOString )\
+		_( input )\
+		_( index )\
+		_( lastIndex )\
+		_( global )\
+		_( ignoreCase )\
+		_( multiline )\
+		_( source )\
+		\
+
+	#define _(X) extern struct Key Key(X);
+	io_libecc_key_Keys
+	#undef _
 
 	enum Key(Flags) {
 		Key(copyOnCreate) = (1 << 0),
