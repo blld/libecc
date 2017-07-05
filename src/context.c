@@ -301,7 +301,7 @@ void printBacktrace (struct Context * const context)
 			
 			if (frame.argumentOffset == Context(callOffset) || frame.argumentOffset == Context(applyOffset))
 				skip = 2;
-			else if (frame.textIndex > Context(noIndex))
+			else if (frame.textIndex > Context(noIndex) && frame.ops->text.bytes == Text(nativeCode).bytes)
 				skip = 1;
 			
 			frame = *frame.parent;
