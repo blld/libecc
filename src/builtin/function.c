@@ -215,7 +215,6 @@ struct Value constructor (struct Context * const context)
 	
 	argumentCount = Context.variableArgumentCount(context);
 	
-	if (argumentCount)
 	{
 		int_fast32_t index;
 		struct Value value;
@@ -230,28 +229,28 @@ struct Value constructor (struct Context * const context)
 		};
 		
 		Chars.beginAppend(&chars);
-		Chars.append(&chars, "(function(");
-		for (index = 0; index < argumentCount; ++index)
-		{
-			if (index == argumentCount - 1)
-				Chars.append(&chars, ") {");
-			
-			value = Value.toString(context, Context.variableArgument(context, index));
-			Chars.append(&chars, "%.*s", Value.stringLength(&value), Value.stringBytes(&value));
-			
-			if (index < argumentCount - 2)
-				Chars.append(&chars, ",");
-		}
+		Chars.append(&chars, "(function (");
+		if (argumentCount)
+			for (index = 0; index < argumentCount; ++index)
+			{
+				if (index == argumentCount - 1)
+					Chars.append(&chars, "){");
+				
+				value = Value.toString(context, Context.variableArgument(context, index));
+				Chars.append(&chars, "%.*s", Value.stringLength(&value), Value.stringBytes(&value));
+				
+				if (index < argumentCount - 2)
+					Chars.append(&chars, ",");
+			}
+		else
+			Chars.append(&chars, ") {");
+		
 		Chars.append(&chars, "})");
 		
 		value = Chars.endAppend(&chars);
 		input = Input.createFromBytes(Value.stringBytes(&value), Value.stringLength(&value), "(Function)");
+		Context.setTextIndex(context, Context(noIndex));
 		Ecc.evalInputWithContext(context->ecc, input, &subContext);
-	}
-	else
-	{
-		static const char emptyFunction[] = "(function() {})";
-		Ecc.evalInput(context->ecc, Input.createFromBytes(emptyFunction, sizeof(emptyFunction)-1, "(Function)"), 0);
 	}
 	
 	return context->ecc->result;
