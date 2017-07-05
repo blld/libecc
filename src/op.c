@@ -46,6 +46,7 @@
 
 static int debug = 0;
 
+extern
 void usage(void)
 {
 	Env.printColor(0, Env(bold), "\n\t-- libecc: basic gdb/lldb commands --\n");
@@ -56,16 +57,20 @@ void usage(void)
 	fprintf(stderr, "\t  c\n\n");
 }
 
-#define _ \
-	const struct Text *text = opText(offset);\
-	if (debug && text->bytes && text->length) {\
-		Env.newline();\
-		Context.printBacktrace(context);\
-		Ecc.printTextInput(context->ecc, *text, 1);\
-		trap();\
-	}\
+static
+struct Value doTrapOp(struct Context *context, int offset)
+{
+	const struct Text *text = opText(offset);
+	if (debug && text->bytes && text->length)
+	{
+		Env.newline();
+		Context.printBacktrace(context);
+		Ecc.printTextInput(context->ecc, *text, 1);
+		trap();
+	}
 	return nextOp();
-
+}
+#define _ return doTrapOp(context, offset);
 
 static
 struct Value trapOp(struct Context *context, int offset)
@@ -105,8 +110,9 @@ struct Value release (struct Value value)
 }
 
 static
-void capture (struct Object *object)
+struct Value capture (struct Value value)
 {
+	struct Object *object = value.data.object;
 	uint32_t index, count;
 	union Object(Element) *element;
 	union Object(Hashmap) *hashmap;
@@ -132,6 +138,8 @@ void capture (struct Object *object)
 	
 	if (object->type->capture)
 		object->type->capture(object);
+	
+	return value;
 }
 
 static
@@ -245,7 +253,7 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 		release(environment->hashmap[index].value);
 	
 	if (Value.isObject(result) && context->ops->text.bytes == Text(nativeCode).bytes)
-		capture(result.data.object);
+		capture(result);
 	
 	return result;
 }
@@ -535,17 +543,15 @@ struct Value construct (struct Context * const context)
 		goto error;
 	
 	if (!Value.isObject(*prototype))
-		object = Value.object(Object.create(Object(prototype)));
+		object = capture(Value.object(Object.create(Object(prototype))));
 	else if (prototype->type == Value(functionType))
 	{
-		++prototype->data.function->object.referenceCount;
-		object = Value.object(Object.create(&prototype->data.function->object));
+		object = Value.object(Object.create(NULL));
+		object.data.object->prototype = &prototype->data.function->object;
+		object = capture(object);
 	}
 	else if (prototype->type == Value(objectType))
-	{
-		++prototype->data.object->referenceCount;
-		object = Value.object(Object.create(prototype->data.object));
-	}
+		object = capture(Value.object(Object.create(prototype->data.object)));
 	else
 		object = Value(undefined);
 	
@@ -620,7 +626,7 @@ struct Value eval (struct Context * const context)
 	value = context->ecc->result;
 	
 	if (Value.isObject(value))
-		capture(value.data.object);
+		capture(value);
 	
 	context->ecc->result = Value(undefined);
 	return value;
@@ -896,8 +902,7 @@ void prepareObject (struct Context * const context, struct Value *object)
 	if (Value.isPrimitive(*object))
 	{
 		Context.setText(context, textObject);
-		*object = Value.toObject(context, *object);
-		capture(object->data.object);
+		*object = capture(Value.toObject(context, *object));
 	}
 }
 
