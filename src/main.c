@@ -15,7 +15,6 @@ static int alertUsage (void);
 
 static struct Value alert (struct Context * const context);
 static struct Value print (struct Context * const context);
-static struct Value get (struct Context * const context);
 
 int main (int argc, const char * argv[])
 {
@@ -25,7 +24,6 @@ int main (int argc, const char * argv[])
 	
 	Ecc.addFunction(ecc, "alert", alert, -1, 0);
 	Ecc.addFunction(ecc, "print", print, -1, 0);
-	Ecc.addFunction(ecc, "get", get, 1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = alertUsage();
@@ -87,45 +85,6 @@ static struct Value alert (struct Context * const context)
 static struct Value print (struct Context * const context)
 {
 	return dumpTo(context, stdout);
-}
-
-static struct Value get (struct Context * const context)
-{
-	struct Text inputError = Text(inputErrorName);
-	struct Value value;
-	struct Chars *chars;
-	char filename[FILENAME_MAX];
-	FILE *file;
-	long size;
-	
-	Context.assertParameterCount(context, 1);
-	
-	value = Context.argument(context, 0);
-	memcpy(filename, Value.stringBytes(&value), Value.stringLength(&value));
-	filename[Value.stringLength(&value)] = '\0';
-	file = fopen(filename, "r");
-	if (!file)
-	{
-		Env.printError(inputError.length, inputError.bytes, "cannot open file '%s'", filename);
-		return Value(undefined);
-	}
-	
-	if (fseek(file, 0, SEEK_END) || (size = ftell(file)) < 0 || fseek(file, 0, SEEK_SET))
-	{
-		Env.printError(inputError.length, inputError.bytes, "cannot handle file '%s'", filename);
-		fclose(file);
-		return Value(undefined);
-	}
-	
-	fprintf(stderr, ">> %lu\n", sizeof(struct Chars));
-	
-	chars = Chars.createSized(size);
-	chars->length = fread(chars->bytes, sizeof(char), size, file);
-	fclose(file), file = NULL;
-	
-//	Value.dumpTo(Value.chars(chars), stderr);
-	
-	return Value.chars(chars);
 }
 
 //
