@@ -17,9 +17,14 @@
 
 	#include "builtin/string.h"
 
+	typedef struct {
+		uint32_t value:24;
+	} Chars(length);
+
 	enum Chars(Flags)
 	{
 		Chars(mark) = 1 << 0,
+		Chars(asciiOnly) = 1 << 1,
 	};
 
 	struct Chars(Append) {
@@ -33,10 +38,10 @@
 
 Interface(Chars,
 	
-	(struct Chars *, createVA ,(uint16_t length, const char *format, va_list ap))
+	(struct Chars *, createVA ,(int32_t length, const char *format, va_list ap))
 	(struct Chars *, create ,(const char *format, ...))
-	(struct Chars *, createSized ,(uint16_t length))
-	(struct Chars *, createWithBytes ,(uint16_t length, const char *bytes))
+	(struct Chars *, createSized ,(int32_t length))
+	(struct Chars *, createWithBytes ,(int32_t length, const char *bytes))
 	
 	(void, beginAppend ,(struct Chars(Append) *))
 	(void, append ,(struct Chars(Append) *, const char *format, ...))
@@ -52,7 +57,7 @@ Interface(Chars,
 	(uint8_t, writeCodepoint ,(char *, uint32_t cp))
 	,
 	{
-		uint16_t length;
+		int32_t length;
 		int16_t referenceCount;
 		uint8_t flags;
 		char bytes[1];

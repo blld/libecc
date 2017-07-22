@@ -15,6 +15,7 @@ static int alertUsage (void);
 
 static struct Value alert (struct Context * const context);
 static struct Value print (struct Context * const context);
+static struct Value get (struct Context * const context);
 
 int main (int argc, const char * argv[])
 {
@@ -24,6 +25,7 @@ int main (int argc, const char * argv[])
 	
 	Ecc.addFunction(ecc, "alert", alert, -1, 0);
 	Ecc.addFunction(ecc, "print", print, -1, 0);
+	Ecc.addFunction(ecc, "get", get, 1, 0);
 	
 	if (argc <= 1 || !strcmp(argv[1], "--help"))
 		result = alertUsage();
@@ -87,6 +89,45 @@ static struct Value print (struct Context * const context)
 	return dumpTo(context, stdout);
 }
 
+static struct Value get (struct Context * const context)
+{
+	struct Text inputError = Text(inputErrorName);
+	struct Value value;
+	struct Chars *chars;
+	char filename[FILENAME_MAX];
+	FILE *file;
+	long size;
+	
+	Context.assertParameterCount(context, 1);
+	
+	value = Context.argument(context, 0);
+	memcpy(filename, Value.stringBytes(&value), Value.stringLength(&value));
+	filename[Value.stringLength(&value)] = '\0';
+	file = fopen(filename, "r");
+	if (!file)
+	{
+		Env.printError(inputError.length, inputError.bytes, "cannot open file '%s'", filename);
+		return Value(undefined);
+	}
+	
+	if (fseek(file, 0, SEEK_END) || (size = ftell(file)) < 0 || fseek(file, 0, SEEK_SET))
+	{
+		Env.printError(inputError.length, inputError.bytes, "cannot handle file '%s'", filename);
+		fclose(file);
+		return Value(undefined);
+	}
+	
+	fprintf(stderr, ">> %lu\n", sizeof(struct Chars));
+	
+	chars = Chars.createSized(size);
+	chars->length = fread(chars->bytes, sizeof(char), size, file);
+	fclose(file), file = NULL;
+	
+//	Value.dumpTo(Value.chars(chars), stderr);
+	
+	return Value.chars(chars);
+}
+
 //
 
 static int testVerbosity = 0;
@@ -102,7 +143,8 @@ static void test (const char *func, int line, const char *test, const char *expe
 	clock_t start = clock();
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(stringResult));
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(sloppyMode) | Ecc(stringResult));
+#warning FIXME
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
@@ -1459,30 +1501,32 @@ static int runTest (int verbosity)
 	
 //	test("debugger", "undefined", NULL);
 	
-	testLexer();
-	testParser();
-	testEval();
-	testConvertion();
-	testException();
-	testOperator();
-	testEquality();
-	testRelational();
-	testConditional();
-	testSwitch();
-	testDelete();
-	testGlobal();
-	testFunction();
-	testLoop();
-	testThis();
-	testObject();
-	testError();
-	testAccessor();
-	testArray();
-	testBoolean();
-	testNumber();
-	testDate();
-	testString();
-	testRegExp();
+//	testLexer();
+//	testParser();
+//	testEval();
+//	testConvertion();
+//	testException();
+//	testOperator();
+//	testEquality();
+//	testRelational();
+//	testConditional();
+//	testSwitch();
+//	testDelete();
+//	testGlobal();
+//	testFunction();
+//	testLoop();
+//	testThis();
+//	testObject();
+//	testError();
+//	testAccessor();
+//	testArray();
+//	testBoolean();
+//	testNumber();
+//	testDate();
+//	testString();
+//	testRegExp();
+	
+	test("__re = new RegExp(void 0); __re.source === ''", "[object Undefined]", NULL);
 	
 	Env.newline();
 	

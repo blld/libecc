@@ -131,7 +131,7 @@ Interface(Value,
 	(struct Value, binaryToString ,(double binary, int base))
 	
 	(struct Value, toString ,(struct Context * const, struct Value))
-	(uint16_t, stringLength ,(const struct Value *))
+	(int32_t, stringLength ,(const struct Value *))
 	(const char *, stringBytes ,(const struct Value *))
 	(struct Text, textOf ,(const struct Value *string))
 	

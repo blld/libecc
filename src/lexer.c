@@ -306,7 +306,13 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 											}
 											self->text = Text.make(self->text.bytes + index - 1, 6);
 											return syntaxError(self, Chars.create("malformed Unicode character escape sequence"));
-										
+											
+										case '\r':
+											if (bytes[index + 1] == '\n')
+												++index;
+										case '\n':
+											continue;
+											
 										default:
 											Chars.append(&chars, "%c", bytes[index]);
 									}

@@ -1384,7 +1384,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->type == &Array(type);
+	isArray = self->type == &Array(type) || self->type == &Arguments(type);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	

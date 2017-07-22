@@ -71,13 +71,13 @@
 
 Interface(Text,
 	
-	(struct Text, make ,(const char *bytes, uint16_t length))
+	(struct Text, make ,(const char *bytes, int32_t length))
 	(struct Text, join ,(struct Text from, struct Text to))
 	
 	(struct Text(Char), character ,(struct Text))
 	(struct Text(Char), nextCharacter ,(struct Text *text))
 	(struct Text(Char), prevCharacter ,(struct Text *text))
-	(uint16_t, advance ,(struct Text *text, uint16_t units))
+	(void, advance ,(struct Text *text, int32_t units))
 	
 	(uint16_t, toUTF16Length ,(struct Text))
 	(uint16_t, toUTF16 ,(struct Text, uint16_t *wbuffer))
@@ -92,7 +92,7 @@ Interface(Text,
 	,
 	{
 		const char *bytes;
-		uint16_t length;
+		int32_t length;
 		uint8_t flags;
 	}
 )

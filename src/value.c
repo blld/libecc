@@ -458,7 +458,7 @@ struct Value toString (struct Context * const context, struct Value value)
 	Ecc.fatal("Invalid Value(Type) : %u", value.type);
 }
 
-uint16_t stringLength (const struct Value *value)
+int32_t stringLength (const struct Value *value)
 {
 	switch (value->type)
 	{
@@ -665,8 +665,8 @@ struct Value equals (struct Context * const context, struct Value a, struct Valu
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
-		uint32_t aLength = stringLength(&a);
-		uint32_t bLength = stringLength(&b);
+		int32_t aLength = stringLength(&a);
+		int32_t bLength = stringLength(&b);
 		if (aLength != bLength)
 			return Value(false);
 		
@@ -698,8 +698,8 @@ struct Value same (struct Context * const context, struct Value a, struct Value 
 		return truth(toBinary(context, a).data.binary == toBinary(context, b).data.binary);
 	else if (isString(a) && isString(b))
 	{
-		uint32_t aLength = stringLength(&a);
-		uint32_t bLength = stringLength(&b);
+		int32_t aLength = stringLength(&a);
+		int32_t bLength = stringLength(&b);
 		if (aLength != bLength)
 			return Value(false);
 		
@@ -746,8 +746,8 @@ struct Value compare (struct Context * const context, struct Value a, struct Val
 	
 	if (isString(a) && isString(b))
 	{
-		uint16_t aLength = stringLength(&a);
-		uint16_t bLength = stringLength(&b);
+		int32_t aLength = stringLength(&a);
+		int32_t bLength = stringLength(&b);
 		
 		if (aLength < bLength && !memcmp(stringBytes(&a), stringBytes(&b), aLength))
 			return Value(true);

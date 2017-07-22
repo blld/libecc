@@ -601,7 +601,7 @@ struct RegExp(Node) * term (struct Parse *p, struct Error **error)
 	else if (*p->c && strchr("*+?)}|", *p->c))
 		return NULL;
 	
-	text = Text.make(p->c, p->end - p->c);
+	text = Text.make(p->c, (int32_t)(p->end - p->c));
 	text.length = Text.character(text).units;
 	p->c += text.length;
 	return characterNode(text, p->ignoreCase);
@@ -832,7 +832,7 @@ start:
 			
 		case opLineStart:
 		{
-			struct Text prev = Text.make(text.bytes, text.bytes - s->start);
+			struct Text prev = Text.make(text.bytes, (int32_t)(text.bytes - s->start));
 			if (text.bytes != s->start && !Text.isLineFeed(Text.prevCharacter(&prev)))
 				return 0;
 			
@@ -847,7 +847,7 @@ start:
 			
 		case opBoundary:
 		{
-			struct Text prev = Text.make(text.bytes, text.bytes - s->start);
+			struct Text prev = Text.make(text.bytes, (int32_t)(text.bytes - s->start));
 			if (text.bytes == s->start)
 			{
 				if (Text.isWord(Text.character(text)) != n->offset)
@@ -1024,7 +1024,7 @@ start:
 				char buffer[c.units];
 				struct Text casetext = Text.make(buffer, 0);
 				
-				casetext.length = Text.toLower(Text.make(text.bytes, sizeof(buffer)), buffer) - buffer;
+				casetext.length = (int32_t)(Text.toLower(Text.make(text.bytes, (int32_t)sizeof(buffer)), buffer) - buffer);
 				c = Text.character(casetext);
 				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
 				{
@@ -1032,7 +1032,7 @@ start:
 					goto next;
 				}
 				
-				casetext.length = Text.toUpper(Text.make(text.bytes, sizeof(buffer)), buffer) - buffer;
+				casetext.length = (int32_t)(Text.toUpper(Text.make(text.bytes, (int32_t)sizeof(buffer)), buffer) - buffer);
 				c = Text.character(casetext);
 				if (c.units == casetext.length && (c.codepoint >= from.codepoint && c.codepoint <= to.codepoint))
 				{
@@ -1140,7 +1140,7 @@ struct Value exec (struct Context * const context)
 			{
 				if (capture[index * 2])
 				{
-					element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+					element = Chars.createWithBytes((int32_t)(capture[index * 2 + 1] - capture[index * 2]), capture[index * 2]);
 					array->element[index].value = Value.chars(element);
 				}
 				else
@@ -1252,7 +1252,7 @@ struct RegExp * create (struct Chars *s, struct Error **error, enum RegExp(Optio
 	self->pattern = s;
 	self->program = pattern(&p, error);
 	self->count = p.count + 1;
-	self->source = Chars.createWithBytes(p.c - self->pattern->bytes - 1, self->pattern->bytes + 1);
+	self->source = Chars.createWithBytes((int32_t)(p.c - self->pattern->bytes - 1), self->pattern->bytes + 1);
 	
 //	++self->pattern->referenceCount;
 //	++self->source->referenceCount;
@@ -1382,7 +1382,7 @@ int matchWithState (struct RegExp *self, struct RegExp(State) *state)
 {
 	int result = 0;
 	uint16_t index, count;
-	struct Text text = Text.make(state->start, state->end - state->start);
+	struct Text text = Text.make(state->start, (int32_t)(state->end - state->start));
 	
 #if DUMP_REGEXP
 	struct RegExp(Node) *n = self->program;

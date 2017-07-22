@@ -75,7 +75,7 @@ struct Value valueOf (struct Context * const context)
 static
 struct Value charAt (struct Context * const context)
 {
-	uint16_t index, length;
+	int32_t index, length;
 	const char *chars;
 	struct Text text;
 	
@@ -241,7 +241,7 @@ struct Value lastIndexOf (struct Context * const context)
 	if (text.flags & Text(breakFlag))
 		--index;
 	
-	text.length = text.bytes - chars;
+	text.length = (int32_t)(text.bytes - chars);
 	
 	for (;;)
 	{
@@ -306,7 +306,7 @@ struct Value match (struct Context * const context)
 	if (lastIndex.data.integer >= 0)
 	{
 		const char *bytes = Value.stringBytes(&context->this);
-		uint16_t length = Value.stringLength(&context->this);
+		int32_t length = Value.stringLength(&context->this);
 		struct Text text = textAtIndex(bytes, length, 0, 0);
 		const char *capture[regexp->count * 2];
 		const char *index[regexp->count * 2];
@@ -343,7 +343,7 @@ struct Value match (struct Context * const context)
 				}
 				
 				if (capture[1] - text.bytes > 0)
-					Text.advance(&text, capture[1] - text.bytes);
+					Text.advance(&text, (int32_t)(capture[1] - text.bytes));
 				else
 					Text.nextCharacter(&text);
 			}
@@ -409,7 +409,7 @@ void replaceText (struct Chars(Append) *chars, struct Text replace, struct Text 
 							Text.advance(&replace, 1);
 						}
 						
-						if (index && index < count)
+						if (capture && index && index < count)
 						{
 							if (capture[index * 2])
 								Chars.append(chars, "%.*s", capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
@@ -473,18 +473,18 @@ struct Value replace (struct Context * const context)
 			
 			if (RegExp.matchWithState(regexp, &state))
 			{
-				Chars.append(&chars, "%.*s", state.capture[0] - text.bytes, text.bytes);
+				Chars.append(&chars, "%.*s", capture[0] - text.bytes, text.bytes);
 				
 				if (replace.type == Value(functionType))
 				{
 					struct Object *arguments = Array.createSized(regexp->count + 2);
-					uint16_t index, count;
+					int32_t index, count;
 					struct Value result;
 					
 					for (index = 0, count = regexp->count; index < count; ++index)
 					{
 						if (capture[index * 2])
-							arguments->element[index].value = Value.chars(Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]));
+							arguments->element[index].value = Value.chars(Chars.createWithBytes((int32_t)(capture[index * 2 + 1] - capture[index * 2]), capture[index * 2]));
 						else
 							arguments->element[index].value = Value(undefined);
 					}
@@ -497,13 +497,13 @@ struct Value replace (struct Context * const context)
 				else
 					replaceText(&chars,
 								Text.make(Value.stringBytes(&replace), Value.stringLength(&replace)),
-								Text.make(bytes, state.capture[0] - bytes),
-								Text.make(state.capture[0], state.capture[1] - state.capture[0]),
-								Text.make(state.capture[1], (bytes + length) - state.capture[1]),
+								Text.make(bytes, (int32_t)(capture[0] - bytes)),
+								Text.make(capture[0], (int32_t)(capture[1] - capture[0])),
+								Text.make(capture[1], (int32_t)((bytes + length) - capture[1])),
 								regexp->count,
 								capture);
 				
-				Text.advance(&text, state.capture[1] - text.bytes);
+				Text.advance(&text, (int32_t)(state.capture[1] - text.bytes));
 				
 				seek = text;
 				if (text.bytes == state.capture[1])
@@ -554,9 +554,9 @@ struct Value replace (struct Context * const context)
 		else
 			replaceText(&chars,
 						Text.make(Value.stringBytes(&replace), Value.stringLength(&replace)),
-						Text.make(text.bytes, text.bytes - bytes),
+						Text.make(text.bytes, (int32_t)(text.bytes - bytes)),
 						Text.make(text.bytes, text.length),
-						Text.make(text.bytes, length - (text.bytes - bytes)),
+						Text.make(text.bytes, (int32_t)(length - (text.bytes - bytes))),
 						0,
 						NULL);
 		
@@ -585,7 +585,7 @@ struct Value search (struct Context * const context)
 	
 	{
 		const char *bytes = Value.stringBytes(&context->this);
-		uint16_t length = Value.stringLength(&context->this);
+		int32_t length = Value.stringLength(&context->this);
 		struct Text text = textAtIndex(bytes, length, 0, 0);
 		const char *capture[regexp->count * 2];
 		const char *index[regexp->count * 2];
@@ -604,7 +604,7 @@ struct Value slice (struct Context * const context)
 	struct Value from, to;
 	struct Text start, end;
 	const char *chars;
-	ptrdiff_t length;
+	int32_t length;
 	uint16_t head = 0, tail = 0;
 	uint32_t headcp = 0;
 	
@@ -635,7 +635,7 @@ struct Value slice (struct Context * const context)
 	if (start.flags & Text(breakFlag))
 		headcp = Text.nextCharacter(&start).codepoint;
 	
-	length = end.bytes - start.bytes;
+	length = (int32_t)(end.bytes - start.bytes);
 	
 	if (start.flags & Text(breakFlag))
 		head = 3;
@@ -720,20 +720,20 @@ struct Value split (struct Context * const context)
 		for (;;)
 		{
 			struct RegExp(State) state = { seek.bytes, seek.bytes + seek.length, capture, index };
-			uint16_t index, count;
+			int32_t index, count;
 			
 			if (size >= limit)
 				break;
 			
 			if (seek.length && RegExp.matchWithState(regexp, &state))
 			{
-				if (state.capture[1] <= text.bytes)
+				if (capture[1] <= text.bytes)
 				{
 					Text.advance(&seek, 1);
 					continue;
 				}
 				
-				element = Chars.createWithBytes(state.capture[0] - text.bytes, text.bytes);
+				element = Chars.createWithBytes((int32_t)(capture[0] - text.bytes), text.bytes);
 				Object.addElement(array, size++, Value.chars(element), 0);
 				
 				for (index = 1, count = regexp->count; index < count; ++index)
@@ -743,14 +743,14 @@ struct Value split (struct Context * const context)
 					
 					if (capture[index * 2])
 					{
-						element = Chars.createWithBytes(capture[index * 2 + 1] - capture[index * 2], capture[index * 2]);
+						element = Chars.createWithBytes((int32_t)(capture[index * 2 + 1] - capture[index * 2]), capture[index * 2]);
 						Object.addElement(array, size++, Value.chars(element), 0);
 					}
 					else
 						Object.addElement(array, size++, Value(undefined), 0);
 				}
 				
-				Text.advance(&text, state.capture[1] - text.bytes);
+				Text.advance(&text, (int32_t)(capture[1] - text.bytes));
 				seek = text;
 			}
 			else
@@ -794,7 +794,7 @@ struct Value split (struct Context * const context)
 	else
 	{
 		struct Text seek = text;
-		ptrdiff_t length;
+		int32_t length;
 		
 		while (seek.length >= separator.length)
 		{
@@ -803,7 +803,7 @@ struct Value split (struct Context * const context)
 			
 			if (!memcmp(seek.bytes, separator.bytes, separator.length))
 			{
-				length = seek.bytes - text.bytes;
+				length = (int32_t)(seek.bytes - text.bytes);
 				element = Chars.createSized(length);
 				memcpy(element->bytes, text.bytes, length);
 				Object.addElement(array, size++, Value.chars(element), 0);
@@ -832,7 +832,7 @@ struct Value substring (struct Context * const context)
 	struct Value from, to;
 	struct Text start, end;
 	const char *chars;
-	uint16_t length, head = 0, tail = 0;
+	int32_t length, head = 0, tail = 0;
 	uint32_t headcp = 0;
 	
 	Context.assertParameterCount(context, 2);
@@ -868,7 +868,7 @@ struct Value substring (struct Context * const context)
 	if (start.flags & Text(breakFlag))
 		headcp = Text.nextCharacter(&start).codepoint;
 	
-	length = end.bytes - start.bytes;
+	length = (int32_t)(end.bytes - start.bytes);
 	
 	if (start.flags & Text(breakFlag))
 		head = 3;
@@ -916,7 +916,7 @@ struct Value toLowerCase (struct Context * const context)
 	{
 		char buffer[text.length * 2];
 		char *end = Text.toLower(text, buffer);
-		chars = Chars.createWithBytes(end - buffer, buffer);
+		chars = Chars.createWithBytes((int32_t)(end - buffer), buffer);
 	}
 	
 	return Value.chars(chars);
@@ -937,7 +937,7 @@ struct Value toUpperCase (struct Context * const context)
 	{
 		char buffer[text.length * 3];
 		char *end = Text.toUpper(text, buffer);
-		chars = Chars.createWithBytes(end - buffer, buffer);
+		chars = Chars.createWithBytes((int32_t)(end - buffer), buffer);
 	}
 	
 	return Value.chars(chars);
@@ -1003,7 +1003,7 @@ static
 struct Value fromCharCode (struct Context * const context)
 {
 	struct Chars(Append) chars;
-	uint16_t index, count;
+	int32_t index, count;
 	
 	Context.assertVariableParameter(context);
 	
@@ -1017,24 +1017,11 @@ struct Value fromCharCode (struct Context * const context)
 	return Chars.endAppend(&chars);
 }
 
-static
-struct Value getLength (struct Context * const context)
-{
-	struct Chars *chars;
-	
-	Context.assertParameterCount(context, 0);
-	
-	chars = context->this.data.string->value;
-	return Value.integer(unitIndex(chars->bytes, chars->length, chars->length));
-}
-
 // MARK: - Methods
 
 void setup ()
 {
-	const enum Value(Flags) r = Value(readonly);
 	const enum Value(Flags) h = Value(hidden);
-	const enum Value(Flags) s = Value(sealed);
 	
 	Function.setupBuiltinObject(
 		&String(constructor), constructor, 1,
@@ -1062,8 +1049,6 @@ void setup ()
 	Function.addToObject(String(prototype), "toUpperCase", toUpperCase, 0, h);
 	Function.addToObject(String(prototype), "toLocaleUpperCase", toUpperCase, 0, h);
 	Function.addToObject(String(prototype), "trim", trim, 0, h);
-	
-	Object.addMember(String(prototype), Key(length), Function.accessor(getLength, NULL), r|h|s | Value(asOwn) | Value(asData));
 }
 
 void teardown (void)
@@ -1074,23 +1059,33 @@ void teardown (void)
 
 struct String * create (struct Chars *chars)
 {
+	const enum Value(Flags) r = Value(readonly);
+	const enum Value(Flags) h = Value(hidden);
+	const enum Value(Flags) s = Value(sealed);
+	uint32_t length;
+	
 	struct String *self = malloc(sizeof(*self));
 	*self = String.identity;
 	Pool.addObject(&self->object);
 	
 	Object.initialize(&self->object, String(prototype));
 	
+	length = unitIndex(chars->bytes, chars->length, chars->length);
+	Object.addMember(&self->object, Key(length), Value.integer(length), r|h|s);
+	
 	self->value = chars;
+	if (length == chars->length)
+		chars->flags |= Chars(asciiOnly);
 	
 	return self;
 }
 
-struct Value valueAtIndex (struct String *self, uint32_t position)
+struct Value valueAtIndex (struct String *self, int32_t index)
 {
 	struct Text(Char) c;
 	struct Text text;
 	
-	text = textAtIndex(self->value->bytes, self->value->length, position, 0);
+	text = textAtIndex(self->value->bytes, self->value->length, index, 0);
 	c = Text.character(text);
 	
 	if (c.units <= 0)
@@ -1117,9 +1112,9 @@ struct Value valueAtIndex (struct String *self, uint32_t position)
 	}
 }
 
-struct Text textAtIndex (const char *chars, uint16_t length, int32_t position, int enableReverse)
+struct Text textAtIndex (const char *chars, int32_t length, int32_t position, int enableReverse)
 {
-	struct Text text = Text.make(chars, length), prev = text;
+	struct Text text = Text.make(chars, length), prev;
 	struct Text(Char) c;
 	
 	if (position >= 0)
@@ -1152,7 +1147,7 @@ struct Text textAtIndex (const char *chars, uint16_t length, int32_t position, i
 			}
 		}
 		
-		text.length = length - (text.bytes - chars);
+		text.length = length - (int32_t)(text.bytes - chars);
 	}
 	else
 		text.length = 0;
@@ -1160,10 +1155,10 @@ struct Text textAtIndex (const char *chars, uint16_t length, int32_t position, i
 	return text;
 }
 
-uint16_t unitIndex (const char *chars, uint16_t max, int32_t unit)
+int32_t unitIndex (const char *chars, int32_t max, int32_t unit)
 {
 	struct Text text = Text.make(chars, max);
-	uint16_t position = 0;
+	int32_t position = 0;
 	struct Text(Char) c;
 	
 	while (unit > 0)

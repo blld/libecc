@@ -58,7 +58,7 @@ void usage(void)
 }
 
 static
-struct Value doTrapOp(struct Context *context, int offset)
+struct Value trapOp_(struct Context *context, int offset)
 {
 	const struct Text *text = opText(offset);
 	if (debug && text->bytes && text->length)
@@ -70,7 +70,7 @@ struct Value doTrapOp(struct Context *context, int offset)
 	}
 	return nextOp();
 }
-#define _ return doTrapOp(context, offset);
+#define _ return trapOp_(context, offset);
 
 static
 struct Value trapOp(struct Context *context, int offset)
@@ -105,39 +105,6 @@ struct Value release (struct Value value)
 		--value.data.chars->referenceCount;
 	if (value.type >= Value(objectType))
 		--value.data.object->referenceCount;
-	
-	return value;
-}
-
-static
-struct Value capture (struct Value value)
-{
-	struct Object *object = value.data.object;
-	uint32_t index, count;
-	union Object(Element) *element;
-	union Object(Hashmap) *hashmap;
-	
-	if (object->prototype)
-		++object->prototype->referenceCount;
-	
-	count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
-	for (index = 0; index < count; ++index)
-	{
-		element = object->element + index;
-		if (element->value.check == 1)
-			retain(element->value);
-	}
-	
-	count = object->hashmapCount;
-	for (index = 2; index < count; ++index)
-	{
-		hashmap = object->hashmap + index;
-		if (hashmap->value.check == 1)
-			retain(hashmap->value);
-	}
-	
-	if (object->type->capture)
-		object->type->capture(object);
 	
 	return value;
 }
@@ -233,9 +200,9 @@ struct Value callOps (struct Context * const context, struct Object *environment
 	if (context->depth >= context->ecc->maximumCallDepth)
 		Context.rangeError(context, Chars.create("maximum depth exceeded"));
 	
-	if (!context->parent->strictMode)
-		if (context->this.type == Value(undefinedType) || context->this.type == Value(nullType))
-			context->this = Value.object(&context->ecc->global->environment);
+//	if (!context->parent->strictMode)
+//		if (context->this.type == Value(undefinedType) || context->this.type == Value(nullType))
+//			context->this = Value.object(&context->ecc->global->environment);
 	
 	context->environment = environment;
 	return context->ops->native(context);
@@ -251,9 +218,6 @@ struct Value callOpsRelease (struct Context * const context, struct Object *envi
 	
 	for (index = 2, count = environment->hashmapCount; index < count; ++index)
 		release(environment->hashmap[index].value);
-	
-	if (Value.isObject(result) && context->ops->text.bytes == Text(nativeCode).bytes)
-		capture(result);
 	
 	return result;
 }
@@ -543,15 +507,14 @@ struct Value construct (struct Context * const context)
 		goto error;
 	
 	if (!Value.isObject(*prototype))
-		object = capture(Value.object(Object.create(Object(prototype))));
+		object = Value.object(Object.create(Object(prototype)));
 	else if (prototype->type == Value(functionType))
 	{
 		object = Value.object(Object.create(NULL));
 		object.data.object->prototype = &prototype->data.function->object;
-		object = capture(object);
 	}
 	else if (prototype->type == Value(objectType))
-		object = capture(Value.object(Object.create(prototype->data.object)));
+		object = Value.object(Object.create(prototype->data.object));
 	else
 		object = Value(undefined);
 	
@@ -624,10 +587,6 @@ struct Value eval (struct Context * const context)
 	Ecc.evalInputWithContext(context->ecc, input, &subContext);
 	
 	value = context->ecc->result;
-	
-	if (Value.isObject(value))
-		capture(value);
-	
 	context->ecc->result = Value(undefined);
 	return value;
 }
@@ -701,6 +660,8 @@ struct Value object (struct Context * const context)
 	struct Value property, value;
 	uint32_t count;
 	
+	object->flags |= Object(mark);
+	
 	for (count = opValue().data.integer; count--;)
 	{
 		property = nextOp();
@@ -720,6 +681,8 @@ struct Value array (struct Context * const context)
 	struct Object *object = Array.createSized(length);
 	struct Value value;
 	uint32_t index;
+	
+	object->flags |= Object(mark);
 	
 	for (index = 0; index < length; ++index)
 	{
@@ -902,7 +865,7 @@ void prepareObject (struct Context * const context, struct Value *object)
 	if (Value.isPrimitive(*object))
 	{
 		Context.setText(context, textObject);
-		*object = capture(Value.toObject(context, *object));
+		*object = Value.toObject(context, *object);
 	}
 }
 

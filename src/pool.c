@@ -163,6 +163,25 @@ struct Value releaseValue(struct Value value)
 	return value;
 }
 
+static void captureObject (struct Object *object);
+
+static
+struct Value retainValue(struct Value value)
+{
+	if (value.type == Value(charsType))
+		++value.data.chars->referenceCount;
+	if (value.type >= Value(objectType))
+	{
+		++value.data.object->referenceCount;
+		if (!(value.data.object->flags & Object(mark)))
+		{
+			value.data.object->flags |= Object(mark);
+			captureObject(value.data.object);
+		}
+	}
+	return value;
+}
+
 static
 void cleanupObject(struct Object *object)
 {
@@ -180,8 +199,43 @@ void cleanupObject(struct Object *object)
 		while (object->hashmapCount--)
 			if ((value = object->hashmap[object->hashmapCount].value).check == 1)
 				releaseValue(value);
+}
+
+static
+void captureObject (struct Object *object)
+{
+	uint32_t index, count;
+	union Object(Element) *element;
+	union Object(Hashmap) *hashmap;
 	
-	Object.finalize(object);
+	if (object->prototype)
+	{
+		++object->prototype->referenceCount;
+		if (!(object->prototype->flags & Object(mark)))
+		{
+			object->prototype->flags |= Object(mark);
+			captureObject(object->prototype);
+		}
+	}
+	
+	count = object->elementCount < object->elementCapacity? object->elementCount : object->elementCapacity;
+	for (index = 0; index < count; ++index)
+	{
+		element = object->element + index;
+		if (element->value.check == 1)
+			retainValue(element->value);
+	}
+	
+	count = object->hashmapCount;
+	for (index = 2; index < count; ++index)
+	{
+		hashmap = object->hashmap + index;
+		if (hashmap->value.check == 1)
+			retainValue(hashmap->value);
+	}
+	
+	if (object->type->capture)
+		object->type->capture(object);
 }
 
 void collectUnmarked (void)
@@ -220,15 +274,20 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 {
 	uint32_t index;
 	
-	if (self->functionCount - indices[0] + self->objectCount - indices[1] + self->charsCount - indices[2] < 32)
-		return;
-	
-	// finalize
+	// prepare
 	
 	index = self->objectCount;
 	while (index-- > indices[1])
 		if (self->objectList[index]->referenceCount <= 0)
 			cleanupObject(self->objectList[index]);
+	
+	index = self->objectCount;
+	while (index-- > indices[1])
+		if (self->objectList[index]->referenceCount > 0 && !(self->objectList[index]->flags & Object(mark)))
+		{
+			self->objectList[index]->flags |= Object(mark);
+			captureObject(self->objectList[index]);
+		}
 	
 	// destroy
 	
@@ -244,6 +303,7 @@ void collectUnreferencedFromIndices (uint32_t indices[3])
 	while (index-- > indices[1])
 		if (self->objectList[index]->referenceCount <= 0)
 		{
+			Object.finalize(self->objectList[index]);
 			Object.destroy(self->objectList[index]);
 			self->objectList[index] = self->objectList[--self->objectCount];
 		}

@@ -969,7 +969,10 @@ struct OpList * assignment (struct Parser *self, int noIn)
 	if (acceptToken(self, '='))
 	{
 		if (!oplist)
+		{
 			syntaxError(self, text, Chars.create("expected expression, got '='"));
+			return NULL;
+		}
 		else if (oplist->ops[0].native == Op.getLocal && oplist->count == 1)
 		{
 			if (Key.isEqual(oplist->ops[0].value.data.key, Key(eval)))
@@ -1640,7 +1643,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	function->environment.hashmap[slot].value.flags |= Value(hidden) | Value(sealed);
 	
 	if (isGetter && parameterCount != 0)
-		syntaxError(self, Text.make(textParameter.bytes, self->lexer->text.bytes - textParameter.bytes), Chars.create("getter functions must have no arguments"));
+		syntaxError(self, Text.make(textParameter.bytes, (int32_t)(self->lexer->text.bytes - textParameter.bytes)), Chars.create("getter functions must have no arguments"));
 	else if (isSetter && parameterCount != 1)
 		syntaxError(self, Text.make(self->lexer->text.bytes, 0), Chars.create("setter functions must have one argument"));
 	
@@ -1651,7 +1654,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 		self->function->flags |= Function(strictMode);
 	
 	oplist = OpList.join(oplist, sourceElements(self));
-	text.length = self->lexer->text.bytes - text.bytes + 1;
+	text.length = (int32_t)(self->lexer->text.bytes - text.bytes) + 1;
 	expectToken(self, '}');
 	self->function = parentFunction;
 	

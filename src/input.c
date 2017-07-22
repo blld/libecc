@@ -47,14 +47,12 @@ void printInput (const char *name, uint16_t line)
 
 struct Input * createFromFile (const char *filename)
 {
-	struct Text inputError;
+	struct Text inputError = Text(inputErrorName);
 	FILE *file;
 	long size;
 	struct Input *self;
 	
 	assert(filename);
-	
-	inputError = Text(inputErrorName);
 	
 	file = fopen(filename, "rb");
 	if (!file)
@@ -139,7 +137,7 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 		
 		if (line > 0)
 		{
-			uint16_t start = self->lines[line];
+			uint32_t start = self->lines[line];
 			
 			bytes = self->bytes + start;
 			do
@@ -201,10 +199,7 @@ void printText (struct Input *self, struct Text text, struct Text ofLine, const 
 					mark[index] = bytes[index];
 			
 			if (!marked)
-			{
 				mark[index++] = '<';
-				marked = 1;
-			}
 			
 			mark[index] = '\0';
 			

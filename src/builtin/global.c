@@ -167,7 +167,7 @@ struct Value decodeExcept (struct Context * const context, const char *exclude)
 				}
 				*b = '\0';
 				
-				c = Text.character(Text.make(buffer, b - buffer));
+				c = Text.character(Text.make(buffer, (int32_t)(b - buffer)));
 				Chars.appendCodepoint(&chars, c.codepoint);
 			}
 			else if (byte && exclude && strchr(exclude, byte))

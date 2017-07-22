@@ -28,31 +28,18 @@ uint32_t nextPowerOfTwo(uint32_t v)
 }
 
 static inline
-uint32_t sizeForLength(uint16_t length)
+uint32_t sizeForLength(uint32_t length)
 {
 	uint32_t size = sizeof(struct Chars) + length;
 	
 	if (size < 16)
-	{
-		/* 16-bytes mini */
 		return 16;
-	}
-	else if (size < 1024)
-	{
-		/* power of two steps between */
-		return nextPowerOfTwo(size);
-	}
 	else
-	{
-		/* 1024-bytes chunk */
-		--size;
-		size |= 0x3ff;
-		return size + 1;
-	}
+		return nextPowerOfTwo(size);
 }
 
 static
-struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint16_t length)
+struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint32_t length)
 {
 	struct Chars *self = NULL, *reuse = chars? chars->value: NULL;
 	
@@ -87,7 +74,7 @@ struct Chars *reuseOrCreate (struct Chars(Append) *chars, uint16_t length)
 
 // MARK: - Methods
 
-struct Chars * createVA (uint16_t length, const char *format, va_list ap)
+struct Chars * createVA (int32_t length, const char *format, va_list ap)
 {
 	struct Chars *self;
 	
@@ -114,7 +101,7 @@ struct Chars * create (const char *format, ...)
 	return self;
 }
 
-struct Chars * createSized (uint16_t length)
+struct Chars * createSized (int32_t length)
 {
 	struct Chars *self = malloc(sizeForLength(length));
 	Pool.addChars(self);
@@ -126,7 +113,7 @@ struct Chars * createSized (uint16_t length)
 	return self;
 }
 
-struct Chars * createWithBytes (uint16_t length, const char *bytes)
+struct Chars * createWithBytes (int32_t length, const char *bytes)
 {
 	struct Chars *self = malloc(sizeForLength(length));
 	Pool.addChars(self);
@@ -148,7 +135,7 @@ void beginAppend (struct Chars(Append) *chars)
 
 void append (struct Chars(Append) *chars, const char *format, ...)
 {
-	uint16_t length;
+	uint32_t length;
 	va_list ap;
 	struct Chars *self = chars->value;
 	
@@ -284,7 +271,7 @@ void appendValue (struct Chars(Append) *chars, struct Context * const context, s
 }
 
 static
-uint16_t stripBinaryOfBytes (char *bytes, uint16_t length)
+uint32_t stripBinaryOfBytes (char *bytes, uint32_t length)
 {
 	while (bytes[length - 1] == '0')
 		bytes[--length] = '\0';
@@ -296,7 +283,7 @@ uint16_t stripBinaryOfBytes (char *bytes, uint16_t length)
 }
 
 static
-uint16_t normalizeBinaryOfBytes (char *bytes, uint16_t length)
+uint32_t normalizeBinaryOfBytes (char *bytes, uint32_t length)
 {
 	if (length > 5 && bytes[length - 5] == 'e' && bytes[length - 3] == '0')
 	{

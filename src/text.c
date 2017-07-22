@@ -449,7 +449,7 @@ static const char uppers[] = {
 
 // MARK: - Methods
 
-struct Text make (const char *bytes, uint16_t length)
+struct Text make (const char *bytes, int32_t length)
 {
 	return (struct Text){
 		.bytes = bytes,
@@ -459,7 +459,7 @@ struct Text make (const char *bytes, uint16_t length)
 
 struct Text join (struct Text from, struct Text to)
 {
-	return make(from.bytes, to.bytes - from.bytes + to.length);
+	return make(from.bytes, (int32_t)(to.bytes - from.bytes) + to.length);
 }
 
 struct Text(Char) character (struct Text text)
@@ -579,7 +579,7 @@ struct Text(Char) prevCharacter (struct Text *text)
 	return c;
 }
 
-uint16_t advance (struct Text *text, uint16_t units)
+void advance (struct Text *text, int32_t units)
 {
 	if (units >= text->length)
 	{
@@ -591,7 +591,6 @@ uint16_t advance (struct Text *text, uint16_t units)
 		text->bytes += units;
 		text->length -= units;
 	}
-	return text->length;
 }
 
 uint16_t toUTF16Length (struct Text text)
