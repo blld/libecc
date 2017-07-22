@@ -143,8 +143,7 @@ static void test (const char *func, int line, const char *test, const char *expe
 	clock_t start = clock();
 	
 	if (testVerbosity > 0 || !setjmp(*Ecc.pushEnv(ecc)))
-		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(sloppyMode) | Ecc(stringResult));
-#warning FIXME
+		Ecc.evalInput(ecc, Input.createFromBytes(test, (uint32_t)strlen(test), "%s:%d", func, line), Ecc(stringResult));
 	
 	if (testVerbosity <= 0)
 		Ecc.popEnv(ecc);
@@ -1501,32 +1500,30 @@ static int runTest (int verbosity)
 	
 //	test("debugger", "undefined", NULL);
 	
-//	testLexer();
-//	testParser();
-//	testEval();
-//	testConvertion();
-//	testException();
-//	testOperator();
-//	testEquality();
-//	testRelational();
-//	testConditional();
-//	testSwitch();
-//	testDelete();
-//	testGlobal();
-//	testFunction();
-//	testLoop();
-//	testThis();
-//	testObject();
-//	testError();
-//	testAccessor();
-//	testArray();
-//	testBoolean();
-//	testNumber();
-//	testDate();
-//	testString();
-//	testRegExp();
-	
-	test("__re = new RegExp(void 0); __re.source === ''", "[object Undefined]", NULL);
+	testLexer();
+	testParser();
+	testEval();
+	testConvertion();
+	testException();
+	testOperator();
+	testEquality();
+	testRelational();
+	testConditional();
+	testSwitch();
+	testDelete();
+	testGlobal();
+	testFunction();
+	testLoop();
+	testThis();
+	testObject();
+	testError();
+	testAccessor();
+	testArray();
+	testBoolean();
+	testNumber();
+	testDate();
+	testString();
+	testRegExp();
 	
 	Env.newline();
 	
