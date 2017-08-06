@@ -1596,7 +1596,7 @@ static
 struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, int isSetter)
 {
 	struct Value value;
-	struct Text text = self->lexer->text, textParameter;
+	struct Text text, textParameter;
 	
 	struct OpList *oplist = NULL;
 	int parameterCount = 0;
@@ -1634,6 +1634,7 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	uint16_t slot = arguments - function->environment.hashmap;
 	
 	self->function = function;
+	text = self->lexer->text;
 	expectToken(self, '(');
 	textParameter = self->lexer->text;
 	oplist = OpList.join(oplist, parameters(self, &parameterCount));

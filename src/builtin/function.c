@@ -68,8 +68,10 @@ struct Value toChars (struct Context * const context, struct Value value)
 	self = value.data.function;
 	Chars.beginAppend(&chars);
 	
+	Chars.append(&chars, "function %s", self->name? self->name: "anonymous");
+	
 	if (self->text.bytes == Text(nativeCode).bytes)
-		Chars.append(&chars, "function %s() [native code]", self->name? self->name: "");
+		Chars.append(&chars, "() [native code]");
 	else
 		Chars.append(&chars, "%.*s", self->text.length, self->text.bytes);
 	
@@ -82,10 +84,7 @@ struct Value toString (struct Context * const context)
 	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(functionType));
 	
-	if (context->this.data.function->text.bytes == Text(nativeCode).bytes)
-		return toChars(context, context->this);
-	else
-		return Value.text(&context->this.data.function->text);
+	return toChars(context, context->this);
 }
 
 static
@@ -243,7 +242,7 @@ struct Value constructor (struct Context * const context)
 					Chars.append(&chars, ",");
 			}
 		else
-			Chars.append(&chars, ") {");
+			Chars.append(&chars, "){");
 		
 		Chars.append(&chars, "})");
 		
