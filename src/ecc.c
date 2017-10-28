@@ -28,6 +28,8 @@ void addInput(struct Ecc *self, struct Input *input)
 
 // MARK: - Methods
 
+uint32_t Ecc(version) = (0 << 24) | (1 << 16) | (0 << 0);
+
 struct Ecc *create (void)
 {
 	struct Ecc *self;

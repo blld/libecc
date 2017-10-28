@@ -23,7 +23,9 @@
 		Ecc(primitiveResult)    = 0x2 /* 0000 0010 */,
 		Ecc(stringResult)       = 0x6 /* 0000 0110 */,
 	};
-
+	
+	extern uint32_t Ecc(version);
+	
 #endif
 
 
