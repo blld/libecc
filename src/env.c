@@ -6,200 +6,150 @@
 //  Licensed under MIT license, see LICENSE.txt file in project root
 //
 
-#if __MSDOS__
-#include <conio.h>
-#elif _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#if _WIN32
-#include <sys/timeb.h>
-#elif _DEFAULT_SOURCE || __APPLE__
-#include <sys/time.h>
-#endif
-
-
 #define Implementation
 #include "env.h"
 
+#if __MSDOS__
+	#include <conio.h>
+#elif _WIN32
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+#endif
+
+#if _WIN32
+	#include <sys/timeb.h>
+#elif _DEFAULT_SOURCE || __APPLE__
+	#include <sys/time.h>
+#endif
+
 // MARK: - Private
 
-struct Env(Internal) {
+#define PRINT_MAX 2048
+
+const int Env(print_max) = PRINT_MAX;
+
+struct {
 #if __MSDOS__
-	int defaultAttribute;
+	int attribute;
 #elif _WIN32
 	HANDLE console;
-	int defaultAttribute;
-	int defaultOutputCP;
-	unsigned int outputFormat;
+	int attribute;
+	int cp;
 #else
-	int isTerminal;
+	int terminal;
 #endif
-} static const EnvInternalIdentity;
+} static env;
 
-static struct Env *self = NULL;
-
-static void setTextColor(enum Env(Color) color, enum Env(Attribute) attribute)
+void setup(void)
 {
-	#if __MSDOS__ || _WIN32
-	int c = color - 30;
+#if __MSDOS__
+	struct text_info textInfo;
+	gettextinfo(&textInfo);
+	env.attribute = textInfo.normattr;
+#elif _WIN32
+	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
+	env.console = GetStdHandle(STD_ERROR_HANDLE);
+	env.cp = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_UTF8);
+	GetConsoleScreenBufferInfo(env.console, &consoleScreenBufferInfo);
+	env.attribute = consoleScreenBufferInfo.wAttributes;
+#else
+	env.terminal = getenv("TERM") != NULL;
+#endif
+}
+
+void teardown(void)
+{
+#if __MSDOS__
+	textattr(env.attribute);
+#elif _WIN32
+	SetConsoleOutputCP(env.cp);
+	SetConsoleTextAttribute(env.console, env.attribute);
+#endif
 	
-	if (attribute == Env(invisible))
-		c = (self->internal->defaultAttribute >> 4) & 0x7;
-	else if (color == Env(black))
-		c = attribute == Env(bold)? 0x7: 0x8;
-	else if (color == Env(white) || !color)
-		c = attribute == Env(bold)? 0xf: attribute == Env(dim)? 0x8: 0x7;
+	newline();
+}
+
+static
+void textc(enum Env(Color) c, enum Env(Attribute) a)
+{
+#if __MSDOS__ || _WIN32
+	if (a == invisible)
+		c = (env.attribute >> 4) & 0x7;
+	else if (c == white || !c)
+		c = a == bold? 0xf: 0x7;
+	else if (c == black)
+		c = a == bold? 0x7: 0x8;
 	else
-		c = (attribute == Env(bold)? 0x8: 0) | ((c << 2) & 0x4) | (c & 0x2) | ((c >> 2) & 0x1);
+	{
+		c -= 30;
+		c = (a == bold? 0x8: 0)
+			| ((c << 2) & 0x4)
+			| (c & 0x2)
+			| ((c >> 2) & 0x1)
+			;
+	}
+	c |= env.attribute & 0xf0;
 	
 	#if __MSDOS__
-	textcolor(c);
+	textattr(c);
 	#elif _WIN32
-	SetConsoleTextAttribute(self->internal->console, c | (self->internal->defaultAttribute & 0xf0));
+	SetConsoleTextAttribute(env.console, c);
 	#endif
-	
-	#else
-	if (self->internal->isTerminal)
+#else
+	if (env.terminal)
 	{
-		if (color && attribute)
-			fprintf(stderr, "\x1B[%d;%dm", color, attribute);
-		else if (color)
-			fprintf(stderr, "\x1B[%dm", color);
-		else if (attribute)
-			fprintf(stderr, "\x1B[%dm", attribute);
+		if (c && a)
+			fprintf(stderr, "\x1B[%d;%dm", c, a);
+		else if (c | a)
+			fprintf(stderr, "\x1B[%dm", c | a);
 		else
 			fprintf(stderr, "\x1B[0m");
 	}
-	#endif
-}
-
-#if __MSDOS__
-static inline void printVA(uint16_t length, const char *format, va_list ap)
-{
-	char buffer[length + 1];
-	int16_t offset = 0;
-	
-	const unsigned char csize = 80;
-	char cbuffer[csize + 1];
-	cbuffer[csize] = '\0';
-	
-	vsnprintf(buffer, length + 1, format, ap);
-	while (offset + csize < length)
-	{
-		memcpy(cbuffer, buffer + offset, csize);
-		cprintf("%s", cbuffer);
-		offset += csize;
-	}
-	cprintf("%s", buffer + offset);
-}
-#elif _WIN32
-static inline void printVA(uint16_t length, const char *format, va_list ap)
-{
-	char buffer[length + 1];
-	vsnprintf(buffer, length + 1, format, ap);
-	DWORD numberOfCharsWritten;
-	WriteConsoleA(self->internal->console, buffer, length, &numberOfCharsWritten, NULL);
-}
 #endif
-
-// MARK: - Static Members
-
-// MARK: - Methods
-
-void setup (void)
-{
-	assert(!self);
-	
-	self = malloc(sizeof(*self));
-	*self = Env.identity;
-	
-	self->internal = malloc(sizeof(*self->internal));
-	*self->internal = EnvInternalIdentity;
-	
-	#if __MSDOS__
-	struct text_info textInfo;
-	gettextinfo(&textInfo);
-	self->internal->defaultAttribute = textInfo.normattr;
-	#elif _WIN32
-	self->internal->console = GetStdHandle(STD_ERROR_HANDLE);
-	self->internal->defaultOutputCP = GetConsoleOutputCP();
-	SetConsoleOutputCP(CP_UTF8);
-	
-	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
-	GetConsoleScreenBufferInfo(self->internal->console, &consoleScreenBufferInfo);
-	self->internal->defaultAttribute = consoleScreenBufferInfo.wAttributes;
-	
-	#else
-	self->internal->isTerminal = getenv("TERM") != NULL;
-	#endif
 }
 
-void teardown (void)
+static
+void vprintc(const char *format, va_list ap)
 {
-	assert(self);
+	char buffer[PRINT_MAX];
+	size_t size = sizeof(buffer);
 	
-	#if __MSDOS__
-	textcolor(self->internal->defaultAttribute);
-	#elif _WIN32
-	SetConsoleOutputCP(self->internal->defaultOutputCP);
-	SetConsoleTextAttribute(self->internal->console, self->internal->defaultAttribute);
-	
-	#if _MSC_VER && _MSC_VER < 1900
-	_set_output_format(self->internal->outputFormat);
-	#endif
-	
-	#endif
-	
-	print("\n");
-	
-	free(self->internal), self->internal = NULL;
-	free(self), self = NULL;
+	if (vsnprintf(buffer, size, format, ap) >= size)
+	{
+		buffer[size - 3] = '.';
+		buffer[size - 2] = '.';
+	}
+#if __MSDOS__
+	cputs(buffer);
+#elif _WIN32
+	{
+		DWORD count;
+		WriteConsoleA(env.console, buffer, strlen(buffer), &count, NULL);
+	}
+#else
+	fputs(buffer, stderr);
+#endif
 }
 
-void print (const char *format, ...)
+void print(const char *format, ...)
 {
 	va_list ap;
 	
-	#if __MSDOS__ || _WIN32
-	{
-		int16_t length;
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		va_start(ap, format);
-		printVA(length, format, ap);
-		va_end(ap);
-	}
-	#else
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	vprintc(format, ap);
 	va_end(ap);
-	#endif
 }
 
-void printColor (enum Env(Color) color, enum Env(Attribute) attribute, const char *format, ...)
+void printColor(enum Env(Color) color, enum Env(Attribute) attribute, const char *format, ...)
 {
 	va_list ap;
 	
-	setTextColor(color, attribute);
-	#if __MSDOS__ || _WIN32
-	{
-		int16_t length;
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		va_start(ap, format);
-		printVA(length, format, ap);
-		va_end(ap);
-	}
-	#else
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	textc(color, attribute);
+	vprintc(format, ap);
+	textc(0, 0);
 	va_end(ap);
-	#endif
-	setTextColor(0, 0);
 }
 
 void printError (int typeLength, const char *type, const char *format, ...)
@@ -209,7 +159,7 @@ void printError (int typeLength, const char *type, const char *format, ...)
 	printColor(Env(red), Env(bold), "%.*s", typeLength, type);
 	print(": ");
 	
-	setTextColor(0, Env(bold));
+	textc(0, Env(bold));
 	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
@@ -225,7 +175,7 @@ void printError (int typeLength, const char *type, const char *format, ...)
 	vfprintf(stderr, format, ap);
 	va_end(ap);
 	#endif
-	setTextColor(0, 0);
+	textc(0, 0);
 	
 	newline();
 }
@@ -237,7 +187,7 @@ void printWarning (const char *format, ...)
 	printColor(Env(yellow), Env(bold), "Warning");
 	print(": ");
 	
-	setTextColor(0, Env(bold));
+	textc(0, Env(bold));
 	#if __MSDOS__ || _WIN32
 	{
 		int16_t length;
@@ -253,13 +203,16 @@ void printWarning (const char *format, ...)
 	vfprintf(stderr, format, ap);
 	va_end(ap);
 	#endif
-	setTextColor(0, 0);
+	textc(0, 0);
 	
 	newline();
 }
 
-void newline ()
+void newline()
 {
+#if __MSDOS__ || _WIN32
+	putc('\r', stderr);
+#endif
 	putc('\n', stderr);
 }
 

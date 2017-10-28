@@ -25,13 +25,15 @@
 		Env(cyan) = 36,
 		Env(white) = 37,
 	};
-
+	
 	enum Env(Attribute) {
 		Env(bold) = 1,
 		Env(dim) = 2,
 		Env(invisible) = 8,
 	};
-
+	
+	extern const int Env(print_max);
+	
 #endif
 
 
