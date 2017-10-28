@@ -44,9 +44,9 @@ Interface(Env,
 	(void, printColor ,(enum Env(Color) color, enum Env(Attribute) attribute, const char *format, ...))
 	(void, printError ,(int typeLength, const char *type, const char *format, ...))
 	(void, printWarning ,(const char *format, ...))
-	(void, newline ,())
+	(void, newline ,(void))
 	
-	(double, currentTime ,())
+	(double, currentTime ,(void))
 	,
 	{
 		struct Env(Internal) *internal;
