@@ -333,8 +333,6 @@ void setup ()
 	Function.addToObject(Math(object), "sin", mathSin, 1, h);
 	Function.addToObject(Math(object), "sqrt", mathSqrt, 1, h);
 	Function.addToObject(Math(object), "tan", mathTan, 1, h);
-	
-	srand((unsigned)time(NULL));
 }
 
 void teardown (void)

@@ -42,6 +42,8 @@ struct {
 
 void setup(void)
 {
+	srand((unsigned)time(NULL));
+	
 #if __MSDOS__
 	struct text_info textInfo;
 	gettextinfo(&textInfo);
