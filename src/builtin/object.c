@@ -1384,7 +1384,7 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	assert(self);
 	
-	isArray = self->type == &Array(type) || self->type == &Arguments(type);
+	isArray = Value.objectIsArray(self);
 	
 	fprintf(file, isArray? "[ ": "{ ");
 	

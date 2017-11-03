@@ -606,6 +606,11 @@ struct Value objectValue (struct Object *object)
 		return Value.host(object);
 }
 
+int objectIsArray (struct Object *object)
+{
+	return object->type == &Array(type) || object->type == &Arguments(type);
+}
+
 struct Value toType (struct Value value)
 {
 	switch ((enum Value(Type))value.type)

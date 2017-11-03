@@ -137,6 +137,7 @@ Interface(Value,
 	
 	(struct Value, toObject ,(struct Context * const, struct Value))
 	(struct Value, objectValue ,(struct Object *))
+	(int, objectIsArray ,(struct Object *))
 	
 	(struct Value, toType ,(struct Value))
 	

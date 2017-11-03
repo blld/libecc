@@ -27,7 +27,7 @@ const struct Object(Type) Array(type) = {
 static
 int valueIsArray (struct Value value)
 {
-	return value.type == Value(objectType) && value.data.object->type == &Array(type);
+	return Value.isObject(value) && Value.objectIsArray(value.data.object);
 }
 
 static
