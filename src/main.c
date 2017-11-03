@@ -130,8 +130,8 @@ static void test (const char *func, int line, const char *test, const char *expe
 		ptrdiff_t textStart = strchr(text, '^') - text, textLength = (end? end - text - textStart: 0) + 1;
 		struct Input *input = Ecc.findInput(ecc, ecc->text);
 		
-		if (ecc->text.bytes >= ecc->ofLine.bytes && ecc->text.bytes < ecc->ofLine.bytes + ecc->ofLine.length)
-			bytes = ecc->ofLine.bytes;
+		if (ecc->text.bytes >= ecc->ofText.bytes && ecc->text.bytes < ecc->ofText.bytes + ecc->ofText.length)
+			bytes = ecc->ofText.bytes;
 		else if (input)
 			bytes = input->bytes;
 		else

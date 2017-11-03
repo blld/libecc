@@ -233,23 +233,26 @@ struct Input * findInput (struct Ecc *self, struct Text text)
 
 void printTextInput (struct Ecc *self, struct Text text, int fullLine)
 {
-	struct Text ofLine;
+	int32_t ofLine;
+	struct Text ofText;
 	const char *ofInput;
 	
 	assert(self);
 	
-	if (text.bytes >= self->ofLine.bytes && text.bytes < self->ofLine.bytes + self->ofLine.length)
+	if (text.bytes >= self->ofText.bytes && text.bytes < self->ofText.bytes + self->ofText.length)
 	{
 		ofLine = self->ofLine;
+		ofText = self->ofText;
 		ofInput = self->ofInput;
 	}
 	else
 	{
-		ofLine = Text(empty);
+		ofLine = 0;
+		ofText = Text(empty);
 		ofInput = NULL;
 	}
 	
-	Input.printText(findInput(self, text), text, ofLine, ofInput, fullLine);
+	Input.printText(findInput(self, text), text, ofLine, ofText, ofInput, fullLine);
 }
 
 void garbageCollect(struct Ecc *self)

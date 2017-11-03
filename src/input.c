@@ -116,17 +116,17 @@ void destroy (struct Input *self)
 	free(self), self = NULL;
 }
 
-void printText (struct Input *self, struct Text text, struct Text ofLine, const char *ofInput, int fullLine)
+void printText (struct Input *self, struct Text text, int32_t ofLine, struct Text ofText, const char *ofInput, int fullLine)
 {
 	int32_t line = -1;
 	const char *bytes = NULL;
 	uint16_t length = 0;
 	
-	if (ofLine.length)
+	if (ofText.length)
 	{
-		bytes = ofLine.bytes;
-		length = ofLine.length;
-		printInput(ofInput? ofInput: "native code", 1);
+		bytes = ofText.bytes;
+		length = ofText.length;
+		printInput(ofInput? ofInput: "native code", ofLine? ofLine: 1);
 	}
 	else if (!self)
 		printInput(ofInput? ofInput: "(unknown input)", 0);

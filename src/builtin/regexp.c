@@ -1370,9 +1370,10 @@ struct RegExp * createWith (struct Context *context, struct Value pattern, struc
 	regexp = create(value.data.chars, &error, context->ecc->sloppyMode? RegExp(allowUnicodeFlags): 0);
 	if (error)
 	{
-		context->ecc->ofLine = Value.textOf(&value);
-		context->ecc->ofInput = "(RegExp)";
 		Context.setTextIndex(context, Context(noIndex));
+		context->ecc->ofLine = 1;
+		context->ecc->ofText = Value.textOf(&value);
+		context->ecc->ofInput = "(RegExp)";
 		Context.throw(context, Value.error(error));
 	}
 	return regexp;

@@ -59,7 +59,8 @@ Interface(Ecc,
 		
 		struct Value result;
 		struct Text text;
-		struct Text ofLine;
+		int32_t ofLine;
+		struct Text ofText;
 		const char *ofInput;
 		
 		struct Input **inputs;
