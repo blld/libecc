@@ -1473,6 +1473,7 @@ static void testJSON (void)
 	test("JSON.parse('{\"abc\": \"ab\\\\\"c\"}').abc", "ab\\\"c", NULL);
 	test("JSON.parse('{\"abc\": [0,1,2,3]}').abc", "0,1,2,3", NULL);
 	test("JSON.parse('{\"abc\": [0,1,2,3]}', function(k,v){ return typeof v == 'number'? v * 2: v }).abc", "0,2,4,6", NULL);
+	test("var r=''; JSON.parse('[1, 2, { \"a\": 4, \"b\": {\"c\": 6}}]', function(key, value) { r += key+','; return value; }); r", "0,1,a,c,b,2,,", NULL);
 }
 
 static int runTest (int verbosity)
