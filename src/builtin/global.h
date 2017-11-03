@@ -25,6 +25,7 @@
 	#include "number.h"
 	#include "regexp.h"
 	#include "error.h"
+	#include "json.h"
 
 	extern const struct Object(Type) Global(type);
 

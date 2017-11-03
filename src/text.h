@@ -46,6 +46,7 @@
 	extern const struct Text Text(functionType);
 	extern const struct Text Text(argumentsType);
 	extern const struct Text Text(mathType);
+	extern const struct Text Text(jsonType);
 	extern const struct Text Text(globalType);
 
 	extern const struct Text Text(errorName);

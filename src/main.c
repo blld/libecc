@@ -1453,6 +1453,28 @@ static void testRegExp (void)
 	,             "   " "  ^");
 }
 
+static void testJSON (void)
+{
+	test("JSON", "[object JSON]", NULL);
+	test("JSON.parse('abc')", "SyntaxError: expect { or ["
+	,                "^  ");
+	test("JSON.parse('{}}')", "SyntaxError: unexpected '}'"
+	,                "  ^");
+	test("JSON.parse('{abc}')", "SyntaxError: expect property name"
+	,                " ^   ");
+	test("JSON.parse('{\\n\\tabc\\n}')", "SyntaxError: expect property name"
+	,                      " ^   ");
+	test("JSON.parse('{\"abc\"}')", "SyntaxError: expect colon"
+	,                  "      ^  ");
+	test("JSON.parse('{\"abc\": 123}')", "[object Object]", NULL);
+	test("JSON.parse('{\"abc\": 123.4e-2}').abc", "1.234", NULL);
+	test("JSON.parse('{\"abc\": 123,}').abc", "SyntaxError: expect property name"
+	,                  "            ^");
+	test("JSON.parse('{\"abc\": \"ab\\\\\"c\"}').abc", "ab\\\"c", NULL);
+	test("JSON.parse('{\"abc\": [0,1,2,3]}').abc", "0,1,2,3", NULL);
+	test("JSON.parse('{\"abc\": [0,1,2,3]}', function(k,v){ return typeof v == 'number'? v * 2: v }).abc", "0,2,4,6", NULL);
+}
+
 static int runTest (int verbosity)
 {
 	testVerbosity = verbosity;
@@ -1483,6 +1505,7 @@ static int runTest (int verbosity)
 	testDate();
 	testString();
 	testRegExp();
+	testJSON();
 	
 	Env.newline();
 	

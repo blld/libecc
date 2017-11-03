@@ -46,6 +46,7 @@ textMake(dateType, "[object Date]");
 textMake(functionType, "[object Function]");
 textMake(argumentsType, "[object Arguments]");
 textMake(mathType, "[object Math]");
+textMake(jsonType, "[object JSON]");
 textMake(globalType, "[object Global]");
 
 textMake(errorName, "Error");

@@ -376,6 +376,7 @@ void setup (void)
 	Number.setup();
 	Boolean.setup();
 	RegExp.setup();
+	JSON.setup();
 	Arguments.setup();
 }
 
@@ -391,6 +392,7 @@ void teardown (void)
 	Number.teardown();
 	Boolean.teardown();
 	RegExp.teardown();
+	JSON.teardown();
 	Arguments.teardown();
 }
 
@@ -434,7 +436,7 @@ struct Function * create (void)
 	Function.addValue(self, "URIError", Value.function(Error(uriConstructor)), h);
 	Function.addValue(self, "EvalError", Value.function(Error(evalConstructor)), h);
 	Function.addValue(self, "Math", Value.object(Math(object)), h);
-	#warning JSON
+	Function.addValue(self, "JSON", Value.object(JSON(object)), h);
 	
 	return self;
 }
