@@ -28,6 +28,20 @@ struct Parse {
 	const struct Op * ops;
 };
 
+struct Stringify {
+	struct Chars(Append) chars;
+	char spaces[11];
+	int level;
+	struct Object *filter;
+	
+	// replacer
+	
+	struct Context context;
+	struct Function * function;
+	struct Object * arguments;
+	const struct Op * ops;
+};
+
 const struct Object(Type) JSON(type) = {
 	.text = &Text(jsonType),
 };
@@ -107,7 +121,7 @@ struct Value literal (struct Parse *parse)
 	switch (c.codepoint)
 	{
 		case 't':
-			if (!strcmp(parse->text.bytes, "rue"))
+			if (!memcmp(parse->text.bytes, "rue", 3))
 			{
 				Text.advance(&parse->text, 3);
 				return Value(true);
@@ -115,7 +129,7 @@ struct Value literal (struct Parse *parse)
 			break;
 			
 		case 'f':
-			if (!strcmp(parse->text.bytes, "alse"))
+			if (!memcmp(parse->text.bytes, "alse", 4))
 			{
 				Text.advance(&parse->text, 4);
 				return Value(false);
@@ -123,7 +137,7 @@ struct Value literal (struct Parse *parse)
 			break;
 			
 		case 'n':
-			if (!strcmp(parse->text.bytes, "ull"))
+			if (!memcmp(parse->text.bytes, "ull", 3))
 			{
 				Text.advance(&parse->text, 3);
 				return Value(null);
@@ -423,17 +437,205 @@ struct Value jsonParse (struct Context * const context)
 }
 
 static
+struct Value replace (struct Stringify *stringify, struct Value this, struct Value property, struct Value value)
+{
+	uint16_t hashmapCount;
+	
+	hashmapCount = stringify->context.environment->hashmapCount;
+	switch (hashmapCount) {
+		default:
+			memcpy(stringify->context.environment->hashmap + 5,
+				   stringify->function->environment.hashmap,
+				   sizeof(*stringify->context.environment->hashmap) * (hashmapCount - 5));
+		case 5:
+			stringify->context.environment->hashmap[3 + 1].value = value;
+		case 4:
+			stringify->context.environment->hashmap[3 + 0].value = property;
+		case 3:
+			break;
+		case 2:
+		case 1:
+		case 0:
+			assert(0);
+			break;
+	}
+	
+	stringify->context.ops = stringify->ops;
+	stringify->context.this = this;
+	stringify->arguments->element[0].value = property;
+	stringify->arguments->element[1].value = value;
+	return stringify->context.ops->native(&stringify->context);
+}
+
+static
+int stringifyValue (struct Stringify *stringify, struct Value this, struct Value property, struct Value value, int isArray, int addComa)
+{
+	uint32_t index, count;
+	
+	if (stringify->function)
+		value = replace(stringify, this, property, value);
+	
+	if (!isArray)
+	{
+		if (value.type == Value(undefinedType))
+			return 0;
+		
+		if (stringify->filter)
+		{
+			struct Object *object = stringify->filter;
+			int found = 0;
+			
+			for (index = 0, count = object->elementCount < Object(ElementMax)? object->elementCount: Object(ElementMax); index < count; ++index)
+			{
+				if (object->element[index].value.check == 1)
+				{
+					if (Value.isTrue(Value.equals(&stringify->context, property, object->element[index].value)))
+					{
+						found = 1;
+						break;
+					}
+				}
+			}
+			
+			if (!found)
+				return 0;
+		}
+	}
+	
+	if (addComa)
+		Chars.append(&stringify->chars, ",%s", strlen(stringify->spaces)? "\n": "");
+	
+	for (index = 0, count = stringify->level; index < count; ++index)
+		Chars.append(&stringify->chars, "%s", stringify->spaces);
+	
+	if (!isArray)
+		Chars.append(&stringify->chars, "\"%.*s\":%s", Value.stringLength(&property), Value.stringBytes(&property), strlen(stringify->spaces)? " ": "");
+	
+	if (value.type == Value(functionType) || value.type == Value(undefinedType))
+		Chars.append(&stringify->chars, "null");
+	else if (Value.isObject(value))
+	{
+		struct Object *object = value.data.object;
+		int isArray = Value.objectIsArray(object);
+		struct Chars(Append) chars;
+		const struct Text *property;
+		int hasValue = 0;
+		
+		Chars.append(&stringify->chars, "%s%s", isArray? "[": "{", strlen(stringify->spaces)? "\n": "");
+		++stringify->level;
+		
+		for (index = 0, count = object->elementCount < Object(ElementMax)? object->elementCount: Object(ElementMax); index < count; ++index)
+		{
+			if (object->element[index].value.check == 1)
+			{
+				Chars.beginAppend(&chars);
+				Chars.append(&chars, "%d", index);
+				hasValue |= stringifyValue(stringify, value, Chars.endAppend(&chars), object->element[index].value, isArray, hasValue);
+			}
+		}
+		
+		if (!isArray)
+		{
+			for (index = 0; index < object->hashmapCount; ++index)
+			{
+				if (object->hashmap[index].value.check == 1)
+				{
+					property = Key.textOf(object->hashmap[index].value.key);
+					hasValue |= stringifyValue(stringify, value, Value.text(property), object->hashmap[index].value, isArray, hasValue);
+				}
+			}
+		}
+		
+		Chars.append(&stringify->chars, "%s", strlen(stringify->spaces)? "\n": "");
+		
+		--stringify->level;
+		for (index = 0, count = stringify->level; index < count; ++index)
+			Chars.append(&stringify->chars, "%s", stringify->spaces);
+		
+		Chars.append(&stringify->chars, "%s", isArray? "]": "}");
+	}
+	else
+		Chars.appendValue(&stringify->chars, &stringify->context, value);
+	
+	return 1;
+}
+
+static
 struct Value jsonStringify (struct Context * const context)
 {
-    struct Value value;
-    
-    Context.assertVariableParameter(context);
-    
-    value = Value.toObject(context, Context.argument(context, 0));
-    
-    // TODO
-    
-    return Value.binary(tan(value.data.binary));
+	struct Value value, replacer, space;
+	struct Stringify stringify = {
+		.context = {
+			.parent = context,
+			.ecc = context->ecc,
+			.depth = context->depth + 1,
+			.textIndex = Context(callIndex),
+		},
+		.spaces = { 0 },
+	};
+	
+	Context.assertVariableParameter(context);
+	
+	value = Context.variableArgument(context, 0);
+	replacer = Context.variableArgument(context, 1);
+	space = Context.variableArgument(context, 2);
+	
+	stringify.filter = replacer.type == Value(objectType) && replacer.data.object->type == &Array(type)? replacer.data.object: NULL;
+	stringify.function = replacer.type == Value(functionType)? replacer.data.function: NULL;
+	stringify.ops = stringify.function? stringify.function->oplist->ops: NULL;
+	
+	if (Value.isString(space))
+		snprintf(stringify.spaces, sizeof(stringify.spaces), "%.*s", Value.stringLength(&space), Value.stringBytes(&space));
+	else if (Value.isNumber(space))
+	{
+		int i = Value.toInteger(context, space).data.integer;
+		
+		if (i < 0)
+			i = 0;
+		
+		if (i > 10)
+			i = 10;
+		
+		while (i--)
+			strcat(stringify.spaces, " ");
+	}
+	
+	Chars.beginAppend(&stringify.chars);
+	
+	if (stringify.function && stringify.function->flags & Function(needHeap))
+	{
+		struct Object *environment = Object.copy(&stringify.function->environment);
+		
+		stringify.context.environment = environment;
+		stringify.arguments = Arguments.createSized(2);
+		++stringify.arguments->referenceCount;
+		
+		environment->hashmap[2].value = Value.object(stringify.arguments);
+		
+		stringifyValue(&stringify, value, Value.text(&Text(empty)), value, 1, 0);
+	}
+	else if (stringify.function)
+	{
+		struct Object environment = stringify.function->environment;
+		struct Object arguments = Object.identity;
+		union Object(Hashmap) hashmap[stringify.function->environment.hashmapCapacity];
+		union Object(Element) element[2];
+		
+		memcpy(hashmap, stringify.function->environment.hashmap, sizeof(hashmap));
+		stringify.context.environment = &environment;
+		stringify.arguments = &arguments;
+		
+		arguments.element = element;
+		arguments.elementCount = 2;
+		environment.hashmap = hashmap;
+		environment.hashmap[2].value = Value.object(&arguments);
+		
+		stringifyValue(&stringify, value, Value.text(&Text(empty)), value, 1, 0);
+	}
+	else
+		stringifyValue(&stringify, value, Value.text(&Text(empty)), value, 1, 0);
+	
+	return Chars.endAppend(&stringify.chars);
 }
 
 // MARK: - Public

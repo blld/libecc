@@ -1472,8 +1472,16 @@ static void testJSON (void)
 	,                  "            ^");
 	test("JSON.parse('{\"abc\": \"ab\\\\\"c\"}').abc", "ab\\\"c", NULL);
 	test("JSON.parse('{\"abc\": [0,1,2,3]}').abc", "0,1,2,3", NULL);
+	test("JSON.parse('{\"abc\": [false,true,null]}').abc", "false,true,", NULL);
 	test("JSON.parse('{\"abc\": [0,1,2,3]}', function(k,v){ return typeof v == 'number'? v * 2: v }).abc", "0,2,4,6", NULL);
 	test("var r=''; JSON.parse('[1, 2, { \"a\": 4, \"b\": {\"c\": 6}}]', function(key, value) { r += key+','; return value; }); r", "0,1,a,c,b,2,,", NULL);
+	test("JSON.stringify({ uno: 1, dos: { tres: 123 } }, null, '\t')", "{\n\t\"uno\": 1,\n\t\"dos\": {\n\t\t\"tres\": 123\n\t}\n}", NULL);
+	test("JSON.stringify({ uno: 1, dos: { tres: 123 } }, null, '  ')", "{\n  \"uno\": 1,\n  \"dos\": {\n    \"tres\": 123\n  }\n}", NULL);
+	test("JSON.stringify({ uno: 1, dos: { tres: 123 } }, null, 3)", "{\n   \"uno\": 1,\n   \"dos\": {\n      \"tres\": 123\n   }\n}", NULL);
+	test("JSON.stringify({ uno: 1, dos: { tres: 123 } })", "{\"uno\":1,\"dos\":{\"tres\":123}}", NULL);
+	test("var r=''; JSON.stringify({ uno: 1, dos: { tres: 123 } }, function(key,value){ r+=key; return value }); r", "unodostres", NULL);
+	test("JSON.stringify({f:'M',w:4,t:'c',M:7}, function replacer(key,value){ return typeof value=='string'?undefined:value });", "{\"w\":4,\"M\":7}", NULL);
+	test("JSON.stringify({f:'M',w:4,t:'c',M:7}, ['w','M']);", "{\"w\":4,\"M\":7}", NULL);
 }
 
 static int runTest (int verbosity)
