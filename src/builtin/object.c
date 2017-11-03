@@ -1390,11 +1390,11 @@ void dumpTo(struct Object *self, FILE *file)
 	
 	for (index = 0, count = elementCount(self); index < count; ++index)
 	{
-		if (!isArray)
-			fprintf(file, "%d: ", (int)index);
-		
 		if (self->element[index].value.check == 1)
 		{
+			if (!isArray)
+				fprintf(file, "%d: ", (int)index);
+			
 			if (self->element[index].value.type == Value(objectType) && self->element[index].value.data.object == self)
 				fprintf(file, "this");
 			else
@@ -1413,6 +1413,7 @@ void dumpTo(struct Object *self, FILE *file)
 				fprintf(stderr, "'");
 				Key.dumpTo(self->hashmap[index].value.key, file);
 				fprintf(file, "': ");
+				
 				if (self->hashmap[index].value.type == Value(objectType) && self->hashmap[index].value.data.object == self)
 					fprintf(file, "this");
 				else
