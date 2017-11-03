@@ -812,7 +812,7 @@ struct Value constructor (struct Context * const context)
 	if (count == 1 && Value.isNumber(value) && Value.isPrimitive(value))
 	{
 		double binary = Value.toBinary(context, value).data.binary;
-		if (isfinite(length) && binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
+		if (isfinite(binary) && binary >= 0 && binary <= UINT32_MAX && binary == (uint32_t)binary)
 		{
 			length = binary;
 			count = 0;
