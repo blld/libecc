@@ -57,7 +57,6 @@ void finalize (struct Object *object)
 static
 struct Value toString (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(stringType));
 	
 	return Value.chars(context->this.data.string->value);
@@ -66,7 +65,6 @@ struct Value toString (struct Context * const context)
 static
 struct Value valueOf (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(stringType));
 	
 	return Value.chars(context->this.data.string->value);
@@ -79,7 +77,6 @@ struct Value charAt (struct Context * const context)
 	const char *chars;
 	struct Text text;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, context->this);
@@ -121,7 +118,6 @@ struct Value charCodeAt (struct Context * const context)
 	const char *chars;
 	struct Text text;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, context->this);
@@ -157,15 +153,14 @@ struct Value concat (struct Context * const context)
 	struct Chars(Append) chars;
 	int32_t index, count;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisCoerciblePrimitive(context);
 	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	
 	Chars.beginAppend(&chars);
 	Chars.appendValue(&chars, context, Context.this(context));
 	for (index = 0; index < count; ++index)
-		Chars.appendValue(&chars, context, Context.variableArgument(context, index));
+		Chars.appendValue(&chars, context, Context.argument(context, index));
 	
 	return Chars.endAppend(&chars);
 }
@@ -178,17 +173,16 @@ struct Value indexOf (struct Context * const context)
 	int32_t index, length, searchLength;
 	const char *chars, *searchChars;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	
-	search = Value.toString(context, Context.variableArgument(context, 0));
+	search = Value.toString(context, Context.argument(context, 0));
 	searchChars = Value.stringBytes(&search);
 	searchLength = Value.stringLength(&search);
-	start = Value.toInteger(context, Context.variableArgument(context, 1));
+	start = Value.toInteger(context, Context.argument(context, 1));
 	index = start.data.integer < 0? length + start.data.integer: start.data.integer;
 	if (index < 0)
 		index = 0;
@@ -221,18 +215,17 @@ struct Value lastIndexOf (struct Context * const context)
 	int32_t index, length, searchLength;
 	const char *chars, *searchChars;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
 	
-	search = Value.toString(context, Context.variableArgument(context, 0));
+	search = Value.toString(context, Context.argument(context, 0));
 	searchChars = Value.stringBytes(&search);
 	searchLength = Value.stringLength(&search);
 	
-	start = Value.toBinary(context, Context.variableArgument(context, 1));
+	start = Value.toBinary(context, Context.argument(context, 1));
 	index = unitIndex(chars, length, length);
 	if (!isnan(start.data.binary) && start.data.binary < index)
 		index = start.data.binary < 0? 0: start.data.binary;
@@ -265,7 +258,6 @@ struct Value localeCompare (struct Context * const context)
 	struct Value that;
 	struct Text a, b;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
@@ -288,8 +280,6 @@ struct Value match (struct Context * const context)
 {
 	struct RegExp *regexp;
 	struct Value value, lastIndex;
-	
-	Context.assertParameterCount(context, 1);
 	
 	context->this = Value.toString(context, Context.this(context));
 	
@@ -442,7 +432,6 @@ struct Value replace (struct Context * const context)
 	const char *bytes, *searchBytes;
 	int32_t length, searchLength;
 	
-	Context.assertParameterCount(context, 2);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
@@ -572,7 +561,6 @@ struct Value search (struct Context * const context)
 	struct RegExp *regexp;
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
@@ -607,8 +595,6 @@ struct Value slice (struct Context * const context)
 	int32_t length;
 	uint16_t head = 0, tail = 0;
 	uint32_t headcp = 0;
-	
-	Context.assertParameterCount(context, 2);
 	
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
@@ -678,7 +664,6 @@ struct Value split (struct Context * const context)
 	struct Text text, separator = { 0 };
 	uint32_t size = 0, limit = UINT32_MAX;
 	
-	Context.assertParameterCount(context, 2);
 	Context.assertThisCoerciblePrimitive(context);
 	
 	context->this = Value.toString(context, Context.this(context));
@@ -835,9 +820,6 @@ struct Value substring (struct Context * const context)
 	int32_t length, head = 0, tail = 0;
 	uint32_t headcp = 0;
 	
-	Context.assertParameterCount(context, 2);
-	Context.assertThisCoerciblePrimitive(context);
-	
 	context->this = Value.toString(context, Context.this(context));
 	chars = Value.stringBytes(&context->this);
 	length = Value.stringLength(&context->this);
@@ -907,8 +889,6 @@ struct Value toLowerCase (struct Context * const context)
 	struct Chars *chars;
 	struct Text text;
 	
-	Context.assertParameterCount(context, 0);
-	
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
 	
@@ -928,8 +908,6 @@ struct Value toUpperCase (struct Context * const context)
 	struct Chars *chars;
 	struct Text text;
 	
-	Context.assertParameterCount(context, 0);
-	
 	context->this = Value.toString(context, Context.this(context));
 	text = Value.textOf(&context->this);
 	{
@@ -947,8 +925,6 @@ struct Value trim (struct Context * const context)
 	struct Chars *chars;
 	struct Text text, last;
 	struct Text(Char) c;
-	
-	Context.assertParameterCount(context, 0);
 	
 	if (!Value.isString(context->this))
 		context->this = Value.toString(context, Context.this(context));
@@ -983,8 +959,6 @@ struct Value constructor (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
 		value = Value.text(value.check == 1? &Text(undefined): &Text(empty));
@@ -1003,14 +977,12 @@ struct Value fromCharCode (struct Context * const context)
 	struct Chars(Append) chars;
 	int32_t index, count;
 	
-	Context.assertVariableParameter(context);
-	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	
 	Chars.beginAppend(&chars);
 	
 	for (index = 0; index < count; ++index)
-		Chars.appendCodepoint(&chars, (uint16_t)Value.toInteger(context, Context.variableArgument(context, index)).data.integer);
+		Chars.appendCodepoint(&chars, (uint16_t)Value.toInteger(context, Context.argument(context, index)).data.integer);
 	
 	return Chars.endAppend(&chars);
 }

@@ -51,14 +51,9 @@ Interface(Context,
 	
 	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
 	
-	(void, assertParameterCount ,(struct Context * const, int parameterCount))
 	(int, argumentCount ,(struct Context * const))
 	(struct Value, argument ,(struct Context * const, int argumentIndex))
 	(void, replaceArgument ,(struct Context * const, int argumentIndex, struct Value value))
-	
-	(void, assertVariableParameter ,(struct Context * const))
-	(int, variableArgumentCount ,(struct Context * const))
-	(struct Value, variableArgument ,(struct Context * const, int argumentIndex))
 	
 	(struct Value, this ,(struct Context * const))
 	(void, assertThisType ,(struct Context * const, enum Value(Type)))

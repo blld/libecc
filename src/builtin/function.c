@@ -81,7 +81,6 @@ struct Value toChars (struct Context * const context, struct Value value)
 static
 struct Value toString (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(functionType));
 	
 	return toChars(context, context->this);
@@ -92,7 +91,6 @@ struct Value apply (struct Context * const context)
 {
 	struct Value this, arguments;
 	
-	Context.assertParameterCount(context, 2);
 	Context.assertThisType(context, Value(functionType));
 	
 	context->strictMode = context->parent->strictMode;
@@ -119,7 +117,6 @@ struct Value call (struct Context * const context)
 {
 	struct Object arguments;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
 	
 	context->strictMode = context->parent->strictMode;
@@ -128,7 +125,7 @@ struct Value call (struct Context * const context)
 	
 	if (arguments.elementCount)
 	{
-		struct Value this = Context.variableArgument(context, 0);
+		struct Value this = Context.argument(context, 0);
 		if (this.type != Value(undefinedType) && this.type != Value(nullType))
 			this = Value.toObject(context, this);
 		
@@ -154,14 +151,13 @@ struct Value bindCall (struct Context * const context)
 	struct Object *arguments;
 	uint16_t count, length;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
 	
 	context->strictMode = context->parent->strictMode;
 	
 	function = context->this.data.function;
 	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	length = (function->environment.elementCount - 1) + count;
 	arguments = Array.createSized(length);
 	
@@ -178,17 +174,16 @@ struct Value bind (struct Context * const context)
 	uint16_t index, count;
 	int parameterCount = 0;
 	
-	Context.assertVariableParameter(context);
 	Context.assertThisType(context, Value(functionType));
 	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	parameterCount = context->this.data.function->parameterCount - (count > 1? count - 1: 0);
 	function = createWithNative(bindCall, parameterCount > 0? parameterCount: 0);
 	
 	Object.resizeElement(&function->environment, count? count: 1);
 	if (count)
 		for (index = 0; index < count; ++index)
-			function->environment.element[index].value = Context.variableArgument(context, index);
+			function->environment.element[index].value = Context.argument(context, index);
 	else
 		function->environment.element[0].value = Value(undefined);
 	
@@ -210,9 +205,7 @@ struct Value constructor (struct Context * const context)
 {
 	int argumentCount;
 	
-	Context.assertVariableParameter(context);
-	
-	argumentCount = Context.variableArgumentCount(context);
+	argumentCount = Context.argumentCount(context);
 	
 	{
 		int_fast32_t index;
@@ -235,7 +228,7 @@ struct Value constructor (struct Context * const context)
 				if (index == argumentCount - 1)
 					Chars.append(&chars, "){");
 				
-				value = Value.toString(context, Context.variableArgument(context, index));
+				value = Value.toString(context, Context.argument(context, index));
 				Chars.append(&chars, "%.*s", Value.stringLength(&value), Value.stringBytes(&value));
 				
 				if (index < argumentCount - 2)

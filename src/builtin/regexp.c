@@ -1083,8 +1083,6 @@ struct Value constructor (struct Context * const context)
 {
 	struct Value pattern, flags;
 	
-	Context.assertParameterCount(context, 2);
-	
 	pattern = Context.argument(context, 0);
 	flags = Context.argument(context, 1);
 	
@@ -1096,7 +1094,6 @@ struct Value toString (struct Context * const context)
 {
 	struct RegExp *self = context->this.data.regexp;
 	
-	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(regexpType));
 	
 	return Value.chars(self->pattern);
@@ -1108,7 +1105,6 @@ struct Value exec (struct Context * const context)
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value, lastIndex;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));
@@ -1165,7 +1161,6 @@ struct Value test (struct Context * const context)
 	struct RegExp *self = context->this.data.regexp;
 	struct Value value, lastIndex;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisType(context, Value(regexpType));
 	
 	value = Value.toString(context, Context.argument(context, 0));

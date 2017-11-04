@@ -375,10 +375,8 @@ struct Value jsonParse (struct Context * const context)
 		},
 	};
 	
-	Context.assertVariableParameter(context);
-	
-	value = Value.toString(context, Context.variableArgument(context, 0));
-	reviver = Context.variableArgument(context, 1);
+	value = Value.toString(context, Context.argument(context, 0));
+	reviver = Context.argument(context, 1);
 	
 	parse.text = Text.make(Value.stringBytes(&value), Value.stringLength(&value));
 	parse.start = parse.text.bytes;
@@ -574,11 +572,9 @@ struct Value jsonStringify (struct Context * const context)
 		.spaces = { 0 },
 	};
 	
-	Context.assertVariableParameter(context);
-	
-	value = Context.variableArgument(context, 0);
-	replacer = Context.variableArgument(context, 1);
-	space = Context.variableArgument(context, 2);
+	value = Context.argument(context, 0);
+	replacer = Context.argument(context, 1);
+	space = Context.argument(context, 2);
 	
 	stringify.filter = replacer.type == Value(objectType) && replacer.data.object->type == &Array(type)? replacer.data.object: NULL;
 	stringify.function = replacer.type == Value(functionType)? replacer.data.function: NULL;

@@ -22,7 +22,6 @@ const struct Object(Type) Arguments(type) = {
 static
 struct Value getLength (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	return Value.binary(context->this.data.object->elementCount);
 }
 
@@ -30,8 +29,6 @@ static
 struct Value setLength (struct Context * const context)
 {
 	double length;
-	
-	Context.assertParameterCount(context, 1);
 	
 	length = Value.toBinary(context, Context.argument(context, 0)).data.binary;
 	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)

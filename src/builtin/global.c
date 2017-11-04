@@ -33,8 +33,6 @@ struct Value eval (struct Context * const context)
 		.environment = Context.environmentRoot(context->parent),
 	};
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (!Value.isString(value) || !Value.isPrimitive(value))
 		return value;
@@ -53,8 +51,6 @@ struct Value parseInt (struct Context * const context)
 	struct Value value;
 	struct Text text;
 	int32_t base;
-	
-	Context.assertParameterCount(context, 2);
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	base = Value.toInteger(context, Context.argument(context, 1)).data.integer;
@@ -82,8 +78,6 @@ struct Value parseFloat (struct Context * const context)
 	struct Value value;
 	struct Text text;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Value.toString(context, Context.argument(context, 0));
 	text = Value.textOf(&value);
 	return Lexer.scanBinary(text, Lexer(scanLazy) | (context->ecc->sloppyMode? Lexer(scanSloppy): 0));
@@ -94,8 +88,6 @@ struct Value isFinite (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Value.toBinary(context, Context.argument(context, 0));
 	return Value.truth(!isnan(value.data.binary) && !isinf(value.data.binary));
 }
@@ -104,8 +96,6 @@ static
 struct Value isNaN (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Value.toBinary(context, Context.argument(context, 0));
 	return Value.truth(isnan(value.data.binary));
@@ -120,8 +110,6 @@ struct Value decodeExcept (struct Context * const context, const char *exclude)
 	uint16_t index = 0, count;
 	struct Chars(Append) chars;
 	uint8_t byte;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	bytes = Value.stringBytes(&value);
@@ -207,8 +195,6 @@ struct Value encodeExpect (struct Context * const context, const char *exclude)
 	struct Text(Char) c;
 	int needPair = 0;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Value.toString(context, Context.argument(context, 0));
 	bytes = Value.stringBytes(&value);
 	length = Value.stringLength(&value);
@@ -276,8 +262,6 @@ struct Value escape (struct Context * const context)
 	struct Text text;
 	struct Text(Char) c;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Value.toString(context, Context.argument(context, 0));
 	text = Value.textOf(&value);
 	
@@ -314,8 +298,6 @@ struct Value unescape (struct Context * const context)
 	struct Chars(Append) chars;
 	struct Text text;
 	struct Text(Char) c;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Value.toString(context, Context.argument(context, 0));
 	text = Value.textOf(&value);

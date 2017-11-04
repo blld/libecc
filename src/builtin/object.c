@@ -145,8 +145,6 @@ struct Object *checkObject (struct Context * const context, int argument)
 static
 struct Value valueOf (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
-	
 	return Value.toObject(context, Context.this(context));
 }
 
@@ -157,8 +155,6 @@ struct Value hasOwnProperty (struct Context * const context)
 	struct Value value;
 	struct Key key;
 	uint32_t index;
-	
-	Context.assertParameterCount(context, 1);
 	
 	self = Value.toObject(context, Context.this(context)).data.object;
 	value = Value.toPrimitive(context, Context.argument(context, 0), Value(hintString));
@@ -174,8 +170,6 @@ static
 struct Value isPrototypeOf (struct Context * const context)
 {
 	struct Value arg0;
-	
-	Context.assertParameterCount(context, 1);
 	
 	arg0 = Context.argument(context, 0);
 	
@@ -200,8 +194,6 @@ struct Value propertyIsEnumerable (struct Context * const context)
 	struct Object *object;
 	struct Value *ref;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Value.toPrimitive(context, Context.argument(context, 0), Value(hintString));
 	object = Value.toObject(context, Context.this(context)).data.object;
 	ref = property(object, value, Value(asOwn));
@@ -216,8 +208,6 @@ static
 struct Value constructor (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	
@@ -234,8 +224,6 @@ struct Value getPrototypeOf (struct Context * const context)
 {
 	struct Object *object;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = Value.toObject(context, Context.argument(context, 0)).data.object;
 	
 	return object->prototype? Value.objectValue(object->prototype): Value(undefined);
@@ -247,8 +235,6 @@ struct Value getOwnPropertyDescriptor (struct Context * const context)
 	struct Object *object;
 	struct Value value;
 	struct Value *ref;
-	
-	Context.assertParameterCount(context, 2);
 	
 	object = Value.toObject(context, Context.argument(context, 0)).data.object;
 	value = Value.toPrimitive(context, Context.argument(context, 1), Value(hintString));
@@ -294,8 +280,6 @@ struct Value getOwnPropertyNames (struct Context * const context)
 	struct Object *result;
 	uint32_t index, count, length;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = checkObject(context, 0);
 	result = Array.create();
 	length = 0;
@@ -329,8 +313,6 @@ struct Value defineProperty (struct Context * const context)
 	struct Value property, value, *getter, *setter, *current, *flag;
 	struct Key key;
 	uint32_t index;
-	
-	Context.assertParameterCount(context, 3);
 	
 	object = checkObject(context, 0);
 	property = Value.toPrimitive(context, Context.argument(context, 1), Value(hintString));
@@ -468,7 +450,7 @@ struct Value defineProperties (struct Context * const context)
 	struct Object *object, *properties;
 	union Object(Hashmap) hashmap[hashmapCount];
 	
-	Context.assertParameterCount(context, 2);
+	memset(hashmap, 0, hashmapCount * sizeof(*hashmap));
 	
 	object = checkObject(context, 0);
 	properties = Value.toObject(context, Context.argument(context, 1)).data.object;
@@ -510,8 +492,6 @@ struct Value objectCreate (struct Context * const context)
 	struct Object *object, *result;
 	struct Value properties;
 	
-	Context.assertParameterCount(context, 2);
-	
 	object = checkObject(context, 0);
 	properties = Context.argument(context, 1);
 	
@@ -530,8 +510,6 @@ struct Value seal (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
-	
-	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
@@ -553,8 +531,6 @@ struct Value freeze (struct Context * const context)
 	struct Object *object;
 	uint32_t index, count;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
@@ -574,8 +550,6 @@ struct Value preventExtensions (struct Context * const context)
 {
 	struct Object *object;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = checkObject(context, 0);
 	object->flags |= Object(sealed);
 	
@@ -587,8 +561,6 @@ struct Value isSealed (struct Context * const context)
 {
 	struct Object *object;
 	uint32_t index, count;
-	
-	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
@@ -611,8 +583,6 @@ struct Value isFrozen (struct Context * const context)
 	struct Object *object;
 	uint32_t index, count;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = checkObject(context, 0);
 	if (!(object->flags & Object(sealed)))
 		return Value(false);
@@ -633,8 +603,6 @@ struct Value isExtensible (struct Context * const context)
 {
 	struct Object *object;
 	
-	Context.assertParameterCount(context, 1);
-	
 	object = checkObject(context, 0);
 	return Value.truth(!(object->flags & Object(sealed)));
 }
@@ -645,8 +613,6 @@ struct Value keys (struct Context * const context)
 	struct Object *object, *parent;
 	struct Object *result;
 	uint32_t index, count, length;
-	
-	Context.assertParameterCount(context, 1);
 	
 	object = checkObject(context, 0);
 	result = Array.create();
@@ -1359,8 +1325,6 @@ void populateElementWithCList (struct Object *self, uint32_t count, const char *
 
 struct Value toString (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
-	
 	if (context->this.type == Value(nullType))
 		return Value.text(&Text(nullType));
 	else if (context->this.type == Value(undefinedType))

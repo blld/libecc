@@ -80,7 +80,6 @@ struct Value isArray (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
 	value = Context.argument(context, 0);
 	
 	return Value.truth(value.type == Value(objectType) && value.data.object->type == &Array(type));
@@ -114,8 +113,6 @@ struct Value toString (struct Context * const context)
 {
 	struct Value function;
 	
-	Context.assertParameterCount(context, 0);
-	
 	context->this = Value.toObject(context, Context.this(context));
 	function = Object.getMember(context, context->this.data.object, Key(join));
 	
@@ -132,20 +129,18 @@ struct Value concat (struct Context * const context)
 	uint32_t element = 0, length = 0, index, count;
 	struct Object *array = NULL;
 	
-	Context.assertVariableParameter(context);
-	
 	value = Value.toObject(context, Context.this(context));
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	
 	length += valueArrayLength(value);
 	for (index = 0; index < count; ++index)
-		length += valueArrayLength(Context.variableArgument(context, index));
+		length += valueArrayLength(Context.argument(context, index));
 	
 	array = Array.createSized(length);
 	
 	valueAppendFromElement(context, value, array, &element);
 	for (index = 0; index < count; ++index)
-		valueAppendFromElement(context, Context.variableArgument(context, index), array, &element);
+		valueAppendFromElement(context, Context.argument(context, index), array, &element);
 	
 	return Value.object(array);
 }
@@ -156,8 +151,6 @@ struct Value join (struct Context * const context)
 	struct Value object;
 	struct Value value;
 	struct Text separator;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))
@@ -179,8 +172,6 @@ struct Value pop (struct Context * const context)
 	struct Value value = Value(undefined);
 	struct Object *this;
 	uint32_t length;
-	
-	Context.assertParameterCount(context, 0);
 	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
@@ -207,21 +198,19 @@ struct Value push (struct Context * const context)
 	struct Object *this;
 	uint32_t length = 0, index, count, base;
 	
-	Context.assertVariableParameter(context);
-	
 	this = Value.toObject(context, Context.this(context)).data.object;
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	
 	base = objectLength(context, this);
 	length = UINT32_MAX - base < count? UINT32_MAX: base + count;
 	objectResize(context, this, length);
 	
 	for (index = base; index < length; ++index)
-		Object.putElement(context, this, index, Context.variableArgument(context, index - base));
+		Object.putElement(context, this, index, Context.argument(context, index - base));
 	
 	if (UINT32_MAX - base < count)
 	{
-		Object.putElement(context, this, index, Context.variableArgument(context, index - base));
+		Object.putElement(context, this, index, Context.argument(context, index - base));
 		
 		if (this->type == &Array(type))
 			Context.rangeError(context, Chars.create("max length exeeded"));
@@ -229,7 +218,7 @@ struct Value push (struct Context * const context)
 		{
 			double index, length = (double)base + count;
 			for (index = (double)UINT32_MAX + 1; index < length; ++index)
-				Object.putProperty(context, this, Value.binary(index), Context.variableArgument(context, index - base));
+				Object.putProperty(context, this, Value.binary(index), Context.argument(context, index - base));
 			
 			Object.putMember(context, this, Key(length), Value.binary(length));
 			return Value.binary(length);
@@ -245,8 +234,6 @@ struct Value reverse (struct Context * const context)
 	struct Value temp;
 	struct Object *this;
 	uint32_t index, half, last, length;
-	
-	Context.assertParameterCount(context, 0);
 	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
@@ -272,8 +259,6 @@ struct Value shift (struct Context * const context)
 	struct Value result;
 	struct Object *this;
 	uint32_t index, count, length;
-	
-	Context.assertParameterCount(context, 0);
 	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
@@ -308,10 +293,8 @@ struct Value unshift (struct Context * const context)
 	struct Object *this;
 	uint32_t length = 0, index, count;
 	
-	Context.assertVariableParameter(context);
-	
 	this = Value.toObject(context, Context.this(context)).data.object;
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	
 	length = objectLength(context, this) + count;
 	objectResize(context, this, length);
@@ -322,7 +305,7 @@ struct Value unshift (struct Context * const context)
 		Object.putElement(context, this, index, Object.getElement(context, this, index - count));
 	
 	for (index = 0; index < count; ++index)
-		Object.putElement(context, this, index, Context.variableArgument(context, index));
+		Object.putElement(context, this, index, Context.argument(context, index));
 	
 	return Value.binary(length);
 }
@@ -334,8 +317,6 @@ struct Value slice (struct Context * const context)
 	struct Value start, end;
 	uint32_t from, to, length;
 	double binary;
-	
-	Context.assertParameterCount(context, 2);
 	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
@@ -386,8 +367,8 @@ struct Value defaultComparison (struct Context * const context)
 {
 	struct Value left, right, result;
 	
-	left = Context.variableArgument(context, 0);
-	right = Context.variableArgument(context, 1);
+	left = Context.argument(context, 0);
+	right = Context.argument(context, 1);
 	result = Value.less(context, Value.toString(context, left), Value.toString(context, right));
 	
 	return Value.integer(Value.isTrue(result)? -1: 0);
@@ -631,8 +612,6 @@ struct Value sort (struct Context * const context)
 	struct Value compare;
 	uint32_t count;
 	
-	Context.assertParameterCount(context, 1);
-	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	count = Value.toInteger(context, Object.getMember(context, this, Key(length))).data.integer;
 	compare = Context.argument(context, 0);
@@ -653,15 +632,13 @@ struct Value splice (struct Context * const context)
 	struct Object *this, *result;
 	uint32_t length, from, to, count = 0, add = 0, start = 0, delete = 0;
 	
-	Context.assertVariableParameter(context);
-	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
 	
 	if (count >= 1)
 	{
-		double binary = Value.toBinary(context, Context.variableArgument(context, 0)).data.binary;
+		double binary = Value.toBinary(context, Context.argument(context, 0)).data.binary;
 		if (isnan(binary))
 			binary = 0;
 		else if (binary < 0)
@@ -677,7 +654,7 @@ struct Value splice (struct Context * const context)
 	
 	if (count >= 2)
 	{
-		double binary = Value.toBinary(context, Context.variableArgument(context, 1)).data.binary;
+		double binary = Value.toBinary(context, Context.argument(context, 1)).data.binary;
 		if (isnan(binary) || binary < 0)
 			binary = 0;
 		else if (binary > length - start)
@@ -710,7 +687,7 @@ struct Value splice (struct Context * const context)
 			Object.putElement(context, this, --to, Object.getElement(context, this, --from));
 	
 	for (from = 2, to = start; from < count; ++from, ++to)
-		Object.putElement(context, this, to, Context.variableArgument(context, from));
+		Object.putElement(context, this, to, Context.argument(context, from));
 	
 	if (length - delete + add <= length)
 		objectResize(context, this, length - delete + add);
@@ -726,13 +703,11 @@ struct Value indexOf (struct Context * const context)
 	uint32_t length = 0;
 	int32_t index;
 	
-	Context.assertVariableParameter(context);
-	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
 	
-	search = Context.variableArgument(context, 0);
-	start = Value.toInteger(context, Context.variableArgument(context, 1));
+	search = Context.argument(context, 0);
+	start = Value.toInteger(context, Context.argument(context, 1));
 	index = start.data.integer < 0? length + start.data.integer: start.data.integer;
 	
 	if (index < 0)
@@ -753,13 +728,11 @@ struct Value lastIndexOf (struct Context * const context)
 	uint32_t length = 0;
 	int32_t index;
 	
-	Context.assertVariableParameter(context);
-	
 	this = Value.toObject(context, Context.this(context)).data.object;
 	length = objectLength(context, this);
 	
-	search = Context.variableArgument(context, 0);
-	start = Value.toInteger(context, Context.variableArgument(context, 1));
+	search = Context.argument(context, 0);
+	start = Value.toInteger(context, Context.argument(context, 1));
 	index = start.data.integer <= 0? length + start.data.integer: start.data.integer + 1;
 	
 	if (index < 0)
@@ -777,8 +750,6 @@ struct Value lastIndexOf (struct Context * const context)
 static
 struct Value getLength (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
-	
 	return Value.binary(context->this.data.object->elementCount);
 }
 
@@ -786,8 +757,6 @@ static
 struct Value setLength (struct Context * const context)
 {
 	double length;
-	
-	Context.assertParameterCount(context, 1);
 	
 	length = Value.toBinary(context, Context.argument(context, 0)).data.binary;
 	if (!isfinite(length) || length < 0 || length > UINT32_MAX || length != (uint32_t)length)
@@ -805,10 +774,9 @@ struct Value constructor (struct Context * const context)
 	struct Value value;
 	uint32_t index, count, length;
 	struct Object *array;
-	Context.assertVariableParameter(context);
 	
-	length = count = Context.variableArgumentCount(context);
-	value = Context.variableArgument(context, 0);
+	length = count = Context.argumentCount(context);
+	value = Context.argument(context, 0);
 	if (count == 1 && Value.isNumber(value) && Value.isPrimitive(value))
 	{
 		double binary = Value.toBinary(context, value).data.binary;
@@ -825,7 +793,7 @@ struct Value constructor (struct Context * const context)
 	
 	for (index = 0; index < count; ++index)
 	{
-		array->element[index].value = Context.variableArgument(context, index);
+		array->element[index].value = Context.argument(context, index);
 		array->element[index].value.flags &= ~(Value(readonly) | Value(hidden) | Value(sealed));
 	}
 	

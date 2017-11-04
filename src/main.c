@@ -62,14 +62,12 @@ static struct Value dumpTo (struct Context * const context, FILE *file)
 	int index, count;
 	struct Value value;
 	
-	Context.assertVariableParameter(context);
-	
-	for (index = 0, count = Context.variableArgumentCount(context); index < count; ++index)
+	for (index = 0, count = Context.argumentCount(context); index < count; ++index)
 	{
 		if (index)
 			putc(' ', file);
 		
-		value = Context.variableArgument(context, index);
+		value = Context.argument(context, index);
 		Value.dumpTo(Value.toString(context, value), file);
 	}
 	putc('\n', file);

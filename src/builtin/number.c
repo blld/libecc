@@ -30,7 +30,6 @@ struct Value toExponential (struct Context * const context)
 	struct Value value;
 	double binary, precision = 0;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
@@ -70,7 +69,6 @@ struct Value toFixed (struct Context * const context)
 	struct Value value;
 	double binary, precision = 0;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
@@ -109,7 +107,6 @@ struct Value toPrecision (struct Context * const context)
 	struct Value value;
 	double binary, precision = 0;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
@@ -151,7 +148,6 @@ struct Value toString (struct Context * const context)
 	int32_t radix = 10;
 	double binary;
 	
-	Context.assertParameterCount(context, 1);
 	Context.assertThisMask(context, Value(numberMask));
 	
 	binary = Value.toBinary(context, context->this).data.binary;
@@ -172,7 +168,6 @@ struct Value toString (struct Context * const context)
 static
 struct Value valueOf (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	Context.assertThisType(context, Value(numberType));
 	
 	return Value.binary(context->this.data.number->value);
@@ -182,8 +177,6 @@ static
 struct Value constructor (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type == Value(undefinedType))

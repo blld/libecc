@@ -90,44 +90,38 @@ struct Value callFunction (struct Context * const self, struct Function *functio
 	return result;
 }
 
-void assertParameterCount (struct Context * const self, int parameterCount)
-{
-	assert(self->environment->hashmapCount == parameterCount + 3);
-}
-
 int argumentCount (struct Context * const self)
 {
-	return self->environment->hashmapCount - 3;
+	if (self->environment->hashmap[2].value.type == Value(objectType))
+		return self->environment->hashmap[2].value.data.object->elementCount;
+	else
+		return self->environment->hashmapCount - 3;
 }
 
 struct Value argument (struct Context * const self, int argumentIndex)
 {
 	self->textIndex = argumentIndex + 4;
-	return self->environment->hashmap[argumentIndex + 3].value;
+	
+	if (self->environment->hashmap[2].value.type == Value(objectType))
+	{
+		if (argumentIndex < self->environment->hashmap[2].value.data.object->elementCount)
+			return self->environment->hashmap[2].value.data.object->element[argumentIndex].value;
+	}
+	else if (argumentIndex < self->environment->hashmapCount - 3)
+		return self->environment->hashmap[argumentIndex + 3].value;
+	
+	return Value(none);
 }
 
 void replaceArgument (struct Context * const self, int argumentIndex, struct Value value)
 {
-	self->environment->hashmap[argumentIndex + 3].value = value;
-}
-
-void assertVariableParameter (struct Context * const self)
-{
-	assert(self->environment->hashmap[2].value.type == Value(objectType));
-}
-
-int variableArgumentCount (struct Context * const self)
-{
-	return self->environment->hashmap[2].value.data.object->elementCount;
-}
-
-struct Value variableArgument (struct Context * const self, int argumentIndex)
-{
-	self->textIndex = argumentIndex + 4;
-	if (argumentIndex < self->environment->hashmap[2].value.data.object->elementCount)
-		return self->environment->hashmap[2].value.data.object->element[argumentIndex].value;
-	else
-		return Value(none);
+	if (self->environment->hashmap[2].value.type == Value(objectType))
+	{
+		if (argumentIndex < self->environment->hashmap[2].value.data.object->elementCount)
+			self->environment->hashmap[2].value.data.object->element[argumentIndex].value = value;
+	}
+	else if (argumentIndex < self->environment->hashmapCount - 3)
+		self->environment->hashmap[argumentIndex + 3].value = value;
 }
 
 struct Value this (struct Context * const self)

@@ -110,7 +110,6 @@ struct Error * create (struct Object *errorPrototype, struct Text text, struct C
 static
 struct Value toString (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
 	Context.assertThisMask(context, Value(objectMask));
 	
 	return toChars(context, context->this);
@@ -120,8 +119,6 @@ static
 struct Value errorConstructor (struct Context * const context)
 {
 	struct Chars *message;
-	
-	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
@@ -133,8 +130,6 @@ struct Value rangeErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
-	Context.assertParameterCount(context, 1);
-	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
 	return Value.error(rangeError(Context.textSeek(context), message));
@@ -144,8 +139,6 @@ static
 struct Value referenceErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
-	
-	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
@@ -157,8 +150,6 @@ struct Value syntaxErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
-	Context.assertParameterCount(context, 1);
-	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
 	return Value.error(syntaxError(Context.textSeek(context), message));
@@ -168,8 +159,6 @@ static
 struct Value typeErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
-	
-	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
@@ -181,8 +170,6 @@ struct Value uriErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
 	
-	Context.assertParameterCount(context, 1);
-	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));
 	return Value.error(uriError(Context.textSeek(context), message));
@@ -192,8 +179,6 @@ static
 struct Value evalErrorConstructor (struct Context * const context)
 {
 	struct Chars *message;
-	
-	Context.assertParameterCount(context, 1);
 	
 	message = messageValue(context, Context.argument(context, 0));
 	Context.setTextIndex(context, Context(callIndex));

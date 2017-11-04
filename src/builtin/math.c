@@ -22,8 +22,6 @@ struct Value mathAbs (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -35,8 +33,6 @@ static
 struct Value mathACos (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
@@ -50,8 +46,6 @@ struct Value mathASin (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -64,8 +58,6 @@ struct Value mathATan (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -77,8 +69,6 @@ static
 struct Value mathATan2 (struct Context * const context)
 {
 	struct Value x, y;
-	
-	Context.assertParameterCount(context, 2);
 	
 	x = Context.argument(context, 0);
 	if (x.type != Value(binaryType))
@@ -96,8 +86,6 @@ struct Value mathCeil (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -109,8 +97,6 @@ static
 struct Value mathCos (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
@@ -124,8 +110,6 @@ struct Value mathExp (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -138,8 +122,6 @@ struct Value mathFloor (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -151,8 +133,6 @@ static
 struct Value mathLog (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
@@ -167,15 +147,13 @@ struct Value mathMax (struct Context * const context)
 	double result = -INFINITY, value;
 	int index, count;
 	
-	Context.assertVariableParameter(context);
-	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	if (!count)
 		return Value.binary(-INFINITY);
 	
 	for (index = 0; index < count; ++index)
 	{
-		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
+		value = Value.toBinary(context, Context.argument(context, index)).data.binary;
 		if (isnan(value))
 			return Value.binary(NAN);
 		
@@ -192,15 +170,13 @@ struct Value mathMin (struct Context * const context)
 	double result = INFINITY, value;
 	int index, count;
 	
-	Context.assertVariableParameter(context);
-	
-	count = Context.variableArgumentCount(context);
+	count = Context.argumentCount(context);
 	if (!count)
 		return Value.binary(INFINITY);
 	
 	for (index = 0; index < count; ++index)
 	{
-		value = Value.toBinary(context, Context.variableArgument(context, index)).data.binary;
+		value = Value.toBinary(context, Context.argument(context, index)).data.binary;
 		if (isnan(value))
 			return Value.binary(NAN);
 		
@@ -216,8 +192,6 @@ struct Value mathPow (struct Context * const context)
 {
 	struct Value x, y;
 	
-	Context.assertParameterCount(context, 2);
-	
 	x = Value.toBinary(context, Context.argument(context, 0));
 	y = Value.toBinary(context, Context.argument(context, 1));
 	
@@ -230,8 +204,6 @@ struct Value mathPow (struct Context * const context)
 static
 struct Value mathRandom (struct Context * const context)
 {
-	Context.assertParameterCount(context, 0);
-	
 	return Value.binary((double)rand() / (double)RAND_MAX);
 }
 
@@ -239,8 +211,6 @@ static
 struct Value mathRound (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
@@ -257,8 +227,6 @@ struct Value mathSin (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -271,8 +239,6 @@ struct Value mathSqrt (struct Context * const context)
 {
 	struct Value value;
 	
-	Context.assertParameterCount(context, 1);
-	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))
 		value = Value.toBinary(context, value);
@@ -284,8 +250,6 @@ static
 struct Value mathTan (struct Context * const context)
 {
 	struct Value value;
-	
-	Context.assertParameterCount(context, 1);
 	
 	value = Context.argument(context, 0);
 	if (value.type != Value(binaryType))

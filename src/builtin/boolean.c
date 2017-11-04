@@ -27,7 +27,6 @@ struct Value toString (struct Context * const context)
 {
 	int truth;
 	
-	Context.assertParameterCount(context, 0);
 	Context.assertThisMask(context, Value(booleanMask));
 	
 	truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
@@ -40,7 +39,6 @@ struct Value valueOf (struct Context * const context)
 {
 	int truth;
 	
-	Context.assertParameterCount(context, 0);
 	Context.assertThisMask(context, Value(booleanMask));
 	
 	truth = Value.isObject(context->this)? context->this.data.boolean->truth: Value.isTrue(context->this);
@@ -52,8 +50,6 @@ static
 struct Value constructor (struct Context * const context)
 {
 	char truth;
-	
-	Context.assertParameterCount(context, 1);
 	
 	truth = Value.isTrue(Context.argument(context, 0));
 	if (context->construct)
