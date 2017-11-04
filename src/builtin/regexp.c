@@ -1257,7 +1257,7 @@ struct RegExp * create (struct Chars *s, struct Error **error, enum RegExp(Optio
 //	++self->pattern->referenceCount;
 //	++self->source->referenceCount;
 	
-	if (*p.c == '/')
+	if (error && *p.c == '/')
 		for (;;)
 		{
 			switch (*(++p.c))
@@ -1311,7 +1311,7 @@ struct RegExp * create (struct Chars *s, struct Error **error, enum RegExp(Optio
 			}
 			break;
 		}
-	else if (!*error)
+	else if (error && !*error)
 		*error = Error.syntaxError(Text.make(p.c, 1), Chars.create("invalid character '%c'", isgraph(*p.c)? *p.c: '?'));
 	
 	Object.addMember(&self->object, Key(source), Value.chars(self->source), Value(readonly) | Value(hidden) | Value(sealed));

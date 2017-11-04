@@ -77,7 +77,7 @@ struct Key keyOfIndex (uint32_t index, int create)
 	char buffer[10 + 1];
 	uint16_t length;
 	
-	length = snprintf(buffer, sizeof(buffer), "%u", index);
+	length = snprintf(buffer, sizeof(buffer), "%u", (unsigned)index);
 	if (create)
 		return Key.makeWithText(Text.make(buffer, length), Key(copyOnCreate));
 	else
@@ -109,6 +109,8 @@ uint32_t elementCount (struct Object *self)
 static
 void readonlyError(struct Context * const context, struct Value *ref, struct Object *this)
 {
+	struct Text text;
+	
 	do
 	{
 		union Object(Hashmap) *hashmap = (union Object(Hashmap) *)ref;
@@ -124,7 +126,7 @@ void readonlyError(struct Context * const context, struct Value *ref, struct Obj
 		
 	} while (( this = this->prototype ));
 	
-	struct Text text = Context.textSeek(context);
+	text = Context.textSeek(context);
 	Context.typeError(context, Chars.create("'%.*s' is read-only", text.length, text.bytes));
 }
 

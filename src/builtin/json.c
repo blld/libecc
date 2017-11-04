@@ -55,7 +55,7 @@ struct Value error (struct Parse *parse, int length, struct Chars *chars)
 static
 struct Text errorOfLine (struct Parse *parse)
 {
-	struct Text text;
+	struct Text text = { 0 };
 	text.bytes = parse->start;
 	while (parse->text.length)
 	{
@@ -585,7 +585,7 @@ struct Value jsonStringify (struct Context * const context)
 	stringify.ops = stringify.function? stringify.function->oplist->ops: NULL;
 	
 	if (Value.isString(space))
-		snprintf(stringify.spaces, sizeof(stringify.spaces), "%.*s", Value.stringLength(&space), Value.stringBytes(&space));
+		snprintf(stringify.spaces, sizeof(stringify.spaces), "%.*s", (int)Value.stringLength(&space), Value.stringBytes(&space));
 	else if (Value.isNumber(space))
 	{
 		int i = Value.toInteger(context, space).data.integer;

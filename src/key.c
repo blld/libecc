@@ -141,5 +141,5 @@ const struct Text *textOf (struct Key key)
 void dumpTo (struct Key key, FILE *file)
 {
 	const struct Text *text = textOf(key);
-	fprintf(file, "%.*s", text->length, text->bytes);
+	fprintf(file, "%.*s", (int)text->length, text->bytes);
 }

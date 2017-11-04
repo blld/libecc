@@ -76,16 +76,16 @@ static
 void textc(enum Env(Color) c, enum Env(Attribute) a)
 {
 #if __MSDOS__ || _WIN32
-	if (a == invisible)
+	if (a == Env(invisible))
 		c = (env.attribute >> 4) & 0x7;
-	else if (c == white || !c)
-		c = a == bold? 0xf: 0x7;
-	else if (c == black)
-		c = a == bold? 0x7: 0x8;
+	else if (c == Env(white) || !c)
+		c = a == Env(bold)? 0xf: 0x7;
+	else if (c == Env(black))
+		c = a == Env(bold)? 0x7: 0x8;
 	else
 	{
 		c -= 30;
-		c = (a == bold? 0x8: 0)
+		c = (a == Env(bold)? 0x8: 0)
 			| ((c << 2) & 0x4)
 			| (c & 0x2)
 			| ((c >> 2) & 0x1)
@@ -161,23 +161,11 @@ void printError (int typeLength, const char *type, const char *format, ...)
 	printColor(Env(red), Env(bold), "%.*s", typeLength, type);
 	print(": ");
 	
-	textc(0, Env(bold));
-	#if __MSDOS__ || _WIN32
-	{
-		int16_t length;
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		va_start(ap, format);
-		printVA(length, format, ap);
-		va_end(ap);
-	}
-	#else
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	#endif
+	textc(0, Env(bold));
+	vprintc(format, ap);
 	textc(0, 0);
+	va_end(ap);
 	
 	newline();
 }
@@ -189,23 +177,11 @@ void printWarning (const char *format, ...)
 	printColor(Env(yellow), Env(bold), "Warning");
 	print(": ");
 	
-	textc(0, Env(bold));
-	#if __MSDOS__ || _WIN32
-	{
-		int16_t length;
-		va_start(ap, format);
-		length = vsnprintf(NULL, 0, format, ap);
-		va_end(ap);
-		va_start(ap, format);
-		printVA(length, format, ap);
-		va_end(ap);
-	}
-	#else
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	#endif
+	textc(0, Env(bold));
+	vprintc(format, ap);
 	textc(0, 0);
+	va_end(ap);
 	
 	newline();
 }

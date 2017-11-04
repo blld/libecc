@@ -930,10 +930,8 @@ struct Value toUpperCase (struct Context * const context)
 	
 	Context.assertParameterCount(context, 0);
 	
-	if (!Value.isString(context->this))
-		context->this = Value.toString(context, Context.this(context));
-		
-		text = Value.textOf(&context->this);
+	context->this = Value.toString(context, Context.this(context));
+	text = Value.textOf(&context->this);
 	{
 		char buffer[text.length * 3];
 		char *end = Text.toUpper(text, buffer);

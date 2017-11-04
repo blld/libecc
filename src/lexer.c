@@ -531,7 +531,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 			
 			default:
 			{
-				if (isalpha(c) || c == '$' || c == '_' || (self->allowUnicodeOutsideLiteral && (c == '\\' || c >= 0x80)))
+				if ((c < 0x80 && isalpha(c)) || c == '$' || c == '_' || (self->allowUnicodeOutsideLiteral && (c == '\\' || c >= 0x80)))
 				{
 					struct Text text = self->text;
 					int k, haveEscape = 0;
@@ -571,6 +571,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 					{
 						struct Text text = self->text;
 						struct Chars(Append) chars;
+						struct Value value;
 						
 						Chars.beginAppend(&chars);
 						
@@ -595,7 +596,7 @@ enum Lexer(Token) nextToken (struct Lexer *self)
 							Chars.appendCodepoint(&chars, c);
 						}
 						
-						struct Value value = Input.attachValue(self->input, Chars.endAppend(&chars));
+						value = Input.attachValue(self->input, Chars.endAppend(&chars));
 						self->value = Value.key(Key.makeWithText(Value.textOf(&value), value.type != Value(charsType)));
 						return Lexer(identifierToken);
 					}

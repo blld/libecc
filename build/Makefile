@@ -9,7 +9,7 @@ binary := $(root)/bin/ecc
 
 #
 
-.PHONY: debug paths
+.PHONY: debug
 debug : debug := -DDEBUG=1
 debug : optim := -O0 -g
 debug : lto   := 
@@ -21,6 +21,10 @@ lto   ?= $(shell echo "main(){}" | $(CC) -flto -o/dev/null -xc - >/dev/null 2>&1
 libs  ?= $(shell echo "main(){}" | $(CC) -lm -o/dev/null -xc - >/dev/null 2>&1 && echo "-lm")
 
 CFLAGS += $(warn) $(optim) $(debug) $(lto)
+
+ifneq (,$(shell which gcc-ar))
+AR = gcc-ar
+endif
 
 ##
 

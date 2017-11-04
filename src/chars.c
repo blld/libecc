@@ -159,7 +159,7 @@ static
 void appendText (struct Chars(Append) * chars, struct Text text)
 {
 	struct Chars *self = chars->value;
-	struct Text(Char) lo = Text.character(text), hi;
+	struct Text(Char) lo = Text.character(text), hi = { 0 };
 	struct Text prev;
 	int surrogates = 0;
 	
@@ -173,7 +173,7 @@ void appendText (struct Chars(Append) * chars, struct Text text)
 	
 	if (lo.units == 3 && lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
 	{
-		hi = Text.prevCharacter(&prev);
+		struct Text(Char) hi = Text.prevCharacter(&prev);
 		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
 			surrogates = 1;

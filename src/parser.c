@@ -1604,6 +1604,8 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	struct Op identifierOp = { 0, Value(undefined) };
 	struct Function *parentFunction;
 	struct Function *function;
+	union Object(Hashmap) *arguments;
+	uint16_t slot;
 	
 	if (!isGetter && !isSetter)
 	{
@@ -1630,8 +1632,8 @@ struct OpList * function (struct Parser *self, int isDeclaration, int isGetter, 
 	
 	function = Function.create(&self->function->environment);
 	
-	union Object(Hashmap) *arguments = (union Object(Hashmap) *)Object.addMember(&function->environment, Key(arguments), Value(undefined), 0);
-	uint16_t slot = arguments - function->environment.hashmap;
+	arguments = (union Object(Hashmap) *)Object.addMember(&function->environment, Key(arguments), Value(undefined), 0);
+	slot = arguments - function->environment.hashmap;
 	
 	self->function = function;
 	text = self->lexer->text;

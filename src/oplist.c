@@ -383,10 +383,10 @@ void dumpTo (struct OpList *self, FILE *file)
 			Value.dumpTo(self->ops[i].value, file);
 		
 		if (self->ops[i].native == Op.text)
-			fprintf(file, "'%.*s'", self->ops[i].text.length, self->ops[i].text.bytes);
+			fprintf(file, "'%.*s'", (int)self->ops[i].text.length, self->ops[i].text.bytes);
 		
 		if (self->ops[i].text.length)
-			fprintf(file, "  `%.*s`", self->ops[i].text.length, self->ops[i].text.bytes);
+			fprintf(file, "  `%.*s`", (int)self->ops[i].text.length, self->ops[i].text.bytes);
 		
 		fputc('\n', stderr);
 	}
