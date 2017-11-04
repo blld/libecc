@@ -173,7 +173,7 @@ void appendText (struct Chars(Append) * chars, struct Text text)
 	
 	if (lo.units == 3 && lo.codepoint >= 0xDC00 && lo.codepoint <= 0xDFFF)
 	{
-		struct Text(Char) hi = Text.prevCharacter(&prev);
+		hi = Text.prevCharacter(&prev);
 		if (hi.units == 3 && hi.codepoint >= 0xD800 && hi.codepoint <= 0xDBFF)
 		{
 			surrogates = 1;
