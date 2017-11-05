@@ -42,7 +42,7 @@ int main (int argc, const char * argv[])
 	
 	Ecc.destroy(ecc), ecc = NULL;
 	
-    return result;
+	return result;
 }
 
 //
