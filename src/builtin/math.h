@@ -10,9 +10,9 @@
 #ifdef Implementation
 #undef Implementation
 #include __FILE__
-#include "implementation.h"
+#include "../implementation.h"
 #else
-#include "interface.h"
+#include "../interface.h"
 #define io_libecc_math_h
 
 	#include "global.h"
