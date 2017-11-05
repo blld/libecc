@@ -1,0 +1,49 @@
+
+libecc
+======
+
+Fast, efficient and easy to use embeddable Ecmascript (5.1) engine for C (99, GNU)
+
+Build
+-----
+
+	$ cd build
+	$ make test
+
+Usage
+-----
+
+	$ nano test.c
+	
+	#include "ecc.h"
+	
+	static
+	struct Value greetings (struct Context * context)
+	{
+		struct Value to = Context.argument(context, 0);
+		to = Value.toString(context, to);
+		fprintf(stderr, "Hello, %.*s!\n", Value.stringLength(&to), Value.stringBytes(&to));
+		return Value(undefined);
+	}
+	
+	int main (int argc, const char * argv[])
+	{
+		const char script1[] = "greetings('world')";
+		struct Ecc *ecc = Ecc.create();
+		
+		Ecc.addFunction(ecc, "greetings", greetings, 1, 0);
+		Ecc.evalInput(ecc, Input.createFromBytes(script1, sizeof(script1), "script1"), 0);
+		
+		Ecc.destroy(ecc), ecc = NULL;
+		return EXIT_SUCCESS;
+	}
+
+	$ gcc -I ../src -L x86_64-apple-darwin16.7.0/lib test.c -lecc
+	$ ./a.out
+	Hello, world!
+
+Copyright
+---------
+
+See LICENSE
+
