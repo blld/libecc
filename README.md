@@ -2,7 +2,7 @@
 libecc
 ======
 
-Fast, efficient and easy to use embeddable Ecmascript (5.1) engine for C (99, GNU)
+Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, GNU)
 
 Build
 -----
@@ -38,6 +38,7 @@ Usage
 		Ecc.destroy(ecc), ecc = NULL;
 		return EXIT_SUCCESS;
 	}
+
 
 	$ gcc -I ../src -L XXX/lib test.c -lecc
 	$ ./a.out
