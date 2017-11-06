@@ -17,18 +17,19 @@ Usage
 	
 	#include "ecc.h"
 	
+	static const char script1[] = "greetings('world')";
+	
 	static
 	struct Value greetings (struct Context * context)
 	{
 		struct Value to = Context.argument(context, 0);
 		to = Value.toString(context, to);
-		fprintf(stderr, "Hello, %.*s!\n", Value.stringLength(&to), Value.stringBytes(&to));
+		printf("Hello, %.*s!\n", Value.stringLength(&to), Value.stringBytes(&to));
 		return Value(undefined);
 	}
 	
 	int main (int argc, const char * argv[])
 	{
-		const char script1[] = "greetings('world')";
 		struct Ecc *ecc = Ecc.create();
 		
 		Ecc.addFunction(ecc, "greetings", greetings, 1, 0);
@@ -38,11 +39,11 @@ Usage
 		return EXIT_SUCCESS;
 	}
 
-	$ gcc -I ../src -L x86_64-apple-darwin16.7.0/lib test.c -lecc
+	$ gcc -I ../src -L XXX/lib test.c -lecc
 	$ ./a.out
 	Hello, world!
 
-Copyright
+Licensing
 ---------
 
 See LICENSE
