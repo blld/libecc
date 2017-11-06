@@ -7,7 +7,8 @@ Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, 
 Build
 -----
 
-	$ cd build
+	$ git clone http://github.com/blld/libecc.git
+	$ cd libecc/build
 	$ make test
 
 Usage
