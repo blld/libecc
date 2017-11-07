@@ -14,7 +14,7 @@ Build
 Usage
 -----
 
-sample
+sample.c
 
 	#include "ecc.h"
 	
@@ -42,7 +42,7 @@ sample
 
  compile
  
-	$ gcc -I ../src -L XXX/lib test.c -lecc
+	$ gcc -I ../src -L XXX/lib sample.c -lecc
 	$ ./a.out
 	Hello, world!
 
