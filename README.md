@@ -14,8 +14,8 @@ Build
 Usage
 -----
 
-	$ nano test.c
-	
+sample
+
 	#include "ecc.h"
 	
 	static const char script1[] = "greetings('world')";
@@ -40,7 +40,8 @@ Usage
 		return EXIT_SUCCESS;
 	}
 
-
+ compile
+ 
 	$ gcc -I ../src -L XXX/lib test.c -lecc
 	$ ./a.out
 	Hello, world!
