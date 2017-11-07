@@ -42,7 +42,7 @@ sample.c
 
  compile
  
-	$ gcc -I ../src -L XXX/lib sample.c -lecc
+	$ gcc -I ../src -L XXX/lib -lecc sample.c
 	$ ./a.out
 	Hello, world!
 
