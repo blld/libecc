@@ -23,7 +23,7 @@ libs  ?= $(shell echo "main(){}" | $(CC) -lm -o/dev/null -xc - >/dev/null 2>&1 &
 CFLAGS += $(warn) $(optim) $(debug) $(lto)
 
 ifneq (,$(shell which gcc-ar))
-AR = gcc-ar
+AR := gcc-ar
 endif
 
 ##
