@@ -15,6 +15,8 @@
 
 // MARK: - Private
 
+static va_list empty_ap;
+
 static void mark (struct Object *object);
 static void capture (struct Object *object);
 
@@ -102,7 +104,7 @@ struct Value apply (struct Context * const context)
 	arguments = Context.argument(context, 1);
 	
 	if (arguments.type == Value(undefinedType) || arguments.type == Value(nullType))
-		return Op.callFunctionVA(context, Context(applyOffset), context->this.data.function, this, 0, NULL);
+		return Op.callFunctionVA(context, Context(applyOffset), context->this.data.function, this, 0, empty_ap);
 	else
 	{
 		if (!Value.isObject(arguments))
@@ -141,7 +143,7 @@ struct Value call (struct Context * const context)
 		return Op.callFunctionArguments(context, Context(callOffset), context->this.data.function, this, &arguments);
 	}
 	else
-		return Op.callFunctionVA(context, Context(callOffset), context->this.data.function, Value(undefined), 0, NULL);
+		return Op.callFunctionVA(context, Context(callOffset), context->this.data.function, Value(undefined), 0, empty_ap);
 }
 
 static
