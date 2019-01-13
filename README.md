@@ -7,7 +7,7 @@ Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, 
 Build
 -----
 
-	$ git clone http://github.com/blld/libecc.git
+	$ git clone https://github.com/blld/libecc.git
 	$ cd libecc/build
 	$ make test
 
@@ -23,9 +23,9 @@ sample.c
 	static
 	struct Value greetings (struct Context * context)
 	{
-		struct Value to = Context.argument(context, 0);
-		to = Value.toString(context, to);
-		printf("Hello, %.*s!\n", Value.stringLength(&to), Value.stringBytes(&to));
+		struct Value to = Value.toString(context, Context.argument(context, 0));
+		struct Text text = Value.textOf(&to);
+		printf("Hello, %.*s!\n", text.length, text.bytes);
 		return Value(undefined);
 	}
 	
@@ -40,14 +40,14 @@ sample.c
 		return EXIT_SUCCESS;
 	}
 
- compile
- 
-	$ gcc -I ../src -L */lib -lecc sample.c
+compile
+
+	$ cc -I ../src -L */lib -lecc sample.c
 	$ ./a.out
 	Hello, world!
 
-Licensing
----------
+License
+-------
 
-See LICENSE
+Licensed under MIT license, see LICENSE.txt file in project root
 
