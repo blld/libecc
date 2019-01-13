@@ -36,7 +36,7 @@ sample.c
 		// retrieve first argument as string
 		struct Value to = Value.toString(context, Context.argument(context, 0));
 		
-		// get C friendly text
+		// get C friendly buffer
 		struct Text text = Value.textOf(&to);
 		
 		// print & return undefined
@@ -46,10 +46,10 @@ sample.c
 	
 	int main (int argc, const char * argv[])
 	{
-		// setup Ecc
+		// setup
 		struct Ecc *ecc = Ecc.create();
 		
-		// add C function to Ecc
+		// add C function
 		Ecc.addFunction(ecc, "greetings", greetings, 1, 0);
 		
 		// run script
