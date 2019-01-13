@@ -696,9 +696,7 @@ char * toUpper (struct Text i, char *o /* length x 3 */)
 
 int isSpace (struct Text(Char) c)
 {
-	return
-		isspace(c.codepoint)
-		|| c.codepoint == 0xA0
+	return c.codepoint == 0xA0
 		|| c.codepoint == 0xFEFF
 		|| c.codepoint == 0x1680
 		|| c.codepoint == 0x180E
@@ -707,6 +705,7 @@ int isSpace (struct Text(Char) c)
 		|| c.codepoint == 0x205F
 		|| c.codepoint == 0x3000
 		|| isLineFeed(c)
+		|| isspace(c.codepoint)
 		;
 }
 
