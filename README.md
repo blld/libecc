@@ -10,7 +10,7 @@ Tested on:
 * iOS
 * Linux
 * Haiku
-* Raspberry-pi
+* Raspberry Pi
 * Windows (minGW, Visual Studio w/ clang)
 * Dos (DJGPP)
 
