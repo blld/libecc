@@ -4,6 +4,15 @@ libecc
 
 Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, GNU)
 
+tested on:
+* macOS
+* iOS
+* Linux
+* Haiku
+* Raspberry-pi
+* Windows (minGW, Visual Studio w/ clang)
+* Dos (DJGPP)
+
 Build
 -----
 
