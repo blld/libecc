@@ -92,7 +92,7 @@ static int testErrorCount = 0;
 static int testCount = 0;
 static double testTime = 0;
 
-useframe
+Ecc(useframe)
 static void test (const char *func, int line, const char *test, const char *expect, const char *text)
 {
 	const char *bytes;

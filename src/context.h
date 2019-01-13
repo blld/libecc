@@ -42,12 +42,12 @@
 
 Interface(Context,
 	
-	(void, rangeError ,(struct Context * const, struct Chars *) noreturn)
-	(void, referenceError ,(struct Context * const, struct Chars *) noreturn)
-	(void, syntaxError ,(struct Context * const, struct Chars *) noreturn)
-	(void, typeError ,(struct Context * const, struct Chars *) noreturn)
-	(void, uriError ,(struct Context * const, struct Chars *) noreturn)
-	(void, throw ,(struct Context * const, struct Value) noreturn)
+	(void, rangeError ,(struct Context * const, struct Chars *) Ecc(noreturn))
+	(void, referenceError ,(struct Context * const, struct Chars *) Ecc(noreturn))
+	(void, syntaxError ,(struct Context * const, struct Chars *) Ecc(noreturn))
+	(void, typeError ,(struct Context * const, struct Chars *) Ecc(noreturn))
+	(void, uriError ,(struct Context * const, struct Chars *) Ecc(noreturn))
+	(void, throw ,(struct Context * const, struct Value) Ecc(noreturn))
 	
 	(struct Value, callFunction ,(struct Context * const, struct Function *function, struct Value this, int argumentCount, ... ))
 	

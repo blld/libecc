@@ -85,7 +85,7 @@ void addValue (struct Ecc *self, const char *name, struct Value value, enum Valu
 	Function.addValue(self->global, name, value, flags);
 }
 
-useframe
+Ecc(useframe)
 int evalInput (struct Ecc *self, struct Input *input, enum Ecc(EvalFlags) flags)
 {
 	volatile int result = EXIT_SUCCESS, trap = !self->envCount || flags & Ecc(primitiveResult), catch = 0;

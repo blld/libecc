@@ -28,16 +28,16 @@
 	#include <time.h>
 
 	#if __GNUC__
-		#define noreturn __attribute__((noreturn))
+		#define io_libecc_ecc_noreturn __attribute__((noreturn))
 	#else
-		#define noreturn
+		#define io_libecc_ecc_noreturn
 	#endif
 
 	#if __GNUC__ && _WIN32 && !_MSC_VER
 		/* use ebp frame */
-		#define useframe __attribute__((optimize("no-omit-frame-pointer")))
+		#define io_libecc_ecc_useframe __attribute__((optimize("no-omit-frame-pointer")))
 	#else
-		#define useframe
+		#define io_libecc_ecc_useframe
 	#endif
 
 	#if (__STDC_VERSION__ < 199901L)

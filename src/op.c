@@ -1584,7 +1584,7 @@ struct Value debugger (struct Context * const context)
 	return trapOp(context, 0);
 }
 
-useframe
+Ecc(useframe)
 struct Value try (struct Context * const context)
 {
 	struct Object *environment = context->environment;
@@ -1659,7 +1659,7 @@ struct Value try (struct Context * const context)
 		return nextOp();
 }
 
-noreturn
+Ecc(noreturn)
 struct Value throw (struct Context * const context)
 {
 	context->ecc->text = *opText(1);
