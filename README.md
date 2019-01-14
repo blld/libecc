@@ -32,7 +32,7 @@ sample.c
 		// retrieve first argument as string
 		struct Value to = Value.toString(context, Context.argument(context, 0));
 		
-		// get C friendly buffer
+		// get C-friendly buffer
 		struct Text text = Value.textOf(&to);
 		
 		// print & return undefined
