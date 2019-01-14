@@ -6,13 +6,11 @@ Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, 
 
 Tested on:
 
-* macOS
-* iOS
-* Linux
-* Haiku
-* Raspberry Pi
-* Windows (minGW, Visual Studio w/ clang)
+* Darwin (macOS, iOS)
+* Linux (Ubuntu, Fedora, Raspberry Pi)
+* Windows (minGW, Visual Studio w/ Clang)
 * Dos (DJGPP)
+* BeOS (Haiku)
 
 Build
 -----
@@ -27,9 +25,7 @@ Usage
 sample.c
 
 	#include "ecc.h"
-	
-	static const char script1[] = "greetings('world')";
-	
+		
 	static
 	struct Value greetings (struct Context * context)
 	{
@@ -53,6 +49,7 @@ sample.c
 		Ecc.addFunction(ecc, "greetings", greetings, 1, 0);
 		
 		// run script
+		char script1[] = "greetings('world')";
 		Ecc.evalInput(ecc, Input.createFromBytes(script1, sizeof(script1), "script1"), 0);
 		
 		// clean-up
