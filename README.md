@@ -4,13 +4,13 @@ libecc
 
 Fast, memory-efficient and easily embeddable Ecmascript (5.1) engine for C (99, GNU)
 
-Tested on:
-
-* Darwin (macOS, iOS)
-* Linux (Ubuntu, Fedora, Raspberry Pi)
-* Windows (minGW, Visual Studio w/ Clang)
-* Dos (DJGPP)
-* BeOS (Haiku)
+   | support | tested on                     |
+   | ------- | ----------------------------- |
+   | Darwin  | macOS, iOS                    |
+   | Linux   | Ubuntu, Fedora, Raspberry Pi  |
+   | Windows | minGW, Visual Studio w/ Clang |
+   | Dos     | DJGPP                         |
+   | BeOS    | Haiku                         |
 
 Build
 -----
