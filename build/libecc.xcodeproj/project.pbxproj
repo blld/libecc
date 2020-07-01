@@ -237,7 +237,7 @@
 		0DD57DB71B2D542A00CD8119 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1150;
 				ORGANIZATIONNAME = Libeccio;
 				TargetAttributes = {
 					0DD57DBE1B2D542A00CD8119 = {
@@ -431,6 +431,7 @@
 		0DD57DC71B2D542A00CD8119 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -438,6 +439,7 @@
 		0DD57DC81B2D542A00CD8119 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
