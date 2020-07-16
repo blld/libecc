@@ -1,4 +1,9 @@
 
+ifneq ($(target),)
+CC := $(target)-gcc
+EMU := qemu-$(firstword $(subst -, ,$(target))) -L /usr/$(target)/
+endif
+
 machine ?= $(shell $(CC) $(CFLAGS) -dumpmachine)
 
 root := .$(machine:%=/%)
@@ -38,7 +43,7 @@ $(root)/bin $(root)/lib $(root)/object/builtin:
 	@mkdir -p $@
 
 test: all
-	$(binary) --test
+	$(EMU) $(binary) --test
 
 $(library): $(objects)
 	@echo "   [AR] $@"
