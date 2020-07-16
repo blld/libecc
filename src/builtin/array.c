@@ -90,7 +90,7 @@ struct Value toChars (struct Context * const context, struct Value this, struct 
 {
 	struct Object *object = this.data.object;
 	struct Value value, length = Object.getMember(context, object, Key(length));
-	uint32_t index, count = Value.toBinary(context, length).data.binary;
+	uint32_t index, count = Value.toInteger(context, length).data.integer;
 	struct Chars(Append) chars;
 	
 	Chars.beginAppend(&chars);
