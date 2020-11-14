@@ -1197,12 +1197,15 @@ struct Value test (struct Context * const context)
 
 void setup ()
 {
+	struct Error *error = NULL;
 	const enum Value(Flags) h = Value(hidden);
 	
 	Function.setupBuiltinObject(
 		&RegExp(constructor), constructor, 2,
-		&RegExp(prototype), Value.regexp(create(Chars.create("/(?:)/"), NULL, 0)),
+		&RegExp(prototype), Value.regexp(create(Chars.create("/(?:)/"), &error, 0)),
 		&RegExp(type));
+	
+	assert(error == NULL);
 	
 	Function.addToObject(RegExp(prototype), "toString", toString, 0, h);
 	Function.addToObject(RegExp(prototype), "exec", exec, 1, h);
